@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디바이스 동기화 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .status-card {
+            background: #e3f2fd;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #2196f3;
+        }
+        .device-list {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+        }
+        .device-item {
+            display: flex;
+            align-items: center;
+            padding: 8px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 4px;
+            border: 1px solid #e0e0e0;
+        }
+        .device-icon {
+            font-size: 20px;
+            margin-right: 10px;
+        }
+        .device-info {
+            flex: 1;
+        }
+        .device-status {
+            font-size: 12px;
+            color: #666;
+        }
+        .online { color: #4caf50; }
+        .offline { color: #f44336; }
+        button {
+            background: #2196f3;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #1976d2;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        .log {
+            background: #f5f5f5;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 디바이스 동기화 테스트</h1>
+        
+        <div class="status-card">
+            <h3>현재 상태</h3>
+            <div id="current-status">로딩 중...</div>
+            <div id="device-count">디바이스 수: 확인 중...</div>
+        </div>
+
+        <div class="device-list">
+            <h3>연결된 디바이스</h3>
+            <div id="device-list">로딩 중...</div>
+        </div>
+
+        <div>
+            <button onclick="refreshDevices()">🔄 새로고침</button>
+            <button onclick="resetDevice()">🔧 디바이스 초기화</button>
+            <button onclick="forceSync()">⚡ 강제 동기화</button>
+            <button onclick="clearLog()">🗑️ 로그 지우기</button>
+        </div>
+
+        <div class="log" id="log">
+            <div>로그가 여기에 표시됩니다...</div>
+        </div>
+    </div>
+
+    <!-- 동기화 시스템 스크립트들 -->
+    <script src="js/supabase-config.js"></script>
+    <script src="js/supabase-integration.js"></script>
+    <script src="js/device-manager.js"></script>
+    <script src="js/cross-device-sync.js"></script>
+    <script src="js/simple-sync-status.js"></script>
+
+    <script>
+        let logContainer = document.getElementById('log');
+        
+        function log(message) {
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+            console.log(message);
+        }
+
+        function clearLog() {
+            logContainer.innerHTML = '<div>로그가 지워졌습니다...</div>';
+        }
+
+        async function refreshDevices() {
+            log('🔄 디바이스 목록 새로고침 시작...');
+            
+            try {
+                if (window.deviceManager) {
+                    const devices = await window.deviceManager.getAllDevices();
+                    updateDeviceList(devices);
+                    updateStatus(devices);
+                    log(`✅ ${devices.length}개 디바이스 발견`);
+                } else {
+                    log('❌ 디바이스 관리자를 찾을 수 없습니다');
+                }
+            } catch (error) {
+                log(`❌ 디바이스 목록 조회 실패: ${error.message}`);
+            }
+        }
+
+        function updateDeviceList(devices) {
+            const container = document.getElementById('device-list');
+            
+            if (!devices || devices.length === 0) {
+                container.innerHTML = '<div style="color: #666; text-align: center; padding: 20px;">동기화된 기기가 없습니다</div>';
+                return;
+            }
+
+            let html = '';
+            devices.forEach(device => {
+                const isCurrent = device.id === window.deviceManager?.deviceId;
+                const isOnline = window.deviceManager.isDeviceOnline(device);
+                const statusClass = isOnline ? 'online' : 'offline';
+                const statusText = isOnline ? '온라인' : '오프라인';
+                const currentText = isCurrent ? ' (현재 기기)' : '';
+                
+                html += `
+                    <div class="device-item">
+                        <div class="device-icon">${window.deviceManager.getDeviceIcon(device.type)}</div>
+                        <div class="device-info">
+                            <div><strong>${window.deviceManager.getDeviceTypeName(device.type)}${currentText}</strong></div>
+                            <div class="device-status ${statusClass}">
+                                ${statusText} • ${device.platform} • ${new Date(device.lastSeen).toLocaleString()}
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        function updateStatus(devices) {
+            const statusEl = document.getElementById('current-status');
+            const countEl = document.getElementById('device-count');
+            
+            if (!devices || devices.length === 0) {
+                statusEl.textContent = '동기화된 기기가 없습니다';
+                statusEl.style.color = '#f44336';
+                countEl.textContent = '디바이스 수: 0개';
+            } else {
+                const onlineDevices = devices.filter(device => 
+                    window.deviceManager.isDeviceOnline(device)
+                );
+                
+                if (onlineDevices.length > 1) {
+                    statusEl.textContent = `${onlineDevices.length}개 기기가 연결되어 있습니다`;
+                    statusEl.style.color = '#4caf50';
+                } else {
+                    statusEl.textContent = '다른 기기 연결 대기 중...';
+                    statusEl.style.color = '#ff9800';
+                }
+                
+                countEl.textContent = `디바이스 수: ${devices.length}개 (온라인: ${onlineDevices.length}개)`;
+            }
+        }
+
+        async function resetDevice() {
+            if (!confirm('디바이스 동기화를 초기화하시겠습니까?')) {
+                return;
+            }
+            
+            log('🔧 디바이스 초기화 시작...');
+            
+            try {
+                if (window.deviceManager) {
+                    window.deviceManager.resetDevice();
+                    log('✅ 디바이스 초기화 완료');
+                }
+                
+                if (window.crossDeviceSync) {
+                    await window.crossDeviceSync.forceSync();
+                    log('✅ 동기화 시스템 재시작 완료');
+                }
+                
+                setTimeout(() => {
+                    refreshDevices();
+                }, 2000);
+                
+            } catch (error) {
+                log(`❌ 디바이스 초기화 실패: ${error.message}`);
+            }
+        }
+
+        async function forceSync() {
+            log('⚡ 강제 동기화 시작...');
+            
+            try {
+                if (window.crossDeviceSync) {
+                    await window.crossDeviceSync.forceSync();
+                    log('✅ 강제 동기화 완료');
+                } else {
+                    log('❌ 동기화 시스템을 찾을 수 없습니다');
+                }
+                
+                setTimeout(() => {
+                    refreshDevices();
+                }, 1000);
+                
+            } catch (error) {
+                log(`❌ 강제 동기화 실패: ${error.message}`);
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', () => {
+            log('📱 디바이스 동기화 테스트 페이지 로드 완료');
+            
+            // 3초 후 자동 새로고침
+            setTimeout(() => {
+                refreshDevices();
+            }, 3000);
+        });
+
+        // 동기화 상태 업데이트 이벤트 리스너
+        window.addEventListener('syncStatusUpdate', (e) => {
+            log(`🔄 동기화 상태 업데이트: ${e.detail.status}`);
+        });
+    </script>
+</body>
+</html>
+
+
+
+

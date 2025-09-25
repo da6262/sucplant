@@ -1,0 +1,70 @@
+{
+  "name": "gyeongsan-succulent-farm",
+  "version": "1.0.0",
+  "description": "경산다육식물농장 White Platter 전문 관리 시스템",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build-win": "electron-builder --win",
+    "build-mac": "electron-builder --mac",
+    "build-linux": "electron-builder --linux",
+    "build-web": "echo '웹 빌드: 정적 파일들을 dist-web 폴더로 복사' && if not exist dist-web mkdir dist-web && xcopy *.html dist-web\\ /Y && xcopy *.js dist-web\\ /Y && xcopy *.json dist-web\\ /Y && xcopy js dist-web\\js\\ /E /I /Y && xcopy assets dist-web\\assets\\ /E /I /Y && echo '웹 빌드 완료: dist-web 폴더를 Firebase Hosting에 업로드하세요'",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder"
+  },
+  "keywords": [
+    "succulent",
+    "farm",
+    "management",
+    "white-platter",
+    "electron"
+  ],
+  "author": "경산다육식물농장",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^27.0.0",
+    "electron-builder": "^24.6.4"
+  },
+  "dependencies": {
+    "sqlite3": "^5.1.6",
+    "uuid": "^9.0.1"
+  },
+  "build": {
+    "appId": "com.gyeongsan.succulent.farm",
+    "productName": "경산다육식물농장 관리시스템",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!node_modules/**/*",
+      "node_modules/sqlite3/**/*"
+    ],
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "requestedExecutionLevel": "asInvoker"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.business"
+    },
+    "linux": {
+      "target": "AppImage",
+      "icon": "assets/icon.png",
+      "category": "Office"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "runAfterFinish": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gyeongsan-farm/management-system.git"
+  }
+}

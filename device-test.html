@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디바이스 테스트</title>
+</head>
+<body>
+    <h1>디바이스 정보 테스트</h1>
+    <button onclick="testDeviceSave()">디바이스 정보 강제 저장</button>
+    <button onclick="testDeviceQuery()">Supabase에서 디바이스 조회</button>
+    <button onclick="testDeviceList()">디바이스 목록 조회</button>
+    
+    <div id="result"></div>
+
+    <script>
+        // Supabase 설정 (실제 프로젝트 설정)
+        const SUPABASE_URL = 'https://bigjqermlhbipjsnyhmt.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZ2pxZXJtbGhiaXBqc255aG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNjE5NjIsImV4cCI6MjA3MzgzNzk2Mn0.OF5NshUeFx62ntIL_LrAdxAcSNebLN2ioZGadawl1hE';
+        
+        // Supabase 클라이언트 초기화
+        const { createClient } = supabase;
+        const supabaseClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        window.supabaseClient = supabaseClient;
+
+        // 디바이스 매니저 로드
+        const script = document.createElement('script');
+        script.src = 'js/device-manager.js';
+        document.head.appendChild(script);
+
+        script.onload = () => {
+            console.log('✅ 디바이스 매니저 로드 완료');
+        };
+
+        async function testDeviceSave() {
+            try {
+                console.log('🔄 디바이스 정보 강제 저장 시작...');
+                const result = await window.deviceManager.forceSaveDeviceInfo();
+                document.getElementById('result').innerHTML = '<p>✅ 저장 완료: ' + JSON.stringify(result) + '</p>';
+            } catch (error) {
+                console.error('❌ 저장 실패:', error);
+                document.getElementById('result').innerHTML = '<p>❌ 저장 실패: ' + error.message + '</p>';
+            }
+        }
+
+        async function testDeviceQuery() {
+            try {
+                console.log('🔍 Supabase에서 디바이스 조회...');
+                const { data, error } = await supabaseClient
+                    .from('device_info')
+                    .select('*')
+                    .order('updated_at', { ascending: false });
+                
+                if (error) {
+                    throw error;
+                }
+                
+                console.log('📊 조회 결과:', data);
+                document.getElementById('result').innerHTML = 
+                    '<p>✅ 조회 완료 (총 ' + data.length + '개):</p><pre>' + JSON.stringify(data, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('❌ 조회 실패:', error);
+                document.getElementById('result').innerHTML = '<p>❌ 조회 실패: ' + error.message + '</p>';
+            }
+        }
+
+        async function testDeviceList() {
+            try {
+                console.log('🔍 디바이스 목록 조회...');
+                const devices = await window.deviceManager.getAllDevices({ source: 'supabase', debug: true });
+                console.log('📊 디바이스 목록:', devices);
+                document.getElementById('result').innerHTML = 
+                    '<p>✅ 목록 조회 완료 (총 ' + devices.length + '개):</p><pre>' + JSON.stringify(devices, null, 2) + '</pre>';
+            } catch (error) {
+                console.error('❌ 목록 조회 실패:', error);
+                document.getElementById('result').innerHTML = '<p>❌ 목록 조회 실패: ' + error.message + '</p>';
+            }
+        }
+    </script>
+    
+    <!-- Supabase CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</body>
+</html>

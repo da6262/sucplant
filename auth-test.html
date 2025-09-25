@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인증 시스템 테스트 - 경산다육식물농장</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.3.0"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- 로그인 모달 -->
+    <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: none;">
+        <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
+            <div class="text-center mb-6">
+                <div class="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
+                    <i class="fas fa-seedling text-2xl text-green-600"></i>
+                </div>
+                <h2 class="text-2xl font-bold text-gray-900">경산다육식물농장</h2>
+                <p class="text-gray-600 mt-2">관리자 로그인이 필요합니다</p>
+            </div>
+            
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label for="username" class="block text-sm font-medium text-gray-700 mb-1">
+                        사용자명
+                    </label>
+                    <input type="text" 
+                           id="username" 
+                           name="username"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="관리자 사용자명"
+                           required>
+                </div>
+                
+                <div>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">
+                        비밀번호
+                    </label>
+                    <input type="password" 
+                           id="password" 
+                           name="password"
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent"
+                           placeholder="관리자 비밀번호"
+                           required>
+                </div>
+                
+                <div id="loginError" class="text-red-600 text-sm text-center" style="display: none;"></div>
+                
+                <button type="submit" 
+                        class="w-full bg-green-600 text-white py-2 px-4 rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition duration-200">
+                    <i class="fas fa-sign-in-alt mr-2"></i>
+                    로그인
+                </button>
+            </form>
+            
+            <div class="mt-6 text-center text-sm text-gray-500">
+                <p>🔐 보안이 강화된 관리자 전용 시스템입니다</p>
+                <p class="mt-1">잘못된 접근 시도는 자동으로 차단됩니다</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Header -->
+    <header class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-seedling text-2xl"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold">경산다육식물농장</h1>
+                        <p class="text-green-100 text-sm">인증 시스템 테스트</p>
+                    </div>
+                </div>
+                
+                <!-- 사용자 정보 및 로그아웃 버튼 -->
+                <div id="userInfo" class="flex items-center space-x-4">
+                    <!-- 인증된 사용자 정보가 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main id="mainContent" class="container mx-auto px-4 py-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🔐 인증 시스템 테스트</h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 로그인 정보 -->
+                <div class="bg-green-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-green-800 mb-3">
+                        <i class="fas fa-key mr-2"></i>
+                        로그인 정보
+                    </h3>
+                    <div class="space-y-2 text-sm">
+                        <p><strong>사용자명:</strong> gsfarfm</p>
+                        <p><strong>비밀번호:</strong> ryubae6677</p>
+                        <p class="text-green-600 mt-3">
+                            <i class="fas fa-info-circle mr-1"></i>
+                            위 정보로 로그인하여 시스템에 접근할 수 있습니다.
+                        </p>
+                    </div>
+                </div>
+                
+                <!-- 보안 기능 -->
+                <div class="bg-blue-50 rounded-lg p-4">
+                    <h3 class="text-lg font-semibold text-blue-800 mb-3">
+                        <i class="fas fa-shield-alt mr-2"></i>
+                        보안 기능
+                    </h3>
+                    <ul class="space-y-2 text-sm text-blue-700">
+                        <li><i class="fas fa-check mr-2"></i>5회 로그인 실패 시 15분 잠금</li>
+                        <li><i class="fas fa-check mr-2"></i>24시간 자동 로그아웃</li>
+                        <li><i class="fas fa-check mr-2"></i>세션 토큰 기반 인증</li>
+                        <li><i class="fas fa-check mr-2"></i>페이지 접근 보호</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 테스트 버튼들 -->
+            <div class="mt-8">
+                <h3 class="text-lg font-semibold text-gray-800 mb-4">테스트 기능</h3>
+                <div class="flex flex-wrap gap-4">
+                    <button onclick="testLogin()" 
+                            class="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700 transition-colors">
+                        <i class="fas fa-sign-in-alt mr-2"></i>
+                        로그인 테스트
+                    </button>
+                    
+                    <button onclick="testLogout()" 
+                            class="bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors">
+                        <i class="fas fa-sign-out-alt mr-2"></i>
+                        로그아웃 테스트
+                    </button>
+                    
+                    <button onclick="testAuthStatus()" 
+                            class="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        인증 상태 확인
+                    </button>
+                    
+                    <button onclick="clearAuthData()" 
+                            class="bg-yellow-600 text-white px-4 py-2 rounded-md hover:bg-yellow-700 transition-colors">
+                        <i class="fas fa-trash mr-2"></i>
+                        인증 데이터 초기화
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 테스트 결과 -->
+            <div id="testResults" class="mt-6 p-4 bg-gray-100 rounded-lg" style="display: none;">
+                <h4 class="font-semibold text-gray-800 mb-2">테스트 결과:</h4>
+                <div id="testOutput" class="text-sm text-gray-700"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 인증 시스템 스크립트 -->
+    <script src="js/auth-system.js?v=1.0.5"></script>
+    
+    <script>
+        // 테스트 함수들
+        function testLogin() {
+            showTestResult('로그인 테스트 시작...');
+            
+            // 자동으로 올바른 계정으로 로그인 시도
+            setTimeout(async () => {
+                const result = await window.authSystem.login('gsfarfm', 'ryubae6677');
+                showTestResult(`로그인 결과: ${result.success ? '성공' : '실패'} - ${result.message}`);
+            }, 500);
+        }
+        
+        function testLogout() {
+            showTestResult('로그아웃 테스트 시작...');
+            window.authSystem.logout();
+            showTestResult('로그아웃 완료');
+        }
+        
+        function testAuthStatus() {
+            const isAuth = window.authSystem.isAuthenticated;
+            const user = window.authSystem.currentUser;
+            const token = window.authSystem.authToken;
+            
+            showTestResult(`
+                인증 상태: ${isAuth ? '인증됨' : '미인증'}<br>
+                사용자: ${user ? user.name : '없음'}<br>
+                토큰: ${token ? '있음' : '없음'}<br>
+                로그인 시도 횟수: ${window.authSystem.loginAttempts}
+            `);
+        }
+        
+        function clearAuthData() {
+            showTestResult('인증 데이터 초기화 중...');
+            window.authSystem.clearStoredAuth();
+            window.authSystem.logout();
+            showTestResult('인증 데이터 초기화 완료');
+        }
+        
+        function showTestResult(message) {
+            const resultsDiv = document.getElementById('testResults');
+            const outputDiv = document.getElementById('testOutput');
+            
+            resultsDiv.style.display = 'block';
+            outputDiv.innerHTML = message;
+        }
+        
+        // 페이지 로드 시 인증 상태 확인
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔐 인증 시스템 테스트 페이지 로드됨');
+            
+            // 3초 후 자동으로 인증 상태 표시
+            setTimeout(() => {
+                testAuthStatus();
+            }, 3000);
+        });
+    </script>
+</body>
+</html>

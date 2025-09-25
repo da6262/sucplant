@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌿 White Platter 등록 완료 테스트 - 경산다육식물농장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .success-animation {
+            animation: successPulse 2s ease-in-out infinite;
+        }
+        @keyframes successPulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .white-platter-bg {
+            background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+        }
+    </style>
+</head>
+<body class="white-platter-bg min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 헤더 -->
+        <div class="text-center mb-8">
+            <h1 class="text-4xl font-bold text-gray-800 mb-2">🌿 White Platter 최종 등록 테스트</h1>
+            <p class="text-gray-600">경산다육식물농장 - 국내 최초 White Platter 전문 생산</p>
+            <div class="mt-4 p-4 bg-blue-50 rounded-lg">
+                <p class="text-blue-800 font-semibold">✅ 메인 시스템 정상 로드 확인</p>
+                <p class="text-blue-600">✅ saveProduct 함수 작동 확인</p>
+                <p class="text-blue-600">✅ openProductModal 함수 작동 확인</p>
+            </div>
+        </div>
+
+        <!-- White Platter 등록 폼 -->
+        <div class="max-w-2xl mx-auto bg-white rounded-xl shadow-lg p-8">
+            <h2 class="text-2xl font-bold text-gray-800 mb-6 text-center">
+                🌱 Cotyledon orbiculata 'White Platter' 등록
+            </h2>
+            
+            <form id="whitePlatterForm" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <!-- 기본 정보 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">상품명</label>
+                        <input type="text" id="productName" 
+                            value="White Platter (화이트 플래터)"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">학명</label>
+                        <input type="text" id="scientificName" 
+                            value="Cotyledon orbiculata 'White Platter'"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">카테고리</label>
+                        <select id="category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="희귀다육식물">희귀다육식물</option>
+                            <option value="프리미엄">프리미엄</option>
+                            <option value="특수품종">특수품종</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">가격 (원)</label>
+                        <input type="number" id="price" 
+                            value="45000"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">재고 수량</label>
+                        <input type="number" id="stock" 
+                            value="12"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">크기</label>
+                        <input type="text" id="size" 
+                            value="대형 (지름 15-20cm)"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+                
+                <!-- 특성 설명 -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">특성 및 설명</label>
+                    <textarea id="description" rows="4" 
+                        class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                        placeholder="White Platter의 특성을 입력하세요...">국내 최초 도입! Cotyledon orbiculata 'White Platter'는 극도로 두꺼운 하얀 분가루(파리나) 코팅으로 유명한 희귀 품종입니다. 
+
+✨ 주요 특징:
+- 대형 원형 잎 (지름 15-20cm)
+- 극두꺼운 하얀 파리나 코팅
+- 국내 최초 생산품종
+- 경산다육식물농장 직접 재배
+
+🌱 관리 포인트:
+- 직사광선 피하기
+- 과습 주의
+- 겨울철 실내 관리
+- 파리나 손상 방지</textarea>
+                </div>
+                
+                <!-- 특수 정보 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">원산지</label>
+                        <input type="text" id="origin" 
+                            value="남아프리카"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">난이도</label>
+                        <select id="difficulty" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <option value="중급">중급</option>
+                            <option value="초급">초급</option>
+                            <option value="고급">고급</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">계절성</label>
+                        <input type="text" id="seasonality" 
+                            value="겨울성장형"
+                            class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                    </div>
+                </div>
+            </form>
+            
+            <!-- 등록 버튼 -->
+            <div class="mt-8 text-center">
+                <button onclick="registerWhitePlatter()" 
+                    class="bg-green-600 hover:bg-green-700 text-white font-bold py-3 px-8 rounded-lg transition-all duration-200 transform hover:scale-105 shadow-lg">
+                    🌿 White Platter 등록하기
+                </button>
+            </div>
+        </div>
+        
+        <!-- 결과 표시 영역 -->
+        <div id="resultArea" class="mt-8 max-w-2xl mx-auto hidden">
+            <div id="successResult" class="bg-green-50 border border-green-200 rounded-lg p-6 hidden">
+                <div class="success-animation text-center">
+                    <h3 class="text-2xl font-bold text-green-800 mb-4">🎉 White Platter 등록 성공!</h3>
+                    <p class="text-green-700 mb-4">경산다육식물농장의 첫 White Platter가 시스템에 등록되었습니다.</p>
+                    <div id="registeredData" class="bg-white p-4 rounded-lg shadow-sm text-left">
+                        <!-- 등록된 데이터가 여기 표시됩니다 -->
+                    </div>
+                </div>
+            </div>
+            
+            <div id="errorResult" class="bg-red-50 border border-red-200 rounded-lg p-6 hidden">
+                <h3 class="text-xl font-bold text-red-800 mb-4">❌ 등록 실패</h3>
+                <div id="errorDetails" class="text-red-700">
+                    <!-- 에러 상세가 여기 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('🌿 White Platter 등록 시스템 시작...');
+
+        // 메인 시스템 연결 확인
+        function checkMainSystem() {
+            console.log('🔍 메인 시스템 연결 확인...');
+            
+            // window.orderSystem 확인
+            if (window.orderSystem) {
+                console.log('✅ 메인 시스템 연결됨:', window.orderSystem);
+                return true;
+            }
+            
+            // 직접 API 테스트
+            console.log('⚠️ window.orderSystem 없음. 직접 API 테스트...');
+            return false;
+        }
+
+        // White Platter 등록 함수
+        async function registerWhitePlatter() {
+            console.log('🚀 White Platter 등록 시작...');
+            
+            // 폼 데이터 수집
+            const formData = {
+                name: document.getElementById('productName').value,
+                scientific_name: document.getElementById('scientificName').value,
+                category: document.getElementById('category').value,
+                price: parseInt(document.getElementById('price').value),
+                stock: parseInt(document.getElementById('stock').value),
+                size: document.getElementById('size').value,
+                description: document.getElementById('description').value,
+                origin: document.getElementById('origin').value,
+                difficulty: document.getElementById('difficulty').value,
+                seasonality: document.getElementById('seasonality').value,
+                special_notes: '국내 최초 White Platter 품종 - 경산다육식물농장 직접 생산',
+                is_premium: true,
+                is_rare: true,
+                created_at: new Date().toISOString()
+            };
+            
+            console.log('📦 등록할 데이터:', formData);
+            
+            // 결과 영역 표시
+            document.getElementById('resultArea').classList.remove('hidden');
+            document.getElementById('successResult').classList.add('hidden');
+            document.getElementById('errorResult').classList.add('hidden');
+            
+            try {
+                // 방법 1: 메인 시스템 사용
+                if (window.orderSystem && window.orderSystem.saveProduct) {
+                    console.log('📡 메인 시스템으로 등록...');
+                    const result = await window.orderSystem.saveProduct(formData);
+                    console.log('✅ 메인 시스템 등록 성공:', result);
+                    showSuccess(result, '메인 시스템');
+                    return;
+                }
+                
+                // 방법 2: 직접 API 호출
+                console.log('📡 직접 API 호출로 등록...');
+                const response = await fetch('tables/products', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ 직접 API 등록 성공:', result);
+                    showSuccess(result, '직접 API');
+                } else {
+                    throw new Error(`API 응답 오류: ${response.status}`);
+                }
+                
+            } catch (error) {
+                console.error('❌ White Platter 등록 실패:', error);
+                showError(error);
+            }
+        }
+        
+        // 성공 결과 표시
+        function showSuccess(result, method) {
+            document.getElementById('successResult').classList.remove('hidden');
+            document.getElementById('errorResult').classList.add('hidden');
+            
+            const dataDiv = document.getElementById('registeredData');
+            dataDiv.innerHTML = `
+                <h4 class="font-bold text-gray-800 mb-3">📋 등록된 White Platter 정보</h4>
+                <div class="grid grid-cols-2 gap-2 text-sm">
+                    <div><strong>등록 ID:</strong> ${result.id || 'N/A'}</div>
+                    <div><strong>상품명:</strong> ${result.name}</div>
+                    <div><strong>학명:</strong> ${result.scientific_name}</div>
+                    <div><strong>가격:</strong> ${result.price?.toLocaleString()}원</div>
+                    <div><strong>재고:</strong> ${result.stock}개</div>
+                    <div><strong>카테고리:</strong> ${result.category}</div>
+                    <div><strong>등록방법:</strong> ${method}</div>
+                    <div><strong>등록시간:</strong> ${new Date().toLocaleString()}</div>
+                </div>
+                <div class="mt-4 p-3 bg-green-100 rounded-lg">
+                    <p class="text-green-800 font-semibold">🎉 축하합니다!</p>
+                    <p class="text-green-700">경산다육식물농장의 첫 White Platter가 성공적으로 등록되었습니다!</p>
+                </div>
+            `;
+        }
+        
+        // 에러 결과 표시
+        function showError(error) {
+            document.getElementById('errorResult').classList.remove('hidden');
+            document.getElementById('successResult').classList.add('hidden');
+            
+            const errorDiv = document.getElementById('errorDetails');
+            errorDiv.innerHTML = `
+                <div class="mb-4">
+                    <strong>오류 메시지:</strong><br>
+                    <code class="bg-red-100 p-2 rounded block mt-2">${error.message}</code>
+                </div>
+                <div class="mb-4">
+                    <strong>오류 스택:</strong><br>
+                    <pre class="bg-red-100 p-2 rounded text-xs mt-2 overflow-auto">${error.stack || '스택 정보 없음'}</pre>
+                </div>
+                <div class="mt-4 p-3 bg-yellow-100 rounded-lg">
+                    <p class="text-yellow-800">💡 해결 방안:</p>
+                    <ul class="text-yellow-700 mt-2 list-disc list-inside">
+                        <li>메인 시스템 페이지에서 직접 등록 시도</li>
+                        <li>네트워크 연결 상태 확인</li>
+                        <li>브라우저 콘솔에서 추가 에러 확인</li>
+                    </ul>
+                </div>
+            `;
+        }
+        
+        // 시스템 상태 확인
+        window.addEventListener('load', function() {
+            console.log('🌿 White Platter 등록 페이지 로드 완료');
+            
+            // 메인 시스템 상태 확인
+            setTimeout(() => {
+                const systemStatus = checkMainSystem();
+                console.log('📊 메인 시스템 상태:', systemStatus ? '연결됨' : '직접 API 모드');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Solapi SMS 발송 테스트</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; }
+        input, button { padding: 10px; font-size: 16px; }
+        #result { margin-top: 20px; padding: 10px; background-color: #f0f0f0; border: 1px solid #ccc; white-space: pre-wrap; }
+    </style>
+</head>
+<body>
+    <h1>솔라피 SMS 발송 테스트</h1>
+    <p>받는 사람 번호: <input type="text" id="toNumber" value="01085582436"></p>
+    <button onclick="testSolapiSms()">테스트 문자 발송</button>
+    <h3>결과:</h3>
+    <pre id="result">여기에 결과가 표시됩니다.</pre>
+
+    <script>
+        // 🚨 중요: 이 부분에 누나의 API 정보를 정확하게 입력하세요.
+        const apiKey = "NCS4ZXQ1JWMUPQ3W".trim(); // 누나의 API Key
+        const apiSecret = "MLER1HFO30FJGXMZLEN9P82TZL6ZWEM2".trim(); // 누나의 API Secret
+        const fromNumber = "01097456245"; // 솔라피에 등록된 발신번호
+
+        async function testSolapiSms() {
+            const toNumber = document.getElementById('toNumber').value;
+            const resultElem = document.getElementById('result');
+            resultElem.textContent = '전송 시도 중...';
+
+            const url = "https://api.solapi.com/messages/v4/send";
+            const date = new Date().toISOString();
+            const salt = CryptoJS.lib.WordArray.random(16).toString(CryptoJS.enc.Hex);
+            
+            // 솔라피 API v4 서명 생성 (Hex 형식 필요)
+            const messageToSign = `${date}${salt}`;
+            const signature = CryptoJS.HmacSHA256(messageToSign, apiSecret).toString(CryptoJS.enc.Hex);
+
+            // 인증 헤더 생성 - 다른 방식 시도
+            const authHeader = `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+            
+            console.log("📝 서명 생성 정보:", { date, salt, signature });
+
+            const payload = {
+                message: {
+                    to: toNumber,
+                    from: fromNumber,
+                    text: "[테스트] 솔라피 SMS 발송 테스트입니다."
+                }
+            };
+            
+            console.log("📤 요청 데이터:", payload);
+            console.log("🔑 인증 헤더:", authHeader);
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': authHeader,
+                        'Content-Type': 'application/json; charset=utf-8'
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                console.log("📡 솔라피 API 응답 상태:", response.status);
+
+                if (!response.ok) {
+                    console.error("❌ 솔라피 API 오류 응답:", data);
+                    throw new Error(`서버 오류: ${response.status} - ${JSON.stringify(data)}`);
+                }
+
+                resultElem.textContent = `✅ 발송 성공!\n\n${JSON.stringify(data, null, 2)}`;
+                console.log("✅ 발송 성공:", data);
+
+            } catch (error) {
+                resultElem.textContent = `❌ 발송 실패!\n\n${error.message}\n\n(콘솔 창을 확인하세요)`;
+                console.error("❌ 최종 오류:", error);
+            }
+        }
+    </script>
+</body>
+</html>

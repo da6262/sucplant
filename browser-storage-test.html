@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌐 브라우저별 저장소 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🌐 브라우저별 저장소 테스트</h1>
+        
+        <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+            <h2 class="font-semibold text-yellow-800 mb-2">⚠️ 중요한 정보</h2>
+            <p class="text-yellow-700 text-sm">
+                LocalStorage는 <strong>브라우저별로 독립적</strong>입니다. 
+                Chrome에서 저장한 데이터는 Firefox에서 볼 수 없고, 
+                Firefox에서 저장한 데이터는 Edge에서 볼 수 없습니다.
+            </p>
+        </div>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <!-- 현재 브라우저 정보 -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="font-semibold mb-4">🖥️ 현재 브라우저 정보</h2>
+                <div id="browser-info" class="text-sm space-y-2"></div>
+            </div>
+            
+            <!-- LocalStorage 상태 -->
+            <div class="bg-white p-6 rounded-lg shadow">
+                <h2 class="font-semibold mb-4">💾 LocalStorage 상태</h2>
+                <div id="storage-status" class="text-sm space-y-2"></div>
+                <button onclick="checkStorage()" class="mt-4 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded">
+                    🔄 새로고침
+                </button>
+            </div>
+        </div>
+        
+        <!-- 테스트 데이터 생성 -->
+        <div class="mt-6 bg-white p-6 rounded-lg shadow">
+            <h2 class="font-semibold mb-4">🧪 테스트 데이터 생성</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button onclick="createTestData()" class="bg-green-600 hover:bg-green-700 text-white py-2 px-4 rounded">
+                    테스트 데이터 생성
+                </button>
+                <button onclick="clearTestData()" class="bg-red-600 hover:bg-red-700 text-white py-2 px-4 rounded">
+                    테스트 데이터 삭제
+                </button>
+                <button onclick="exportData()" class="bg-purple-600 hover:bg-purple-700 text-white py-2 px-4 rounded">
+                    데이터 내보내기
+                </button>
+            </div>
+            <div id="test-result" class="mt-4 text-sm"></div>
+        </div>
+        
+        <!-- 브라우저별 비교 가이드 -->
+        <div class="mt-6 bg-white p-6 rounded-lg shadow">
+            <h2 class="font-semibold mb-4">📋 브라우저별 테스트 가이드</h2>
+            <div class="text-sm space-y-3">
+                <div class="border-l-4 border-blue-500 pl-4">
+                    <strong>Chrome:</strong> 이 페이지에서 테스트 데이터를 생성하고, Chrome 개발자 도구(F12) → Application → Local Storage에서 확인
+                </div>
+                <div class="border-l-4 border-orange-500 pl-4">
+                    <strong>Firefox:</strong> Firefox에서 같은 페이지를 열고, Firefox 개발자 도구(F12) → Storage → Local Storage에서 확인
+                </div>
+                <div class="border-l-4 border-green-500 pl-4">
+                    <strong>Edge:</strong> Edge에서 같은 페이지를 열고, Edge 개발자 도구(F12) → Application → Local Storage에서 확인
+                </div>
+                <div class="border-l-4 border-red-500 pl-4">
+                    <strong>Safari:</strong> Safari에서 같은 페이지를 열고, Safari 개발자 도구 → Storage → Local Storage에서 확인
+                </div>
+            </div>
+        </div>
+        
+        <!-- 데이터 동기화 방법 -->
+        <div class="mt-6 bg-white p-6 rounded-lg shadow">
+            <h2 class="font-semibold mb-4">🔄 데이터 동기화 방법</h2>
+            <div class="text-sm space-y-3">
+                <div class="bg-blue-50 p-3 rounded">
+                    <strong>1. 데이터 내보내기/가져오기:</strong> 현재 브라우저에서 데이터를 JSON 파일로 내보내고, 다른 브라우저에서 가져오기
+                </div>
+                <div class="bg-green-50 p-3 rounded">
+                    <strong>2. 서버 API 사용:</strong> 모든 브라우저가 같은 서버 API에 연결하여 데이터 동기화
+                </div>
+                <div class="bg-purple-50 p-3 rounded">
+                    <strong>3. 클라우드 동기화:</strong> Google Drive, Dropbox 등을 통한 데이터 동기화
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 브라우저 정보 표시
+        function displayBrowserInfo() {
+            const infoDiv = document.getElementById('browser-info');
+            const userAgent = navigator.userAgent;
+            let browserName = 'Unknown';
+            let browserVersion = 'Unknown';
+            
+            if (userAgent.indexOf('Chrome') > -1 && userAgent.indexOf('Edg') === -1) {
+                browserName = 'Chrome';
+                browserVersion = userAgent.match(/Chrome\/(\d+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Firefox') > -1) {
+                browserName = 'Firefox';
+                browserVersion = userAgent.match(/Firefox\/(\d+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Edg') > -1) {
+                browserName = 'Edge';
+                browserVersion = userAgent.match(/Edg\/(\d+)/)?.[1] || 'Unknown';
+            } else if (userAgent.indexOf('Safari') > -1 && userAgent.indexOf('Chrome') === -1) {
+                browserName = 'Safari';
+                browserVersion = userAgent.match(/Version\/(\d+)/)?.[1] || 'Unknown';
+            }
+            
+            infoDiv.innerHTML = `
+                <div><strong>브라우저:</strong> ${browserName} ${browserVersion}</div>
+                <div><strong>User Agent:</strong> ${userAgent}</div>
+                <div><strong>언어:</strong> ${navigator.language}</div>
+                <div><strong>플랫폼:</strong> ${navigator.platform}</div>
+                <div><strong>쿠키 활성화:</strong> ${navigator.cookieEnabled ? 'Yes' : 'No'}</div>
+                <div><strong>LocalStorage 지원:</strong> ${typeof(Storage) !== "undefined" ? 'Yes' : 'No'}</div>
+            `;
+        }
+        
+        // LocalStorage 상태 확인
+        function checkStorage() {
+            const statusDiv = document.getElementById('storage-status');
+            const key = 'farm_management_customers';
+            const data = localStorage.getItem(key);
+            
+            let output = `<div class="font-medium">키: ${key}</div>`;
+            
+            if (data) {
+                try {
+                    const customers = JSON.parse(data);
+                    output += `
+                        <div class="text-green-600">✅ 데이터 존재</div>
+                        <div>고객 수: ${customers.length}명</div>
+                        <div>데이터 크기: ${data.length} bytes</div>
+                        <div>마지막 수정: ${new Date().toLocaleString()}</div>
+                    `;
+                    
+                    if (customers.length > 0) {
+                        output += `<div class="mt-2"><strong>최근 고객:</strong></div>`;
+                        customers.slice(-3).forEach(customer => {
+                            output += `<div class="text-xs text-gray-600">• ${customer.name} (${customer.phone})</div>`;
+                        });
+                    }
+                } catch (error) {
+                    output += `<div class="text-red-600">❌ JSON 파싱 오류: ${error.message}</div>`;
+                }
+            } else {
+                output += `<div class="text-red-600">❌ 데이터 없음</div>`;
+            }
+            
+            // LocalStorage 전체 상태
+            output += `<div class="mt-4"><strong>전체 LocalStorage:</strong></div>`;
+            let totalKeys = 0;
+            for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && key.startsWith('farm_management_')) {
+                    totalKeys++;
+                    output += `<div class="text-xs text-gray-600">• ${key}</div>`;
+                }
+            }
+            if (totalKeys === 0) {
+                output += `<div class="text-xs text-gray-500">farm_management_ 키가 없습니다</div>`;
+            }
+            
+            statusDiv.innerHTML = output;
+        }
+        
+        // 테스트 데이터 생성
+        function createTestData() {
+            const resultDiv = document.getElementById('test-result');
+            const browserName = navigator.userAgent.includes('Chrome') ? 'Chrome' : 
+                              navigator.userAgent.includes('Firefox') ? 'Firefox' : 
+                              navigator.userAgent.includes('Edg') ? 'Edge' : 
+                              navigator.userAgent.includes('Safari') ? 'Safari' : 'Unknown';
+            
+            const testCustomers = [
+                {
+                    id: `test_${browserName.toLowerCase()}_1`,
+                    name: `${browserName} 테스트 고객 1`,
+                    phone: '010-1111-1111',
+                    address: `${browserName} 브라우저에서 생성`,
+                    grade: 'GENERAL',
+                    created_at: new Date().toISOString(),
+                    browser: browserName
+                },
+                {
+                    id: `test_${browserName.toLowerCase()}_2`,
+                    name: `${browserName} 테스트 고객 2`,
+                    phone: '010-2222-2222',
+                    address: `${browserName} 브라우저에서 생성`,
+                    grade: 'VIP',
+                    created_at: new Date().toISOString(),
+                    browser: browserName
+                }
+            ];
+            
+            try {
+                const key = 'farm_management_customers';
+                const existingData = localStorage.getItem(key);
+                const customers = existingData ? JSON.parse(existingData) : [];
+                
+                // 기존 테스트 데이터 제거
+                const filteredCustomers = customers.filter(c => !c.id.startsWith('test_'));
+                
+                // 새 테스트 데이터 추가
+                filteredCustomers.push(...testCustomers);
+                
+                localStorage.setItem(key, JSON.stringify(filteredCustomers));
+                
+                resultDiv.innerHTML = `
+                    <div class="text-green-600">✅ ${browserName} 브라우저용 테스트 데이터 생성 완료!</div>
+                    <div>생성된 고객: ${testCustomers.length}명</div>
+                    <div>총 고객 수: ${filteredCustomers.length}명</div>
+                    <div class="mt-2 text-xs text-gray-600">
+                        이제 다른 브라우저에서 같은 페이지를 열어보세요. 
+                        데이터가 다를 것입니다!
+                    </div>
+                `;
+                
+                checkStorage();
+                
+            } catch (error) {
+                resultDiv.innerHTML = `<div class="text-red-600">❌ 데이터 생성 실패: ${error.message}</div>`;
+            }
+        }
+        
+        // 테스트 데이터 삭제
+        function clearTestData() {
+            if (confirm('테스트 데이터를 삭제하시겠습니까?')) {
+                try {
+                    const key = 'farm_management_customers';
+                    const existingData = localStorage.getItem(key);
+                    const customers = existingData ? JSON.parse(existingData) : [];
+                    
+                    // 테스트 데이터만 제거
+                    const filteredCustomers = customers.filter(c => !c.id.startsWith('test_'));
+                    
+                    localStorage.setItem(key, JSON.stringify(filteredCustomers));
+                    
+                    document.getElementById('test-result').innerHTML = 
+                        '<div class="text-orange-600">🗑️ 테스트 데이터가 삭제되었습니다.</div>';
+                    
+                    checkStorage();
+                } catch (error) {
+                    document.getElementById('test-result').innerHTML = 
+                        `<div class="text-red-600">❌ 삭제 실패: ${error.message}</div>`;
+                }
+            }
+        }
+        
+        // 데이터 내보내기
+        function exportData() {
+            try {
+                const key = 'farm_management_customers';
+                const data = localStorage.getItem(key);
+                
+                if (data) {
+                    const customers = JSON.parse(data);
+                    const exportData = {
+                        exportDate: new Date().toISOString(),
+                        browser: navigator.userAgent,
+                        customers: customers
+                    };
+                    
+                    const blob = new Blob([JSON.stringify(exportData, null, 2)], {type: 'application/json'});
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `customers_${new Date().toISOString().split('T')[0]}.json`;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                    document.getElementById('test-result').innerHTML = 
+                        '<div class="text-green-600">📁 데이터가 JSON 파일로 내보내졌습니다.</div>';
+                } else {
+                    document.getElementById('test-result').innerHTML = 
+                        '<div class="text-red-600">❌ 내보낼 데이터가 없습니다.</div>';
+                }
+            } catch (error) {
+                document.getElementById('test-result').innerHTML = 
+                    `<div class="text-red-600">❌ 내보내기 실패: ${error.message}</div>`;
+            }
+        }
+        
+        // 페이지 로드 시 초기화
+        window.onload = function() {
+            displayBrowserInfo();
+            checkStorage();
+        };
+    </script>
+</body>
+</html>
+

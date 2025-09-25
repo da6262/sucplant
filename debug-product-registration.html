@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>상품등록 디버그 테스트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-2xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🛠️ 상품등록 기능 진단</h1>
+        
+        <div class="space-y-4">
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">1. 메인 시스템에서 테스트</h2>
+                <button onclick="testMainSystem()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">
+                    메인 시스템에서 상품등록 테스트
+                </button>
+                <div id="main-test-result" class="mt-2 text-sm"></div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">2. DOM 요소 존재 확인</h2>
+                <button onclick="checkDOMElements()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600">
+                    DOM 요소 확인
+                </button>
+                <div id="dom-check-result" class="mt-2 text-sm"></div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">3. JavaScript 함수 존재 확인</h2>
+                <button onclick="checkJSFunctions()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600">
+                    JavaScript 함수 확인
+                </button>
+                <div id="js-check-result" class="mt-2 text-sm"></div>
+            </div>
+            
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">4. 이벤트 리스너 확인</h2>
+                <button onclick="checkEventListeners()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600">
+                    이벤트 리스너 확인
+                </button>
+                <div id="event-check-result" class="mt-2 text-sm"></div>
+            </div>
+        </div>
+        
+        <div class="mt-8 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 class="font-semibold text-yellow-800">📋 진단 결과가 여기에 표시됩니다</h3>
+            <div id="diagnosis-result" class="mt-2 text-sm text-yellow-700"></div>
+        </div>
+    </div>
+
+    <script>
+        function testMainSystem() {
+            const result = document.getElementById('main-test-result');
+            
+            // iframe으로 메인 시스템 로드하여 테스트
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const addProductBtn = iframeDoc.getElementById('add-product-btn');
+                    
+                    if (addProductBtn) {
+                        result.innerHTML = '<span class="text-green-600">✅ 상품등록 버튼 발견됨</span>';
+                        
+                        // 버튼 클릭 시뮬레이션
+                        addProductBtn.click();
+                        
+                        setTimeout(() => {
+                            const modal = iframeDoc.getElementById('product-modal');
+                            if (modal && !modal.classList.contains('hidden')) {
+                                result.innerHTML += '<br><span class="text-green-600">✅ 모달창 정상 열림</span>';
+                            } else {
+                                result.innerHTML += '<br><span class="text-red-600">❌ 모달창이 열리지 않음</span>';
+                            }
+                        }, 500);
+                        
+                    } else {
+                        result.innerHTML = '<span class="text-red-600">❌ 상품등록 버튼을 찾을 수 없음</span>';
+                    }
+                } catch (error) {
+                    result.innerHTML = '<span class="text-red-600">❌ 테스트 중 오류: ' + error.message + '</span>';
+                }
+                
+                // 정리
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 2000);
+            };
+        }
+        
+        function checkDOMElements() {
+            const result = document.getElementById('dom-check-result');
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                    const elements = [
+                        'add-product-btn',
+                        'product-modal',
+                        'product-form-name',
+                        'product-form-category',
+                        'product-form-price'
+                    ];
+                    
+                    let output = '<ul class="list-disc list-inside">';
+                    elements.forEach(id => {
+                        const element = iframeDoc.getElementById(id);
+                        if (element) {
+                            output += `<li class="text-green-600">✅ ${id} - 존재함</li>`;
+                        } else {
+                            output += `<li class="text-red-600">❌ ${id} - 없음</li>`;
+                        }
+                    });
+                    output += '</ul>';
+                    
+                    result.innerHTML = output;
+                } catch (error) {
+                    result.innerHTML = '<span class="text-red-600">❌ DOM 확인 중 오류: ' + error.message + '</span>';
+                }
+                
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+            };
+        }
+        
+        function checkJSFunctions() {
+            const result = document.getElementById('js-check-result');
+            
+            window.open('index.html', '_blank').onload = function() {
+                // 새 창에서 확인 (CORS 제한으로 인해 콘솔 메시지로 안내)
+                result.innerHTML = `
+                    <div class="text-blue-600">
+                        📋 새 창이 열렸습니다. 개발자 도구(F12)를 열고 콘솔에서 다음 명령어를 실행하세요:
+                        <pre class="bg-gray-100 p-2 mt-2 rounded text-xs">
+orderSystem.openProductModal(); // 모달 열기 테스트
+console.log(typeof orderSystem.saveProduct); // 함수 존재 확인
+                        </pre>
+                    </div>
+                `;
+            };
+        }
+        
+        function checkEventListeners() {
+            const result = document.getElementById('event-check-result');
+            result.innerHTML = `
+                <div class="text-blue-600">
+                    📋 이벤트 리스너 확인을 위해 메인 시스템(index.html)을 열고 개발자 도구에서 확인하세요:
+                    <pre class="bg-gray-100 p-2 mt-2 rounded text-xs">
+// 버튼 요소 확인
+const btn = document.getElementById('add-product-btn');
+console.log('버튼 존재:', !!btn);
+
+// 이벤트 리스너 확인 (크롬에서)
+getEventListeners(btn);
+
+// 수동으로 이벤트 발생
+btn.click();
+                    </pre>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>

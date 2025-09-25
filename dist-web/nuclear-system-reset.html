@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💥 핵폭탄급 시스템 리셋 - 경산다육식물농장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @keyframes nuclear {
+            0% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.1) rotate(180deg); }
+            100% { transform: scale(1) rotate(360deg); }
+        }
+        .nuclear-reset {
+            animation: nuclear 3s ease-in-out infinite;
+        }
+        .danger-glow {
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.5);
+            animation: glow 2s ease-in-out infinite alternate;
+        }
+        @keyframes glow {
+            from { box-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+            to { box-shadow: 0 0 30px rgba(239, 68, 68, 0.8), 0 0 40px rgba(239, 68, 68, 0.3); }
+        }
+    </style>
+</head>
+<body class="bg-black text-white min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- 핵폭탄급 경고 -->
+        <div class="text-center mb-8">
+            <div class="nuclear-reset text-8xl mb-4">💥</div>
+            <h1 class="text-4xl font-bold text-red-500 mb-4">핵폭탄급 시스템 리셋</h1>
+            <p class="text-xl text-gray-300">모든 것을 완전히 파괴하고 처음부터 다시 시작합니다</p>
+        </div>
+
+        <!-- 단계별 핵폭탄 버튼들 -->
+        <div class="space-y-6 mb-8">
+            <!-- 1단계: 브라우저 데이터 완전 폭파 -->
+            <div class="bg-red-900 border-2 border-red-500 rounded-xl p-6 danger-glow">
+                <h2 class="text-2xl font-bold text-red-400 mb-4">💣 1단계: 브라우저 데이터 완전 폭파</h2>
+                <p class="text-gray-300 mb-4">모든 캐시, 스토리지, 쿠키, 서비스워커를 완전히 제거합니다.</p>
+                <button onclick="nuclearDataWipe()" 
+                    class="w-full bg-red-600 hover:bg-red-700 text-white font-bold py-4 px-6 rounded-lg text-xl">
+                    💀 브라우저 데이터 완전 폭파
+                </button>
+                <div id="wipeStatus" class="mt-4"></div>
+            </div>
+
+            <!-- 2단계: 강제 하드 리로드 -->
+            <div class="bg-orange-900 border-2 border-orange-500 rounded-xl p-6">
+                <h2 class="text-2xl font-bold text-orange-400 mb-4">🔥 2단계: 강제 하드 리로드</h2>
+                <p class="text-gray-300 mb-4">모든 캐시를 무시하고 서버에서 직접 새 파일을 가져옵니다.</p>
+                <button onclick="forceHardReload()" 
+                    class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold py-4 px-6 rounded-lg text-xl">
+                    ⚡ 강제 하드 리로드
+                </button>
+                <div id="reloadStatus" class="mt-4"></div>
+            </div>
+
+            <!-- 3단계: 시스템 완전 재구축 -->
+            <div class="bg-purple-900 border-2 border-purple-500 rounded-xl p-6">
+                <h2 class="text-2xl font-bold text-purple-400 mb-4">🚀 3단계: 시스템 완전 재구축</h2>
+                <p class="text-gray-300 mb-4">orderSystem을 완전히 새로 만들고 모든 기능을 다시 로드합니다.</p>
+                <button onclick="rebuildSystem()" 
+                    class="w-full bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-6 rounded-lg text-xl">
+                    🛠️ 시스템 완전 재구축
+                </button>
+                <div id="rebuildStatus" class="mt-4"></div>
+            </div>
+
+            <!-- 최종 핵폭탄: 모든 것 폭파 -->
+            <div class="bg-gradient-to-r from-red-900 via-orange-900 to-purple-900 border-4 border-red-500 rounded-xl p-8 danger-glow">
+                <h2 class="text-3xl font-bold text-red-400 mb-4 text-center">☢️ 최종 핵폭탄: 모든 것 폭파</h2>
+                <p class="text-gray-300 mb-6 text-center text-lg">모든 단계를 한 번에 실행하여 시스템을 완전히 리셋합니다.</p>
+                <button onclick="nuclearReset()" 
+                    class="w-full bg-gradient-to-r from-red-600 to-purple-600 hover:from-red-700 hover:to-purple-700 text-white font-bold py-6 px-8 rounded-lg text-2xl nuclear-reset">
+                    ☢️ 핵폭탄 발사 (모든 것 폭파)
+                </button>
+                <div id="nuclearStatus" class="mt-6"></div>
+            </div>
+        </div>
+
+        <!-- 실시간 폭파 로그 -->
+        <div class="bg-gray-900 border border-gray-700 rounded-xl p-6">
+            <h2 class="text-xl font-bold text-green-400 mb-4">💻 실시간 폭파 로그</h2>
+            <div id="nuclearLog" class="bg-black p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+                <div class="text-green-400">[SYSTEM] 핵폭탄급 리셋 도구 준비 완료...</div>
+            </div>
+        </div>
+
+        <!-- 수동 해결 가이드 -->
+        <div class="mt-8 bg-yellow-900 border-2 border-yellow-500 rounded-xl p-6">
+            <h2 class="text-xl font-bold text-yellow-400 mb-4">🔧 수동 해결 가이드 (마지막 수단)</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-bold text-yellow-300 mb-2">Chrome 완전 리셋:</h3>
+                    <ol class="list-decimal list-inside space-y-1 text-yellow-200 text-sm">
+                        <li>F12 → Application → Storage</li>
+                        <li>"Clear site data" 클릭</li>
+                        <li>Service Workers → "Unregister"</li>
+                        <li>Network 탭 → "Disable cache" 체크</li>
+                        <li>Ctrl+Shift+R (하드 새로고침)</li>
+                    </ol>
+                </div>
+                <div>
+                    <h3 class="font-bold text-yellow-300 mb-2">시크릿 모드 테스트:</h3>
+                    <ol class="list-decimal list-inside space-y-1 text-yellow-200 text-sm">
+                        <li>Ctrl+Shift+N (시크릿 모드)</li>
+                        <li>사이트 재접속</li>
+                        <li>정상 작동 확인</li>
+                        <li>정상이면 메인 브라우저에서 "Clear site data"</li>
+                        <li>다른 브라우저로 테스트</li>
+                    </ol>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        console.log('💥 핵폭탄급 시스템 리셋 도구 발사 준비...');
+
+        // 핵폭탄 로그
+        function nuclearLog(message, type = 'info') {
+            const logDiv = document.getElementById('nuclearLog');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            const colors = {
+                'info': 'text-blue-400',
+                'success': 'text-green-400',
+                'warning': 'text-yellow-400',
+                'error': 'text-red-400',
+                'nuclear': 'text-red-500 font-bold'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 ${colors[type] || 'text-gray-400'}`;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            logDiv.appendChild(logEntry);
+            logDiv.scrollTop = logDiv.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        // 상태 업데이트
+        function updateStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            const colors = {
+                'info': 'text-blue-400',
+                'success': 'text-green-400',
+                'warning': 'text-yellow-400',
+                'error': 'text-red-400'
+            };
+            
+            element.innerHTML = `<div class="${colors[type]}">${message}</div>`;
+        }
+
+        // 1단계: 브라우저 데이터 완전 폭파
+        async function nuclearDataWipe() {
+            nuclearLog('💣 브라우저 데이터 완전 폭파 시작!', 'nuclear');
+            updateStatus('wipeStatus', '💀 폭파 진행 중...', 'warning');
+            
+            try {
+                // 1. 모든 캐시 삭제
+                if ('caches' in window) {
+                    const cacheNames = await caches.keys();
+                    nuclearLog(`발견된 캐시: ${cacheNames.length}개 - 모두 폭파!`, 'warning');
+                    
+                    for (const cacheName of cacheNames) {
+                        await caches.delete(cacheName);
+                        nuclearLog(`💥 캐시 폭파: ${cacheName}`, 'error');
+                    }
+                }
+                
+                // 2. 모든 Storage 삭제
+                localStorage.clear();
+                sessionStorage.clear();
+                nuclearLog('💥 Storage 데이터 완전 폭파!', 'error');
+                
+                // 3. 서비스워커 폭파
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        nuclearLog('💥 서비스워커 폭파!', 'error');
+                    }
+                }
+                
+                // 4. IndexedDB 폭파
+                if ('indexedDB' in window) {
+                    try {
+                        const databases = await indexedDB.databases();
+                        for (const db of databases) {
+                            indexedDB.deleteDatabase(db.name);
+                            nuclearLog(`💥 IndexedDB 폭파: ${db.name}`, 'error');
+                        }
+                    } catch (e) {
+                        nuclearLog('IndexedDB 폭파 시도 (부분적)', 'warning');
+                    }
+                }
+                
+                // 5. 쿠키 삭제 시도
+                document.cookie.split(";").forEach(function(c) { 
+                    document.cookie = c.replace(/^ +/, "").replace(/=.*/, "=;expires=" + new Date().toUTCString() + ";path=/"); 
+                });
+                nuclearLog('💥 쿠키 폭파 시도!', 'error');
+                
+                updateStatus('wipeStatus', '✅ 브라우저 데이터 완전 폭파 완료!', 'success');
+                nuclearLog('✅ 1단계 완료: 브라우저 데이터 완전 폭파 성공!', 'success');
+                
+            } catch (error) {
+                updateStatus('wipeStatus', `❌ 폭파 실패: ${error.message}`, 'error');
+                nuclearLog(`❌ 폭파 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // 2단계: 강제 하드 리로드
+        async function forceHardReload() {
+            nuclearLog('🔥 강제 하드 리로드 준비!', 'nuclear');
+            updateStatus('reloadStatus', '⚡ 하드 리로드 준비 중...', 'warning');
+            
+            try {
+                // 메타 태그로 캐시 무력화
+                const metaNoCache = document.createElement('meta');
+                metaNoCache.httpEquiv = 'Cache-Control';
+                metaNoCache.content = 'no-cache, no-store, must-revalidate';
+                document.head.appendChild(metaNoCache);
+                
+                const metaPragma = document.createElement('meta');
+                metaPragma.httpEquiv = 'Pragma';
+                metaPragma.content = 'no-cache';
+                document.head.appendChild(metaPragma);
+                
+                const metaExpires = document.createElement('meta');
+                metaExpires.httpEquiv = 'Expires';
+                metaExpires.content = '0';
+                document.head.appendChild(metaExpires);
+                
+                nuclearLog('🔥 캐시 무력화 메타 태그 추가', 'warning');
+                
+                // 3초 후 강제 리로드
+                updateStatus('reloadStatus', '⚡ 3초 후 강제 리로드 실행!', 'warning');
+                
+                setTimeout(() => {
+                    nuclearLog('💥 강제 하드 리로드 발사!', 'nuclear');
+                    // 모든 캐시를 무시하고 서버에서 새로 가져오기
+                    window.location.href = window.location.href + '?nuclear=' + Date.now();
+                }, 3000);
+                
+            } catch (error) {
+                updateStatus('reloadStatus', `❌ 리로드 실패: ${error.message}`, 'error');
+                nuclearLog(`❌ 하드 리로드 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // 3단계: 시스템 완전 재구축
+        async function rebuildSystem() {
+            nuclearLog('🚀 시스템 완전 재구축 시작!', 'nuclear');
+            updateStatus('rebuildStatus', '🛠️ 시스템 재구축 중...', 'warning');
+            
+            try {
+                // 기존 orderSystem 완전 제거
+                if (window.orderSystem) {
+                    delete window.orderSystem;
+                    nuclearLog('💥 기존 orderSystem 폭파!', 'error');
+                }
+                
+                // 전역 변수 정리
+                const globalVars = ['orderSystem', 'OrderManagementSystem'];
+                globalVars.forEach(varName => {
+                    try {
+                        delete window[varName];
+                        nuclearLog(`💥 전역 변수 ${varName} 폭파!`, 'error');
+                    } catch (e) {
+                        // 일부 변수는 삭제 불가능할 수 있음
+                    }
+                });
+                
+                // 스크립트 태그 모두 제거
+                const scripts = document.querySelectorAll('script[src*="app.js"], script[src*="order"]');
+                scripts.forEach(script => {
+                    script.remove();
+                    nuclearLog('💥 기존 스크립트 태그 제거!', 'error');
+                });
+                
+                // 새로운 스크립트 동적 로드
+                nuclearLog('🔄 새로운 시스템 구축 중...', 'info');
+                
+                const newScript = document.createElement('script');
+                newScript.src = 'js/app.js?' + Date.now(); // 캐시 버스팅
+                newScript.onload = () => {
+                    nuclearLog('✅ 새 스크립트 로드 성공!', 'success');
+                    
+                    // 시스템 초기화 시도
+                    setTimeout(() => {
+                        try {
+                            if (typeof OrderManagementSystem !== 'undefined') {
+                                window.orderSystem = new OrderManagementSystem();
+                                nuclearLog('🎉 새로운 orderSystem 구축 완료!', 'success');
+                                updateStatus('rebuildStatus', '✅ 시스템 완전 재구축 성공!', 'success');
+                            } else {
+                                throw new Error('OrderManagementSystem 클래스를 찾을 수 없음');
+                            }
+                        } catch (error) {
+                            nuclearLog(`❌ 시스템 구축 실패: ${error.message}`, 'error');
+                            updateStatus('rebuildStatus', `❌ 구축 실패: ${error.message}`, 'error');
+                        }
+                    }, 1000);
+                };
+                
+                newScript.onerror = () => {
+                    nuclearLog('❌ 새 스크립트 로드 실패!', 'error');
+                    updateStatus('rebuildStatus', '❌ 스크립트 로드 실패!', 'error');
+                };
+                
+                document.head.appendChild(newScript);
+                
+            } catch (error) {
+                updateStatus('rebuildStatus', `❌ 재구축 실패: ${error.message}`, 'error');
+                nuclearLog(`❌ 시스템 재구축 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // 최종 핵폭탄: 모든 것 폭파
+        async function nuclearReset() {
+            nuclearLog('☢️ 최종 핵폭탄 발사! 모든 것을 폭파합니다!', 'nuclear');
+            updateStatus('nuclearStatus', '☢️ 핵폭탄 발사 중...', 'error');
+            
+            try {
+                // 1단계: 데이터 폭파
+                await nuclearDataWipe();
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                // 2단계: 시스템 재구축
+                await rebuildSystem();
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                // 최종 검증
+                nuclearLog('🔍 최종 시스템 상태 검증...', 'info');
+                
+                if (window.orderSystem && typeof window.orderSystem === 'object') {
+                    nuclearLog('🎉 핵폭탄 성공! 시스템이 완전히 재구축되었습니다!', 'success');
+                    updateStatus('nuclearStatus', '🎉 핵폭탄 성공! 시스템 완전 재구축!', 'success');
+                    
+                    // 메인 페이지로 강제 이동
+                    setTimeout(() => {
+                        nuclearLog('🚀 메인 페이지로 강제 이동...', 'nuclear');
+                        window.location.href = 'index.html?nuclear=reset&t=' + Date.now();
+                    }, 3000);
+                    
+                } else {
+                    nuclearLog('⚠️ 핵폭탄 완료, 수동 새로고침 권장', 'warning');
+                    updateStatus('nuclearStatus', '⚠️ 핵폭탄 완료, 수동 새로고침 필요', 'warning');
+                    
+                    setTimeout(() => {
+                        if (confirm('핵폭탄이 완료되었습니다! 강제 새로고침하시겠습니까?')) {
+                            window.location.reload(true);
+                        }
+                    }, 2000);
+                }
+                
+            } catch (error) {
+                nuclearLog(`☢️ 핵폭탄 실패: ${error.message}`, 'error');
+                updateStatus('nuclearStatus', `☢️ 핵폭탄 실패: ${error.message}`, 'error');
+            }
+        }
+
+        // 페이지 로드 시 초기화
+        window.addEventListener('load', function() {
+            nuclearLog('💥 핵폭탄급 리셋 도구 준비 완료!', 'nuclear');
+            nuclearLog('⚠️ 주의: 이 도구는 모든 브라우저 데이터를 삭제합니다!', 'warning');
+            nuclearLog('💡 시스템 로딩 오류가 지속되면 "최종 핵폭탄" 사용을 권장합니다.', 'info');
+            
+            // 현재 문제 상황 진단
+            setTimeout(() => {
+                const diagnostics = {
+                    serviceWorker: 'serviceWorker' in navigator,
+                    caches: 'caches' in window,
+                    localStorage: typeof Storage !== 'undefined',
+                    online: navigator.onLine,
+                    orderSystem: typeof window.orderSystem !== 'undefined'
+                };
+                
+                nuclearLog('🔍 현재 시스템 진단:', 'info');
+                Object.entries(diagnostics).forEach(([key, value]) => {
+                    nuclearLog(`  ${key}: ${value ? '✅' : '❌'}`, value ? 'success' : 'error');
+                });
+                
+                if (!diagnostics.online) {
+                    nuclearLog('❌ 치명적: 네트워크 연결 없음!', 'error');
+                } else if (!diagnostics.orderSystem) {
+                    nuclearLog('❌ 주요 문제: orderSystem 로드 실패!', 'error');
+                }
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

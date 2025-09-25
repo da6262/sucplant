@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>인증 시스템 수정 - 경산다육식물농장</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com/3.3.0"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <!-- Header -->
+    <header class="bg-green-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center space-x-3">
+                <i class="fas fa-tools text-2xl"></i>
+                <div>
+                    <h1 class="text-2xl font-bold">인증 시스템 수정</h1>
+                    <p class="text-green-100 text-sm">강제 로컬 모드 해제 및 인증 시스템 활성화</p>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="container mx-auto px-4 py-6">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-2xl font-bold text-gray-900 mb-6">🔧 인증 시스템 문제 해결</h2>
+            
+            <div class="bg-yellow-50 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-yellow-800 mb-3">
+                    <i class="fas fa-exclamation-triangle mr-2"></i>
+                    현재 문제
+                </h3>
+                <ul class="space-y-2 text-sm text-yellow-700 list-disc list-inside">
+                    <li>강제 로컬 모드로 인해 인증 시스템이 작동하지 않음</li>
+                    <li>데이터 연동이 차단되어 있음</li>
+                    <li>비밀번호 설정이 적용되지 않음</li>
+                </ul>
+            </div>
+            
+            <div class="bg-blue-50 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-blue-800 mb-3">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    해결 방법
+                </h3>
+                <ol class="space-y-2 text-sm text-blue-700 list-decimal list-inside">
+                    <li>아래 "강제 로컬 모드 해제" 버튼을 클릭합니다</li>
+                    <li>페이지를 새로고침합니다</li>
+                    <li>로그인 모달이 표시되면 로그인합니다</li>
+                    <li>메인 시스템으로 이동합니다</li>
+                </ol>
+            </div>
+            
+            <div class="bg-green-50 rounded-lg p-4 mb-6">
+                <h3 class="text-lg font-semibold text-green-800 mb-3">
+                    <i class="fas fa-key mr-2"></i>
+                    로그인 정보
+                </h3>
+                <div class="space-y-2 text-sm">
+                    <p><strong>사용자명:</strong> gsfarfm</p>
+                    <p><strong>비밀번호:</strong> ryubae6677</p>
+                </div>
+            </div>
+            
+            <div class="flex flex-wrap gap-4">
+                <button onclick="disableForceLocalMode()" 
+                        class="bg-red-600 text-white px-6 py-3 rounded-md hover:bg-red-700 transition-colors">
+                    <i class="fas fa-unlock mr-2"></i>
+                    강제 로컬 모드 해제
+                </button>
+                
+                <button onclick="testAuthSystem()" 
+                        class="bg-blue-600 text-white px-6 py-3 rounded-md hover:bg-blue-700 transition-colors">
+                    <i class="fas fa-check-circle mr-2"></i>
+                    인증 시스템 테스트
+                </button>
+                
+                <button onclick="goToMainSystem()" 
+                        class="bg-green-600 text-white px-6 py-3 rounded-md hover:bg-green-700 transition-colors">
+                    <i class="fas fa-home mr-2"></i>
+                    메인 시스템으로 이동
+                </button>
+            </div>
+            
+            <!-- 상태 표시 -->
+            <div id="statusDisplay" class="mt-6 p-4 bg-gray-100 rounded-lg" style="display: none;">
+                <h4 class="font-semibold text-gray-800 mb-2">상태:</h4>
+                <div id="statusOutput" class="text-sm text-gray-700"></div>
+            </div>
+        </div>
+    </main>
+
+    <!-- 강제 로컬 모드 해제 스크립트 -->
+    <script src="disable-force-local-mode.js"></script>
+    
+    <script>
+        // 강제 로컬 모드 해제
+        function disableForceLocalMode() {
+            showStatus('강제 로컬 모드 해제 중...');
+            
+            // 강제 로컬 모드 플래그 해제
+            window.FORCE_LOCAL_MODE = false;
+            delete window.FORCE_LOCAL_MODE;
+            
+            // 로컬 스토리지 정리
+            const keysToRemove = [
+                'force_local_mode',
+                'FORCE_LOCAL_MODE',
+                'local_mode_active',
+                'api_disabled'
+            ];
+            
+            keysToRemove.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                }
+            });
+            
+            // 모드 스위치를 API 모드로 설정
+            if (window.MODE_SWITCH) {
+                window.MODE_SWITCH.currentMode = 'api';
+                window.MODE_SWITCH.applyMode('api');
+            }
+            
+            showStatus('✅ 강제 로컬 모드 해제 완료!<br>이제 페이지를 새로고침하세요.');
+            
+            // 3초 후 자동 새로고침
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        }
+        
+        // 인증 시스템 테스트
+        function testAuthSystem() {
+            showStatus('인증 시스템 테스트 중...');
+            
+            if (typeof window.authSystem !== 'undefined') {
+                showStatus('✅ 인증 시스템 로드됨<br>현재 인증 상태: ' + (window.authSystem.isAuthenticated ? '인증됨' : '미인증'));
+            } else {
+                showStatus('❌ 인증 시스템이 로드되지 않음<br>페이지를 새로고침하세요.');
+            }
+        }
+        
+        // 메인 시스템으로 이동
+        function goToMainSystem() {
+            window.location.href = 'index.html';
+        }
+        
+        // 상태 표시
+        function showStatus(message) {
+            const statusDiv = document.getElementById('statusDisplay');
+            const outputDiv = document.getElementById('statusOutput');
+            
+            statusDiv.style.display = 'block';
+            outputDiv.innerHTML = message;
+        }
+        
+        // 페이지 로드 시 현재 상태 확인
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('🔧 인증 시스템 수정 페이지 로드됨');
+            
+            // 현재 상태 표시
+            const isForceLocalMode = window.FORCE_LOCAL_MODE;
+            const hasAuthSystem = typeof window.authSystem !== 'undefined';
+            
+            let statusMessage = `
+                <strong>현재 상태:</strong><br>
+                • 강제 로컬 모드: ${isForceLocalMode ? '활성화됨' : '비활성화됨'}<br>
+                • 인증 시스템: ${hasAuthSystem ? '로드됨' : '로드되지 않음'}<br>
+                • 모드: ${window.MODE_SWITCH ? window.MODE_SWITCH.currentMode : '알 수 없음'}
+            `;
+            
+            showStatus(statusMessage);
+        });
+    </script>
+</body>
+</html>

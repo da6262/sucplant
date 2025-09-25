@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>고객 등록 테스트</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            background: #4CAF50;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background: #45a049;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        input {
+            padding: 8px;
+            margin: 5px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            width: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 고객 등록 테스트</h1>
+    
+    <div class="test-section">
+        <h3>1. LocalStorage 상태 확인</h3>
+        <button onclick="checkLocalStorage()">LocalStorage 확인</button>
+        <div id="localStorage-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>2. 테스트 고객 등록</h3>
+        <input type="text" id="test-name" placeholder="고객명" value="테스트고객">
+        <input type="text" id="test-phone" placeholder="전화번호" value="010-1234-5678">
+        <input type="text" id="test-address" placeholder="주소" value="경산시 테스트동 123">
+        <br>
+        <button onclick="registerTestCustomer()">테스트 고객 등록</button>
+        <div id="register-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>3. 고객 목록 확인</h3>
+        <button onclick="loadCustomers()">고객 목록 로드</button>
+        <div id="customers-result" class="result"></div>
+    </div>
+    
+    <div class="test-section">
+        <h3>4. LocalStorage 직접 조작</h3>
+        <button onclick="addCustomerDirectly()">LocalStorage에 직접 추가</button>
+        <button onclick="clearCustomers()">고객 데이터 삭제</button>
+        <div id="direct-result" class="result"></div>
+    </div>
+
+    <script>
+        // LocalStorage 키 생성 함수
+        function getLocalStorageKey(tableName) {
+            return `farm_management_${tableName}`;
+        }
+
+        // LocalStorage 상태 확인
+        function checkLocalStorage() {
+            const result = document.getElementById('localStorage-result');
+            const key = getLocalStorageKey('customers');
+            const data = localStorage.getItem(key);
+            
+            let output = `🔍 LocalStorage 상태 확인\n`;
+            output += `키: ${key}\n`;
+            output += `데이터 존재: ${!!data}\n`;
+            output += `데이터 크기: ${data ? data.length : 0} bytes\n`;
+            
+            if (data) {
+                try {
+                    const parsed = JSON.parse(data);
+                    output += `파싱된 데이터: ${Array.isArray(parsed) ? parsed.length : '객체'} 개\n`;
+                    output += `데이터 내용:\n${JSON.stringify(parsed, null, 2)}`;
+                } catch (e) {
+                    output += `파싱 오류: ${e.message}`;
+                }
+            }
+            
+            result.textContent = output;
+        }
+
+        // 테스트 고객 등록
+        function registerTestCustomer() {
+            const result = document.getElementById('register-result');
+            const name = document.getElementById('test-name').value;
+            const phone = document.getElementById('test-phone').value;
+            const address = document.getElementById('test-address').value;
+            
+            if (!name || !phone) {
+                result.textContent = '❌ 고객명과 전화번호는 필수입니다.';
+                return;
+            }
+            
+            try {
+                // 기존 고객 데이터 로드
+                const key = getLocalStorageKey('customers');
+                const existingData = localStorage.getItem(key);
+                const customers = existingData ? JSON.parse(existingData) : [];
+                
+                // 새 고객 데이터 생성
+                const newCustomer = {
+                    id: Date.now().toString(),
+                    name: name,
+                    phone: phone,
+                    address: address,
+                    email: '',
+                    grade: 'GENERAL',
+                    registration_date: new Date().toISOString().split('T')[0],
+                    memo: '테스트 등록',
+                    created_at: new Date().toISOString()
+                };
+                
+                // 고객 추가
+                customers.push(newCustomer);
+                
+                // LocalStorage에 저장
+                localStorage.setItem(key, JSON.stringify(customers));
+                
+                result.textContent = `✅ 고객 등록 성공!\n고객명: ${name}\n전화번호: ${phone}\n주소: ${address}\n총 고객 수: ${customers.length}명`;
+                
+            } catch (error) {
+                result.textContent = `❌ 등록 실패: ${error.message}`;
+            }
+        }
+
+        // 고객 목록 로드
+        function loadCustomers() {
+            const result = document.getElementById('customers-result');
+            const key = getLocalStorageKey('customers');
+            const data = localStorage.getItem(key);
+            
+            if (!data) {
+                result.textContent = '❌ 저장된 고객 데이터가 없습니다.';
+                return;
+            }
+            
+            try {
+                const customers = JSON.parse(data);
+                let output = `📋 고객 목록 (총 ${customers.length}명)\n\n`;
+                
+                customers.forEach((customer, index) => {
+                    output += `${index + 1}. ${customer.name}\n`;
+                    output += `   전화번호: ${customer.phone}\n`;
+                    output += `   주소: ${customer.address || '없음'}\n`;
+                    output += `   등급: ${customer.grade || 'GENERAL'}\n`;
+                    output += `   등록일: ${customer.registration_date || '없음'}\n\n`;
+                });
+                
+                result.textContent = output;
+            } catch (error) {
+                result.textContent = `❌ 데이터 로드 실패: ${error.message}`;
+            }
+        }
+
+        // LocalStorage에 직접 추가
+        function addCustomerDirectly() {
+            const result = document.getElementById('direct-result');
+            const key = getLocalStorageKey('customers');
+            
+            const testCustomer = {
+                id: 'direct_' + Date.now(),
+                name: '직접등록고객',
+                phone: '010-9999-9999',
+                address: '직접 등록된 주소',
+                email: 'direct@test.com',
+                grade: 'VIP',
+                registration_date: new Date().toISOString().split('T')[0],
+                memo: 'LocalStorage 직접 등록',
+                created_at: new Date().toISOString()
+            };
+            
+            try {
+                const existingData = localStorage.getItem(key);
+                const customers = existingData ? JSON.parse(existingData) : [];
+                customers.push(testCustomer);
+                localStorage.setItem(key, JSON.stringify(customers));
+                
+                result.textContent = `✅ 직접 등록 성공!\n고객 수: ${customers.length}명`;
+            } catch (error) {
+                result.textContent = `❌ 직접 등록 실패: ${error.message}`;
+            }
+        }
+
+        // 고객 데이터 삭제
+        function clearCustomers() {
+            const result = document.getElementById('direct-result');
+            const key = getLocalStorageKey('customers');
+            
+            try {
+                localStorage.removeItem(key);
+                result.textContent = '✅ 고객 데이터가 삭제되었습니다.';
+            } catch (error) {
+                result.textContent = `❌ 삭제 실패: ${error.message}`;
+            }
+        }
+
+        // 페이지 로드 시 초기 상태 확인
+        window.onload = function() {
+            checkLocalStorage();
+        };
+    </script>
+</body>
+</html>
+

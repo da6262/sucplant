@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>컴팩트 포장 리스트 데모 - 경산다육식물농장</title>
+    <style>
+        @media print {
+            body { 
+                margin: 10px; 
+                padding: 0; 
+                font-family: 'Malgun Gothic', Arial, sans-serif;
+                font-size: 11px;
+                line-height: 1.3;
+            }
+            
+            .header {
+                text-align: center;
+                margin-bottom: 15px;
+                border-bottom: 2px solid #333;
+                padding-bottom: 8px;
+            }
+            
+            .farm-title {
+                font-size: 18px;
+                font-weight: bold;
+                margin-bottom: 3px;
+            }
+            
+            .sub-title {
+                font-size: 14px;
+                color: #666;
+                margin-bottom: 3px;
+            }
+            
+            .print-date {
+                font-size: 10px;
+                color: #888;
+            }
+            
+            .customer-table {
+                width: 100%;
+                border-collapse: collapse;
+                margin-bottom: 20px;
+                page-break-inside: avoid;
+            }
+            
+            .customer-header {
+                background-color: #f0f8f0 !important;
+            }
+            
+            .customer-header td {
+                padding: 8px 10px !important;
+                border: 2px solid #333 !important;
+                font-weight: bold;
+                font-size: 12px;
+            }
+            
+            .products-table {
+                width: 100%;
+                border-collapse: collapse;
+            }
+            
+            .products-table th,
+            .products-table td {
+                border: 1px solid #666 !important;
+                padding: 6px 8px !important;
+                text-align: center;
+                vertical-align: middle;
+            }
+            
+            .products-table th {
+                background-color: #f9f9f9 !important;
+                font-weight: bold;
+                font-size: 10px;
+            }
+            
+            .product-cell {
+                width: 33.33%;
+                font-size: 10px;
+                position: relative;
+            }
+            
+            .product-name {
+                font-weight: bold;
+                margin-bottom: 2px;
+            }
+            
+            .product-quantity {
+                color: #d63384;
+                font-weight: bold;
+            }
+            
+            .checkbox {
+                width: 15px;
+                height: 15px;
+                border: 2px solid #333;
+                display: inline-block;
+                margin-right: 5px;
+                vertical-align: middle;
+            }
+            
+            .order-info {
+                font-size: 10px;
+                color: #666;
+            }
+            
+            .total-amount {
+                font-weight: bold;
+                color: #d63384;
+            }
+            
+            .address-cell {
+                max-width: 200px;
+                word-break: break-all;
+                font-size: 9px;
+            }
+        }
+        
+        @media screen {
+            body {
+                margin: 20px;
+                font-family: 'Malgun Gothic', Arial, sans-serif;
+            }
+            
+            .demo-button {
+                background: #16a34a;
+                color: white;
+                padding: 10px 20px;
+                border: none;
+                border-radius: 5px;
+                cursor: pointer;
+                margin: 10px;
+                font-size: 14px;
+            }
+            
+            .demo-button:hover {
+                background: #15803d;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div style="text-align: center; margin-bottom: 20px;">
+        <button class="demo-button" onclick="window.print()">📄 인쇄 미리보기</button>
+        <button class="demo-button" onclick="location.reload()">🔄 새로고침</button>
+    </div>
+
+    <div class="header">
+        <div class="farm-title">🌱 경산다육식물농장</div>
+        <div class="sub-title">📦 고객별 포장 체크리스트 (컴팩트 버전)</div>
+        <div class="print-date">출력일시: 2024-08-25 18:30:15</div>
+    </div>
+    
+    <!-- 첫 번째 고객 -->
+    <table class="customer-table">
+        <tr class="customer-header">
+            <td style="width: 15%;">
+                <span class="checkbox"></span>
+                <strong>주문번호</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>WP2024080001</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>고객명</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>김다육</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>연락처</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>010-1234-5678</strong>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>배송주소</strong></td>
+            <td colspan="3" class="address-cell">서울시 강남구 테헤란로 123, 456호</td>
+            <td><strong>총금액</strong></td>
+            <td class="total-amount">75,000원</td>
+        </tr>
+    </table>
+    
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Platter 소품</div>
+                    <div class="product-quantity">2개</div>
+                </td>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Platter 중품</div>
+                    <div class="product-quantity">1개</div>
+                </td>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Sprite 소품</div>
+                    <div class="product-quantity">3개</div>
+                </td>
+            </tr>
+            <tr>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">Powdery White 중품</div>
+                    <div class="product-quantity">1개</div>
+                </td>
+                <td class="product-cell">-</td>
+                <td class="product-cell">-</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div style="margin: 15px 0; border-bottom: 1px dashed #ccc;"></div>
+    
+    <!-- 두 번째 고객 -->
+    <table class="customer-table">
+        <tr class="customer-header">
+            <td style="width: 15%;">
+                <span class="checkbox"></span>
+                <strong>주문번호</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>WP2024080002</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>고객명</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>이화분</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>연락처</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>010-9876-5432</strong>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>배송주소</strong></td>
+            <td colspan="3" class="address-cell">부산시 해운대구 센텀로 456, 789호 (센텀시티)</td>
+            <td><strong>총금액</strong></td>
+            <td class="total-amount">120,000원</td>
+        </tr>
+    </table>
+    
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Platter 대품</div>
+                    <div class="product-quantity">2개</div>
+                </td>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Platter 중품</div>
+                    <div class="product-quantity">3개</div>
+                </td>
+                <td class="product-cell">-</td>
+            </tr>
+        </tbody>
+    </table>
+    
+    <div style="margin: 15px 0; border-bottom: 1px dashed #ccc;"></div>
+    
+    <!-- 세 번째 고객 -->
+    <table class="customer-table">
+        <tr class="customer-header">
+            <td style="width: 15%;">
+                <span class="checkbox"></span>
+                <strong>주문번호</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>WP2024080003</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>고객명</strong>
+            </td>
+            <td style="width: 20%;">
+                <strong>박식물</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>연락처</strong>
+            </td>
+            <td style="width: 15%;">
+                <strong>010-5555-7777</strong>
+            </td>
+        </tr>
+        <tr>
+            <td><strong>배송주소</strong></td>
+            <td colspan="3" class="address-cell">대구시 중구 동성로 789, 101호</td>
+            <td><strong>총금액</strong></td>
+            <td class="total-amount">45,000원</td>
+        </tr>
+    </table>
+    
+    <table class="products-table">
+        <thead>
+            <tr>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+                <th class="product-cell">상품명 / 수량</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td class="product-cell">
+                    <span class="checkbox"></span>
+                    <div class="product-name">White Sprite 소품</div>
+                    <div class="product-quantity">5개</div>
+                </td>
+                <td class="product-cell">-</td>
+                <td class="product-cell">-</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <script>
+        console.log('📦 컴팩트 포장 리스트 데모 로드 완료!');
+        
+        // 인쇄 최적화
+        window.addEventListener('beforeprint', () => {
+            console.log('🖨️ 인쇄 시작');
+        });
+        
+        window.addEventListener('afterprint', () => {
+            console.log('✅ 인쇄 완료');
+        });
+    </script>
+</body>
+</html>

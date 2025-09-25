@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>데이터 저장 위치 확인 - 경산다육식물농장</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-6xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">
+                            <i class="fas fa-database text-blue-600 mr-2"></i>
+                            데이터 저장 위치 확인
+                        </h1>
+                        <p class="text-gray-600 mt-1">고객, 상품, 주문 데이터가 어디에 저장되는지 확인합니다</p>
+                    </div>
+                    <div class="text-right">
+                        <div class="text-sm text-gray-500">경산다육식물농장</div>
+                        <div class="text-xs text-gray-400">데이터 관리 v1.0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 저장 방식 설명 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                    데이터 저장 방식
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                        <h3 class="font-medium text-blue-800 mb-2">
+                            <i class="fas fa-laptop text-blue-600 mr-2"></i>
+                            로컬 모드 (현재 활성)
+                        </h3>
+                        <div class="text-sm text-blue-700 space-y-1">
+                            <div>• <strong>저장 위치:</strong> 브라우저 LocalStorage</div>
+                            <div>• <strong>장점:</strong> 빠른 속도, 오프라인 사용 가능</div>
+                            <div>• <strong>단점:</strong> 브라우저별로 데이터 분리</div>
+                            <div>• <strong>백업:</strong> 수동으로 JSON 파일 다운로드</div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                        <h3 class="font-medium text-green-800 mb-2">
+                            <i class="fas fa-cloud text-green-600 mr-2"></i>
+                            API 모드 (서버 연결 시)
+                        </h3>
+                        <div class="text-sm text-green-700 space-y-1">
+                            <div>• <strong>저장 위치:</strong> 서버 데이터베이스</div>
+                            <div>• <strong>장점:</strong> 여러 기기에서 동기화</div>
+                            <div>• <strong>단점:</strong> 인터넷 연결 필요</div>
+                            <div>• <strong>백업:</strong> 서버에서 자동 백업</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- LocalStorage 데이터 확인 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-hdd text-green-600 mr-2"></i>
+                    LocalStorage 데이터 현황
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-green-600">고객 데이터</div>
+                                <div id="customers-count" class="text-2xl font-bold text-green-800">-</div>
+                                <div class="text-xs text-green-600">farm_management_customers</div>
+                            </div>
+                            <i class="fas fa-users text-green-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-blue-600">주문 데이터</div>
+                                <div id="orders-count" class="text-2xl font-bold text-blue-800">-</div>
+                                <div class="text-xs text-blue-600">farm_management_orders</div>
+                            </div>
+                            <i class="fas fa-shopping-cart text-blue-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-purple-600">상품 데이터</div>
+                                <div id="products-count" class="text-2xl font-bold text-purple-800">-</div>
+                                <div class="text-xs text-purple-600">farm_management_products</div>
+                            </div>
+                            <i class="fas fa-box text-purple-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-orange-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-orange-600">대기자 데이터</div>
+                                <div id="waitlist-count" class="text-2xl font-bold text-orange-800">-</div>
+                                <div class="text-xs text-orange-600">farm_management_waitlist</div>
+                            </div>
+                            <i class="fas fa-clock text-orange-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-indigo-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-indigo-600">카테고리 데이터</div>
+                                <div id="categories-count" class="text-2xl font-bold text-indigo-800">-</div>
+                                <div class="text-xs text-indigo-600">farm_management_categories</div>
+                            </div>
+                            <i class="fas fa-tags text-indigo-600 text-2xl"></i>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-pink-50 p-4 rounded-lg">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <div class="text-sm font-medium text-pink-600">주문처 데이터</div>
+                                <div id="sources-count" class="text-2xl font-bold text-pink-800">-</div>
+                                <div class="text-xs text-pink-600">farm_management_order_sources</div>
+                            </div>
+                            <i class="fas fa-store text-pink-600 text-2xl"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 상세 정보 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-list text-gray-600 mr-2"></i>
+                    데이터 상세 정보
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-800 mb-2">고객 데이터 (farm_management_customers)</h3>
+                        <div id="customers-detail" class="text-sm text-gray-600">확인중...</div>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-800 mb-2">주문 데이터 (farm_management_orders)</h3>
+                        <div id="orders-detail" class="text-sm text-gray-600">확인중...</div>
+                    </div>
+                    
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h3 class="font-medium text-gray-800 mb-2">상품 데이터 (farm_management_products)</h3>
+                        <div id="products-detail" class="text-sm text-gray-600">확인중...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 관리 도구 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-tools text-orange-600 mr-2"></i>
+                    데이터 관리 도구
+                </h2>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-medium text-blue-800">데이터 백업</div>
+                            <i class="fas fa-download text-blue-600"></i>
+                        </div>
+                        <div class="text-sm text-blue-600 mb-3">모든 데이터를 JSON 파일로 다운로드합니다</div>
+                        <button onclick="backupAllData()" class="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            <i class="fas fa-file-download mr-2"></i>백업 다운로드
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-green-50 border border-green-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-medium text-green-800">데이터 복원</div>
+                            <i class="fas fa-upload text-green-600"></i>
+                        </div>
+                        <div class="text-sm text-green-600 mb-3">백업 파일에서 데이터를 복원합니다</div>
+                        <input type="file" id="restore-file" accept=".json" class="hidden" onchange="restoreAllData(this)">
+                        <button onclick="document.getElementById('restore-file').click()" class="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                            <i class="fas fa-file-upload mr-2"></i>파일 선택
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-red-50 border border-red-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-medium text-red-800">데이터 초기화</div>
+                            <i class="fas fa-trash text-red-600"></i>
+                        </div>
+                        <div class="text-sm text-red-600 mb-3">모든 데이터를 삭제합니다 (주의!)</div>
+                        <button onclick="clearAllData()" class="w-full px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors">
+                            <i class="fas fa-exclamation-triangle mr-2"></i>데이터 삭제
+                        </button>
+                    </div>
+                    
+                    <div class="p-4 bg-purple-50 border border-purple-200 rounded-lg">
+                        <div class="flex items-center justify-between mb-3">
+                            <div class="font-medium text-purple-800">LocalStorage 정리</div>
+                            <i class="fas fa-broom text-purple-600"></i>
+                        </div>
+                        <div class="text-sm text-purple-600 mb-3">불필요한 LocalStorage 데이터를 정리합니다</div>
+                        <button onclick="cleanupLocalStorage()" class="w-full px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                            <i class="fas fa-magic mr-2"></i>정리 실행
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 로그 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">
+                    <i class="fas fa-terminal text-gray-600 mr-2"></i>
+                    데이터 관리 로그
+                </h2>
+                <div id="log-container" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm h-64 overflow-y-auto">
+                    <div class="text-gray-500">데이터 저장 위치 확인 도구가 준비되었습니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 로그 함수
+        function log(message, type = 'info') {
+            const logContainer = document.getElementById('log-container');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-green-400',
+                warning: 'text-yellow-400',
+                error: 'text-red-400'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = colors[type] || 'text-gray-400';
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // 데이터 현황 확인
+        function checkDataStatus() {
+            const dataTypes = [
+                { key: 'customers', name: '고객', element: 'customers-count' },
+                { key: 'orders', name: '주문', element: 'orders-count' },
+                { key: 'products', name: '상품', element: 'products-count' },
+                { key: 'waitlist', name: '대기자', element: 'waitlist-count' },
+                { key: 'categories', name: '카테고리', element: 'categories-count' },
+                { key: 'order_sources', name: '주문처', element: 'sources-count' }
+            ];
+
+            dataTypes.forEach(dataType => {
+                const data = JSON.parse(localStorage.getItem(`farm_management_${dataType.key}`) || '[]');
+                const countElement = document.getElementById(dataType.element);
+                if (countElement) {
+                    countElement.textContent = data.length;
+                }
+                log(`${dataType.name} 데이터: ${data.length}개`, 'info');
+            });
+
+            // 상세 정보 표시
+            showDataDetails();
+        }
+
+        // 데이터 상세 정보 표시
+        function showDataDetails() {
+            // 고객 데이터 상세
+            const customers = JSON.parse(localStorage.getItem('farm_management_customers') || '[]');
+            const customersDetail = document.getElementById('customers-detail');
+            if (customers.length > 0) {
+                const sample = customers[0];
+                customersDetail.innerHTML = `
+                    <div>총 ${customers.length}명의 고객</div>
+                    <div>예시: ${sample.name || '이름 없음'} (${sample.phone || '전화번호 없음'})</div>
+                    <div>저장 키: farm_management_customers</div>
+                `;
+            } else {
+                customersDetail.textContent = '고객 데이터가 없습니다.';
+            }
+
+            // 주문 데이터 상세
+            const orders = JSON.parse(localStorage.getItem('farm_management_orders') || '[]');
+            const ordersDetail = document.getElementById('orders-detail');
+            if (orders.length > 0) {
+                const sample = orders[0];
+                ordersDetail.innerHTML = `
+                    <div>총 ${orders.length}건의 주문</div>
+                    <div>예시: ${sample.customer_name || '고객명 없음'} - ${sample.order_status || '상태 없음'}</div>
+                    <div>저장 키: farm_management_orders</div>
+                `;
+            } else {
+                ordersDetail.textContent = '주문 데이터가 없습니다.';
+            }
+
+            // 상품 데이터 상세
+            const products = JSON.parse(localStorage.getItem('farm_management_products') || '[]');
+            const productsDetail = document.getElementById('products-detail');
+            if (products.length > 0) {
+                const sample = products[0];
+                productsDetail.innerHTML = `
+                    <div>총 ${products.length}개의 상품</div>
+                    <div>예시: ${sample.name || '상품명 없음'} - ${sample.price || 0}원</div>
+                    <div>저장 키: farm_management_products</div>
+                `;
+            } else {
+                productsDetail.textContent = '상품 데이터가 없습니다.';
+            }
+        }
+
+        // 모든 데이터 백업
+        function backupAllData() {
+            log('데이터 백업 시작...', 'info');
+            
+            const data = {
+                customers: JSON.parse(localStorage.getItem('farm_management_customers') || '[]'),
+                orders: JSON.parse(localStorage.getItem('farm_management_orders') || '[]'),
+                products: JSON.parse(localStorage.getItem('farm_management_products') || '[]'),
+                waitlist: JSON.parse(localStorage.getItem('farm_management_waitlist') || '[]'),
+                categories: JSON.parse(localStorage.getItem('farm_management_categories') || '[]'),
+                order_sources: JSON.parse(localStorage.getItem('farm_management_order_sources') || '[]'),
+                order_statuses: JSON.parse(localStorage.getItem('farm_management_order_statuses') || '[]'),
+                backup_date: new Date().toISOString(),
+                version: '1.0'
+            };
+            
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `경산다육농장_전체데이터_백업_${new Date().toISOString().split('T')[0]}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            
+            log('데이터 백업 완료', 'success');
+        }
+
+        // 모든 데이터 복원
+        function restoreAllData(input) {
+            const file = input.files[0];
+            if (!file) return;
+            
+            log('데이터 복원 시작...', 'info');
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    // LocalStorage에 저장
+                    localStorage.setItem('farm_management_customers', JSON.stringify(data.customers || []));
+                    localStorage.setItem('farm_management_orders', JSON.stringify(data.orders || []));
+                    localStorage.setItem('farm_management_products', JSON.stringify(data.products || []));
+                    localStorage.setItem('farm_management_waitlist', JSON.stringify(data.waitlist || []));
+                    localStorage.setItem('farm_management_categories', JSON.stringify(data.categories || []));
+                    localStorage.setItem('farm_management_order_sources', JSON.stringify(data.order_sources || []));
+                    localStorage.setItem('farm_management_order_statuses', JSON.stringify(data.order_statuses || []));
+                    
+                    // 상태 업데이트
+                    checkDataStatus();
+                    
+                    log(`데이터 복원 완료: ${data.backup_date || '날짜 미상'}`, 'success');
+                } catch (error) {
+                    log(`데이터 복원 실패: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        // 모든 데이터 삭제
+        function clearAllData() {
+            if (!confirm('정말로 모든 데이터를 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.')) {
+                return;
+            }
+            
+            log('모든 데이터 삭제 시작...', 'warning');
+            
+            const keys = [
+                'farm_management_customers',
+                'farm_management_orders',
+                'farm_management_products',
+                'farm_management_waitlist',
+                'farm_management_categories',
+                'farm_management_order_sources',
+                'farm_management_order_statuses'
+            ];
+            
+            keys.forEach(key => {
+                localStorage.removeItem(key);
+                log(`삭제됨: ${key}`, 'warning');
+            });
+            
+            checkDataStatus();
+            log('모든 데이터가 삭제되었습니다.', 'success');
+        }
+
+        // LocalStorage 정리
+        function cleanupLocalStorage() {
+            log('LocalStorage 정리 시작...', 'info');
+            
+            const allKeys = Object.keys(localStorage);
+            const farmKeys = allKeys.filter(key => key.startsWith('farm_management_'));
+            const otherKeys = allKeys.filter(key => !key.startsWith('farm_management_'));
+            
+            log(`농장 관리 데이터: ${farmKeys.length}개`, 'info');
+            log(`기타 데이터: ${otherKeys.length}개`, 'info');
+            
+            // 불필요한 키들 정리
+            const unnecessaryKeys = [
+                'systemLoadingIssue',
+                'apiMode',
+                'lastUpdateCheck',
+                'pwa-install-prompt'
+            ];
+            
+            unnecessaryKeys.forEach(key => {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    log(`정리됨: ${key}`, 'info');
+                }
+            });
+            
+            log('LocalStorage 정리 완료', 'success');
+        }
+
+        // 페이지 로드 시 초기화
+        document.addEventListener('DOMContentLoaded', function() {
+            checkDataStatus();
+            log('데이터 저장 위치 확인 도구가 준비되었습니다.', 'success');
+        });
+    </script>
+</body>
+</html>

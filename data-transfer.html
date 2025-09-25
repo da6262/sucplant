@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>📤 데이터 이전 도구 - 미리보기 → 웹사이트</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <header class="text-center mb-8">
+                <h1 class="text-3xl font-bold text-blue-600 mb-2">
+                    <i class="fas fa-exchange-alt"></i> 데이터 이전 도구
+                </h1>
+                <p class="text-gray-600">미리보기 데이터를 게시된 웹사이트로 안전하게 이전하세요! 🚀</p>
+            </header>
+
+            <!-- 진행 단계 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-list-ol"></i> 데이터 이전 단계
+                </h2>
+                <div class="space-y-4">
+                    <div id="step1" class="flex items-center p-4 border-l-4 border-blue-500 bg-blue-50">
+                        <div class="flex-shrink-0 w-8 h-8 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">1</div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-blue-800">미리보기에서 데이터 추출</h3>
+                            <p class="text-sm text-blue-600">현재 LocalStorage에서 모든 데이터를 가져옵니다</p>
+                        </div>
+                        <div class="ml-auto">
+                            <button id="extract-data" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded transition-colors">
+                                <i class="fas fa-download"></i> 데이터 추출
+                            </button>
+                        </div>
+                    </div>
+
+                    <div id="step2" class="flex items-center p-4 border-l-4 border-gray-300 bg-gray-50">
+                        <div class="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold">2</div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-gray-600">데이터 파일 다운로드</h3>
+                            <p class="text-sm text-gray-500">JSON 파일로 백업 데이터를 저장합니다</p>
+                        </div>
+                        <div class="ml-auto">
+                            <span id="step2-status" class="text-gray-400">대기중...</span>
+                        </div>
+                    </div>
+
+                    <div id="step3" class="flex items-center p-4 border-l-4 border-gray-300 bg-gray-50">
+                        <div class="flex-shrink-0 w-8 h-8 bg-gray-400 text-white rounded-full flex items-center justify-center font-bold">3</div>
+                        <div class="ml-4">
+                            <h3 class="font-semibold text-gray-600">게시된 웹사이트에서 복구</h3>
+                            <p class="text-sm text-gray-500">vvldwnru.gensparkspace.com에서 데이터를 복구합니다</p>
+                        </div>
+                        <div class="ml-auto">
+                            <span id="step3-status" class="text-gray-400">대기중...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 데이터 미리보기 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-eye"></i> 현재 데이터 현황
+                </h2>
+                <div id="data-preview" class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div class="bg-blue-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-blue-800 mb-2">
+                            <i class="fas fa-users"></i> 고객 데이터
+                        </h3>
+                        <div id="customers-count" class="text-2xl font-bold text-blue-600">-</div>
+                    </div>
+                    <div class="bg-green-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-green-800 mb-2">
+                            <i class="fas fa-shopping-cart"></i> 주문 데이터
+                        </h3>
+                        <div id="orders-count" class="text-2xl font-bold text-green-600">-</div>
+                    </div>
+                    <div class="bg-purple-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-purple-800 mb-2">
+                            <i class="fas fa-leaf"></i> 상품 데이터
+                        </h3>
+                        <div id="products-count" class="text-2xl font-bold text-purple-600">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 상세 데이터 보기 -->
+            <div class="bg-white rounded-lg shadow-lg p-6 mb-8">
+                <h2 class="text-xl font-semibold mb-4 text-gray-800">
+                    <i class="fas fa-database"></i> 추출된 데이터 상세
+                </h2>
+                <div id="extracted-data" class="bg-gray-50 p-4 rounded-lg max-h-96 overflow-y-auto">
+                    <p class="text-gray-500 text-center">데이터 추출 버튼을 클릭하세요</p>
+                </div>
+            </div>
+
+            <!-- 액션 버튼들 -->
+            <div class="text-center space-x-4">
+                <button id="download-backup" class="bg-green-500 hover:bg-green-600 text-white px-6 py-3 rounded-lg transition-colors" disabled>
+                    <i class="fas fa-download"></i> 백업 파일 다운로드
+                </button>
+                <button id="go-to-website" class="bg-blue-500 hover:bg-blue-600 text-white px-6 py-3 rounded-lg transition-colors">
+                    <i class="fas fa-external-link-alt"></i> 게시된 웹사이트로 이동
+                </button>
+            </div>
+
+            <!-- 가이드 -->
+            <div class="mt-8 bg-yellow-50 border border-yellow-200 rounded-lg p-6">
+                <h3 class="font-semibold text-yellow-800 mb-3">
+                    <i class="fas fa-lightbulb"></i> 이전 완료 후 해야 할 일
+                </h3>
+                <ol class="list-decimal list-inside space-y-2 text-yellow-700">
+                    <li>백업 파일을 다운로드하세요</li>
+                    <li><strong>vvldwnru.gensparkspace.com</strong>에 접속하세요</li>
+                    <li><strong>data-recovery.html</strong> 페이지로 이동하세요</li>
+                    <li><strong>"백업 파일 복구"</strong> 버튼으로 파일을 업로드하세요</li>
+                    <li>복구 완료 후 메인 페이지에서 데이터를 확인하세요</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        class DataTransferTool {
+            constructor() {
+                this.extractedData = null;
+                this.init();
+            }
+
+            init() {
+                this.loadDataCounts();
+                this.setupEventListeners();
+            }
+
+            loadDataCounts() {
+                const tables = ['customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
+                
+                tables.slice(0, 3).forEach((table, index) => {
+                    const data = localStorage.getItem(table);
+                    const count = data ? JSON.parse(data).length : 0;
+                    
+                    const countElement = document.getElementById(`${table.replace('s', 's')}-count`);
+                    if (countElement) {
+                        countElement.textContent = count;
+                    }
+                });
+            }
+
+            setupEventListeners() {
+                document.getElementById('extract-data').addEventListener('click', () => {
+                    this.extractData();
+                });
+
+                document.getElementById('download-backup').addEventListener('click', () => {
+                    this.downloadBackup();
+                });
+
+                document.getElementById('go-to-website').addEventListener('click', () => {
+                    window.open('https://vvldwnru.gensparkspace.com', '_blank');
+                });
+            }
+
+            extractData() {
+                const tables = ['customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
+                const allData = {};
+                let totalItems = 0;
+
+                // Step 1 활성화
+                this.activateStep(1);
+
+                tables.forEach(table => {
+                    const data = localStorage.getItem(table);
+                    if (data) {
+                        try {
+                            const parsed = JSON.parse(data);
+                            allData[table] = parsed;
+                            totalItems += parsed.length;
+                        } catch (e) {
+                            allData[table] = [];
+                        }
+                    } else {
+                        allData[table] = [];
+                    }
+                });
+
+                this.extractedData = allData;
+
+                // 데이터 미리보기 업데이트
+                let previewHTML = `<h3 class="font-semibold mb-3 text-green-600">✅ 데이터 추출 완료!</h3>`;
+                previewHTML += `<div class="space-y-2">`;
+                
+                Object.keys(allData).forEach(table => {
+                    const count = allData[table].length;
+                    previewHTML += `<div class="flex justify-between items-center">`;
+                    previewHTML += `<span class="font-medium">${this.getTableDisplayName(table)}:</span>`;
+                    previewHTML += `<span class="bg-blue-100 text-blue-800 px-2 py-1 rounded">${count}개</span>`;
+                    previewHTML += `</div>`;
+                });
+                
+                previewHTML += `</div>`;
+                previewHTML += `<div class="mt-4 p-3 bg-green-100 rounded-lg">`;
+                previewHTML += `<strong>총 ${totalItems}개의 데이터가 추출되었습니다!</strong>`;
+                previewHTML += `</div>`;
+
+                document.getElementById('extracted-data').innerHTML = previewHTML;
+
+                // Step 2 활성화
+                setTimeout(() => {
+                    this.activateStep(2);
+                    document.getElementById('download-backup').disabled = false;
+                }, 1000);
+            }
+
+            activateStep(stepNumber) {
+                const step = document.getElementById(`step${stepNumber}`);
+                step.className = step.className.replace('border-gray-300 bg-gray-50', 'border-green-500 bg-green-50');
+                step.querySelector('.w-8').className = step.querySelector('.w-8').className.replace('bg-gray-400', 'bg-green-500');
+                step.querySelector('h3').className = step.querySelector('h3').className.replace('text-gray-600', 'text-green-800');
+                step.querySelector('p').className = step.querySelector('p').className.replace('text-gray-500', 'text-green-600');
+
+                const status = document.getElementById(`step${stepNumber}-status`);
+                if (status) {
+                    status.textContent = '완료 ✅';
+                    status.className = 'text-green-600 font-medium';
+                }
+            }
+
+            getTableDisplayName(table) {
+                const names = {
+                    'customers': '고객',
+                    'orders': '주문',
+                    'products': '상품',
+                    'categories': '카테고리',
+                    'order_sources': '주문출처',
+                    'waitlist': '대기고객'
+                };
+                return names[table] || table;
+            }
+
+            downloadBackup() {
+                if (!this.extractedData) {
+                    alert('먼저 데이터를 추출해주세요!');
+                    return;
+                }
+
+                const dataStr = JSON.stringify(this.extractedData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `경산다육농장_미리보기데이터_${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+                link.click();
+
+                // Step 3 안내
+                setTimeout(() => {
+                    this.activateStep(3);
+                    alert(`🎉 백업 파일 다운로드 완료!
+
+다음 단계:
+1. 게시된 웹사이트(vvldwnru.gensparkspace.com)로 이동
+2. data-recovery.html 페이지 접속  
+3. "백업 파일 복구" 버튼으로 방금 다운로드한 파일 업로드
+4. 복구 완료!`);
+                }, 500);
+            }
+        }
+
+        // 페이지 로드 시 도구 시작
+        new DataTransferTool();
+    </script>
+</body>
+</html>

@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>연결 진단 도구 - 경산다육식물농장</title>
+    <style>
+        body {
+            font-family: 'Malgun Gothic', '맑은 고딕', Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f5;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #16a34a;
+            color: white;
+            border-radius: 8px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #e5e7eb;
+            border-radius: 8px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 10px;
+            border-radius: 5px;
+        }
+        .success {
+            background: #d1fae5;
+            border: 1px solid #16a34a;
+            color: #065f46;
+        }
+        .error {
+            background: #fee2e2;
+            border: 1px solid #ef4444;
+            color: #991b1b;
+        }
+        .warning {
+            background: #fef3c7;
+            border: 1px solid #f59e0b;
+            color: #92400e;
+        }
+        .button {
+            background: #16a34a;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+        }
+        .button:hover {
+            background: #15803d;
+        }
+        .button:disabled {
+            background: #9ca3af;
+            cursor: not-allowed;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #16a34a;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .code {
+            background: #f3f4f6;
+            padding: 10px;
+            border-radius: 5px;
+            font-family: monospace;
+            font-size: 14px;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 연결 진단 도구</h1>
+            <h2>경산다육식물농장 관리시스템</h2>
+        </div>
+        
+        <div class="test-section">
+            <h3>🌐 기본 연결 테스트</h3>
+            <button class="button" onclick="runBasicTests()">기본 테스트 실행</button>
+            <div id="basic-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📡 외부 리소스 테스트</h3>
+            <button class="button" onclick="runResourceTests()">리소스 테스트 실행</button>
+            <div id="resource-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🔍 API 연결 테스트</h3>
+            <button class="button" onclick="runApiTests()">API 테스트 실행</button>
+            <div id="api-results"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>📊 시스템 정보</h3>
+            <div id="system-info"></div>
+        </div>
+        
+        <div class="test-section">
+            <h3>🛠️ 해결 방법</h3>
+            <div id="solutions"></div>
+        </div>
+        
+        <div style="text-align: center; margin-top: 30px;">
+            <button class="button" onclick="runAllTests()">🚀 전체 테스트 실행</button>
+            <button class="button" onclick="window.location.href='index.html'">🏠 메인으로 돌아가기</button>
+        </div>
+    </div>
+    
+    <script>
+        let testResults = {
+            basic: [],
+            resource: [],
+            api: []
+        };
+        
+        function addResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const result = document.createElement('div');
+            result.className = `test-result ${type}`;
+            result.innerHTML = message;
+            container.appendChild(result);
+        }
+        
+        function clearResults(containerId) {
+            document.getElementById(containerId).innerHTML = '';
+        }
+        
+        async function runBasicTests() {
+            clearResults('basic-results');
+            addResult('basic-results', '<div class="loading"></div> 기본 연결 테스트 중...', 'warning');
+            
+            // 1. 온라인 상태 확인
+            if (navigator.onLine) {
+                addResult('basic-results', '✅ 온라인 상태: 정상', 'success');
+            } else {
+                addResult('basic-results', '❌ 오프라인 상태: 인터넷 연결 필요', 'error');
+            }
+            
+            // 2. 브라우저 정보
+            const userAgent = navigator.userAgent;
+            addResult('basic-results', `📱 브라우저: ${userAgent}`, 'info');
+            
+            // 3. 로컬 스토리지 테스트
+            try {
+                localStorage.setItem('test', 'test');
+                localStorage.removeItem('test');
+                addResult('basic-results', '✅ 로컬 스토리지: 정상', 'success');
+            } catch (e) {
+                addResult('basic-results', '❌ 로컬 스토리지: 오류 - ' + e.message, 'error');
+            }
+            
+            // 4. 기본 네트워크 테스트
+            try {
+                const response = await fetch('https://httpbin.org/get', { 
+                    method: 'GET',
+                    mode: 'no-cors'
+                });
+                addResult('basic-results', '✅ 기본 네트워크: 정상', 'success');
+            } catch (e) {
+                addResult('basic-results', '❌ 기본 네트워크: 오류 - ' + e.message, 'error');
+            }
+        }
+        
+        async function runResourceTests() {
+            clearResults('resource-results');
+            addResult('resource-results', '<div class="loading"></div> 외부 리소스 테스트 중...', 'warning');
+            
+            const resources = [
+                { name: 'Tailwind CSS', url: 'https://cdn.tailwindcss.com/3.3.0' },
+                { name: 'Font Awesome', url: 'https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css' },
+                { name: 'Google Fonts', url: 'https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap' },
+                { name: 'SheetJS', url: 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js' },
+                { name: 'QRious', url: 'https://cdnjs.cloudflare.com/ajax/libs/qrious/4.0.2/qrious.min.js' },
+                { name: 'Chart.js', url: 'https://cdn.jsdelivr.net/npm/chart.js' }
+            ];
+            
+            for (const resource of resources) {
+                try {
+                    const response = await fetch(resource.url, { 
+                        method: 'HEAD',
+                        mode: 'no-cors'
+                    });
+                    addResult('resource-results', `✅ ${resource.name}: 접근 가능`, 'success');
+                } catch (e) {
+                    addResult('resource-results', `❌ ${resource.name}: 접근 불가 - ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        async function runApiTests() {
+            clearResults('api-results');
+            addResult('api-results', '<div class="loading"></div> API 연결 테스트 중...', 'warning');
+            
+            // API 엔드포인트 테스트 (실제 API URL로 변경 필요)
+            const apiEndpoints = [
+                { name: '주문 API', url: '/api/orders' },
+                { name: '고객 API', url: '/api/customers' },
+                { name: '재고 API', url: '/api/inventory' }
+            ];
+            
+            for (const endpoint of apiEndpoints) {
+                try {
+                    const response = await fetch(endpoint.url);
+                    if (response.ok) {
+                        addResult('api-results', `✅ ${endpoint.name}: 정상 (${response.status})`, 'success');
+                    } else {
+                        addResult('api-results', `⚠️ ${endpoint.name}: 오류 (${response.status})`, 'warning');
+                    }
+                } catch (e) {
+                    addResult('api-results', `❌ ${endpoint.name}: 연결 실패 - ${e.message}`, 'error');
+                }
+            }
+        }
+        
+        function displaySystemInfo() {
+            const systemInfo = document.getElementById('system-info');
+            systemInfo.innerHTML = `
+                <div class="test-result">
+                    <strong>운영체제:</strong> ${navigator.platform}<br>
+                    <strong>브라우저:</strong> ${navigator.userAgent}<br>
+                    <strong>언어:</strong> ${navigator.language}<br>
+                    <strong>화면 해상도:</strong> ${screen.width}x${screen.height}<br>
+                    <strong>현재 시간:</strong> ${new Date().toLocaleString()}<br>
+                    <strong>온라인 상태:</strong> ${navigator.onLine ? '온라인' : '오프라인'}
+                </div>
+            `;
+        }
+        
+        function displaySolutions() {
+            const solutions = document.getElementById('solutions');
+            solutions.innerHTML = `
+                <div class="test-result">
+                    <h4>🔧 일반적인 해결 방법:</h4>
+                    <ol>
+                        <li><strong>인터넷 연결 확인:</strong> Wi-Fi 또는 모바일 데이터 연결 상태 확인</li>
+                        <li><strong>방화벽 설정:</strong> 브라우저가 인터넷에 접근할 수 있도록 허용</li>
+                        <li><strong>프록시 설정:</strong> 회사나 학교 네트워크의 경우 프록시 설정 확인</li>
+                        <li><strong>DNS 설정:</strong> DNS 서버를 8.8.8.8 또는 1.1.1.1로 변경</li>
+                        <li><strong>브라우저 캐시 삭제:</strong> Ctrl+Shift+Delete로 캐시 삭제</li>
+                        <li><strong>다른 브라우저 시도:</strong> Chrome, Firefox, Edge 등 다른 브라우저 사용</li>
+                    </ol>
+                </div>
+                <div class="test-result">
+                    <h4>🚨 긴급 해결 방법:</h4>
+                    <p>모든 방법이 실패하면 오프라인 모드를 사용하세요:</p>
+                    <div class="code">
+                        <a href="offline-fallback.html" class="button">오프라인 모드로 이동</a>
+                    </div>
+                </div>
+            `;
+        }
+        
+        async function runAllTests() {
+            await runBasicTests();
+            await runResourceTests();
+            await runApiTests();
+            displaySystemInfo();
+            displaySolutions();
+        }
+        
+        // 페이지 로드 시 시스템 정보 표시
+        document.addEventListener('DOMContentLoaded', function() {
+            displaySystemInfo();
+            displaySolutions();
+        });
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+

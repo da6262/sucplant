@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🔍 완전 진단 도구</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-4">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-2xl font-bold mb-6">🔍 상품등록 완전 진단 도구</h1>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <!-- 1. 시스템 상태 체크 -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">1. 시스템 상태 체크</h2>
+                <button onclick="checkSystemStatus()" class="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 w-full">
+                    전체 시스템 상태 확인
+                </button>
+                <div id="system-status" class="mt-2 text-sm max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- 2. DOM 요소 체크 -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">2. DOM 요소 체크</h2>
+                <button onclick="checkDOMElements()" class="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 w-full">
+                    필수 요소 존재 확인
+                </button>
+                <div id="dom-status" class="mt-2 text-sm max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- 3. 카테고리 데이터 체크 -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">3. 카테고리 데이터</h2>
+                <button onclick="checkCategories()" class="bg-purple-500 text-white px-4 py-2 rounded hover:bg-purple-600 w-full">
+                    카테고리 데이터 확인
+                </button>
+                <div id="category-status" class="mt-2 text-sm max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- 4. 폼 유효성 체크 -->
+            <div class="bg-white p-4 rounded-lg shadow">
+                <h2 class="font-semibold mb-2">4. 폼 유효성 체크</h2>
+                <button onclick="checkFormValidation()" class="bg-orange-500 text-white px-4 py-2 rounded hover:bg-orange-600 w-full">
+                    폼 필드 유효성 확인
+                </button>
+                <div id="form-status" class="mt-2 text-sm max-h-32 overflow-y-auto"></div>
+            </div>
+            
+            <!-- 5. 수동 상품등록 테스트 -->
+            <div class="bg-white p-4 rounded-lg shadow col-span-2">
+                <h2 class="font-semibold mb-2">5. 수동 상품등록 테스트</h2>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mb-3">
+                    <input type="text" id="manual-name" placeholder="상품명" class="border p-2 rounded text-sm">
+                    <input type="number" id="manual-price" placeholder="판매가" class="border p-2 rounded text-sm">
+                    <select id="manual-category" class="border p-2 rounded text-sm">
+                        <option value="">카테고리 선택</option>
+                        <option value="다육식물">다육식물</option>
+                        <option value="희귀품종">희귀품종</option>
+                    </select>
+                    <select id="manual-shipping" class="border p-2 rounded text-sm">
+                        <option value="normal">일반배송</option>
+                        <option value="direct">직거래</option>
+                    </select>
+                </div>
+                <button onclick="manualProductTest()" class="bg-red-500 text-white px-4 py-2 rounded hover:bg-red-600 w-full">
+                    🚀 수동 상품등록 실행
+                </button>
+                <div id="manual-test-result" class="mt-2 text-sm max-h-32 overflow-y-auto"></div>
+            </div>
+        </div>
+        
+        <!-- 종합 결과 -->
+        <div class="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+            <h3 class="font-semibold text-yellow-800">📋 종합 진단 결과</h3>
+            <div id="comprehensive-result" class="mt-2 text-sm text-yellow-700">
+                위의 모든 테스트를 실행하면 여기에 종합 결과가 표시됩니다.
+            </div>
+        </div>
+        
+        <!-- 콘솔 로그 -->
+        <div class="mt-4 p-4 bg-gray-100 rounded-lg">
+            <h3 class="font-semibold">📜 실시간 로그</h3>
+            <div id="console-log" class="mt-2 text-xs font-mono max-h-40 overflow-y-auto bg-black text-green-400 p-2 rounded"></div>
+        </div>
+    </div>
+
+    <script>
+        // 로그 함수
+        function log(message, type = 'info') {
+            const logDiv = document.getElementById('console-log');
+            const now = new Date().toLocaleTimeString();
+            const colors = {
+                'info': 'text-green-400',
+                'error': 'text-red-400', 
+                'warn': 'text-yellow-400',
+                'success': 'text-blue-400'
+            };
+            
+            logDiv.innerHTML += `<div class="${colors[type] || 'text-green-400'}">[${now}] ${message}</div>`;
+            logDiv.scrollTop = logDiv.scrollHeight;
+            console.log(message);
+        }
+        
+        // 1. 시스템 상태 체크
+        async function checkSystemStatus() {
+            log('🔍 시스템 상태 체크 시작...', 'info');
+            const result = document.getElementById('system-status');
+            
+            try {
+                const iframe = document.createElement('iframe');
+                iframe.src = 'index.html';
+                iframe.style.display = 'none';
+                document.body.appendChild(iframe);
+                
+                iframe.onload = function() {
+                    try {
+                        const iframeWindow = iframe.contentWindow;
+                        
+                        let status = '<div class="space-y-1">';
+                        
+                        // orderSystem 체크
+                        if (iframeWindow.orderSystem) {
+                            status += '<div class="text-green-600">✅ orderSystem 존재</div>';
+                            log('✅ orderSystem 객체 확인됨', 'success');
+                            
+                            // 주요 함수들 체크
+                            const functions = ['openProductModal', 'saveProduct', 'loadProducts'];
+                            functions.forEach(func => {
+                                if (typeof iframeWindow.orderSystem[func] === 'function') {
+                                    status += `<div class="text-green-600">✅ ${func} 함수 존재</div>`;
+                                    log(`✅ ${func} 함수 확인됨`, 'success');
+                                } else {
+                                    status += `<div class="text-red-600">❌ ${func} 함수 없음</div>`;
+                                    log(`❌ ${func} 함수 없음`, 'error');
+                                }
+                            });
+                        } else {
+                            status += '<div class="text-red-600">❌ orderSystem 없음</div>';
+                            log('❌ orderSystem 객체 없음', 'error');
+                        }
+                        
+                        // QR 상태 체크
+                        if (iframeWindow.QRCodeDisabled) {
+                            status += '<div class="text-orange-600">⚠️ QR 코드 비활성화됨</div>';
+                            log('⚠️ QR 코드 비활성화 상태', 'warn');
+                        } else if (typeof iframeWindow.QRious !== 'undefined') {
+                            status += '<div class="text-green-600">✅ QR 코드 활성화됨</div>';
+                            log('✅ QR 코드 라이브러리 로드됨', 'success');
+                        } else {
+                            status += '<div class="text-red-600">❌ QR 라이브러리 없음</div>';
+                            log('❌ QRious 라이브러리 로드 실패', 'error');
+                        }
+                        
+                        status += '</div>';
+                        result.innerHTML = status;
+                        
+                    } catch (error) {
+                        result.innerHTML = `<div class="text-red-600">❌ 시스템 체크 실패: ${error.message}</div>`;
+                        log(`❌ 시스템 체크 실패: ${error.message}`, 'error');
+                    }
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 1000);
+                };
+                
+            } catch (error) {
+                result.innerHTML = `<div class="text-red-600">❌ 체크 실패: ${error.message}</div>`;
+                log(`❌ 시스템 상태 체크 실패: ${error.message}`, 'error');
+            }
+        }
+        
+        // 2. DOM 요소 체크
+        function checkDOMElements() {
+            log('🔍 DOM 요소 체크 시작...', 'info');
+            const result = document.getElementById('dom-status');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                try {
+                    const iframeDoc = iframe.contentDocument;
+                    const elements = [
+                        'add-product-btn',
+                        'product-modal',
+                        'product-form-name',
+                        'product-form-category',
+                        'product-form-price',
+                        'product-form-shipping'
+                    ];
+                    
+                    let status = '<div class="space-y-1">';
+                    let allExists = true;
+                    
+                    elements.forEach(id => {
+                        const element = iframeDoc.getElementById(id);
+                        if (element) {
+                            status += `<div class="text-green-600">✅ ${id}</div>`;
+                            log(`✅ DOM 요소 확인: ${id}`, 'success');
+                        } else {
+                            status += `<div class="text-red-600">❌ ${id}</div>`;
+                            log(`❌ DOM 요소 없음: ${id}`, 'error');
+                            allExists = false;
+                        }
+                    });
+                    
+                    status += '</div>';
+                    result.innerHTML = status;
+                    
+                    if (allExists) {
+                        log('✅ 모든 필수 DOM 요소 확인됨', 'success');
+                    } else {
+                        log('❌ 일부 DOM 요소 누락', 'error');
+                    }
+                    
+                } catch (error) {
+                    result.innerHTML = `<div class="text-red-600">❌ DOM 체크 실패: ${error.message}</div>`;
+                    log(`❌ DOM 체크 실패: ${error.message}`, 'error');
+                }
+                
+                setTimeout(() => {
+                    document.body.removeChild(iframe);
+                }, 1000);
+            };
+        }
+        
+        // 3. 카테고리 데이터 체크
+        function checkCategories() {
+            log('🔍 카테고리 데이터 체크 시작...', 'info');
+            const result = document.getElementById('category-status');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        const iframeWindow = iframe.contentWindow;
+                        
+                        if (iframeWindow.orderSystem && iframeWindow.orderSystem.categories) {
+                            const categories = iframeWindow.orderSystem.categories;
+                            let status = `<div class="text-green-600">✅ 카테고리 ${categories.length}개 발견</div>`;
+                            
+                            if (categories.length > 0) {
+                                status += '<div class="text-sm mt-1">';
+                                categories.forEach(cat => {
+                                    status += `<div>• ${cat.name}</div>`;
+                                });
+                                status += '</div>';
+                                log(`✅ 카테고리 ${categories.length}개 로드됨`, 'success');
+                            } else {
+                                status += '<div class="text-orange-600">⚠️ 카테고리가 비어있음</div>';
+                                log('⚠️ 카테고리 데이터 없음', 'warn');
+                            }
+                            
+                            result.innerHTML = status;
+                        } else {
+                            result.innerHTML = '<div class="text-red-600">❌ 카테고리 데이터 없음</div>';
+                            log('❌ 카테고리 데이터 접근 실패', 'error');
+                        }
+                        
+                    } catch (error) {
+                        result.innerHTML = `<div class="text-red-600">❌ 카테고리 체크 실패: ${error.message}</div>`;
+                        log(`❌ 카테고리 체크 실패: ${error.message}`, 'error');
+                    }
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 1000);
+                }, 2000); // 카테고리 로딩 대기
+            };
+        }
+        
+        // 4. 폼 유효성 체크
+        function checkFormValidation() {
+            log('🔍 폼 유효성 체크 시작...', 'info');
+            const result = document.getElementById('form-status');
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        const iframeDoc = iframe.contentDocument;
+                        const iframeWindow = iframe.contentWindow;
+                        
+                        // 모달 열기 시도
+                        if (iframeWindow.orderSystem && typeof iframeWindow.orderSystem.openProductModal === 'function') {
+                            iframeWindow.orderSystem.openProductModal();
+                            
+                            setTimeout(() => {
+                                const modal = iframeDoc.getElementById('product-modal');
+                                if (modal && !modal.classList.contains('hidden')) {
+                                    let status = '<div class="text-green-600">✅ 모달 열림 성공</div>';
+                                    
+                                    // 필수 필드 체크
+                                    const fields = [
+                                        { id: 'product-form-name', name: '상품명' },
+                                        { id: 'product-form-price', name: '판매가' },
+                                        { id: 'product-form-category', name: '카테고리' },
+                                        { id: 'product-form-shipping', name: '배송옵션' }
+                                    ];
+                                    
+                                    fields.forEach(field => {
+                                        const element = iframeDoc.getElementById(field.id);
+                                        if (element) {
+                                            status += `<div class="text-green-600">✅ ${field.name} 필드</div>`;
+                                        } else {
+                                            status += `<div class="text-red-600">❌ ${field.name} 필드 없음</div>`;
+                                        }
+                                    });
+                                    
+                                    result.innerHTML = status;
+                                    log('✅ 모달 및 폼 필드 확인 완료', 'success');
+                                } else {
+                                    result.innerHTML = '<div class="text-red-600">❌ 모달이 열리지 않음</div>';
+                                    log('❌ 상품등록 모달 열림 실패', 'error');
+                                }
+                            }, 500);
+                            
+                        } else {
+                            result.innerHTML = '<div class="text-red-600">❌ openProductModal 함수 없음</div>';
+                            log('❌ openProductModal 함수 접근 실패', 'error');
+                        }
+                        
+                    } catch (error) {
+                        result.innerHTML = `<div class="text-red-600">❌ 폼 체크 실패: ${error.message}</div>`;
+                        log(`❌ 폼 유효성 체크 실패: ${error.message}`, 'error');
+                    }
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 3000);
+                }, 1000);
+            };
+        }
+        
+        // 5. 수동 상품등록 테스트
+        function manualProductTest() {
+            log('🚀 수동 상품등록 테스트 시작...', 'info');
+            const result = document.getElementById('manual-test-result');
+            
+            const name = document.getElementById('manual-name').value.trim();
+            const price = document.getElementById('manual-price').value;
+            const category = document.getElementById('manual-category').value;
+            const shipping = document.getElementById('manual-shipping').value;
+            
+            if (!name || !price || !category) {
+                result.innerHTML = '<div class="text-red-600">❌ 필수 필드를 모두 입력해주세요</div>';
+                log('❌ 필수 필드 누락', 'error');
+                return;
+            }
+            
+            const iframe = document.createElement('iframe');
+            iframe.src = 'index.html';
+            iframe.style.display = 'none';
+            document.body.appendChild(iframe);
+            
+            iframe.onload = function() {
+                setTimeout(() => {
+                    try {
+                        const iframeDoc = iframe.contentDocument;
+                        const iframeWindow = iframe.contentWindow;
+                        
+                        if (!iframeWindow.orderSystem) {
+                            result.innerHTML = '<div class="text-red-600">❌ orderSystem 없음</div>';
+                            log('❌ orderSystem 접근 실패', 'error');
+                            return;
+                        }
+                        
+                        // QR 코드 비활성화
+                        iframeWindow.QRCodeDisabled = true;
+                        log('QR 코드 비활성화', 'info');
+                        
+                        // 모달 열기
+                        iframeWindow.orderSystem.openProductModal();
+                        
+                        setTimeout(() => {
+                            // 폼 필드 채우기
+                            const nameField = iframeDoc.getElementById('product-form-name');
+                            const priceField = iframeDoc.getElementById('product-form-price');
+                            const categoryField = iframeDoc.getElementById('product-form-category');
+                            const shippingField = iframeDoc.getElementById('product-form-shipping');
+                            
+                            if (nameField) nameField.value = name;
+                            if (priceField) priceField.value = price;
+                            if (categoryField) categoryField.value = category;
+                            if (shippingField) shippingField.value = shipping;
+                            
+                            log(`폼 필드 입력 완료: ${name}, ${price}원, ${category}`, 'info');
+                            
+                            // 저장 시도
+                            setTimeout(() => {
+                                try {
+                                    iframeWindow.orderSystem.saveProduct().then(() => {
+                                        result.innerHTML = '<div class="text-green-600">✅ 상품등록 성공!</div>';
+                                        log('✅ 상품등록 성공!', 'success');
+                                    }).catch(error => {
+                                        result.innerHTML = `<div class="text-red-600">❌ 저장 실패: ${error.message}</div>`;
+                                        log(`❌ 상품 저장 실패: ${error.message}`, 'error');
+                                    });
+                                } catch (error) {
+                                    result.innerHTML = `<div class="text-red-600">❌ 저장 오류: ${error.message}</div>`;
+                                    log(`❌ 저장 중 오류: ${error.message}`, 'error');
+                                }
+                            }, 500);
+                            
+                        }, 500);
+                        
+                    } catch (error) {
+                        result.innerHTML = `<div class="text-red-600">❌ 테스트 실패: ${error.message}</div>`;
+                        log(`❌ 수동 테스트 실패: ${error.message}`, 'error');
+                    }
+                    
+                    setTimeout(() => {
+                        document.body.removeChild(iframe);
+                    }, 5000);
+                }, 2000);
+            };
+        }
+        
+        // 초기화
+        window.onload = function() {
+            log('🔍 완전 진단 도구 시작됨', 'info');
+            
+            // 기본값 설정
+            document.getElementById('manual-name').value = 'White Platter';
+            document.getElementById('manual-price').value = '50000';
+            document.getElementById('manual-category').value = '다육식물';
+            
+            log('💡 팁: 모든 테스트를 순서대로 실행해보세요!', 'info');
+        };
+    </script>
+</body>
+</html>

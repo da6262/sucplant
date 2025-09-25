@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>크로스 디바이스 동기화 테스트</title>
+    <script src="https://cdn.tailwindcss.com/3.3.0"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-4xl mx-auto">
+            <!-- 헤더 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 mb-2">
+                    <i class="fas fa-sync-alt text-green-600 mr-3"></i>
+                    크로스 디바이스 동기화 테스트
+                </h1>
+                <p class="text-gray-600">핸드폰, 컴퓨터, 태블릿 간의 실시간 데이터 동기화를 테스트합니다.</p>
+            </div>
+
+            <!-- 현재 디바이스 정보 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-mobile-alt text-blue-600 mr-2"></i>
+                    현재 디바이스 정보
+                </h2>
+                <div id="device-info" class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>디바이스 정보를 불러오는 중...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 동기화 상태 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-chart-line text-green-600 mr-2"></i>
+                    동기화 상태
+                </h2>
+                <div id="sync-status" class="space-y-4">
+                    <div class="text-center text-gray-500 py-8">
+                        <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
+                        <p>동기화 상태를 확인하는 중...</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 테스트 컨트롤 -->
+            <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-cogs text-purple-600 mr-2"></i>
+                    테스트 컨트롤
+                </h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <button id="test-sync" class="bg-green-500 hover:bg-green-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        수동 동기화
+                    </button>
+                    <button id="test-data" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-database mr-2"></i>
+                        테스트 데이터 생성
+                    </button>
+                    <button id="test-conflict" class="bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                        충돌 테스트
+                    </button>
+                    <button id="clear-data" class="bg-red-500 hover:bg-red-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-trash mr-2"></i>
+                        로컬 데이터 초기화
+                    </button>
+                    <button id="show-stats" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        동기화 통계
+                    </button>
+                    <button id="show-devices" class="bg-indigo-500 hover:bg-indigo-600 text-white px-4 py-3 rounded-lg transition-colors">
+                        <i class="fas fa-mobile-alt mr-2"></i>
+                        연결된 디바이스
+                    </button>
+                </div>
+            </div>
+
+            <!-- 로그 출력 -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h2 class="text-xl font-semibold text-gray-900 mb-4">
+                    <i class="fas fa-terminal text-gray-600 mr-2"></i>
+                    동기화 로그
+                </h2>
+                <div id="sync-log" class="bg-gray-900 text-green-400 p-4 rounded-lg font-mono text-sm max-h-96 overflow-y-auto">
+                    <div class="text-gray-500">동기화 로그가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 필요한 스크립트들 -->
+    <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
+    <script src="js/supabase-config.js"></script>
+    <script src="js/indexeddb-cache.js"></script>
+    <script src="js/supabase-integration.js"></script>
+    <script src="js/cross-device-sync.js"></script>
+    <script src="js/sync-ui.js"></script>
+
+    <script>
+        // 로그 출력 함수
+        function addLog(message, type = 'info') {
+            const logContainer = document.getElementById('sync-log');
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-blue-400',
+                success: 'text-green-400',
+                error: 'text-red-400',
+                warning: 'text-yellow-400'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `mb-1 ${colors[type] || colors.info}`;
+            logEntry.innerHTML = `[${timestamp}] ${message}`;
+            
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+
+        // 디바이스 정보 표시
+        function updateDeviceInfo() {
+            const container = document.getElementById('device-info');
+            if (window.crossDeviceSync) {
+                const deviceInfo = window.crossDeviceSync.deviceInfo;
+                container.innerHTML = `
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-900 mb-2">디바이스 ID</h3>
+                        <p class="text-sm text-gray-600 font-mono">${deviceInfo.id}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-900 mb-2">디바이스 타입</h3>
+                        <p class="text-sm text-gray-600">${deviceInfo.type}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-900 mb-2">플랫폼</h3>
+                        <p class="text-sm text-gray-600">${deviceInfo.platform}</p>
+                    </div>
+                    <div class="bg-gray-50 p-4 rounded-lg">
+                        <h3 class="font-semibold text-gray-900 mb-2">화면 해상도</h3>
+                        <p class="text-sm text-gray-600">${deviceInfo.screen}</p>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center text-red-500 py-8">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>동기화 시스템을 찾을 수 없습니다.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 동기화 상태 표시
+        function updateSyncStatus() {
+            const container = document.getElementById('sync-status');
+            if (window.crossDeviceSync) {
+                const status = window.crossDeviceSync.getSyncStatus();
+                const stats = window.crossDeviceSync.getSyncStats();
+                
+                container.innerHTML = `
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 mb-2">마지막 동기화</h3>
+                            <p class="text-sm text-gray-600">
+                                ${status?.lastSync ? new Date(status.lastSync).toLocaleString() : '없음'}
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 mb-2">동기화 상태</h3>
+                            <p class="text-sm text-gray-600">
+                                <span class="px-2 py-1 rounded-full text-xs ${status?.status === 'success' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}">
+                                    ${status?.status || '대기 중'}
+                                </span>
+                            </p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 mb-2">총 레코드 수</h3>
+                            <p class="text-sm text-gray-600">${stats.totalRecords}개</p>
+                        </div>
+                        <div class="bg-gray-50 p-4 rounded-lg">
+                            <h3 class="font-semibold text-gray-900 mb-2">동기화 시간</h3>
+                            <p class="text-sm text-gray-600">${status?.duration || 0}ms</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                container.innerHTML = `
+                    <div class="text-center text-red-500 py-8">
+                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                        <p>동기화 상태를 확인할 수 없습니다.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // 테스트 데이터 생성
+        function createTestData() {
+            const testCustomer = {
+                id: 'test_' + Date.now(),
+                name: '테스트 고객',
+                phone: '010-1234-5678',
+                address: '테스트 주소',
+                email: 'test@example.com',
+                grade: 'GENERAL',
+                registration_date: new Date().toISOString().split('T')[0],
+                memo: '동기화 테스트용 고객',
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            };
+
+            const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+            customers.push(testCustomer);
+            localStorage.setItem('customers', JSON.stringify(customers));
+            
+            addLog('테스트 고객 데이터가 생성되었습니다.', 'success');
+            updateSyncStatus();
+        }
+
+        // 충돌 테스트
+        function testConflict() {
+            const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+            if (customers.length > 0) {
+                // 첫 번째 고객의 이름을 변경
+                customers[0].name = '충돌 테스트 - ' + new Date().toLocaleTimeString();
+                customers[0].updated_at = new Date().toISOString();
+                localStorage.setItem('customers', JSON.stringify(customers));
+                
+                addLog('충돌 테스트 데이터가 생성되었습니다. 다른 디바이스에서 동일한 고객을 수정해보세요.', 'warning');
+            } else {
+                addLog('충돌 테스트를 위해 먼저 테스트 데이터를 생성해주세요.', 'error');
+            }
+        }
+
+        // 로컬 데이터 초기화
+        function clearLocalData() {
+            if (confirm('모든 로컬 데이터를 삭제하시겠습니까?')) {
+                const tables = ['customers', 'orders', 'products', 'waitlist', 'categories', 'order_sources'];
+                tables.forEach(table => {
+                    localStorage.removeItem(table);
+                });
+                addLog('로컬 데이터가 초기화되었습니다.', 'warning');
+                updateSyncStatus();
+            }
+        }
+
+        // 이벤트 리스너 설정
+        document.addEventListener('DOMContentLoaded', function() {
+            // 초기 정보 업데이트
+            setTimeout(() => {
+                updateDeviceInfo();
+                updateSyncStatus();
+            }, 1000);
+
+            // 버튼 이벤트
+            document.getElementById('test-sync').addEventListener('click', async () => {
+                addLog('수동 동기화를 시작합니다...', 'info');
+                try {
+                    await window.crossDeviceSync.forceSync();
+                    addLog('수동 동기화가 완료되었습니다.', 'success');
+                    updateSyncStatus();
+                } catch (error) {
+                    addLog('동기화 실패: ' + error.message, 'error');
+                }
+            });
+
+            document.getElementById('test-data').addEventListener('click', createTestData);
+            document.getElementById('test-conflict').addEventListener('click', testConflict);
+            document.getElementById('clear-data').addEventListener('click', clearLocalData);
+
+            document.getElementById('show-stats').addEventListener('click', () => {
+                if (window.crossDeviceSync) {
+                    const stats = window.crossDeviceSync.getSyncStats();
+                    addLog('동기화 통계: ' + JSON.stringify(stats, null, 2), 'info');
+                }
+            });
+
+            document.getElementById('show-devices').addEventListener('click', async () => {
+                if (window.crossDeviceSync) {
+                    const devices = await window.crossDeviceSync.getAllDevices();
+                    addLog('연결된 디바이스: ' + JSON.stringify(devices, null, 2), 'info');
+                }
+            });
+
+            // 동기화 상태 업데이트 이벤트
+            window.addEventListener('syncStatusUpdate', (e) => {
+                addLog('동기화 상태 업데이트: ' + e.detail.status, 'info');
+                updateSyncStatus();
+            });
+        });
+
+        // 콘솔 로그를 페이지에 표시
+        const originalLog = console.log;
+        const originalError = console.error;
+        const originalWarn = console.warn;
+
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLog(args.join(' '), 'info');
+        };
+
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLog('ERROR: ' + args.join(' '), 'error');
+        };
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLog('WARN: ' + args.join(' '), 'warning');
+        };
+    </script>
+</body>
+</html>

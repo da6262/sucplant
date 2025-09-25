@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API 연결 테스트</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Noto Sans KR', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    
+    <div class="container mx-auto px-4 py-8">
+        <div class="max-w-2xl mx-auto">
+            
+            <!-- 헤더 -->
+            <header class="bg-green-600 text-white shadow-lg rounded-lg mb-8">
+                <div class="px-6 py-4">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <i class="fas fa-seedling text-2xl"></i>
+                            <div>
+                                <h1 class="text-2xl font-bold">경산다육식물농장</h1>
+                                <p class="text-green-100 text-sm">API 연결 테스트</p>
+                            </div>
+                        </div>
+                        
+                        <div class="text-right flex items-center space-x-3">
+                            <!-- API 상태 표시 -->
+                            <div id="api-status-indicator" class="flex items-center space-x-2 px-3 py-1 rounded-lg text-sm">
+                                <div id="api-status-dot" class="w-2 h-2 rounded-full bg-yellow-400 animate-pulse"></div>
+                                <span id="api-status-text" class="text-xs">연결 확인중...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- 테스트 결과 -->
+            <div class="bg-white rounded-lg shadow-lg p-6">
+                <h2 class="text-xl font-bold mb-4 flex items-center">
+                    <i class="fas fa-wifi mr-2 text-blue-500"></i>
+                    API 연결 상태
+                </h2>
+                
+                <div class="space-y-4">
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-2">현재 URL:</p>
+                        <p class="font-mono text-sm" id="current-url"></p>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-2">API 기본 URL:</p>
+                        <p class="font-mono text-sm" id="api-base-url"></p>
+                    </div>
+                    
+                    <div class="p-4 bg-gray-50 rounded-lg">
+                        <p class="text-sm text-gray-600 mb-2">테스트 결과:</p>
+                        <div id="test-result" class="text-sm">
+                            <span class="text-yellow-600">
+                                <i class="fas fa-spinner fa-spin mr-1"></i>
+                                테스트 진행중...
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button id="retry-test" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg transition-colors">
+                        <i class="fas fa-redo mr-1"></i>
+                        다시 테스트
+                    </button>
+                </div>
+            </div>
+            
+            <!-- 콘솔 로그 표시 -->
+            <div class="bg-black text-green-400 rounded-lg shadow-lg p-6 mt-8">
+                <h3 class="text-lg font-bold mb-4 flex items-center">
+                    <i class="fas fa-terminal mr-2"></i>
+                    콘솔 로그
+                </h3>
+                <div id="console-logs" class="font-mono text-sm max-h-96 overflow-y-auto">
+                    <div class="text-gray-400">로그가 여기에 표시됩니다...</div>
+                </div>
+            </div>
+            
+        </div>
+    </div>
+    
+    <script>
+        // 페이지 정보 표시
+        document.getElementById('current-url').textContent = window.location.href;
+        
+        // 콘솔 로그 캡처
+        const originalLog = console.log;
+        const originalWarn = console.warn;
+        const originalError = console.error;
+        
+        const logContainer = document.getElementById('console-logs');
+        
+        function addLogToUI(message, type = 'log') {
+            const colors = {
+                log: 'text-green-400',
+                warn: 'text-yellow-400', 
+                error: 'text-red-400'
+            };
+            
+            const logEntry = document.createElement('div');
+            logEntry.className = `${colors[type]} mb-1`;
+            logEntry.textContent = `[${type.toUpperCase()}] ${message}`;
+            logContainer.appendChild(logEntry);
+            logContainer.scrollTop = logContainer.scrollHeight;
+        }
+        
+        console.log = function(...args) {
+            originalLog.apply(console, args);
+            addLogToUI(args.join(' '), 'log');
+        };
+        
+        console.warn = function(...args) {
+            originalWarn.apply(console, args);
+            addLogToUI(args.join(' '), 'warn');
+        };
+        
+        console.error = function(...args) {
+            originalError.apply(console, args);
+            addLogToUI(args.join(' '), 'error');
+        };
+        
+        // 테스트 버튼 이벤트
+        document.getElementById('retry-test').addEventListener('click', function() {
+            if (window.apiTest) {
+                window.apiTest.init();
+            }
+        });
+    </script>
+    
+    <!-- API 테스트 스크립트 -->
+    <script src="js/app-test.js"></script>
+    
+</body>
+</html>
