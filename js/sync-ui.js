@@ -205,7 +205,8 @@ class SyncUI {
 
         try {
             if (window.deviceManager) {
-                const devices = await window.deviceManager.getAllDevices();
+                // 현재 디바이스만 표시
+                const devices = await window.deviceManager.getCurrentDeviceOnly();
                 this.renderDeviceList(devices);
             } else {
                 content.innerHTML = `

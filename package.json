@@ -5,13 +5,16 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "build": "electron-builder",
+    "build-electron": "electron-builder",
     "build-win": "electron-builder --win",
     "build-mac": "electron-builder --mac",
     "build-linux": "electron-builder --linux",
     "build-css": "tailwindcss -i ./src/input.css -o ./dist/tailwind.css --watch",
     "build-css-prod": "tailwindcss -i ./src/input.css -o ./dist/tailwind.css --minify",
     "build-web": "npm run build-css-prod && echo '웹 빌드: 정적 파일들을 dist-web 폴더로 복사' && if not exist dist-web mkdir dist-web && xcopy *.html dist-web\\ /Y && xcopy *.js dist-web\\ /Y && xcopy *.json dist-web\\ /Y && xcopy js dist-web\\js\\ /E /I /Y && xcopy assets dist-web\\assets\\ /E /I /Y && xcopy dist\\tailwind.css dist-web\\ /Y && echo '웹 빌드 완료: dist-web 폴더를 Firebase Hosting에 업로드하세요'",
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 5173",
     "pack": "electron-builder --dir",
     "dist": "electron-builder"
   },
@@ -26,7 +29,8 @@
   "license": "MIT",
   "devDependencies": {
     "electron": "^27.0.0",
-    "electron-builder": "^24.6.4"
+    "electron-builder": "^24.6.4",
+    "vite": "^4.5.0"
   },
   "dependencies": {
     "sqlite3": "^5.1.6",

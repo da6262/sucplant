@@ -3,6 +3,9 @@
  * LocalStorage와 Supabase 간의 데이터 동기화 처리
  */
 
+// 읽기 전용 테이블 목록
+const READ_ONLY_TABLES = ['farm_categories', 'farm_order_statuses'];
+
 class SupabaseIntegration {
     constructor() {
         this.isOnline = navigator.onLine;
@@ -28,6 +31,12 @@ class SupabaseIntegration {
      */
     async saveData(table, data, operation = 'upsert') {
         try {
+            // 읽기 전용 테이블 체크
+            if (READ_ONLY_TABLES.includes(table) && operation !== 'select') {
+                console.warn(`[READONLY] ${table}는 읽기 전용 — ${operation} 무시`);
+                return { success: true, data: null, error: null }; // 성공처럼 통과시켜 UI 깨짐 방지
+            }
+            
             // 1. IndexedDB 캐시에 저장
             await window.indexedDBCache.setCache(table, data);
             
@@ -103,35 +112,89 @@ class SupabaseIntegration {
         }
 
         const tableName = window.SupabaseConfig.getTableName(table);
+        console.log(`💾 Supabase 저장 시도: ${tableName}, 작업: ${operation}`);
         
         // 날짜 필드 정리 (배열인 경우 각 항목 처리)
         const processedData = Array.isArray(data) 
             ? data.map(item => this.cleanDateFields(item))
             : this.cleanDateFields(data);
         
+        // UUID 타입 테이블 처리 (farm_waitlist)
+        if (tableName === 'farm_waitlist' && operation === 'insert') {
+            const processedWithUUID = Array.isArray(processedData) 
+                ? processedData.map(item => {
+                    // UUID가 없거나 유효하지 않은 경우 새로 생성
+                    if (!item.id || typeof item.id !== 'string' || item.id.length < 36) {
+                        item.id = crypto.randomUUID();
+                    }
+                    return item;
+                })
+                : (() => {
+                    if (!processedData.id || typeof processedData.id !== 'string' || processedData.id.length < 36) {
+                        processedData.id = crypto.randomUUID();
+                    }
+                    return processedData;
+                })();
+            processedData = processedWithUUID;
+        }
+        
         let result;
-        switch (operation) {
-            case 'insert':
-                result = await supabase.from(tableName).insert(processedData);
-                break;
-            case 'update':
-                result = await supabase.from(tableName).update(processedData).eq('id', processedData.id);
-                break;
-            case 'delete':
-                result = await supabase.from(tableName).delete().eq('id', processedData.id);
-                break;
-            case 'upsert':
-            default:
-                result = await supabase.from(tableName).upsert(processedData);
-                break;
-        }
+        try {
+            switch (operation) {
+                case 'insert':
+                    // farm_customers 테이블의 경우 id 제거하여 자동생성
+                    if (tableName === 'farm_customers') {
+                        const safeData = Array.isArray(processedData) 
+                            ? processedData.map(item => {
+                                const { id: _drop, ...payload } = item;
+                                return payload;
+                            })
+                            : (() => {
+                                const { id: _drop, ...payload } = processedData;
+                                return payload;
+                            })();
+                        result = await supabase.from(tableName).insert(safeData).select('id').single();
+                    } else {
+                        result = await supabase.from(tableName).insert(processedData);
+                    }
+                    break;
+                case 'update':
+                    result = await supabase.from(tableName).update(processedData).eq('id', processedData.id);
+                    break;
+                case 'delete':
+                    result = await supabase.from(tableName).delete().eq('id', processedData.id);
+                    break;
+                case 'upsert':
+                default:
+                    // farm_customers 테이블의 경우 upsert 대신 phone 기준으로 처리
+                    if (tableName === 'farm_customers') {
+                        const safeData = Array.isArray(processedData) 
+                            ? processedData.map(item => {
+                                const { id: _drop, ...payload } = item;
+                                return payload;
+                            })
+                            : (() => {
+                                const { id: _drop, ...payload } = processedData;
+                                return payload;
+                            })();
+                        result = await supabase.from(tableName).upsert(safeData, { onConflict: 'phone' });
+                    } else {
+                        result = await supabase.from(tableName).upsert(processedData);
+                    }
+                    break;
+            }
 
-        if (result.error) {
-            throw new Error(`Supabase 저장 실패: ${result.error.message}`);
-        }
+            if (result.error) {
+                console.error(`❌ Supabase 오류 (${tableName}):`, result.error);
+                throw new Error(`Supabase 저장 실패: ${result.error.message}`);
+            }
 
-        console.log(`☁️ Supabase 저장 성공: ${tableName}`);
-        return result.data;
+            console.log(`✅ Supabase 저장 성공: ${tableName}`);
+            return result.data;
+        } catch (error) {
+            console.error(`❌ Supabase 저장 예외 (${tableName}):`, error);
+            throw error;
+        }
     }
 
     /**

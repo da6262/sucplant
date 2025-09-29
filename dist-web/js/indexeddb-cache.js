@@ -269,3 +269,4 @@ class IndexedDBCache {
 window.indexedDBCache = new IndexedDBCache();
 
 console.log('📦 IndexedDB 캐시 모듈 로드 완료');
+

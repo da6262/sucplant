@@ -173,7 +173,7 @@
                     <span id="orders-count" class="bg-green-100 text-green-700 px-2 py-1 rounded-full text-xs">0</span>
                 </button>
                 
-                <button id="customers-tab" onclick="orderSystem.switchTab('customers')" 
+                <button id="customers-tab" onclick="orderSystem.switchTab('farm_customers')" 
                         class="flex items-center space-x-2 py-4 border-b-2 border-transparent text-gray-600 hover:text-green-600 transition-colors">
                     <i class="fas fa-users"></i>
                     <span>고객관리</span>
@@ -327,7 +327,7 @@
                         break;
                     case '2':
                         e.preventDefault();
-                        orderSystem.switchTab('customers');
+                        orderSystem.switchTab('farm_customers');
                         break;
                     case '3':
                         e.preventDefault();

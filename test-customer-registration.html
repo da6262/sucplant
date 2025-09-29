@@ -86,7 +86,7 @@
         // LocalStorage 상태 확인
         function checkLocalStorage() {
             const result = document.getElementById('localStorage-result');
-            const key = getLocalStorageKey('customers');
+            const key = getLocalStorageKey('farm_customers');
             const data = localStorage.getItem(key);
             
             let output = `🔍 LocalStorage 상태 확인\n`;
@@ -121,7 +121,7 @@
             
             try {
                 // 기존 고객 데이터 로드
-                const key = getLocalStorageKey('customers');
+                const key = getLocalStorageKey('farm_customers');
                 const existingData = localStorage.getItem(key);
                 const customers = existingData ? JSON.parse(existingData) : [];
                 
@@ -154,7 +154,7 @@
         // 고객 목록 로드
         function loadCustomers() {
             const result = document.getElementById('customers-result');
-            const key = getLocalStorageKey('customers');
+            const key = getLocalStorageKey('farm_customers');
             const data = localStorage.getItem(key);
             
             if (!data) {
@@ -183,7 +183,7 @@
         // LocalStorage에 직접 추가
         function addCustomerDirectly() {
             const result = document.getElementById('direct-result');
-            const key = getLocalStorageKey('customers');
+            const key = getLocalStorageKey('farm_customers');
             
             const testCustomer = {
                 id: 'direct_' + Date.now(),
@@ -212,7 +212,7 @@
         // 고객 데이터 삭제
         function clearCustomers() {
             const result = document.getElementById('direct-result');
-            const key = getLocalStorageKey('customers');
+            const key = getLocalStorageKey('farm_customers');
             
             try {
                 localStorage.removeItem(key);

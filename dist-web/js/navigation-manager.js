@@ -282,3 +282,7 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 console.log('🧭 네비게이션 관리 모듈 로드 완료');
+
+
+
+

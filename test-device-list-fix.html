@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>디바이스 목록 수정 테스트</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test-section { margin: 20px 0; padding: 15px; border: 1px solid #ddd; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        .device-item { margin: 10px 0; padding: 10px; background: #f8f9fa; border-radius: 3px; }
+        button { padding: 10px 15px; margin: 5px; background: #007bff; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #0056b3; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 디바이스 목록 수정 테스트</h1>
+    
+    <div class="test-section info">
+        <h3>📋 테스트 목적</h3>
+        <p>디바이스 목록 오류를 수정하고 정상 작동을 확인합니다.</p>
+    </div>
+
+    <div class="test-section">
+        <h3>🧪 테스트 실행</h3>
+        <button onclick="testDeviceManager()">디바이스 관리자 테스트</button>
+        <button onclick="testDeviceList()">디바이스 목록 조회 테스트</button>
+        <button onclick="testSupabaseConnection()">Supabase 연결 테스트</button>
+        <button onclick="clearResults()">결과 지우기</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        // Supabase 설정
+        const supabaseUrl = 'https://bigjqermlhbipjsnyhmt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZ2pxZXJtbGhiaXBqc255aG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNjE5NjIsImV4cCI6MjA3MzgzNzk2Mn0.OF5NshUeFx62ntIL_LrAdxAcSNebLN2ioZGadawl1hE';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        // 전역 설정
+        window.supabaseClient = supabase;
+        window.SupabaseConfig = {
+            getClient: () => supabase
+        };
+
+        function addResult(title, content, type = 'info') {
+            const resultsDiv = document.getElementById('results');
+            const section = document.createElement('div');
+            section.className = `test-section ${type}`;
+            section.innerHTML = `
+                <h3>${title}</h3>
+                <div>${content}</div>
+            `;
+            resultsDiv.appendChild(section);
+        }
+
+        function clearResults() {
+            document.getElementById('results').innerHTML = '';
+        }
+
+        async function testSupabaseConnection() {
+            addResult('🔗 Supabase 연결 테스트', '연결 중...', 'info');
+            
+            try {
+                const { data, error } = await supabase
+                    .from('device_info')
+                    .select('count')
+                    .limit(1);
+                
+                if (error) {
+                    throw error;
+                }
+                
+                addResult('✅ Supabase 연결 성공', '데이터베이스에 정상적으로 연결되었습니다.', 'success');
+                return true;
+            } catch (error) {
+                addResult('❌ Supabase 연결 실패', `오류: ${error.message}`, 'error');
+                return false;
+            }
+        }
+
+        async function testDeviceManager() {
+            addResult('📱 디바이스 관리자 테스트', '테스트 중...', 'info');
+            
+            try {
+                // 디바이스 관리자 클래스 정의 (간단한 버전)
+                class TestDeviceManager {
+                    constructor() {
+                        this.deviceId = 'test_device_' + Date.now();
+                        this.deviceInfo = {
+                            id: this.deviceId,
+                            type: 'desktop',
+                            platform: navigator.platform,
+                            userAgent: navigator.userAgent,
+                            screen: `${screen.width}x${screen.height}`,
+                            language: navigator.language,
+                            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            lastSeen: new Date().toISOString()
+                        };
+                        this.localDevices = [];
+                    }
+
+                    async getAllDevices() {
+                        try {
+                            let supabaseDevices = [];
+                            
+                            // Supabase에서 디바이스 조회
+                            const { data, error } = await supabase
+                                .from('device_info')
+                                .select('id, type, platform, user_agent, screen, language, timezone, last_seen, created_at')
+                                .order('last_seen', { ascending: false })
+                                .limit(50);
+
+                            if (error) {
+                                console.warn('Supabase 오류:', error.message);
+                            } else if (data && data.length > 0) {
+                                supabaseDevices = data.map(device => ({
+                                    id: device.id || 'unknown',
+                                    type: device.type || 'desktop',
+                                    platform: device.platform || 'Unknown',
+                                    userAgent: device.user_agent || navigator.userAgent,
+                                    screen: device.screen || `${screen.width}x${screen.height}`,
+                                    language: device.language || navigator.language,
+                                    timezone: device.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                    lastSeen: device.last_seen || new Date().toISOString(),
+                                    source: 'supabase'
+                                }));
+                            }
+
+                            // 로컬 디바이스 추가
+                            const localDevices = [this.deviceInfo];
+                            
+                            // 병합
+                            const allDevices = [...localDevices, ...supabaseDevices];
+                            
+                            return allDevices;
+                        } catch (error) {
+                            console.error('디바이스 조회 실패:', error);
+                            return [this.deviceInfo];
+                        }
+                    }
+                }
+
+                const deviceManager = new TestDeviceManager();
+                const devices = await deviceManager.getAllDevices();
+                
+                addResult('✅ 디바이스 관리자 테스트 성공', `
+                    <p>총 ${devices.length}개 디바이스 발견</p>
+                    <pre>${JSON.stringify(devices, null, 2)}</pre>
+                `, 'success');
+                
+                return devices;
+            } catch (error) {
+                addResult('❌ 디바이스 관리자 테스트 실패', `오류: ${error.message}`, 'error');
+                return null;
+            }
+        }
+
+        async function testDeviceList() {
+            addResult('📋 디바이스 목록 조회 테스트', '테스트 중...', 'info');
+            
+            try {
+                const devices = await testDeviceManager();
+                
+                if (devices && devices.length > 0) {
+                    let deviceListHtml = '';
+                    devices.forEach((device, index) => {
+                        deviceListHtml += `
+                            <div class="device-item">
+                                <strong>디바이스 ${index + 1}</strong><br>
+                                ID: ${device.id}<br>
+                                타입: ${device.type}<br>
+                                플랫폼: ${device.platform}<br>
+                                마지막 접속: ${new Date(device.lastSeen).toLocaleString()}<br>
+                                소스: ${device.source || 'unknown'}
+                            </div>
+                        `;
+                    });
+                    
+                    addResult('✅ 디바이스 목록 조회 성공', deviceListHtml, 'success');
+                } else {
+                    addResult('⚠️ 디바이스 목록이 비어있음', '디바이스가 발견되지 않았습니다.', 'error');
+                }
+            } catch (error) {
+                addResult('❌ 디바이스 목록 조회 실패', `오류: ${error.message}`, 'error');
+            }
+        }
+
+        // 페이지 로드 시 자동 테스트
+        window.addEventListener('load', () => {
+            addResult('🚀 자동 테스트 시작', '페이지 로드 완료, 테스트를 시작합니다.', 'info');
+            setTimeout(() => {
+                testSupabaseConnection().then(connected => {
+                    if (connected) {
+                        testDeviceManager().then(() => {
+                            testDeviceList();
+                        });
+                    }
+                });
+            }, 1000);
+        });
+    </script>
+</body>
+</html>
+
+

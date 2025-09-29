@@ -15,7 +15,7 @@ window.forceApiMode = async function() {
     try {
         // 1. 로컬스토리지 백업 (만약을 위해)
         const backup = {};
-        const keys = ['customers', 'orders', 'products', 'waitlist', 'categories', 'order_sources'];
+        const keys = ['farm_customers', 'orders', 'products', 'waitlist', 'categories', 'order_sources'];
         keys.forEach(key => {
             const data = localStorage.getItem(key);
             if (data) {
@@ -26,7 +26,23 @@ window.forceApiMode = async function() {
         
         // 2. API 연결 강제 테스트
         console.log('🔗 API 연결 강제 테스트...');
-        const response = await fetch('tables/customers?limit=1');
+        
+        // 운영 환경 감지
+        const hostname = window.location.hostname;
+        const isProduction = !(hostname === 'localhost' || hostname === '127.0.0.1');
+        
+        let testUrl;
+        if (isProduction) {
+            // 운영 환경에서는 Supabase 경로 사용
+            testUrl = 'https://bigjqermlhbipjsnyhmt.supabase.co/rest/v1/farm_customers?limit=1';
+            console.log(`🚀 운영 환경 - Supabase 테스트 URL: ${testUrl}`);
+        } else {
+            // 로컬 환경에서는 기존 경로 사용
+            testUrl = 'tables/farm_customers?limit=1';
+            console.log(`🏠 로컬 환경 - 테스트 URL: ${testUrl}`);
+        }
+        
+        const response = await fetch(testUrl);
         
         if (response.ok) {
             const data = await response.json();

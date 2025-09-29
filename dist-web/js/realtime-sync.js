@@ -100,7 +100,7 @@ class RealtimeSync {
         // 테이블명 매핑 (Supabase 테이블명 → 로컬 키)
         const tableMapping = {
             'farm_orders': 'orders',
-            'farm_customers': 'customers', 
+            'farm_customers': 'farm_customers', 
             'farm_waitlist': 'waitlist',
             'farm_products': 'products',
             'farm_categories': 'categories',

@@ -17,7 +17,7 @@ window.mobileSync = async function() {
         
         // 2. 로컬 데이터 추출
         const localData = {
-            customers: JSON.parse(localStorage.getItem('customers') || '[]'),
+            farm_customers: JSON.parse(localStorage.getItem('farm_customers') || '[]'),
             orders: JSON.parse(localStorage.getItem('orders') || '[]'),
             products: JSON.parse(localStorage.getItem('products') || '[]'),
             waitlist: JSON.parse(localStorage.getItem('waitlist') || '[]'),

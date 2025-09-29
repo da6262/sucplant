@@ -49,7 +49,7 @@ if (window.MODE_SWITCH) {
 //         const method = options.method || 'GET';
 //         
 //         if (method === 'GET') {
-            // GET: 로컬 데이터 반환
+//             // GET: 로컬 데이터 반환
 //             return new Response(JSON.stringify({
 //                 data: localData,
 //                 total: localData.length,
@@ -145,7 +145,7 @@ if (window.MODE_SWITCH) {
 //             headers: { 'Content-Type': 'application/json' }
 //         });
 //     }
-//     
+    
 //     // API가 아닌 일반 요청은 원래대로
 //     return forceLocalOriginalFetch(url, options);
 // };
@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 데이터 현황 표시
             try {
                 const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-                const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+                const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
                 console.log('');
                 console.log('📊 현재 데이터:');
                 console.log(`  📦 주문: ${orders.length}건`);

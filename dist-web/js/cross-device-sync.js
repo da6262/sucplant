@@ -236,7 +236,7 @@ class CrossDeviceSync {
      * 서버에서 최신 데이터 가져오기
      */
     async fetchServerData() {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'farm_waitlist', 'farm_categories', 'order_sources'];
         const serverData = {};
 
         for (const table of tables) {
@@ -261,7 +261,7 @@ class CrossDeviceSync {
      */
     async detectConflicts(serverData) {
         const conflicts = [];
-        const tables = ['customers', 'orders', 'products', 'waitlist'];
+        const tables = ['farm_customers', 'orders', 'products', 'farm_waitlist'];
 
         for (const table of tables) {
             const localData = JSON.parse(localStorage.getItem(table) || '[]');
@@ -358,7 +358,7 @@ class CrossDeviceSync {
      * 로컬 변경사항 서버에 업로드
      */
     async uploadLocalChanges() {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'farm_waitlist', 'farm_categories', 'order_sources'];
 
         for (const table of tables) {
             try {
@@ -378,7 +378,7 @@ class CrossDeviceSync {
      * 로컬 데이터 업데이트
      */
     async updateLocalData(serverData) {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'farm_waitlist', 'farm_categories', 'order_sources'];
 
         for (const table of tables) {
             try {
@@ -462,7 +462,7 @@ class CrossDeviceSync {
      */
     getSyncStats() {
         const status = this.getSyncStatus();
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'farm_waitlist', 'farm_categories', 'order_sources'];
         const stats = {
             lastSync: status?.lastSync || null,
             deviceCount: 0,

@@ -45,7 +45,7 @@ function resetTestData() {
         // 기존 데이터 삭제
         localStorage.removeItem('farm_customers');
         localStorage.removeItem('farm_orders');
-        localStorage.removeItem('waitlist');
+        localStorage.removeItem('farm_waitlist');
         
         // 새로운 데이터 생성
         window.orderSystem.createInitialDataIfNeeded();
@@ -70,7 +70,7 @@ function debugCustomerRegistration() {
         return;
     }
     
-    const key = window.orderSystem.getLocalStorageKey('customers');
+    const key = window.orderSystem.getLocalStorageKey('farm_customers');
     const data = localStorage.getItem(key);
     
     console.log('📊 LocalStorage 상태:', {
@@ -130,7 +130,7 @@ function checkCustomerData() {
         return;
     }
     
-    const key = window.orderSystem.getLocalStorageKey('customers');
+    const key = window.orderSystem.getLocalStorageKey('farm_customers');
     const data = localStorage.getItem(key);
     
     console.log('📊 LocalStorage 상태:', {
@@ -358,7 +358,7 @@ function applyRealtimeDelta(table, payload) {
         
         // 테이블별 UI 업데이트
         switch (localKey) {
-            case 'customers':
+            case 'farm_customers':
                 window.orderSystem.loadCustomers();
                 break;
             case 'orders':
@@ -370,7 +370,7 @@ function applyRealtimeDelta(table, payload) {
             case 'categories':
                 window.orderSystem.loadCategories();
                 break;
-            case 'waitlist':
+            case 'farm_waitlist':
                 window.orderSystem.loadWaitlist();
                 break;
             case 'channels':
@@ -416,7 +416,7 @@ class OrderManagementSystem {
         this.products = [];
         this.categories = [];
         this.orderSources = [];
-        this.waitlist = [];
+        this.farm_waitlist = [];
         this.currentEditingOrder = null;
         this.currentEditingWaitlist = null;
         this.currentShippingFilter = '';
@@ -524,7 +524,15 @@ class OrderManagementSystem {
         
         console.log(`🌐 현재 호스트: ${hostname}, 프로토콜: ${protocol}, 포트: ${port}, 패스: ${pathname}`);
         
-        if (hostname.includes('genspark.ai')) {
+        // 운영 환경 감지 (localhost가 아닌 모든 환경)
+        const isProduction = !(hostname === 'localhost' || hostname === '127.0.0.1');
+        
+        if (isProduction) {
+            // 운영 환경에서는 Supabase 경로로 강제 설정
+            const supabaseUrl = 'https://bigjqermlhbipjsnyhmt.supabase.co/rest/v1';
+            console.log(`🚀 운영 환경 감지 - Supabase API URL: ${supabaseUrl}`);
+            return supabaseUrl;
+        } else if (hostname.includes('genspark.ai')) {
             // GenSpark 환경에서는 절대 경로 사용
             const apiUrl = '/tables';
             console.log(`🚀 GenSpark API URL: ${apiUrl} (절대 경로)`);
@@ -609,7 +617,7 @@ class OrderManagementSystem {
         console.log('🔄 강제 API 동기화 시작...');
         
         const syncResults = {
-            customers: { success: 0, failed: 0 },
+            farm_customers: { success: 0, failed: 0 },
             orders: { success: 0, failed: 0 },
             products: { success: 0, failed: 0 },
             categories: { success: 0, failed: 0 }
@@ -617,7 +625,7 @@ class OrderManagementSystem {
 
         try {
             // 고객 동기화
-            const customers = this.loadFromLocalStorage('customers');
+            const customers = this.loadFromLocalStorage('farm_customers');
             console.log(`👥 고객 ${customers.length}개 동기화 시작...`);
             
             for (const customer of customers) {
@@ -629,9 +637,9 @@ class OrderManagementSystem {
                     });
                     
                     if (response.ok) {
-                        syncResults.customers.success++;
+                        syncResults.farm_customers.success++;
                     } else {
-                        syncResults.customers.failed++;
+                        syncResults.farm_customers.failed++;
                     }
                 } catch (error) {
                     syncResults.customers.failed++;
@@ -690,11 +698,11 @@ class OrderManagementSystem {
                             localStorage.setItem(this.getLocalStorageKey(base), JSON.stringify(result.data));
                             
                             // 메모리에도 업데이트 (베이스명 기준)
-                            if (base === 'customers') this.customers = result.data;
+                            if (base === 'farm_customers') this.customers = result.data;
                             else if (base === 'orders') this.orders = result.data;
                             else if (base === 'products') this.products = result.data;
                             else if (base === 'categories') this.categories = result.data;
-                            else if (base === 'waitlist') this.waitlist = result.data;
+                            else if (base === 'farm_waitlist') this.farm_waitlist = result.data;
                             
                             totalSynced += result.data.length;
                             console.log(`✅ ${table} 동기화 완료: ${result.data.length}개`);
@@ -760,11 +768,11 @@ class OrderManagementSystem {
                         localStorage.setItem(this.getLocalStorageKey(base), JSON.stringify(mergedData));
                         
                         // 메모리 업데이트
-                        if (base === 'customers') this.customers = mergedData;
+                        if (base === 'farm_customers') this.customers = mergedData;
                         else if (base === 'orders') this.orders = mergedData;
                         else if (base === 'products') this.products = mergedData;
                         else if (base === 'categories') this.categories = mergedData;
-                        else if (base === 'waitlist') this.waitlist = mergedData;
+                        else if (base === 'farm_waitlist') this.farm_waitlist = mergedData;
                         
                         // 서버에 병합된 데이터 업로드
                         await this.uploadMergedDataToServer(table, mergedData);
@@ -805,7 +813,7 @@ class OrderManagementSystem {
                     return localItem.id === serverItem.id;
                 }
                 // 특정 테이블별 고유 키로 중복 확인
-                if (tableName === 'customers' && localItem.phone && serverItem.phone) {
+                if (tableName === 'farm_customers' && localItem.phone && serverItem.phone) {
                     return localItem.phone === serverItem.phone;
                 }
                 if (tableName === 'orders' && localItem.order_number && serverItem.order_number) {
@@ -1821,6 +1829,16 @@ class OrderManagementSystem {
             });
         }
 
+        // ESC 키로 고객 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const customerModal = document.getElementById('customer-modal');
+                if (customerModal && !customerModal.classList.contains('hidden')) {
+                    this.closeCustomerModal();
+                }
+            }
+        });
+
         // 고객 주문이력 모달 닫기
         const closeCustomerOrdersModal = document.getElementById('close-customer-orders-modal');
         if (closeCustomerOrdersModal) {
@@ -2133,6 +2151,16 @@ class OrderManagementSystem {
                 }
             });
         }
+
+        // ESC 키로 주문 모달 닫기
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                const orderModal = document.getElementById('order-modal');
+                if (orderModal && !orderModal.classList.contains('hidden')) {
+                    this.closeOrderModal();
+                }
+            }
+        });
 
         const smsModal = document.getElementById('sms-modal');
         if (smsModal) {
@@ -3022,7 +3050,7 @@ class OrderManagementSystem {
         } else if (tabId === 'tab-waitlist') {
             // 대기자관리 탭: 대기자 데이터만 로드
             console.log('⏳ 대기자관리 탭 - 대기자 데이터만 로드');
-            if (this.waitlist.length === 0) {
+            if (this.farm_waitlist.length === 0) {
                 await this.loadWaitlist(); // 대기자 데이터가 없을 때만 로드
             }
             this.updateWaitlistStats(); // 대기자 통계만 업데이트
@@ -3194,10 +3222,10 @@ class OrderManagementSystem {
         }
 
         // 고객 데이터 초기화 (빈 배열로 시작)
-        const existingCustomers = this.loadFromLocalStorage('customers');
+        const existingCustomers = this.loadFromLocalStorage('farm_customers');
         if (!existingCustomers) {
             // 빈 고객 목록으로 초기화
-            this.saveToLocalStorage('customers', []);
+            this.saveToLocalStorage('farm_customers', []);
             console.log('✅ 고객 데이터 초기화 완료 (빈 목록)');
         }
 
@@ -3210,7 +3238,7 @@ class OrderManagementSystem {
         }
 
         // 기본 대기자 데이터 생성
-        const existingWaitlist = this.loadFromLocalStorage('waitlist');
+        const existingWaitlist = this.loadFromLocalStorage('farm_waitlist');
         if (!existingWaitlist || existingWaitlist.length === 0) {
             const waitlist = [
                 {
@@ -3256,16 +3284,16 @@ class OrderManagementSystem {
                     updated_at: Date.now()
                 }
             ];
-            this.saveToLocalStorage('waitlist', waitlist);
+            this.saveToLocalStorage('farm_waitlist', waitlist);
             console.log('✅ 대기자 데이터 생성 완료');
         }
 
         console.log('🎉 초기 데이터 확인/생성 완료!');
         
         // 데이터 생성 후 강제 로드
-        this.customers = this.loadFromLocalStorage('customers') || [];
+        this.customers = this.loadFromLocalStorage('farm_customers') || [];
         this.orders = this.loadFromLocalStorage('orders') || [];
-        this.waitlist = this.loadFromLocalStorage('waitlist') || [];
+        this.farm_waitlist = this.loadFromLocalStorage('farm_waitlist') || [];
         console.log('🔍 초기화된 고객 수:', this.customers.length);
         console.log('🔍 초기화된 주문 수:', this.orders.length);
     }
@@ -3282,7 +3310,7 @@ class OrderManagementSystem {
             
             // API 호출 시도 (백그라운드에서 동기화) - 차단되면 무시
             try {
-                const response = await fetch(this.getApiUrl('orders'));
+                const response = await fetch(this.getApiUrl('farm_orders'));
                 if (response.ok) {
                     const result = await response.json();
                     const apiData = result.data || [];
@@ -3413,11 +3441,11 @@ class OrderManagementSystem {
                         console.log('✅ Supabase에서 고객 데이터 로드:', supabaseData.length, '명');
                         
                         // 로컬 스토리지에도 저장
-                        await this.saveToStorage('customers', supabaseData);
+                        await this.saveToStorage('farm_customers', supabaseData);
                     } else {
                         console.log('📭 Supabase에 고객 데이터 없음');
                         // 로컬 스토리지에서 로드
-                        const localData = await this.loadFromStorage('customers') || [];
+                        const localData = await this.loadFromStorage('farm_customers') || [];
                         this.customers = localData;
                         console.log('📦 로컬에서 고객 데이터 로드:', localData.length, '명');
                     }
@@ -3963,7 +3991,7 @@ class OrderManagementSystem {
         if (status === 'all') {
             this.renderWaitlistTable();
         } else {
-            const filteredWaitlist = this.waitlist.filter(item => item.status === status);
+            const filteredWaitlist = this.farm_waitlist.filter(item => item.status === status);
             this.renderWaitlistTable(filteredWaitlist);
         }
     }
@@ -3971,7 +3999,7 @@ class OrderManagementSystem {
     // 대기자 상태별 개수 업데이트
     updateWaitlistStatusCounts() {
         const statusCounts = {
-            all: this.waitlist.length,
+            all: this.farm_waitlist.length,
             '대기중': 0,
             '연락완료': 0,
             '주문전환': 0,
@@ -3979,7 +4007,7 @@ class OrderManagementSystem {
         };
 
         // 각 상태별 개수 계산
-        this.waitlist.forEach(item => {
+        this.farm_waitlist.forEach(item => {
             const status = item.status;
             if (statusCounts.hasOwnProperty(status)) {
                 statusCounts[status]++;
@@ -4149,7 +4177,7 @@ class OrderManagementSystem {
                 let apiSuccess = false;
                 try {
                     const updateData = { ...order, order_status: selectedStatus };
-                    const response = await fetch(this.getApiUrl(`orders/${order.id}`), {
+                    const response = await fetch(this.getApiUrl(`farm_orders/${order.id}`), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(updateData)
@@ -4752,7 +4780,7 @@ class OrderManagementSystem {
                 const order = JSON.parse(checkbox.dataset.order.replace(/&#x27;/g, "'"));
                 const updateData = { ...order, order_status: status };
 
-                const response = await fetch(this.getApiUrl(`orders/${order.id}`), {
+                const response = await fetch(this.getApiUrl(`farm_orders/${order.id}`), {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(updateData)
@@ -5046,7 +5074,7 @@ class OrderManagementSystem {
                 
                 // 직접 API 호출 시도
                 try {
-                    const response = await fetch(this.getApiUrl(`orders/${orderId}`), {
+                    const response = await fetch(this.getApiUrl(`farm_orders/${orderId}`), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(orderData)
@@ -5154,7 +5182,7 @@ class OrderManagementSystem {
             
             // API 먼저 시도
             try {
-                const response = await fetch(this.getApiUrl(`orders/${orderId}`), {
+                const response = await fetch(this.getApiUrl(`farm_orders/${orderId}`), {
                     method: 'PUT',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify(updateData)
@@ -5356,6 +5384,10 @@ class OrderManagementSystem {
                 <button type="button" onclick="orderSystem.saveOrder()" 
                         class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded transition-colors text-sm">
                     ${orderId ? '수정' : '등록'}
+                </button>
+                <button type="button" onclick="orderSystem.saveOrderAsWaitlist()" 
+                        class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded transition-colors text-sm">
+                    <i class="fas fa-clock mr-1"></i>대기자 등록
                 </button>
             </div>
         `;
@@ -5602,6 +5634,97 @@ class OrderManagementSystem {
         return itemsTotal >= freeShippingThreshold ? 0 : defaultShippingFee;
     }
 
+    // 주문을 대기자로 저장
+    // 주문 폼 데이터 수집 함수
+    collectOrderFormData() {
+        const itemsTotal = this.currentOrderItems.reduce((sum, item) => sum + item.total, 0);
+        const discountAmount = parseInt(document.getElementById('discount-amount').value) || 0;
+        const discountedTotal = Math.max(0, itemsTotal - discountAmount);
+        const shippingFee = this.calculateShippingFee(this.currentOrderItems, discountedTotal);
+        
+        const orderData = {
+            order_number: document.getElementById('order-number').value,
+            order_date: new Date(document.getElementById('order-date').value).toISOString(),
+            customer_name: document.getElementById('customer-name').value,
+            customer_phone: document.getElementById('customer-phone').value,
+            customer_address: document.getElementById('customer-address').value,
+            order_items: JSON.stringify(this.currentOrderItems),
+            total_amount: this.currentOrderTotal,
+            order_status: document.getElementById('order-status').value,
+            tracking_number: document.getElementById('tracking-number').value || '',
+            memo: document.getElementById('order-memo').value,
+            shipping_fee: shippingFee,
+            discount_amount: discountAmount,
+            order_source: document.getElementById('order-source').value
+        };
+
+        // 필수 필드 검증
+        if (!orderData.customer_name.trim()) {
+            alert('고객명을 입력해주세요.');
+            return null;
+        }
+
+        if (!orderData.customer_phone.trim()) {
+            alert('전화번호를 입력해주세요.');
+            return null;
+        }
+
+        if (this.currentOrderItems.length === 0) {
+            alert('주문 상품을 추가해주세요.');
+            return null;
+        }
+
+        if (!orderData.order_source.trim()) {
+            alert('주문 출처를 선택해주세요.');
+            return null;
+        }
+
+        return orderData;
+    }
+
+    async saveOrderAsWaitlist() {
+        console.log('🔄 주문을 대기자로 저장 시작...');
+        
+        // 주문 폼 데이터 수집
+        const orderData = this.collectOrderFormData();
+        if (!orderData) {
+            return; // 유효성 검사 실패
+        }
+        
+        // 대기자 데이터로 변환
+        const waitlistData = {
+            customer_name: orderData.customerName,
+            customer_phone: orderData.customerPhone,
+            product_name: orderData.orderItems.map(item => item.name).join(', '),
+            product_category: orderData.orderItems[0]?.category || '기타',
+            expected_price: orderData.totalAmount,
+            register_date: new Date().toISOString(),
+            status: '대기중',
+            memo: `주문에서 대기자로 전환: ${orderData.memo || ''}`,
+            priority: 3,
+            created_at: new Date().toISOString()
+        };
+        
+        try {
+            // 대기자 데이터 저장
+            await this.saveWaitlist(waitlistData);
+            
+            // 주문 모달 닫기
+            this.closeOrderModal();
+            
+            // 대기자 관리 탭으로 이동
+            this.switchTab('tab-waitlist');
+            await this.loadWaitlist();
+            
+            // 성공 알림
+            alert(`✅ 대기자 등록 완료!\n\n고객: ${waitlistData.customer_name}\n상품: ${waitlistData.product_name}\n예상금액: ${waitlistData.expected_price.toLocaleString()}원`);
+            
+        } catch (error) {
+            console.error('❌ 대기자 등록 실패:', error);
+            alert('❌ 대기자 등록에 실패했습니다. 다시 시도해주세요.');
+        }
+    }
+
     // 주문 저장
     async saveOrder() {
         const itemsTotal = this.currentOrderItems.reduce((sum, item) => sum + item.total, 0);
@@ -5655,14 +5778,14 @@ class OrderManagementSystem {
                 
                 if (this.currentEditingOrder) {
                     // 주문 수정
-                    response = await fetch(this.getApiUrl(`orders/${this.currentEditingOrder}`), {
+                    response = await fetch(this.getApiUrl(`farm_orders/${this.currentEditingOrder}`), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(orderData)
                     });
                 } else {
                     // 새 주문 등록
-                    response = await fetch(this.getApiUrl('orders'), {
+                    response = await fetch(this.getApiUrl('farm_orders'), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(orderData)
@@ -5725,7 +5848,7 @@ class OrderManagementSystem {
             // API 먼저 시도
             let apiSuccess = false;
             try {
-                const newCustomer = await fetch(this.getApiUrl('customers'), {
+                const newCustomer = await fetch(this.getApiUrl('farm_customers'), {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({
@@ -5756,7 +5879,7 @@ class OrderManagementSystem {
                     memo: '주문을 통해 자동 등록'
                 };
                 this.customers.push(newCustomerData);
-                await this.saveToStorage('customers', this.customers);
+                await this.saveToStorage('farm_customers', this.customers);
                 console.log(`신규 고객 "${orderData.customer_name}" LocalStorage로 자동 등록 완료! 🌱`);
             }
             
@@ -5765,7 +5888,7 @@ class OrderManagementSystem {
             // 기존 고객 정보 업데이트 (주소가 비어있으면 업데이트)
             if (existingCustomer.address !== orderData.customer_address && orderData.customer_address.trim()) {
                 try {
-                    await fetch(this.getApiUrl(`customers/${existingCustomer.id}`), {
+                    await fetch(this.getApiUrl(`farm_customers/${existingCustomer.id}`), {
                         method: 'PATCH',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify({
@@ -5789,7 +5912,8 @@ class OrderManagementSystem {
         
         console.log('🔍 DOM 요소 확인:', {
             customerNameInput: !!customerNameInput,
-            suggestionsList: !!suggestionsList
+            suggestionsList: !!suggestionsList,
+            customersCount: this.customers ? this.customers.length : 0
         });
         
         if (!customerNameInput) {
@@ -5799,6 +5923,16 @@ class OrderManagementSystem {
         
         if (!suggestionsList) {
             console.warn('⚠️ customer-suggestions 요소를 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 고객 데이터가 없으면 로드 시도
+        if (!this.customers || this.customers.length === 0) {
+            console.log('📥 고객 데이터가 없어서 로드 시도...');
+            this.loadCustomers().then(() => {
+                console.log('✅ 고객 데이터 로드 완료, 자동완성 재설정');
+                this.setupCustomerAutocomplete();
+            });
             return;
         }
         
@@ -5866,6 +6000,16 @@ class OrderManagementSystem {
         
         if (!query.trim()) {
             suggestionsList.classList.add('hidden');
+            return;
+        }
+
+        // 고객 데이터가 없으면 로드 시도
+        if (!this.customers || this.customers.length === 0) {
+            console.log('📥 고객 데이터가 없어서 로드 시도...');
+            this.loadCustomers().then(() => {
+                console.log('✅ 고객 데이터 로드 완료, 자동완성 재실행');
+                this.showCustomerSuggestions(query);
+            });
             return;
         }
 
@@ -6288,7 +6432,7 @@ class OrderManagementSystem {
         
         // 고객관리 탭으로 이동
         console.log('🔄 고객관리 탭으로 이동 중...');
-        this.switchTab('customers');
+        this.switchTab('farm_customers');
         
         // 고객 등록 모달 열기
         console.log('🔄 고객 등록 모달 열기 중...');
@@ -6315,14 +6459,18 @@ class OrderManagementSystem {
 
             console.log('📤 Supabase에 고객 저장 시도:', customerData.name);
             
+            // ID를 문자열로 변환 (integer 범위 초과 방지)
             const supabaseData = {
-                id: customerData.id,
+                id: customerData.id.toString(),
                 name: customerData.name,
-                phone: customerData.phone,
+                phone: customerData.phone || null,
                 email: customerData.email || null,
                 address: customerData.address || null,
                 memo: customerData.memo || null,
                 grade: customerData.grade || 'GENERAL',
+                total_amount: customerData.totalAmount || 0,
+                order_count: customerData.orderCount || 0,
+                last_order_date: customerData.lastOrderDate || null,
                 created_at: customerData.created_at || new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
@@ -6628,7 +6776,7 @@ class OrderManagementSystem {
             
             // API 먼저 시도
             try {
-                const response = await fetch(this.getApiUrl(`orders/${orderId}`), {
+                const response = await fetch(this.getApiUrl(`farm_orders/${orderId}`), {
                     method: 'DELETE'
                 });
 
@@ -6859,9 +7007,41 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
     // 모달 닫기
     closeOrderModal() {
-        document.getElementById('order-modal').classList.add('hidden');
+        console.log('🔄 주문 모달 닫기 시작...');
+        console.log('🔍 orderSystem 객체:', this);
+        console.log('🔍 orderSystem.closeOrderModal 함수:', this.closeOrderModal);
+        
+        const modal = document.getElementById('order-modal');
+        console.log('🔍 order-modal 요소:', modal);
+        
+        if (modal) {
+            console.log('🔍 모달 현재 클래스:', modal.className);
+            modal.classList.add('hidden');
+            console.log('🔍 모달 숨김 후 클래스:', modal.className);
+            console.log('✅ 주문 모달 숨김 처리 완료');
+        } else {
+            console.warn('⚠️ order-modal 요소를 찾을 수 없습니다');
+        }
+        
+        // 상태 초기화
         this.currentEditingOrder = null;
         this.currentOrderItems = [];
+        console.log('✅ 상태 초기화 완료');
+        
+        // 폼 초기화
+        const form = document.getElementById('order-form');
+        if (form) {
+            form.reset();
+            console.log('✅ 주문 폼 초기화 완료');
+        } else {
+            console.warn('⚠️ order-form 요소를 찾을 수 없습니다');
+        }
+        
+        // body 스크롤 복원
+        document.body.style.overflow = '';
+        console.log('✅ body 스크롤 복원 완료');
+        
+        console.log('✅ 주문 모달 닫기 완료');
     }
 
     // SMS 모달 닫기
@@ -7105,7 +7285,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
                 // API 업데이트 시도
                 try {
-                    const response = await fetch(this.getApiUrl(`customers/${customerId}`), {
+                    const response = await fetch(this.getApiUrl(`farm_customers/${customerId}`), {
                         method: 'PUT',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ ...this.customers[customerIndex], grade: newGrade })
@@ -7121,7 +7301,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                 }
 
                 // LocalStorage 저장
-                await this.saveToStorage('customers', this.customers);
+                await this.saveToStorage('farm_customers', this.customers);
 
                 // 등급 승격 알림 (승격인 경우에만)
                 const gradeOrder = { 
@@ -7223,7 +7403,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
             // API 업데이트 시도
             try {
-                const response = await fetch(this.getApiUrl(`customers/${customerId}`), {
+                const response = await fetch(this.getApiUrl(`farm_customers/${customerId}`), {
                     method: 'PUT',
                     headers: {
                         'Content-Type': 'application/json'
@@ -7342,6 +7522,42 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             display: window.getComputedStyle(modal).display,
             visibility: window.getComputedStyle(modal).visibility
         });
+
+        // '저장' 버튼 이벤트 리스너 추가
+        const saveBtn = document.getElementById('save-customer-btn');
+        if (saveBtn) {
+            // 모달을 열 때마다 이벤트 리스너가 중복으로 쌓이는 것을 방지합니다.
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
+            // 새로운 저장 버튼에 클릭 이벤트를 추가합니다.
+            newSaveBtn.addEventListener('click', async (e) => {
+                e.preventDefault(); // 폼 자동 제출 방지
+                
+                // 폼에서 입력된 데이터를 가져옵니다.
+                const customerData = {
+                    name: document.getElementById('customer-form-name').value,
+                    phone: document.getElementById('customer-form-phone').value,
+                    address: document.getElementById('customer-form-address').value,
+                    address_detail: document.getElementById('customer-form-address-detail')?.value || '',
+                    email: document.getElementById('customer-form-email').value,
+                    grade: document.getElementById('customer-form-grade').value,
+                    registration_date: document.getElementById('customer-form-registration-date').value,
+                    memo: document.getElementById('customer-form-memo').value
+                };
+
+                try {
+                    // 고객 데이터 전문가에게 데이터 저장을 요청합니다!
+                    await window.customerDataManager.addCustomer(customerData);
+                    
+                    this.showToast('✅ 고객이 성공적으로 등록되었습니다.');
+                    this.closeCustomerModal(); // 모달 닫기
+                    this.renderCustomersTable(); // 고객 목록 새로고침
+                } catch (error) {
+                    alert(`❌ 고객 등록 실패: ${error.message}`);
+                }
+            });
+        }
     }
 
     // 고객 저장
@@ -7417,14 +7633,14 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                     
                     if (this.currentEditingCustomer) {
                         // 고객 수정
-                        response = await fetch(this.getApiUrl(`customers/${this.currentEditingCustomer}`), {
+                        response = await fetch(this.getApiUrl(`farm_customers/${this.currentEditingCustomer}`), {
                             method: 'PUT',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify(customerData)
                         });
                     } else {
                         // 새 고객 등록
-                        response = await fetch(this.getApiUrl('customers'), {
+                        response = await fetch(this.getApiUrl('farm_customers'), {
                             method: 'POST',
                             headers: {'Content-Type': 'application/json'},
                             body: JSON.stringify(customerData)
@@ -7468,6 +7684,15 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             alert(this.currentEditingCustomer ? '고객 정보가 수정되었습니다.' : '새 고객이 등록되었습니다.');
             this.closeCustomerModal();
             await this.loadCustomers();
+            
+            // 대기자 등록에서 온 경우 대기자 목록으로 돌아가기
+            if (this.fromWaitlistRegistration) {
+                console.log('🔄 대기자 등록에서 온 경우 - 대기자 관리 탭으로 이동');
+                this.fromWaitlistRegistration = false;
+                this.customerRegistrationSource = null;
+                this.switchTab('tab-waitlist');
+                await this.loadWaitlist();
+            }
             
             // 새 고객 등록 시에만 원래 화면으로 돌아가기 (수정 시에는 고객 목록 유지)
             if (!this.currentEditingCustomer) {
@@ -7514,8 +7739,15 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         this.openCustomerModal(customerId);
     }
 
-    // 고객 삭제
+    // 고객 삭제 (고객관리 탭에서만 가능)
     async deleteCustomer(customerId) {
+        // 고객관리 탭에서만 삭제 허용
+        const currentTab = document.querySelector('.tab-button.active');
+        if (!currentTab || currentTab.id !== 'tab-customers') {
+            alert('⚠️ 고객 삭제는 고객관리 탭에서만 가능합니다.');
+            return;
+        }
+
         const customer = this.customers.find(c => c.id === customerId);
         if (!customer) {
             alert('고객 정보를 찾을 수 없습니다.');
@@ -7549,7 +7781,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
             // 3. API 삭제 시도
             try {
-                const response = await fetch(this.getApiUrl(`customers/${customerId}`), {
+                const response = await fetch(this.getApiUrl(`farm_customers/${customerId}`), {
                     method: 'DELETE'
                 });
 
@@ -8223,8 +8455,27 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
     // 고객 모달 닫기
     closeCustomerModal() {
-        document.getElementById('customer-modal').classList.add('hidden');
-        this.currentEditingCustomer = null;
+        console.log('🔒 고객 모달 닫기 시작...');
+        const modal = document.getElementById('customer-modal');
+        
+        if (modal) {
+            // hidden 클래스 추가
+            modal.classList.add('hidden');
+            
+            // display 스타일도 명시적으로 설정
+            modal.style.display = 'none';
+            modal.style.zIndex = '-1';
+            
+            // body 스크롤 복원
+            document.body.style.overflow = '';
+            
+            // 현재 편집 중인 고객 초기화
+            this.currentEditingCustomer = null;
+            
+            console.log('✅ 고객 모달 닫기 완료');
+        } else {
+            console.error('❌ 고객 모달 요소를 찾을 수 없습니다');
+        }
     }
 
     // 고객 주문이력 모달 닫기
@@ -10738,38 +10989,157 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
     // 대기자 데이터 로드
     async loadWaitlist() {
+        console.log('🔄 대기자 데이터 로드 시작...');
+        
+        let apiWaitlist = [];
+        let localWaitlist = [];
+        
+        // 1. API에서 대기자 데이터 로드
         try {
-            console.log('대기자 데이터 로드 시작...');
-            const response = await fetch(this.getApiUrl('waitlist'));
+            const response = await fetch(this.getApiUrl('farm_waitlist'));
             
             if (response.ok) {
                 const result = await response.json();
-                this.waitlist = result.data || [];
-                console.log('API에서 대기자 데이터 로드 완료:', this.waitlist.length, '건');
+                apiWaitlist = result.data || [];
+                console.log('✅ API에서 대기자 데이터 로드 완료:', apiWaitlist.length, '건');
             } else {
                 throw new Error(`API 오류: ${response.status}`);
             }
         } catch (error) {
-            console.warn('API 로드 실패, LocalStorage에서 복원:', error);
+            console.warn('⚠️ API 로드 실패:', error.message);
         }
         
-        // LocalStorage 데이터도 함께 로드 (API가 성공해도 LocalStorage 확인)
-        const localWaitlist = this.loadFromLocalStorage('waitlist');
-        console.log('LocalStorage에서 대기자 데이터 확인:', localWaitlist.length, '건');
-        
-        // LocalStorage에 데이터가 더 많으면 병합
-        if (localWaitlist.length > this.waitlist.length) {
-            console.log('LocalStorage에 더 많은 대기자 데이터 발견 - 병합 처리');
-            this.waitlist = localWaitlist;
+        // 2. LocalStorage에서 대기자 데이터 로드
+        try {
+            localWaitlist = this.loadFromLocalStorage('farm_waitlist');
+            console.log('📱 LocalStorage에서 대기자 데이터 확인:', localWaitlist.length, '건');
+        } catch (error) {
+            console.warn('⚠️ LocalStorage 로드 실패:', error.message);
         }
         
-        console.log('최종 대기자 데이터:', this.waitlist.length, '건');
-        console.log('복원된 대기자 상세 데이터:', this.waitlist);
+        // 3. 데이터 병합 및 동기화
+        this.farm_waitlist = this.mergeWaitlistData(apiWaitlist, localWaitlist);
         
-        // LocalStorage 백업
-        this.saveToLocalStorage('waitlist', this.waitlist);
+        console.log('📊 최종 대기자 데이터:', this.farm_waitlist.length, '건');
+        console.log('📋 대기자 상세 데이터:', this.farm_waitlist);
+        
+        // 4. LocalStorage에 최종 데이터 저장
+        this.saveToLocalStorage('farm_waitlist', this.farm_waitlist);
+        
+        // 5. UI 업데이트
         this.renderWaitlistTable();
         this.updateWaitlistStats();
+        
+        // 6. API와 동기화 (LocalStorage에 더 많은 데이터가 있는 경우)
+        if (localWaitlist.length > apiWaitlist.length) {
+            console.log('🔄 LocalStorage 데이터를 API에 동기화 중...');
+            await this.syncWaitlistToApi();
+        }
+    }
+
+    // 대기자 데이터 병합
+    mergeWaitlistData(apiData, localData) {
+        const waitlistMap = new Map();
+        
+        // API 데이터 추가
+        apiData.forEach(item => {
+            if (item && item.id) {
+                waitlistMap.set(item.id, { ...item, source: 'api' });
+            }
+        });
+        
+        // LocalStorage 데이터 추가/업데이트
+        localData.forEach(item => {
+            if (item && item.id) {
+                const existing = waitlistMap.get(item.id);
+                if (existing) {
+                    // 기존 데이터 업데이트 (LocalStorage 우선)
+                    waitlistMap.set(item.id, { ...item, source: 'both' });
+                } else {
+                    // 새 데이터 추가
+                    waitlistMap.set(item.id, { ...item, source: 'local' });
+                }
+            }
+        });
+        
+        // 배열로 변환 및 정렬
+        const mergedData = Array.from(waitlistMap.values());
+        return mergedData.sort((a, b) => {
+            const dateA = new Date(a.register_date || a.created_at || 0);
+            const dateB = new Date(b.register_date || b.created_at || 0);
+            return dateB - dateA; // 최신순
+        });
+    }
+
+    // 대기자 데이터를 API에 동기화
+    async syncWaitlistToApi() {
+        try {
+            for (const item of this.waitlist) {
+                if (item.source === 'local' || item.source === 'both') {
+                    await this.saveWaitlistToApi(item);
+                }
+            }
+            console.log('✅ 대기자 데이터 API 동기화 완료');
+        } catch (error) {
+            console.error('❌ 대기자 데이터 API 동기화 실패:', error);
+        }
+    }
+
+    // 대기자 데이터 긴급 복구
+    async emergencyWaitlistRecovery() {
+        console.log('🚨 대기자 데이터 긴급 복구 시작...');
+        
+        try {
+            // 1. 모든 LocalStorage 키 확인
+            const allKeys = Object.keys(localStorage);
+            const waitlistKeys = allKeys.filter(key => 
+                key.includes('waitlist') || key.includes('대기자')
+            );
+            
+            console.log('🔍 발견된 대기자 관련 키:', waitlistKeys);
+            
+            // 2. 각 키에서 데이터 복구 시도
+            let recoveredData = [];
+            for (const key of waitlistKeys) {
+                try {
+                    const data = JSON.parse(localStorage.getItem(key));
+                    if (Array.isArray(data) && data.length > 0) {
+                        console.log(`📦 ${key}에서 ${data.length}개 데이터 복구`);
+                        recoveredData = recoveredData.concat(data);
+                    }
+                } catch (e) {
+                    console.warn(`⚠️ ${key} 파싱 실패:`, e);
+                }
+            }
+            
+            // 3. 중복 제거 및 병합
+            const uniqueData = [];
+            const seenIds = new Set();
+            
+            recoveredData.forEach(item => {
+                if (item && item.id && !seenIds.has(item.id)) {
+                    seenIds.add(item.id);
+                    uniqueData.push(item);
+                }
+            });
+            
+            if (uniqueData.length > 0) {
+                this.waitlist = uniqueData;
+                this.saveToLocalStorage('waitlist', this.waitlist);
+                this.renderWaitlistTable();
+                this.updateWaitlistStats();
+                
+                console.log(`✅ 대기자 데이터 복구 완료: ${uniqueData.length}건`);
+                alert(`🚨 대기자 데이터 복구 완료!\n\n${uniqueData.length}개의 대기자 데이터가 복구되었습니다.`);
+            } else {
+                console.log('❌ 복구할 대기자 데이터가 없습니다.');
+                alert('❌ 복구할 대기자 데이터가 없습니다.');
+            }
+            
+        } catch (error) {
+            console.error('❌ 대기자 데이터 복구 실패:', error);
+            alert('❌ 대기자 데이터 복구에 실패했습니다.');
+        }
     }
 
     // 대기자 데이터 저장 (주문 저장과 동일한 이중 안전망 방식)
@@ -10790,14 +11160,14 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                 
                 if (waitlistData.id && !waitlistData.id.startsWith('waitlist_') && !waitlistData.id.startsWith('local_')) {
                     // 대기자 수정
-                    response = await fetch(this.getApiUrl(`waitlist/${waitlistData.id}`), {
+                    response = await fetch(this.getApiUrl(`farm_waitlist/${waitlistData.id}`), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(waitlistData)
                     });
                 } else {
                     // 새 대기자 등록
-                    response = await fetch(this.getApiUrl('waitlist'), {
+                    response = await fetch(this.getApiUrl('farm_waitlist'), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(waitlistData)
@@ -10867,7 +11237,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         
         try {
             // API 삭제 시도
-            const response = await fetch(this.getApiUrl(`waitlist/${waitlistId}`), {
+            const response = await fetch(this.getApiUrl(`farm_waitlist/${waitlistId}`), {
                 method: 'DELETE'
             });
 
@@ -11399,11 +11769,21 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
 
     // 대기자 저장시 신규 고객 자동 등록
     async saveWaitlistCustomerIfNew(waitlistData) {
-        // 전화번호와 고객명으로 기존 고객 찾기
-        const existingCustomer = this.customers.find(c => 
-            c.phone === waitlistData.customer_phone || 
-            c.name === waitlistData.customer_name
-        );
+        // 전화번호 정규화 (숫자만 추출)
+        const normalizedPhone = waitlistData.customer_phone?.replace(/[^0-9]/g, '') || '';
+        
+        // 전화번호로 기존 고객 찾기 (정규화된 번호로 비교)
+        const existingCustomer = this.customers.find(c => {
+            const existingPhone = c.phone?.replace(/[^0-9]/g, '') || '';
+            return existingPhone === normalizedPhone;
+        });
+        
+        console.log('🔍 대기자 고객 중복 검사:', {
+            입력전화번호: waitlistData.customer_phone,
+            정규화된번호: normalizedPhone,
+            기존고객발견: !!existingCustomer,
+            기존고객명: existingCustomer?.name
+        });
         
         if (!existingCustomer) {
             try {
@@ -11418,7 +11798,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                 
                 // API 먼저 시도
                 try {
-                    const response = await fetch(this.getApiUrl('customers'), {
+                    const response = await fetch(this.getApiUrl('farm_customers'), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(newCustomerData)
@@ -11440,7 +11820,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                     newCustomerData.id = Date.now().toString();
                     newCustomerData.created_at = new Date().toISOString();
                     this.customers.push(newCustomerData);
-                    await this.saveToStorage('customers', this.customers);
+                    await this.saveToStorage('farm_customers', this.customers);
                     console.log(`신규 고객 "${waitlistData.customer_name}" LocalStorage로 자동 등록 완료!`);
                 }
                 
@@ -11656,14 +12036,14 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
                 
                 if (orderId) {
                     // 주문 수정
-                    response = await fetch(this.getApiUrl(`orders/${orderId}`), {
+                    response = await fetch(this.getApiUrl(`farm_orders/${orderId}`), {
                         method: 'PUT',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(orderData)
                     });
                 } else {
                     // 새 주문 등록
-                    response = await fetch(this.getApiUrl('orders'), {
+                    response = await fetch(this.getApiUrl('farm_orders'), {
                         method: 'POST',
                         headers: {'Content-Type': 'application/json'},
                         body: JSON.stringify(orderData)
@@ -14385,16 +14765,16 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         // 대시보드에 필요한 데이터 로드 (아직 로드되지 않은 경우에만)
         console.log('📋 대시보드 데이터 로드 중...');
         
-        if (this.orders.length === 0) {
+        if ((this.orders || []).length === 0) {
             await this.loadOrders();
         }
-        if (this.customers.length === 0) {
+        if ((this.customers || []).length === 0) {
             await this.loadCustomers();
         }
-        if (this.products.length === 0) {
+        if ((this.products || []).length === 0) {
             await this.loadProducts();
         }
-        if (this.waitlist.length === 0) {
+        if ((this.farm_waitlist || []).length === 0) {
             await this.loadWaitlist();
         }
         
@@ -16012,7 +16392,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
     // 대기자 목록에서 고객 관리로 이동
     navigateToCustomer(customerName) {
         // 고객 관리 탭으로 전환
-        this.showSection('customers');
+        this.showSection('farm_customers');
         
         // 탭 활성화 상태 업데이트
         document.querySelectorAll('.nav-link').forEach(link => {
@@ -16734,28 +17114,28 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         }
         
         // 1. 포장할 주문 (입금확인 상태)
-        const packOrdersCount = this.orders.filter(order => order.order_status === '입금확인').length;
+        const packOrdersCount = (this.orders || []).filter(order => order.order_status === '입금확인').length;
         const packCountElement = document.getElementById('pack-orders-count');
         if (packCountElement) {
             packCountElement.textContent = packOrdersCount;
         }
         
         // 2. 오늘 보낼 택배 (배송준비 상태)
-        const shipOrdersCount = this.orders.filter(order => order.order_status === '배송준비').length;
+        const shipOrdersCount = (this.orders || []).filter(order => order.order_status === '배송준비').length;
         const shipCountElement = document.getElementById('ship-orders-count');
         if (shipCountElement) {
             shipCountElement.textContent = shipOrdersCount;
         }
         
         // 3. 재고 부족 상품 (재고가 10개 이하)
-        const lowStockCount = this.products.filter(product => (product.stock || 0) <= 10).length;
+        const lowStockCount = (this.products || []).filter(product => (product.stock || 0) <= 10).length;
         const lowStockElement = document.getElementById('low-stock-count');
         if (lowStockElement) {
             lowStockElement.textContent = lowStockCount;
         }
         
         // 4. 연락할 대기자 (대기중 상태)
-        const contactWaitlistCount = this.waitlist.filter(item => item.status === '대기중').length;
+        const contactWaitlistCount = (this.farm_waitlist || []).filter(item => item.status === '대기중').length;
         const contactWaitlistElement = document.getElementById('contact-waitlist-count');
         if (contactWaitlistElement) {
             contactWaitlistElement.textContent = contactWaitlistCount;
@@ -16764,7 +17144,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         // 5. 이번 달 신규 고객
         const currentMonth = new Date().getMonth();
         const currentYear = new Date().getFullYear();
-        const newCustomersCount = this.customers.filter(customer => {
+        const newCustomersCount = (this.customers || []).filter(customer => {
             // created_at 또는 registration_date 필드 확인
             const customerDateField = customer.created_at || customer.registration_date;
             if (!customerDateField) return false;
@@ -16784,8 +17164,8 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         console.log(`📦 포장할 주문: ${packOrdersCount}건`);
         console.log(`🚚 오늘 보낼 택배: ${shipOrdersCount}건`);
         console.log(`📉 재고 부족 상품: ${lowStockCount}개`);
-        console.log(`📞 연락할 대기자: ${contactWaitlistCount}명 (전체 대기자 ${this.waitlist.length}명)`);
-        console.log(`👥 이번 달 신규 고객: ${newCustomersCount}명 (전체 고객 ${this.customers.length}명)`);
+        console.log(`📞 연락할 대기자: ${contactWaitlistCount}명 (전체 대기자 ${(this.farm_waitlist || []).length}명)`);
+        console.log(`👥 이번 달 신규 고객: ${newCustomersCount}명 (전체 고객 ${(this.customers || []).length}명)`);
         console.log('✅ 실시간 운영 현황 데이터 업데이트 완료');
     }
     
@@ -17639,7 +18019,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             
             // API에서 데이터 로드 시도
             try {
-                const response = await fetch(this.getApiUrl('order_statuses'));
+                const response = await fetch(this.getApiUrl('farm_order_statuses'));
                 if (response.ok) {
                     const result = await response.json();
                     this.orderStatuses = result.data || [];
@@ -17651,7 +18031,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             }
             
             // LocalStorage에서 로드
-            this.orderStatuses = this.loadFromLocalStorage('order_statuses');
+            this.orderStatuses = this.loadFromLocalStorage('farm_order_statuses');
             
             // 기본 상태 데이터가 없으면 생성
             if (this.orderStatuses.length === 0) {
@@ -17955,8 +18335,8 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             try {
                 const method = statusData.id && statusData.id !== '' ? 'PUT' : 'POST';
                 const url = statusData.id && statusData.id !== '' 
-                    ? this.getApiUrl(`order_statuses/${statusData.id}`)
-                    : this.getApiUrl('order_statuses');
+                    ? this.getApiUrl(`farm_order_statuses/${statusData.id}`)
+                    : this.getApiUrl('farm_order_statuses');
 
                 const response = await fetch(url, {
                     ...this.getCommonFetchOptions(),
@@ -18022,7 +18402,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             
             // API 삭제 시도
             try {
-                const response = await fetch(this.getApiUrl(`order_statuses/${statusId}`), {
+                const response = await fetch(this.getApiUrl(`farm_order_statuses/${statusId}`), {
                     ...this.getCommonFetchOptions(),
                     method: 'DELETE'
                 });
@@ -18940,7 +19320,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         console.log('🧹 모든 데모 데이터 제거 시작...');
         
         // LocalStorage의 모든 데이터 제거
-        const keysToRemove = ['orders', 'customers', 'waitlist'];
+        const keysToRemove = ['orders', 'farm_customers', 'waitlist'];
         keysToRemove.forEach(key => {
             localStorage.removeItem(key);
             console.log(`✅ ${key} 데이터 제거 완료`);
@@ -18949,7 +19329,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         // 메모리의 데이터도 초기화
         this.orders = [];
         this.customers = [];
-        this.waitlist = [];
+        this.farm_waitlist = [];
         
         // UI 새로고침
         this.renderOrders();
@@ -19309,7 +19689,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         try {
             // LocalStorage에서 모든 데이터 강제 로드
             const orders = this.loadFromLocalStorage('orders') || [];
-            const customers = this.loadFromLocalStorage('customers') || [];
+            const customers = this.loadFromLocalStorage('farm_customers') || [];
             const products = this.loadFromLocalStorage('products') || [];
             const waitlist = this.loadFromLocalStorage('waitlist') || [];
             const categories = this.loadFromLocalStorage('categories') || [];
@@ -19352,7 +19732,7 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
             
             console.log('✅ 긴급 데이터 복구 완료:', {
                 orders: orders.length,
-                customers: customers.length,
+                farm_customers: customers.length,
                 products: products.length,
                 waitlist: waitlist.length,
                 categories: categories.length
@@ -19453,15 +19833,10 @@ ${discountLine}${shippingFee > 0 ? `▶ 배송비: ${new Intl.NumberFormat('ko-K
         });
     }
 
-    // 카카오 주소 검색 이벤트 리스너 설정
+    // 카카오 주소 검색 이벤트 리스너 설정 (이벤트 위임 방식으로 변경)
     setupKakaoAddressSearch() {
-        const customerAddressSearchBtn = document.getElementById('customer-form-address-search');
-        if (customerAddressSearchBtn) {
-            customerAddressSearchBtn.addEventListener('click', function() {
-                openKakaoAddressSearch('customer-form-address', 'customer-form-address-detail');
-            });
-        }
-        console.log('✅ 카카오 주소 검색 이벤트 리스너 재등록 완료');
+        // 이벤트 위임을 사용하므로 별도 등록 불필요
+        console.log('✅ 카카오 주소 검색 이벤트 리스너는 이미 이벤트 위임으로 등록됨');
     }
     
     // 고객 상세 정보 모달 열기
@@ -20017,17 +20392,15 @@ function openKakaoAddressSearch(targetInputId, detailInputId = null) {
     }).open();
 }
 
-// 주소 검색 이벤트 리스너 등록
+// 주소 검색 이벤트 리스너 등록 (이벤트 위임 방식으로 변경)
 document.addEventListener('DOMContentLoaded', function() {
-    // 고객 등록 폼 주소 검색 버튼
-    const customerAddressSearchBtn = document.getElementById('customer-form-address-search');
-    if (customerAddressSearchBtn) {
-        customerAddressSearchBtn.addEventListener('click', function() {
+    // 이벤트 위임을 사용하여 동적으로 생성되는 버튼에도 이벤트 리스너 적용
+    document.addEventListener('click', function(event) {
+        if (event.target && event.target.id === 'customer-form-address-search') {
+            console.log('🔍 주소 검색 버튼 클릭됨');
             openKakaoAddressSearch('customer-form-address', 'customer-form-address-detail');
-        });
-    }
-
-    // 주문 폼은 고객 데이터베이스에서 주소를 가져오므로 주소 검색 불필요
+        }
+    });
 
     console.log('✅ 카카오 주소 검색 기능이 초기화되었습니다.');
 });
@@ -20572,7 +20945,7 @@ OrderManagementSystem.prototype.recalculateAllCustomerGrades = function() {
     });
     
     // 모든 고객 데이터 저장 (등급이 변경되었든 아니든)
-    this.saveToStorage('customers', this.customers);
+    this.saveToStorage('farm_customers', this.customers);
     
     // Supabase 데이터베이스에도 저장
     this.saveCustomersToDatabase();
@@ -20604,7 +20977,7 @@ OrderManagementSystem.prototype.forceUpdateCustomerGrades = function() {
     });
     
     // 데이터 저장
-    this.saveToStorage('customers', this.customers);
+    this.saveToStorage('farm_customers', this.customers);
     this.saveCustomersToDatabase();
     
     // UI 새로고침
@@ -20844,7 +21217,7 @@ OrderManagementSystem.prototype.emergencyDataRecovery = function() {
     try {
         // 로컬 스토리지에서 데이터 복구
         const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-        const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+        const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
         const products = JSON.parse(localStorage.getItem('products') || '[]');
         
         if (orders.length > 0) {

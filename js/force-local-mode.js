@@ -179,7 +179,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // 데이터 현황 표시
             try {
                 const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-                const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+                const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
                 console.log('');
                 console.log('📊 현재 데이터:');
                 console.log(`  📦 주문: ${orders.length}건`);

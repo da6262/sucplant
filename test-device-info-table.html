@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Info Table Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Device Info Table Test</h1>
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <script>
+        // Supabase 설정
+        const supabaseUrl = 'https://bigjqermlhbipjsnyhmt.supabase.co';
+        const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJpZ2pxZXJtbGhiaXBqc255aG10Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgyNjE5NjIsImV4cCI6MjA3MzgzNzk2Mn0.OF5NshUeFx62ntIL_LrAdxAcSNebLN2ioZGadawl1hE';
+        
+        const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+        
+        async function testDeviceInfoTable() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+            
+            try {
+                statusDiv.innerHTML = '<p>🔍 Testing device_info table...</p>';
+                
+                // 1. 테이블 존재 확인
+                console.log('1. Testing table existence...');
+                const { data: tableData, error: tableError } = await supabase
+                    .from('device_info')
+                    .select('*')
+                    .limit(1);
+                
+                if (tableError) {
+                    throw new Error(`Table access error: ${tableError.message}`);
+                }
+                
+                statusDiv.innerHTML += '<p>✅ Table exists and accessible</p>';
+                
+                // 2. 데이터 삽입 테스트
+                console.log('2. Testing data insertion...');
+                const testDevice = {
+                    id: 'test_device_' + Date.now(),
+                    type: 'desktop',
+                    platform: 'Windows',
+                    user_agent: navigator.userAgent,
+                    screen: `${screen.width}x${screen.height}`,
+                    language: navigator.language,
+                    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                    last_seen: new Date().toISOString()
+                };
+                
+                const { data: insertData, error: insertError } = await supabase
+                    .from('device_info')
+                    .insert(testDevice);
+                
+                if (insertError) {
+                    throw new Error(`Insert error: ${insertError.message}`);
+                }
+                
+                statusDiv.innerHTML += '<p>✅ Data insertion successful</p>';
+                
+                // 3. 데이터 조회 테스트 (문제가 되는 쿼리)
+                console.log('3. Testing problematic query...');
+                const { data: selectData, error: selectError } = await supabase
+                    .from('device_info')
+                    .select('id,last_seen')
+                    .eq('id', testDevice.id);
+                
+                if (selectError) {
+                    throw new Error(`Select error: ${selectError.message}`);
+                }
+                
+                statusDiv.innerHTML += '<p>✅ Select query successful</p>';
+                
+                // 4. 결과 표시
+                resultsDiv.innerHTML = `
+                    <h3>Test Results:</h3>
+                    <p><strong>Table Data:</strong> ${JSON.stringify(tableData, null, 2)}</p>
+                    <p><strong>Inserted Device:</strong> ${JSON.stringify(testDevice, null, 2)}</p>
+                    <p><strong>Selected Data:</strong> ${JSON.stringify(selectData, null, 2)}</p>
+                `;
+                
+                // 5. 테스트 데이터 정리
+                console.log('5. Cleaning up test data...');
+                await supabase
+                    .from('device_info')
+                    .delete()
+                    .eq('id', testDevice.id);
+                
+                statusDiv.innerHTML += '<p>✅ Test completed successfully</p>';
+                
+            } catch (error) {
+                console.error('Test failed:', error);
+                statusDiv.innerHTML += `<p>❌ Test failed: ${error.message}</p>`;
+                resultsDiv.innerHTML = `<p><strong>Error Details:</strong> ${error.message}</p>`;
+            }
+        }
+        
+        // 페이지 로드 시 테스트 실행
+        window.addEventListener('load', testDeviceInfoTable);
+    </script>
+</body>
+</html>
+
+
+

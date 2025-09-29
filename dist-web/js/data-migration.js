@@ -5,7 +5,7 @@ class DataMigration {
     constructor() {
         this.apiBase = '';
         this.migrationStatus = {
-            customers: { total: 0, success: 0, failed: 0 },
+            farm_customers: { total: 0, success: 0, failed: 0 },
             orders: { total: 0, success: 0, failed: 0 },
             products: { total: 0, success: 0, failed: 0 },
             waitlist: { total: 0, success: 0, failed: 0 },
@@ -19,7 +19,7 @@ class DataMigration {
         console.log('🔍 LocalStorage 데이터 추출 시작...');
         
         const localData = {
-            customers: this.getLocalStorageData('customers'),
+            farm_customers: this.getLocalStorageData('farm_customers'),
             orders: this.getLocalStorageData('orders'), 
             products: this.getLocalStorageData('products'),
             waitlist: this.getLocalStorageData('waitlist'),
@@ -62,7 +62,7 @@ class DataMigration {
             
             // 메인 데이터 업로드
             await this.uploadProducts(localData.products);
-            await this.uploadCustomers(localData.customers);
+            await this.uploadCustomers(localData.farm_customers);
             await this.uploadOrders(localData.orders);
             await this.uploadWaitlist(localData.waitlist);
             
@@ -191,7 +191,7 @@ class DataMigration {
         
         for (const customer of customers) {
             try {
-                const response = await fetch('tables/customers', {
+                const response = await fetch('tables/farm_customers', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -206,13 +206,13 @@ class DataMigration {
                 });
 
                 if (response.ok) {
-                    this.migrationStatus.customers.success++;
+                    this.migrationStatus.farm_customers.success++;
                     console.log(`✅ 고객 업로드 성공: ${customer.name}`);
                 } else {
                     throw new Error(`HTTP ${response.status}`);
                 }
             } catch (error) {
-                this.migrationStatus.customers.failed++;
+                this.migrationStatus.farm_customers.failed++;
                 console.error(`❌ 고객 업로드 실패: ${customer.name}`, error);
             }
         }
@@ -242,7 +242,7 @@ class DataMigration {
                     orderItems = [];
                 }
 
-                const response = await fetch('tables/orders', {
+                const response = await fetch('tables/farm_orders', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({

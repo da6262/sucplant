@@ -12,7 +12,7 @@ const SUPABASE_PRODUCTION_CONFIG = {
     
     // 테이블 이름 매핑
     tables: {
-        customers: 'farm_customers',
+        farm_customers: 'farm_customers',
         orders: 'farm_orders', 
         products: 'farm_products',
         categories: 'farm_categories',

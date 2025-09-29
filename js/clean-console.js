@@ -15,7 +15,7 @@ setTimeout(() => {
     // 데이터 현황 표시
     try {
         const orders = JSON.parse(localStorage.getItem('orders') || '[]');
-        const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+        const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
         const products = JSON.parse(localStorage.getItem('products') || '[]');
         const waitlist = JSON.parse(localStorage.getItem('waitlist') || '[]');
         

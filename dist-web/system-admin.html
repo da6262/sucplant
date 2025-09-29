@@ -434,14 +434,14 @@
                 }
                 
                 // 주문 수 조회
-                const ordersResponse = await fetch('tables/orders?limit=1');
+                const ordersResponse = await fetch('tables/farm_orders?limit=1');
                 if (ordersResponse.ok) {
                     const ordersData = await ordersResponse.json();
                     document.getElementById('totalOrders').textContent = ordersData.total || 0;
                 }
                 
                 // 고객 수 조회
-                const customersResponse = await fetch('tables/customers?limit=1');
+                const customersResponse = await fetch('tables/farm_customers?limit=1');
                 if (customersResponse.ok) {
                     const customersData = await customersResponse.json();
                     document.getElementById('totalCustomers').textContent = customersData.total || 0;
@@ -462,7 +462,7 @@
                 { name: 'products', description: '상품 관리', icon: 'fas fa-leaf', color: 'green' },
                 { name: 'orders', description: '주문 관리', icon: 'fas fa-shopping-cart', color: 'blue' },
                 { name: 'order_items', description: '주문 상품 상세', icon: 'fas fa-list', color: 'purple' },
-                { name: 'customers', description: '고객 관리', icon: 'fas fa-users', color: 'yellow' },
+                { name: 'farm_customers', description: '고객 관리', icon: 'fas fa-users', color: 'yellow' },
                 { name: 'categories', description: '카테고리 관리', icon: 'fas fa-tags', color: 'red' },
                 { name: 'suppliers', description: '공급업체 관리', icon: 'fas fa-truck', color: 'indigo' },
                 { name: 'system_settings', description: '시스템 설정', icon: 'fas fa-cog', color: 'gray' },

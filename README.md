@@ -357,7 +357,7 @@ start-server.bat
 
 ### API 엔드포인트 (상대 경로)
 - `tables/customers` - 고객 데이터 CRUD
-- `tables/orders` - 주문 데이터 CRUD
+- `tables/farm_orders` - 주문 데이터 CRUD
 - `tables/products` - 상품 데이터 CRUD
 - `tables/categories` - 카테고리 데이터 CRUD
 - `tables/channels` - 판매 채널 데이터 CRUD **NEW!** 

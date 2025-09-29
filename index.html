@@ -74,6 +74,11 @@
     <!-- Chart.js for Dashboard -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     
+    <!-- SweetAlert2 for Alerts and Notifications -->
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" 
+            onerror="console.warn('⚠️ SweetAlert2 라이브러리 로딩 실패 - 알림 기능 비활성화'); window.SwalDisabled = true;"
+            onload="console.log('✅ SweetAlert2 라이브러리 로딩 성공:', typeof Swal !== 'undefined');"></script>
+    
     <!-- CryptoJS for Solapi HMAC Authentication -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js" 
             onerror="console.warn('⚠️ CryptoJS 라이브러리 로딩 실패 - SMS 기능 비활성화'); window.CryptoJSDisabled = true;"
@@ -1860,9 +1865,14 @@
                             <i class="fas fa-clock mr-2 text-orange-600"></i>대기자 관리
                             <span class="text-sm text-gray-500 ml-2">상품 입고 시 연락할 고객들</span>
                         </h2>
-                        <button id="add-waitlist-btn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-user-clock mr-2"></i>새 대기자 등록
-                        </button>
+                        <div class="flex gap-2">
+                            <button id="add-waitlist-btn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                <i class="fas fa-user-clock mr-2"></i>새 대기자 등록
+                            </button>
+                            <button onclick="orderSystem.emergencyWaitlistRecovery()" class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg transition-colors" title="대기자 데이터 복구">
+                                <i class="fas fa-ambulance mr-2"></i>데이터 복구
+                            </button>
+                        </div>
                     </div>
                     
                     <!-- 대기자 통계 -->
@@ -2627,7 +2637,7 @@
                 <div class="p-6 border-b border-gray-200">
                     <div class="flex justify-between items-center">
                         <h3 id="modal-title" class="text-lg font-semibold text-gray-800">새 주문 등록</h3>
-                        <button id="close-modal" class="text-gray-400 hover:text-gray-600">
+                        <button id="close-modal" onclick="orderSystem.closeOrderModal()" class="text-gray-400 hover:text-gray-600">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
@@ -4469,12 +4479,18 @@
         };
     </script>
     
-    <!-- Supabase 통합 모듈들 -->
+    <!-- 1) Supabase 설정: window.SUPABASE_CONFIG 노출 (URL/anonKey) -->
     <script src="js/supabase-config.js?v=1.0.4"></script>
+    
+    <!-- 2) 헤더 주입 래퍼: Supabase REST 호출이면 apikey/Bearer 자동 추가 -->
+    <script src="js/api-fallback.js?v=1.0.3"></script>
+    
+    <!-- Supabase 통합 모듈들 -->
     <script src="js/indexeddb-cache.js?v=1.0.4"></script>
     <script src="js/supabase-integration.js?v=1.0.4"></script>
     
-    <script src="js/app.js?v=1.2.1" onerror="console.error('❌ js/app.js 로딩 실패!'); document.body.innerHTML += '<div style=\'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:9999;text-align:center;\'>⚠️ JavaScript 파일 로딩 실패! 새로고침해주세요.</div>';"></script>
+    <!-- 3) 앱 로직 (항상 마지막) - 모듈화된 구조 -->
+    <script type="module" src="/main.js?v=1.0.0" onerror="console.error('❌ main.js 로딩 실패!'); document.body.innerHTML += '<div style=\'position:fixed;top:0;left:0;right:0;background:red;color:white;padding:10px;z-index:9999;text-align:center;\'>⚠️ JavaScript 파일 로딩 실패! 새로고침해주세요.</div>';"></script>
     
     <!-- 프로덕션 모드 전환 스크립트 -->
     <script src="production-setup.js?v=1.0.0"></script>
@@ -4712,7 +4728,6 @@
     </script>
     <script src="js/data-migration.js?v=1.0.3"></script>
     <script src="js/force-api-mode.js?v=1.0.3"></script>
-    <script src="js/api-fallback.js?v=1.0.3"></script>
     <script src="js/mobile-sync.js?v=1.0.3"></script>
     <script src="js/cross-device-sync.js?v=1.0.1"></script>
     <script src="js/sync-ui.js?v=1.0.1"></script>
@@ -5142,32 +5157,42 @@
                         
                         if (hasChanges) {
                             // 성공 메시지 표시
-                            const Toast = Swal.mixin({
-                                toast: true,
-                                position: 'top-end',
-                                showConfirmButton: false,
-                                timer: 2000,
-                                timerProgressBar: true
-                            });
-                            
-                            Toast.fire({
-                                icon: 'success',
-                                title: '카테고리 설정이 저장되었습니다! 🎉'
-                            });
+                            if (typeof Swal !== 'undefined' && !window.SwalDisabled) {
+                                const Toast = Swal.mixin({
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 2000,
+                                    timerProgressBar: true
+                                });
+                                
+                                Toast.fire({
+                                    icon: 'success',
+                                    title: '카테고리 설정이 저장되었습니다! 🎉'
+                                });
+                            } else {
+                                // SweetAlert가 없을 때 기본 알림
+                                alert('✅ 카테고리 설정이 저장되었습니다!');
+                            }
                         } else {
                             // 변경사항이 없을 때 메시지
-                            const Toast = Swal.mixin({
-                                toast: true,
-                                position: 'top-end',
-                                showConfirmButton: false,
-                                timer: 1500,
-                                timerProgressBar: true
-                            });
-                            
-                            Toast.fire({
-                                icon: 'info',
-                                title: '저장할 변경사항이 없습니다'
-                            });
+                            if (typeof Swal !== 'undefined' && !window.SwalDisabled) {
+                                const Toast = Swal.mixin({
+                                    toast: true,
+                                    position: 'top-end',
+                                    showConfirmButton: false,
+                                    timer: 1500,
+                                    timerProgressBar: true
+                                });
+                                
+                                Toast.fire({
+                                    icon: 'info',
+                                    title: '저장할 변경사항이 없습니다'
+                                });
+                            } else {
+                                // SweetAlert가 없을 때 기본 알림
+                                alert('ℹ️ 저장할 변경사항이 없습니다');
+                            }
                         }
                         
                         // 모달 닫기
@@ -5177,12 +5202,17 @@
                         console.error('카테고리 저장 오류:', error);
                         
                         // 오류 메시지 표시
-                        Swal.fire({
-                            icon: 'error',
-                            title: '저장 실패',
-                            text: '카테고리 저장 중 오류가 발생했습니다.',
-                            confirmButtonText: '확인'
-                        });
+                        if (typeof Swal !== 'undefined' && !window.SwalDisabled) {
+                            Swal.fire({
+                                icon: 'error',
+                                title: '저장 실패',
+                                text: '카테고리 저장 중 오류가 발생했습니다.',
+                                confirmButtonText: '확인'
+                            });
+                        } else {
+                            // SweetAlert가 없을 때 기본 알림
+                            alert('❌ 저장 실패: 카테고리 저장 중 오류가 발생했습니다.');
+                        }
                     } finally {
                         // 버튼 상태 복원
                         categoryModalSave.disabled = false;
@@ -5389,7 +5419,7 @@
         }
         
         function updateBackupStats() {
-            const tables = ['customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
+            const tables = ['farm_customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
             
             tables.forEach(table => {
                 const data = localStorage.getItem(table);
@@ -5419,7 +5449,7 @@
         
         function performJSONBackup(isEmergency = false) {
             const allData = {};
-            const tables = ['customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
+            const tables = ['farm_customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
             let totalItems = 0;
             
             console.log('📊 JSON 백업 시작...');
@@ -5485,7 +5515,7 @@
         function performAPISync() {
             console.log('🔄 API 동기화 시작...');
             
-            const tables = ['customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
+            const tables = ['farm_customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
             let syncedCount = 0;
             
             Promise.all(tables.map(async (table) => {
@@ -5614,9 +5644,9 @@
             }
             
             // 테이블별 데이터 개수
-            const tables = ['customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
+            const tables = ['farm_customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
             const tableNames = {
-                'customers': '고객',
+                'farm_customers': '고객',
                 'orders': '주문', 
                 'products': '상품',
                 'farm_categories': '카테고리',
@@ -5698,7 +5728,7 @@
                     const backupData = JSON.parse(e.target.result);
                     console.log('🔄 데이터 복구 시작...', restoreMode);
                     
-                    const tables = ['customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
+                    const tables = ['farm_customers', 'orders', 'products', 'farm_categories', 'order_sources', 'waitlist'];
                     let restoredCount = 0;
                     let totalRestored = 0;
                     

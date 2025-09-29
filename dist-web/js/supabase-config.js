@@ -12,7 +12,7 @@ const SUPABASE_CONFIG = {
     
     // 테이블 이름 매핑
     tables: {
-        customers: 'farm_customers',
+        farm_customers: 'farm_customers',
         orders: 'farm_orders', 
         products: 'farm_products',
         categories: 'farm_categories',
@@ -21,7 +21,8 @@ const SUPABASE_CONFIG = {
         channels: 'farm_channels',
         orderStatuses: 'farm_order_statuses',
         shippingRules: 'farm_shipping_rules',
-        customerGrades: 'farm_customer_grades'
+        customerGrades: 'farm_customer_grades',
+        device_info: 'device_info' // 디바이스 정보 테이블 추가
     }
 };
 
@@ -109,41 +110,58 @@ async function checkSupabaseConnection() {
     }
     
     try {
-        // 간단한 쿼리로 연결 테스트
-        const { data, error } = await supabase
-            .from(SUPABASE_CONFIG.tables.customers)
-            .select('count')
-            .limit(1);
+        // 간단한 쿼리로 연결 테스트 (farm_customers 테이블 직접 사용)
+        const { count, error } = await supabase
+            .from('farm_customers')
+            .select('*', { count: 'exact', head: true });
             
         if (error) {
+            console.error('❌ Supabase 연결 테스트 실패:', error);
             return { connected: false, error: error.message };
         }
         
-        return { connected: true, data };
+        console.log('✅ Supabase 연결 테스트 성공');
+        return { connected: true, data: { count } };
     } catch (error) {
+        console.error('❌ Supabase 연결 테스트 예외:', error);
         return { connected: false, error: error.message };
     }
 }
 
 /**
- * 테이블 이름 가져오기
+ * 테이블 이름 가져오기 (undefined 방지)
  */
 function getTableName(localStorageKey) {
-    // localStorage 키를 Supabase 테이블 이름으로 매핑
-    const keyMapping = {
-        'farm_customers': SUPABASE_CONFIG.tables.customers,
-        'farm_orders': SUPABASE_CONFIG.tables.orders,
-        'farm_products': SUPABASE_CONFIG.tables.products,
-        'farm_categories': SUPABASE_CONFIG.tables.categories,
-        'farm_waitlist': SUPABASE_CONFIG.tables.waitlist,
-        'order_sources': SUPABASE_CONFIG.tables.order_sources,
-        'farm_channels': SUPABASE_CONFIG.tables.channels,
-        'farm_order_statuses': SUPABASE_CONFIG.tables.orderStatuses,
-        'farm_shipping_rules': SUPABASE_CONFIG.tables.shippingRules,
-        'farm_customer_grades': SUPABASE_CONFIG.tables.customerGrades
+    const map = {
+        // 정식 테이블
+        farm_customers: 'farm_customers',
+        farm_orders: 'farm_orders',
+        farm_order_statuses: 'farm_order_statuses',
+        farm_products: 'farm_products',
+        farm_categories: 'farm_categories',
+        farm_waitlist: 'farm_waitlist',
+        order_sources: 'farm_channels',
+        farm_channels: 'farm_channels',
+        farm_shipping_rules: 'farm_shipping_rules',
+        farm_customer_grades: 'farm_customer_grades',
+        device_info: 'device_info',
+        // 레거시/별칭 흡수
+        customers: 'farm_customers',
+        orders: 'farm_orders',
+        order_statuses: 'farm_order_statuses',
+        products: 'farm_products',
+        categories: 'farm_categories'
     };
     
-    return keyMapping[localStorageKey] || localStorageKey;
+    const key = (localStorageKey ?? '').toString().trim();
+    if (!key) {
+        console.warn('[getTableName] 빈 base 감지 → 임시로 farm_categories 반환');
+        return 'farm_categories'; // 안전한 읽기 전용 기본값
+    }
+    
+    const result = map[key] || key; // 매핑 없으면 원본 반환
+    console.log(`[getTableName] ${key} → ${result}`);
+    return result;
 }
 
 // 전역으로 노출

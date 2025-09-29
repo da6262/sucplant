@@ -1,6 +1,40 @@
 // API 500 오류 대응 스크립트
 // 서버 오류 시 자동으로 로컬 모드로 전환
 
+// Supabase 인증 헤더 자동 주입 (401 오류 해결)
+// 전역 설정에서 REST URL/Anon 키를 읽어옵니다.
+const CFG = window.SUPABASE_CONFIG || {};
+const SUPABASE_REST = (CFG.url || '').replace(/\/$/, '') + '/rest/v1';
+const SUPABASE_ANON = CFG.anonKey;
+
+// 원래 fetch 보존
+const _fetch = window.fetch.bind(window);
+
+// 중복 래핑 방지
+if (!window.__supabaseFetchWrapped) {
+  window.__supabaseFetchWrapped = true;
+
+  window.fetch = (input, init = {}) => {
+    const url = typeof input === 'string' ? input : input.url;
+
+    // Supabase REST 호출만 감지
+    const isSupabaseREST =
+      (typeof url === 'string') &&
+      (url.startsWith(SUPABASE_REST) || url.includes('.supabase.co/rest/v1'));
+
+    if (isSupabaseREST) {
+      const headers = new Headers(init.headers || {});
+      if (!headers.has('apikey')) headers.set('apikey', SUPABASE_ANON);                  // ✅ apikey
+      if (!headers.has('Authorization')) headers.set('Authorization', `Bearer ${SUPABASE_ANON}`); // ✅ Bearer
+      init.headers = headers;
+      console.log('🔐 Supabase 인증 헤더 자동 주입:', url);
+    }
+    return _fetch(input, init);
+  };
+  
+  console.log('✅ Supabase 인증 헤더 자동 주입 활성화');
+}
+
 // API 500 오류 감지 및 대응
 window.handleApiError = function(error, tableName) {
     console.log(`⚠️ API 오류 감지: ${tableName}`, error);

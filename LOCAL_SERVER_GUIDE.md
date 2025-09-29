@@ -72,7 +72,7 @@ php -S localhost:8000
 ```javascript
 // 자동 설정되는 API URL
 http://localhost:8000/tables/customers
-http://localhost:8000/tables/orders
+http://localhost:8000/tables/farm_orders
 http://localhost:8000/tables/products
 ```
 

@@ -96,11 +96,11 @@
 
     <!-- 필요한 스크립트들 -->
     <script src="https://unpkg.com/@supabase/supabase-js@2"></script>
-    <script src="js/supabase-config.js"></script>
-    <script src="js/indexeddb-cache.js"></script>
-    <script src="js/supabase-integration.js"></script>
-    <script src="js/cross-device-sync.js"></script>
-    <script src="js/sync-ui.js"></script>
+    <script type="module" src="/js/supabase-config.js"></script>
+    <script type="module" src="/js/indexeddb-cache.js"></script>
+    <script type="module" src="/js/supabase-integration.js"></script>
+    <script type="module" src="/js/cross-device-sync.js"></script>
+    <script type="module" src="/js/sync-ui.js"></script>
 
     <script>
         // 로그 출력 함수
@@ -213,9 +213,9 @@
                 updated_at: new Date().toISOString()
             };
 
-            const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+            const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
             customers.push(testCustomer);
-            localStorage.setItem('customers', JSON.stringify(customers));
+            localStorage.setItem('farm_customers', JSON.stringify(customers));
             
             addLog('테스트 고객 데이터가 생성되었습니다.', 'success');
             updateSyncStatus();
@@ -223,12 +223,12 @@
 
         // 충돌 테스트
         function testConflict() {
-            const customers = JSON.parse(localStorage.getItem('customers') || '[]');
+            const customers = JSON.parse(localStorage.getItem('farm_customers') || '[]');
             if (customers.length > 0) {
                 // 첫 번째 고객의 이름을 변경
                 customers[0].name = '충돌 테스트 - ' + new Date().toLocaleTimeString();
                 customers[0].updated_at = new Date().toISOString();
-                localStorage.setItem('customers', JSON.stringify(customers));
+                localStorage.setItem('farm_customers', JSON.stringify(customers));
                 
                 addLog('충돌 테스트 데이터가 생성되었습니다. 다른 디바이스에서 동일한 고객을 수정해보세요.', 'warning');
             } else {
@@ -239,7 +239,7 @@
         // 로컬 데이터 초기화
         function clearLocalData() {
             if (confirm('모든 로컬 데이터를 삭제하시겠습니까?')) {
-                const tables = ['customers', 'orders', 'products', 'waitlist', 'categories', 'order_sources'];
+                const tables = ['farm_customers', 'orders', 'products', 'waitlist', 'categories', 'order_sources'];
                 tables.forEach(table => {
                     localStorage.removeItem(table);
                 });

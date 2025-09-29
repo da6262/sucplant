@@ -143,7 +143,7 @@ class DesktopIntegration {
         if (data.orderSources) orderSystem.orderSources = data.orderSources;
 
         // LocalStorage에 저장
-        orderSystem.saveToLocalStorage('customers', orderSystem.customers);
+        orderSystem.saveToLocalStorage('farm_customers', orderSystem.customers);
         orderSystem.saveToLocalStorage('orders', orderSystem.orders);
         orderSystem.saveToLocalStorage('products', orderSystem.products);
         orderSystem.saveToLocalStorage('waitlist', orderSystem.waitlist);
@@ -185,7 +185,7 @@ class DesktopIntegration {
                 e.preventDefault();
                 if (orderSystem.currentTab === 'orders') {
                     orderSystem.openOrderModal();
-                } else if (orderSystem.currentTab === 'customers') {
+                } else if (orderSystem.currentTab === 'farm_customers') {
                     orderSystem.openCustomerModal();
                 } else if (orderSystem.currentTab === 'products') {
                     orderSystem.openProductModal();
@@ -241,7 +241,7 @@ class DesktopIntegration {
         if (!orderSystem) return;
 
         // 각 데이터 타입별로 저장
-        orderSystem.saveToLocalStorage('customers', orderSystem.customers);
+        orderSystem.saveToLocalStorage('farm_customers', orderSystem.customers);
         orderSystem.saveToLocalStorage('orders', orderSystem.orders);
         orderSystem.saveToLocalStorage('products', orderSystem.products);
         orderSystem.saveToLocalStorage('waitlist', orderSystem.waitlist);
@@ -264,7 +264,7 @@ class DesktopIntegration {
             case 'orders':
                 searchInput = document.getElementById('order-search');
                 break;
-            case 'customers':
+            case 'farm_customers':
                 searchInput = document.getElementById('customer-search');
                 break;
             case 'products':
@@ -290,7 +290,7 @@ class DesktopIntegration {
             case 'orders':
                 orderSystem.renderOrdersTable();
                 break;
-            case 'customers':
+            case 'farm_customers':
                 orderSystem.renderCustomersTable();
                 break;
             case 'products':

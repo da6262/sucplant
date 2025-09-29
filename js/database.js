@@ -31,7 +31,7 @@ class FarmDatabase {
     async createTables() {
         const tables = [
             // 고객 테이블
-            `CREATE TABLE IF NOT EXISTS customers (
+            `CREATE TABLE IF NOT EXISTS farm_customers (
                 id TEXT PRIMARY KEY,
                 name TEXT NOT NULL,
                 phone TEXT UNIQUE NOT NULL,
@@ -129,8 +129,8 @@ class FarmDatabase {
     // 인덱스 생성
     async createIndexes() {
         const indexes = [
-            'CREATE INDEX IF NOT EXISTS idx_customers_phone ON customers(phone)',
-            'CREATE INDEX IF NOT EXISTS idx_customers_grade ON customers(grade)',
+            'CREATE INDEX IF NOT EXISTS idx_farm_customers_phone ON farm_customers(phone)',
+            'CREATE INDEX IF NOT EXISTS idx_farm_customers_grade ON farm_customers(grade)',
             'CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(order_status)',
             'CREATE INDEX IF NOT EXISTS idx_orders_date ON orders(order_date)',
             'CREATE INDEX IF NOT EXISTS idx_orders_customer ON orders(customer_phone)',
@@ -239,17 +239,17 @@ class FarmDatabase {
         const values = Object.values(customerData);
         
         return await this.runQuery(
-            `INSERT INTO customers (${columns}) VALUES (${placeholders})`,
+            `INSERT INTO farm_customers (${columns}) VALUES (${placeholders})`,
             values
         );
     }
 
     async getCustomers() {
-        return await this.getAll('SELECT * FROM customers ORDER BY created_at DESC');
+        return await this.getAll('SELECT * FROM farm_customers ORDER BY created_at DESC');
     }
 
     async getCustomerById(id) {
-        return await this.getOne('SELECT * FROM customers WHERE id = ?', [id]);
+        return await this.getOne('SELECT * FROM farm_customers WHERE id = ?', [id]);
     }
 
     async updateCustomer(id, customerData) {
@@ -257,13 +257,13 @@ class FarmDatabase {
         const values = [...Object.values(customerData), id];
         
         return await this.runQuery(
-            `UPDATE customers SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            `UPDATE farm_customers SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
             values
         );
     }
 
     async deleteCustomer(id) {
-        return await this.runQuery('DELETE FROM customers WHERE id = ?', [id]);
+        return await this.runQuery('DELETE FROM farm_customers WHERE id = ?', [id]);
     }
 
     // 주문 관련
@@ -273,17 +273,17 @@ class FarmDatabase {
         const values = Object.values(orderData);
         
         return await this.runQuery(
-            `INSERT INTO orders (${columns}) VALUES (${placeholders})`,
+            `INSERT INTO farm_orders (${columns}) VALUES (${placeholders})`,
             values
         );
     }
 
     async getOrders() {
-        return await this.getAll('SELECT * FROM orders ORDER BY order_date DESC');
+        return await this.getAll('SELECT * FROM farm_orders ORDER BY order_date DESC');
     }
 
     async getOrderById(id) {
-        return await this.getOne('SELECT * FROM orders WHERE id = ?', [id]);
+        return await this.getOne('SELECT * FROM farm_orders WHERE id = ?', [id]);
     }
 
     async updateOrder(id, orderData) {
@@ -291,13 +291,13 @@ class FarmDatabase {
         const values = [...Object.values(orderData), id];
         
         return await this.runQuery(
-            `UPDATE orders SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
+            `UPDATE farm_orders SET ${setClause}, updated_at = CURRENT_TIMESTAMP WHERE id = ?`,
             values
         );
     }
 
     async deleteOrder(id) {
-        return await this.runQuery('DELETE FROM orders WHERE id = ?', [id]);
+        return await this.runQuery('DELETE FROM farm_orders WHERE id = ?', [id]);
     }
 
     // 상품 관련
@@ -371,7 +371,7 @@ class FarmDatabase {
                 order_status,
                 COUNT(*) as count,
                 SUM(total_amount) as total_amount
-            FROM orders 
+            FROM farm_orders 
             GROUP BY order_status
         `);
         
@@ -383,7 +383,7 @@ class FarmDatabase {
             SELECT 
                 grade,
                 COUNT(*) as count
-            FROM customers 
+            FROM farm_customers 
             GROUP BY grade
         `);
         
@@ -392,7 +392,7 @@ class FarmDatabase {
 
     async getTopProducts(limit = 10) {
         // 주문 아이템에서 상품별 판매량 계산 (JSON 파싱 필요)
-        const orders = await this.getAll('SELECT order_items FROM orders');
+        const orders = await this.getAll('SELECT order_items FROM farm_orders');
         const productSales = {};
         
         orders.forEach(order => {

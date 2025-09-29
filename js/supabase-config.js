@@ -12,16 +12,17 @@ const SUPABASE_CONFIG = {
     
     // 테이블 이름 매핑
     tables: {
-        customers: 'farm_customers',
+        farm_customers: 'farm_customers',
         orders: 'farm_orders', 
         products: 'farm_products',
         categories: 'farm_categories',
         waitlist: 'farm_waitlist',
         order_sources: 'farm_channels', // order_sources는 farm_channels 테이블 사용
-        channels: 'farm_channels',
+        channels: 'farm_channels', // channels 별칭
         orderStatuses: 'farm_order_statuses',
         shippingRules: 'farm_shipping_rules',
-        customerGrades: 'farm_customer_grades'
+        customerGrades: 'farm_customer_grades',
+        device_info: 'device_info' // 디바이스 정보 테이블 추가
     }
 };
 
@@ -32,69 +33,80 @@ window.SUPABASE_CONFIG = SUPABASE_CONFIG;
 let supabase = null;
 
 /**
- * Supabase 클라이언트 초기화
+ * Supabase 클라이언트 초기화 (개선된 버전)
  */
 function initializeSupabase() {
-    try {
-        // 강제 로컬 모드 체크
-        if (window.FORCE_LOCAL_MODE) {
-            console.log('🛑 강제 로컬 모드: Supabase API 완전 비활성화');
-            SUPABASE_CONFIG.disabled = true;
-            return false;
-        }
-        
-        // 모드 스위치 시스템 체크
-        if (window.MODE_SWITCH && window.MODE_SWITCH.getCurrentMode() === 'local') {
-            console.log('🏠 로컬 모드: Supabase API 비활성화됨');
-            SUPABASE_CONFIG.disabled = true;
-            return false;
-        }
-        
-        // 로컬 모드 - Supabase 비활성화
-        if (SUPABASE_CONFIG.disabled) {
-            console.log('🏠 로컬 모드: Supabase API 비활성화됨');
-            return false;
-        }
-        
-        // URL과 키가 설정되지 않은 경우
-        if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey || 
-            SUPABASE_CONFIG.url === 'https://your-project.supabase.co' ||
-            SUPABASE_CONFIG.anonKey === 'your-anon-key-here') {
-            console.warn('⚠️ Supabase URL 또는 키가 설정되지 않았습니다.');
-            console.log('💡 enableSupabaseProduction() 함수를 사용하여 실제 설정을 활성화하세요.');
-            SUPABASE_CONFIG.disabled = true;
-            return false;
-        }
-        
-        // 이미 초기화된 경우 중복 초기화 방지
-        if (window.supabaseClient && window.supabaseClient._isInitialized) {
-            console.log('✅ Supabase 클라이언트 이미 초기화됨 - 중복 초기화 방지');
-            supabase = window.supabaseClient;
-            return true;
-        }
+    return new Promise((resolve) => {
+        try {
+            // 로컬 모드 체크 (통합)
+            const isLocalMode = window.FORCE_LOCAL_MODE || 
+                               (window.MODE_SWITCH && window.MODE_SWITCH.getCurrentMode() === 'local') ||
+                               SUPABASE_CONFIG.disabled;
+                               
+            if (isLocalMode) {
+                console.log('🏠 로컬 모드: Supabase API 비활성화됨');
+                SUPABASE_CONFIG.disabled = true;
+                resolve(false);
+                return;
+            }
+            
+            // URL과 키가 설정되지 않은 경우
+            if (!SUPABASE_CONFIG.url || !SUPABASE_CONFIG.anonKey || 
+                SUPABASE_CONFIG.url === 'https://your-project.supabase.co' ||
+                SUPABASE_CONFIG.anonKey === 'your-anon-key-here') {
+                console.warn('⚠️ Supabase URL 또는 키가 설정되지 않았습니다.');
+                console.log('💡 enableSupabaseProduction() 함수를 사용하여 실제 설정을 활성화하세요.');
+                SUPABASE_CONFIG.disabled = true;
+                resolve(false);
+                return;
+            }
+            
+            // 이미 초기화된 경우 중복 초기화 방지
+            if (window.supabaseClient && window.supabaseClient._isInitialized) {
+                console.log('✅ Supabase 클라이언트 이미 초기화됨 - 중복 초기화 방지');
+                supabase = window.supabaseClient;
+                resolve(true);
+                return;
+            }
 
-        // Supabase 클라이언트가 로드되었는지 확인
-        if (typeof window.supabase === 'undefined') {
-            console.warn('⚠️ Supabase 클라이언트가 로드되지 않았습니다. CDN 스크립트를 확인하세요.');
-            return false;
+            // Supabase 클라이언트 로딩 대기 (최대 10초)
+            let attempts = 0;
+            const maxAttempts = 100; // 10초 (100ms * 100)
+            
+            const checkSupabase = () => {
+                attempts++;
+                
+                if (typeof window.supabase !== 'undefined') {
+                    console.log('✅ Supabase CDN 로드 완료');
+                    
+                    // createClient를 사용하여 Supabase 클라이언트 생성
+                    supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
+                    
+                    // 중복 초기화 방지를 위한 플래그 설정
+                    if (supabase) {
+                        supabase._isInitialized = true;
+                        window.supabaseClient = supabase;
+                    }
+                    
+                    console.log('✅ Supabase 클라이언트 초기화 성공');
+                    console.log('🌐 Supabase URL:', SUPABASE_CONFIG.url);
+                    resolve(true);
+                } else if (attempts >= maxAttempts) {
+                    console.error('❌ Supabase CDN 로딩 타임아웃 (10초)');
+                    console.warn('⚠️ Supabase 클라이언트가 로드되지 않았습니다. CDN 스크립트를 확인하세요.');
+                    resolve(false);
+                } else {
+                    // 100ms 후 다시 시도
+                    setTimeout(checkSupabase, 100);
+                }
+            };
+            
+            checkSupabase();
+        } catch (error) {
+            console.error('❌ Supabase 초기화 실패:', error);
+            resolve(false);
         }
-        
-        // createClient를 사용하여 Supabase 클라이언트 생성
-        supabase = window.supabase.createClient(SUPABASE_CONFIG.url, SUPABASE_CONFIG.anonKey);
-        
-        // 중복 초기화 방지를 위한 플래그 설정
-        if (supabase) {
-            supabase._isInitialized = true;
-            window.supabaseClient = supabase;
-        }
-        
-        console.log('✅ Supabase 클라이언트 초기화 성공');
-        console.log('🌐 Supabase URL:', SUPABASE_CONFIG.url);
-        return true;
-    } catch (error) {
-        console.error('❌ Supabase 초기화 실패:', error);
-        return false;
-    }
+    });
 }
 
 // 전역으로 노출
@@ -109,41 +121,58 @@ async function checkSupabaseConnection() {
     }
     
     try {
-        // 간단한 쿼리로 연결 테스트
-        const { data, error } = await supabase
-            .from(SUPABASE_CONFIG.tables.customers)
-            .select('count')
-            .limit(1);
+        // 간단한 쿼리로 연결 테스트 (farm_customers 테이블 직접 사용)
+        const { count, error } = await supabase
+            .from('farm_customers')
+            .select('*', { count: 'exact', head: true });
             
         if (error) {
+            console.error('❌ Supabase 연결 테스트 실패:', error);
             return { connected: false, error: error.message };
         }
         
-        return { connected: true, data };
+        console.log('✅ Supabase 연결 테스트 성공');
+        return { connected: true, data: { count } };
     } catch (error) {
+        console.error('❌ Supabase 연결 테스트 예외:', error);
         return { connected: false, error: error.message };
     }
 }
 
 /**
- * 테이블 이름 가져오기
+ * 테이블 이름 가져오기 (undefined 방지)
  */
 function getTableName(localStorageKey) {
-    // localStorage 키를 Supabase 테이블 이름으로 매핑
-    const keyMapping = {
-        'farm_customers': SUPABASE_CONFIG.tables.customers,
-        'farm_orders': SUPABASE_CONFIG.tables.orders,
-        'farm_products': SUPABASE_CONFIG.tables.products,
-        'farm_categories': SUPABASE_CONFIG.tables.categories,
-        'farm_waitlist': SUPABASE_CONFIG.tables.waitlist,
-        'order_sources': SUPABASE_CONFIG.tables.order_sources,
-        'farm_channels': SUPABASE_CONFIG.tables.channels,
-        'farm_order_statuses': SUPABASE_CONFIG.tables.orderStatuses,
-        'farm_shipping_rules': SUPABASE_CONFIG.tables.shippingRules,
-        'farm_customer_grades': SUPABASE_CONFIG.tables.customerGrades
+    const map = {
+        // 정식 테이블
+        farm_customers: 'farm_customers',
+        farm_orders: 'farm_orders',
+        farm_order_statuses: 'farm_order_statuses',
+        farm_products: 'farm_products',
+        farm_categories: 'farm_categories',
+        farm_waitlist: 'farm_waitlist',
+        order_sources: 'farm_channels',
+        farm_channels: 'farm_channels', // 중복 제거됨
+        farm_shipping_rules: 'farm_shipping_rules',
+        farm_customer_grades: 'farm_customer_grades',
+        device_info: 'device_info',
+        // 레거시/별칭 흡수
+        customers: 'farm_customers',
+        orders: 'farm_orders',
+        order_statuses: 'farm_order_statuses',
+        products: 'farm_products',
+        categories: 'farm_categories'
     };
     
-    return keyMapping[localStorageKey] || localStorageKey;
+    const key = (localStorageKey ?? '').toString().trim();
+    if (!key) {
+        console.warn('[getTableName] 빈 base 감지 → 임시로 farm_categories 반환');
+        return 'farm_categories'; // 안전한 읽기 전용 기본값
+    }
+    
+    const result = map[key] || key; // 매핑 없으면 원본 반환
+    console.log(`[getTableName] ${key} → ${result}`);
+    return result;
 }
 
 // 전역으로 노출

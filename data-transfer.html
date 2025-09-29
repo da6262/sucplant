@@ -136,7 +136,7 @@
             }
 
             loadDataCounts() {
-                const tables = ['customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
+                const tables = ['farm_customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
                 
                 tables.slice(0, 3).forEach((table, index) => {
                     const data = localStorage.getItem(table);
@@ -164,7 +164,7 @@
             }
 
             extractData() {
-                const tables = ['customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
+                const tables = ['farm_customers', 'orders', 'products', 'categories', 'order_sources', 'waitlist'];
                 const allData = {};
                 let totalItems = 0;
 
@@ -230,7 +230,7 @@
 
             getTableDisplayName(table) {
                 const names = {
-                    'customers': '고객',
+                    'farm_customers': '고객',
                     'orders': '주문',
                     'products': '상품',
                     'categories': '카테고리',

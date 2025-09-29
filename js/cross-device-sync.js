@@ -3,6 +3,9 @@
  * 핸드폰, 컴퓨터, 태블릿 간의 실시간 데이터 동기화
  */
 
+// 읽기 전용 테이블 목록
+const READ_ONLY_TABLES = ['farm_categories', 'farm_order_statuses'];
+
 class CrossDeviceSync {
     constructor() {
         this.syncInterval = null;
@@ -236,7 +239,7 @@ class CrossDeviceSync {
      * 서버에서 최신 데이터 가져오기
      */
     async fetchServerData() {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
         const serverData = {};
 
         for (const table of tables) {
@@ -261,7 +264,7 @@ class CrossDeviceSync {
      */
     async detectConflicts(serverData) {
         const conflicts = [];
-        const tables = ['customers', 'orders', 'products', 'waitlist'];
+        const tables = ['farm_customers', 'orders', 'products', 'waitlist'];
 
         for (const table of tables) {
             const localData = JSON.parse(localStorage.getItem(table) || '[]');
@@ -358,9 +361,12 @@ class CrossDeviceSync {
      * 로컬 변경사항 서버에 업로드
      */
     async uploadLocalChanges() {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        
+        // 읽기 전용 테이블 제외
+        const toUpload = tables.filter(table => !READ_ONLY_TABLES.includes(table));
 
-        for (const table of tables) {
+        for (const table of toUpload) {
             try {
                 const localData = JSON.parse(localStorage.getItem(table) || '[]');
                 
@@ -378,7 +384,7 @@ class CrossDeviceSync {
      * 로컬 데이터 업데이트
      */
     async updateLocalData(serverData) {
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
 
         for (const table of tables) {
             try {
@@ -462,7 +468,7 @@ class CrossDeviceSync {
      */
     getSyncStats() {
         const status = this.getSyncStatus();
-        const tables = ['customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
+        const tables = ['farm_customers', 'orders', 'products', 'waitlist', 'farm_categories', 'order_sources'];
         const stats = {
             lastSync: status?.lastSync || null,
             deviceCount: 0,

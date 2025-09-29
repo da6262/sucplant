@@ -187,17 +187,10 @@ class SimpleSyncStatus {
                 // 강제로 현재 디바이스 추가
                 window.deviceManager.ensureCurrentDeviceInList();
                 
-                const devices = await window.deviceManager.getAllDevices();
+                // 현재 디바이스만 표시
+                const devices = await window.deviceManager.getCurrentDeviceOnly();
                 if (devices && devices.length > 0) {
-                    const onlineDevices = devices.filter(device => 
-                        window.deviceManager.isDeviceOnline(device)
-                    );
-                    
-                    if (onlineDevices.length > 1) {
-                        this.updateStatus('success', `${onlineDevices.length}개 기기 연결됨`);
-                    } else {
-                        this.updateStatus('success', `현재 기기 연결됨 (${devices.length}개)`);
-                    }
+                    this.updateStatus('success', '현재 기기 연결됨');
                 } else {
                     // 디바이스가 없으면 강제로 현재 디바이스 추가
                     console.log('🔧 디바이스 목록이 비어있음 - 강제로 현재 디바이스 추가');
@@ -277,18 +270,18 @@ class SimpleSyncStatus {
             // 강제로 현재 디바이스 추가
             window.deviceManager.ensureCurrentDeviceInList();
             
-            window.deviceManager.getAllDevices().then(devices => {
-                let message = '📱 연결된 디바이스 목록:\n\n';
+            // 현재 디바이스만 표시
+            window.deviceManager.getCurrentDeviceOnly().then(devices => {
+                let message = '📱 현재 디바이스 정보:\n\n';
                 if (devices && devices.length > 0) {
                     devices.forEach(device => {
-                        const isCurrent = device.id === window.deviceManager?.deviceId;
                         const isOnline = window.deviceManager.isDeviceOnline(device);
                         const statusIcon = isOnline ? '🟢' : '🔴';
-                        const currentIcon = isCurrent ? '👉' : window.deviceManager.getDeviceIcon(device.type);
+                        const currentIcon = '👉';
                         
                         message += `${currentIcon} ${statusIcon} ${window.deviceManager.getDeviceTypeName(device.type)} (${device.platform})\n`;
                         message += `   마지막 접속: ${new Date(device.lastSeen).toLocaleString()}\n`;
-                        message += `   데이터 소스: ${device.source || 'local'}\n\n`;
+                        message += `   데이터 소스: ${device.source || 'current'}\n\n`;
                     });
                 } else {
                     // 디바이스가 없으면 강제로 현재 디바이스 추가
