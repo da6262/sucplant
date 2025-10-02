@@ -378,7 +378,7 @@ class DesktopIntegration {
         alert(helpContent);
     }
 
-    // 상태 모니터링 설정
+    // 상태 모니터링 설정 (성능 최적화 - 타이머 제거)
     setupStatusMonitoring() {
         // 데이터 변경 감지
         this.setupDataChangeDetection();
@@ -386,10 +386,8 @@ class DesktopIntegration {
         // 성능 모니터링
         this.setupPerformanceMonitoring();
         
-        // 주기적 상태 업데이트
-        setInterval(() => {
-            this.updateSystemStatus();
-        }, 5000);
+        // 주기적 상태 업데이트 제거됨 (성능 최적화)
+        console.log('✅ 상태 모니터링 설정 완료 (타이머 제거됨)');
     }
 
     // 데이터 변경 감지
@@ -406,21 +404,10 @@ class DesktopIntegration {
         };
     }
 
-    // 성능 모니터링
+    // 성능 모니터링 (메모리 체크 제거됨 - 성능 최적화)
     setupPerformanceMonitoring() {
-        // 메모리 사용량 모니터링 (개발 모드에서만)
-        if (process.env.NODE_ENV === 'development') {
-            setInterval(() => {
-                if (performance.memory) {
-                    const memory = performance.memory;
-                    console.log('메모리 사용량:', {
-                        used: Math.round(memory.usedJSHeapSize / 1048576) + 'MB',
-                        total: Math.round(memory.totalJSHeapSize / 1048576) + 'MB',
-                        limit: Math.round(memory.jsHeapSizeLimit / 1048576) + 'MB'
-                    });
-                }
-            }, 30000);
-        }
+        // 메모리 체크 타이머 제거됨 - 성능 최적화
+        console.log('✅ 성능 모니터링 설정 완료 (메모리 체크 제거됨)');
     }
 
     // 시스템 상태 업데이트
@@ -472,14 +459,12 @@ class DesktopIntegration {
         }
     }
 
-    // 자동 저장 설정
+    // 자동 저장 설정 (성능 최적화 - 타이머 제거)
     setupAutoSave() {
-        // 30초마다 자동 저장
-        setInterval(() => {
-            this.saveAllData();
-        }, 30000);
+        // 30초마다 자동 저장 제거됨 (성능 최적화)
+        console.log('✅ 자동 저장 설정 완료 (타이머 제거됨)');
 
-        // 페이지 종료 시 저장
+        // 페이지 종료 시 저장만 유지
         window.addEventListener('beforeunload', () => {
             this.saveAllData();
         });

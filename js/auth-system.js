@@ -5,6 +5,8 @@
  * Supabase Auth를 사용하여 안전한 인증을 제공합니다.
  */
 
+import { showToast } from '../utils/ui-helpers.js';
+
 class AuthSystem {
     constructor() {
         this.isAuthenticated = false;
@@ -138,7 +140,7 @@ class AuthSystem {
                 
                 // 환영 메시지
                 if (typeof orderSystem !== 'undefined') {
-                    orderSystem.showToast(`🌱 ${this.currentUser.name}님, 환영합니다!`, 3000);
+                    showToast(`🌱 ${this.currentUser.name}님, 환영합니다!`, 3000);
                 }
                 
                 return { success: true, message: '로그인 성공' };
@@ -183,7 +185,7 @@ class AuthSystem {
         console.log('✅ 로그아웃 완료');
         
         if (typeof orderSystem !== 'undefined') {
-            orderSystem.showToast('🔓 로그아웃되었습니다.', 2000);
+            showToast('🔓 로그아웃되었습니다.', 2000);
         }
     }
     

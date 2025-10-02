@@ -269,17 +269,13 @@
             document.getElementById('current-time').textContent = now.toLocaleTimeString('ko-KR');
         }
         
-        // 1초마다 시간 업데이트
-        setInterval(updateTime, 1000);
+        // 시간 업데이트 (성능 최적화 - 타이머 제거)
         updateTime();
 
-        // 자동 저장 시간 업데이트
+        // 자동 저장 시간 업데이트 (성능 최적화 - 타이머 제거)
         function updateLastSaved() {
             document.getElementById('last-saved').textContent = new Date().toLocaleTimeString('ko-KR');
         }
-
-        // 데이터 저장 시마다 호출
-        setInterval(updateLastSaved, 30000); // 30초마다 업데이트
 
         // 빠른 액션 함수들
         async function quickBackup() {

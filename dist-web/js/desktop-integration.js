@@ -406,21 +406,10 @@ class DesktopIntegration {
         };
     }
 
-    // 성능 모니터링
+    // 성능 모니터링 (메모리 체크 제거됨 - 성능 최적화)
     setupPerformanceMonitoring() {
-        // 메모리 사용량 모니터링 (개발 모드에서만)
-        if (process.env.NODE_ENV === 'development') {
-            setInterval(() => {
-                if (performance.memory) {
-                    const memory = performance.memory;
-                    console.log('메모리 사용량:', {
-                        used: Math.round(memory.usedJSHeapSize / 1048576) + 'MB',
-                        total: Math.round(memory.totalJSHeapSize / 1048576) + 'MB',
-                        limit: Math.round(memory.jsHeapSizeLimit / 1048576) + 'MB'
-                    });
-                }
-            }, 30000);
-        }
+        // 메모리 체크 타이머 제거됨 - 성능 최적화
+        console.log('✅ 성능 모니터링 설정 완료 (메모리 체크 제거됨)');
     }
 
     // 시스템 상태 업데이트

@@ -1,6 +1,11 @@
 // 고객 데이터 관리 모듈
 // features/customers/customerData.js
 
+// LocalStorage 키 생성 함수
+function getLocalStorageKey(key) {
+    return `farm_management_${key}`;
+}
+
 class CustomerDataManager {
     constructor() {
         this.farm_customers = [];
@@ -8,26 +13,13 @@ class CustomerDataManager {
         this.customerSortBy = 'newest'; // 기본값: 최근 등록순
     }
 
-    // 고객 데이터 로드 (LocalStorage에서)
+    // 고객 데이터 로드 (LocalStorage 전용)
     async loadCustomers() {
         try {
             console.log('👥 고객 데이터 로드 시작...');
             
-            // Supabase 통합 모듈이 있으면 사용, 없으면 LocalStorage 폴백
-            if (window.supabaseIntegration) {
-                const result = await window.supabaseIntegration.loadData('farm_customers');
-                if (result.success) {
-                    this.farm_customers = result.data || [];
-                    console.log(`📦 Supabase에서 고객 ${this.farm_customers.length}개 로드됨`);
-                    return this.farm_customers;
-                } else {
-                    console.warn('⚠️ Supabase 로드 실패, LocalStorage 폴백');
-                }
-            }
-            
-            // LocalStorage 폴백
-            const key = getLocalStorageKey('farm_customers');
-            const data = localStorage.getItem(key);
+            // LocalStorage에서 직접 로드 (키 통일: farm_customers)
+            const data = localStorage.getItem('farm_customers');
             this.farm_customers = data ? JSON.parse(data) : [];
             
             console.log(`📦 LocalStorage에서 고객 ${this.farm_customers.length}개 로드됨`);
@@ -40,25 +32,13 @@ class CustomerDataManager {
         }
     }
 
-    // 고객 데이터 저장
+    // 고객 데이터 저장 (LocalStorage 전용)
     async saveCustomers() {
         try {
             console.log('💾 고객 데이터 저장 시작...');
             
-            // Supabase 통합 모듈이 있으면 사용, 없으면 LocalStorage 폴백
-            if (window.supabaseIntegration) {
-                const result = await window.supabaseIntegration.saveData('farm_customers', this.farm_customers);
-                if (result.success) {
-                    console.log('✅ Supabase에 고객 데이터 저장 완료');
-                    return true;
-                } else {
-                    console.warn('⚠️ Supabase 저장 실패, LocalStorage 폴백');
-                }
-            }
-            
-            // LocalStorage 폴백
-            const key = getLocalStorageKey('farm_customers');
-            localStorage.setItem(key, JSON.stringify(this.farm_customers));
+            // LocalStorage에 직접 저장 (키 통일: farm_customers)
+            localStorage.setItem('farm_customers', JSON.stringify(this.farm_customers));
             console.log('✅ LocalStorage에 고객 데이터 저장 완료');
             return true;
             
@@ -295,10 +275,16 @@ class CustomerDataManager {
     }
 }
 
+// 인스턴스 생성
+const customerDataManager = new CustomerDataManager();
+
 // 전역 인스턴스 생성
-window.customerDataManager = new CustomerDataManager();
+window.customerDataManager = customerDataManager;
 
 // 모듈 내보내기 (ES6 모듈 지원시)
 if (typeof module !== 'undefined' && module.exports) {
     module.exports = CustomerDataManager;
 }
+
+// ES6 모듈 export
+export { customerDataManager, CustomerDataManager };
