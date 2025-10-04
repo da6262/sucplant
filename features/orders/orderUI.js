@@ -16,6 +16,7 @@ export function openOrderModal(orderId = null) {
         
         // 모달 표시
         modal.classList.remove('hidden');
+        modal.style.display = 'flex';
         
         if (orderId) {
             // 수정 모드
@@ -26,6 +27,9 @@ export function openOrderModal(orderId = null) {
             modalTitle.textContent = '새 주문 등록';
             clearOrderForm();
         }
+        
+        // 주문 폼 HTML 생성
+        generateOrderFormHTML();
         
         // 고객명 자동완성 초기화 (모달이 열린 후)
         setTimeout(() => {
@@ -47,6 +51,7 @@ export function closeOrderModal() {
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
+            modal.style.display = 'none';
         }
         
     } catch (error) {
@@ -64,11 +69,124 @@ export function loadOrderData(orderId) {
     }
 }
 
+// 주문 폼 HTML 생성
+function generateOrderFormHTML() {
+    try {
+        const orderForm = document.getElementById('order-form');
+        if (!orderForm) {
+            console.error('주문 폼을 찾을 수 없습니다.');
+            return;
+        }
+        
+        orderForm.innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- 고객 정보 -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-gray-800 border-b pb-2">고객 정보</h4>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">고객명 *</label>
+                        <input type="text" id="order-customer-name" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="고객명을 입력하세요" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">연락처 *</label>
+                        <input type="tel" id="order-customer-phone" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="010-1234-5678" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">주소 *</label>
+                        <textarea id="order-customer-address" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="주소를 입력하세요" required></textarea>
+                    </div>
+                </div>
+                
+                <!-- 주문 정보 -->
+                <div class="space-y-4">
+                    <h4 class="text-lg font-semibold text-gray-800 border-b pb-2">주문 정보</h4>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">상품명 *</label>
+                        <input type="text" id="order-product-name" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="상품명을 입력하세요" required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">수량 *</label>
+                        <input type="number" id="order-quantity" min="1" value="1"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               required>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">가격</label>
+                        <input type="number" id="order-price" min="0"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                               placeholder="가격을 입력하세요">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">배송 메모</label>
+                        <textarea id="order-memo" rows="3"
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                                  placeholder="배송 관련 메모를 입력하세요"></textarea>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 버튼 영역 -->
+            <div class="flex justify-end gap-3 mt-6 pt-6 border-t">
+                <button type="button" onclick="closeOrderModal()" 
+                        class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors">
+                    취소
+                </button>
+                <button type="submit" 
+                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    주문 등록
+                </button>
+            </div>
+        `;
+        
+        console.log('주문 폼 HTML 생성 완료');
+        
+    } catch (error) {
+        console.error('주문 폼 HTML 생성 실패:', error);
+    }
+}
+
 // 주문 폼 초기화
 export function clearOrderForm() {
     try {
         console.log('주문 폼 초기화');
-        // 주문 폼 초기화 로직 구현
+        
+        // 폼 필드들 초기화
+        const fields = [
+            'order-customer-name',
+            'order-customer-phone', 
+            'order-customer-address',
+            'order-product-name',
+            'order-quantity',
+            'order-price',
+            'order-memo'
+        ];
+        
+        fields.forEach(fieldId => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                if (field.type === 'number') {
+                    field.value = fieldId === 'order-quantity' ? '1' : '';
+                } else {
+                    field.value = '';
+                }
+            }
+        });
+        
     } catch (error) {
         console.error('주문 폼 초기화 실패:', error);
     }
@@ -78,6 +196,14 @@ export function clearOrderForm() {
 export function openPickingListModal() {
     try {
         console.log('피킹 리스트 모달 열기');
+        
+        // 선택된 주문 확인
+        const selectedOrders = getSelectedOrders();
+        
+        if (selectedOrders.length === 0) {
+            alert('피킹할 주문을 선택해주세요.');
+            return;
+        }
         
         // 피킹 리스트 생성 로직
         generatePickingList();
@@ -105,13 +231,8 @@ export function generatePickingList() {
     try {
         console.log('피킹 리스트 생성');
         
-        // 선택된 주문들 가져오기
+        // 선택된 주문들 가져오기 (이미 openPickingListModal에서 확인됨)
         const selectedOrders = getSelectedOrders();
-        
-        if (selectedOrders.length === 0) {
-            alert('피킹할 주문을 선택해주세요.');
-            return;
-        }
         
         // 피킹 리스트 데이터 생성
         const pickingData = createPickingListData(selectedOrders);

@@ -213,3 +213,5 @@ window.editCategory = editCategory;
 window.deleteCategory = deleteCategory;
 
 
+
+

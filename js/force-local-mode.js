@@ -6,8 +6,8 @@ console.log('🔄 강제 로컬 모드 전환 시작...');
 // 1. 앱 초기화 전에 API 비활성화 (Supabase 동기화를 위해 비활성화)
 window.FORCE_LOCAL_MODE = false;
 
-// 인증 시스템은 모든 모드에서 활성화
-console.log('🔐 인증 시스템은 강제 로컬 모드와 관계없이 활성화됩니다');
+// 인증 시스템 비활성화 (로컬 모드)
+console.log('🚫 인증 시스템 비활성화됨 (로컬 모드)');
 
 // 2. 모드 스위치 시스템과 통합 (Supabase 동기화를 위해 API 모드로 설정)
 if (window.MODE_SWITCH) {

@@ -1732,7 +1732,13 @@ class OrderManagementSystem {
                     console.log('현재 this:', this);
                     console.log('openPickingListModal 함수 존재 여부:', typeof this.openPickingListModal);
                     try {
-                        this.openPickingListModal();
+                        // 전역 함수로 호출
+                        if (typeof window.openPickingListModal === 'function') {
+                            window.openPickingListModal();
+                        } else {
+                            console.error('❌ openPickingListModal 함수를 찾을 수 없습니다');
+                            alert('피킹 리스트 기능이 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+                        }
                     } catch (error) {
                         console.error('❌ 피킹 리스트 모달 열기 실패:', error);
                         alert('피킹 리스트 기능에 오류가 발생했습니다: ' + error.message);
