@@ -1277,6 +1277,18 @@ class OrderManagementSystem {
                 selectedButton.classList.add('active');
             }
             
+            // 주문 탭인 경우 주문 테이블 렌더링
+            if (tabId === 'tab-orders' || tabId === 'orders') {
+                console.log('📦 주문 탭 클릭됨 - 데이터 로드 및 렌더링 시작');
+                
+                if (window.renderOrdersTable) {
+                    await window.renderOrdersTable();
+                    console.log('🎨 주문 목록 렌더링 완료');
+                } else {
+                    console.error('❌ renderOrdersTable 함수를 찾을 수 없습니다.');
+                }
+            }
+            
             // 고객 탭인 경우 고객 테이블 렌더링
             if (tabId === 'tab-customers') {
                 console.log('👥 고객 탭 클릭됨 - 데이터 로드 및 렌더링 시작');
@@ -1560,7 +1572,8 @@ class OrderManagementSystem {
         console.log('🏠 로컬 기반 시스템: API 모니터링 비활성화');
         
         this.setupEventListeners();
-        // 초기 데이터 로드 (고객 데이터만)
+        
+        // 초기 데이터 로드
         if (window.customerDataManager) {
             console.log('📦 고객 데이터 로드 시작...');
             await window.customerDataManager.loadCustomers();
@@ -1572,6 +1585,13 @@ class OrderManagementSystem {
                 console.log('🎨 고객 목록 강제 렌더링...');
                 window.renderCustomersTable('all');
             }
+        }
+        
+        // 주문 데이터 초기 로드 및 렌더링
+        if (window.renderOrdersTable) {
+            console.log('📦 주문 데이터 초기 로드 및 렌더링...');
+            await window.renderOrdersTable();
+            console.log('🎨 주문 목록 초기 렌더링 완료');
         }
         
         if (window.productDataManager) {

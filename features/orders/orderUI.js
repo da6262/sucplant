@@ -42,13 +42,11 @@ export function openOrderModal(orderId = null) {
 // 주문 모달 닫기
 export function closeOrderModal() {
     try {
-        console.log('주문 모달 닫기');
-        
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
         }
-        
+        console.log('주문 모달 닫기 완료');
     } catch (error) {
         console.error('주문 모달 닫기 실패:', error);
     }
@@ -68,7 +66,43 @@ export function loadOrderData(orderId) {
 export function clearOrderForm() {
     try {
         console.log('주문 폼 초기화');
-        // 주문 폼 초기화 로직 구현
+        
+        // 주문일자를 오늘 날짜로 설정
+        const today = new Date().toISOString().split('T')[0];
+        const orderDateInput = document.getElementById('order-date');
+        if (orderDateInput) {
+            orderDateInput.value = today;
+        }
+        
+        // 기타 폼 필드 초기화
+        const form = document.getElementById('order-modal');
+        if (form && form.reset) {
+            form.reset();
+            // 주문일자는 다시 오늘 날짜로 설정 (reset 후에)
+            if (orderDateInput) {
+                orderDateInput.value = today;
+            }
+        } else {
+            // form.reset이 없는 경우 수동으로 필드 초기화
+            const inputs = form?.querySelectorAll('input, select, textarea');
+            if (inputs) {
+                inputs.forEach(input => {
+                    if (input.id !== 'order-date') { // 주문일자는 제외
+                        if (input.type === 'checkbox' || input.type === 'radio') {
+                            input.checked = false;
+                        } else {
+                            input.value = '';
+                        }
+                    }
+                });
+            }
+            // 주문일자는 다시 오늘 날짜로 설정
+            if (orderDateInput) {
+                orderDateInput.value = today;
+            }
+        }
+        
+        console.log('주문 폼 초기화 완료, 주문일자:', today);
     } catch (error) {
         console.error('주문 폼 초기화 실패:', error);
     }
@@ -133,7 +167,7 @@ export function generatePackagingLabels() {
         const selectedOrders = getSelectedOrders();
         
         if (selectedOrders.length === 0) {
-            alert('포장 라벨을 생성할 주문을 선택해주세요.');
+            alert('포장할 주문을 선택해주세요.');
             return;
         }
         
@@ -151,17 +185,14 @@ export function generatePackagingLabels() {
 // 선택된 주문들 가져오기
 export function getSelectedOrders() {
     try {
-        const checkboxes = document.querySelectorAll('#orders-table-body input[type="checkbox"]:checked');
+        const checkboxes = document.querySelectorAll('.order-checkbox:checked');
         const selectedOrders = [];
         
         checkboxes.forEach(checkbox => {
-            const row = checkbox.closest('tr');
-            if (row) {
-                const orderId = row.dataset.orderId;
-                if (orderId) {
-                    selectedOrders.push(orderId);
-                }
-            }
+            const orderId = checkbox.value;
+            // 주문 데이터에서 해당 ID 찾기
+            // 실제 구현에서는 주문 데이터를 참조해야 함
+            selectedOrders.push({ id: orderId });
         });
         
         return selectedOrders;
@@ -223,7 +254,7 @@ export async function loadOrders() {
         console.log('📦 주문 데이터 로드 시작...');
         
         // LocalStorage에서 주문 데이터 가져오기
-        const ordersData = localStorage.getItem('farm_orders');
+        const ordersData = localStorage.getItem('farm_orders') || localStorage.getItem('orders');
         if (ordersData) {
             const orders = JSON.parse(ordersData);
             console.log(`✅ 주문 데이터 ${orders.length}개 로드 완료`);
@@ -239,83 +270,94 @@ export async function loadOrders() {
 }
 
 // 주문 테이블 렌더링
-export function renderOrdersTable() {
+export async function renderOrdersTable() {
     try {
         console.log('🎨 주문 테이블 렌더링 시작...');
         
-        const tbody = document.getElementById('orders-table-body');
-        if (!tbody) {
-            console.error('❌ 주문 테이블 body를 찾을 수 없습니다');
+        // 주문 데이터 로드
+        const orders = await loadOrders();
+        console.log(`📦 로드된 주문 수: ${orders.length}개`);
+        
+        // 주문 테이블 컨테이너 찾기
+        const ordersTableBody = document.getElementById('orders-table-body');
+        if (!ordersTableBody) {
+            console.error('❌ 주문 테이블 컨테이너를 찾을 수 없습니다');
             return;
         }
         
-        // 주문 데이터 로드
-        loadOrders().then(orders => {
-            if (orders.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-shopping-cart text-4xl mb-2"></i><br>
-                            등록된 주문이 없습니다
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-            
-            // 주문 목록 렌더링
-            tbody.innerHTML = orders.map(order => `
-                <tr class="hover:bg-gray-50" data-order-id="${order.id}">
-                    <td class="px-3 py-3 text-center">
-                        <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500" 
-                               data-order-id="${order.id}">
-                    </td>
-                    <td class="px-3 py-3 text-sm text-gray-900">${order.order_date || '-'}</td>
-                    <td class="px-3 py-3 text-sm text-gray-900">${order.order_number || '-'}</td>
-                    <td class="px-3 py-3 text-sm text-gray-900">${order.customer_name || '-'}</td>
-                    <td class="px-3 py-3 text-sm text-gray-900">${order.customer_phone || '-'}</td>
-                    <td class="px-3 py-3 text-center">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
-                                    ${getStatusColor(order.order_status)}">
-                            ${order.order_status || '주문접수'}
-                        </span>
-                    </td>
-                    <td class="px-3 py-3 text-center">
-                        <i class="fas fa-print text-gray-400"></i>
-                    </td>
-                    <td class="px-3 py-3 text-center">
-                        <i class="fas fa-comment-sms text-gray-400"></i>
-                    </td>
-                    <td class="px-3 py-3 text-center">
-                        <button onclick="editOrder('${order.id}')" class="text-blue-600 hover:text-blue-800 mr-2">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button onclick="deleteOrder('${order.id}')" class="text-red-600 hover:text-red-800">
-                            <i class="fas fa-trash"></i>
-                        </button>
+        if (orders.length === 0) {
+            ordersTableBody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="px-6 py-4 text-center text-gray-500">
+                        등록된 주문이 없습니다
                     </td>
                 </tr>
-            `).join('');
-            
-            console.log('✅ 주문 테이블 렌더링 완료');
-        });
+            `;
+            console.log('📭 주문 데이터가 없습니다');
+            return;
+        }
+        
+        // 주문 테이블 렌더링
+        ordersTableBody.innerHTML = orders.map(order => `
+            <tr class="hover:bg-gray-50">
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500" 
+                           value="${order.id}">
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${order.order_number || 'N/A'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${order.order_date || 'N/A'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${order.customer_name || 'N/A'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${order.customer_phone || 'N/A'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.order_status)}">
+                        ${order.order_status || '주문접수'}
+                    </span>
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    ${order.total_amount ? order.total_amount.toLocaleString() + '원' : '0원'}
+                </td>
+                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    <div class="flex justify-center space-x-2">
+                        <button onclick="editOrder('${order.id}')" 
+                                class="text-blue-600 hover:text-blue-800 font-medium text-xs">
+                            <i class="fas fa-edit mr-1"></i>수정
+                        </button>
+                        <button onclick="deleteOrder('${order.id}')" 
+                                class="text-red-600 hover:text-red-800 font-medium text-xs">
+                            <i class="fas fa-trash mr-1"></i>삭제
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `).join('');
+        
+        console.log(`✅ 주문 테이블 렌더링 완료: ${orders.length}개`);
         
     } catch (error) {
         console.error('❌ 주문 테이블 렌더링 실패:', error);
     }
 }
 
-// 주문 상태 색상 반환
+// 주문 상태 색상 가져오기
 function getStatusColor(status) {
     const statusColors = {
-        '주문접수': 'bg-yellow-100 text-yellow-800',
+        '주문접수': 'bg-gray-100 text-gray-800',
         '입금확인': 'bg-blue-100 text-blue-800',
-        '배송준비': 'bg-orange-100 text-orange-800',
+        '배송준비': 'bg-yellow-100 text-yellow-800',
         '배송시작': 'bg-purple-100 text-purple-800',
         '배송완료': 'bg-green-100 text-green-800',
         '주문취소': 'bg-red-100 text-red-800',
-        '환불처리': 'bg-gray-100 text-gray-800'
+        '환불처리': 'bg-red-100 text-red-800'
     };
+
     return statusColors[status] || 'bg-gray-100 text-gray-800';
 }
 
@@ -372,6 +414,7 @@ export async function saveOrder() {
         closeOrderModal();
         
         console.log('✅ 주문 저장 완료');
+        console.log('💾 저장된 주문 수:', existingOrders.length);
         
         // 성공 메시지
         if (window.showToast) {
@@ -410,9 +453,17 @@ function getOrderItems() {
     const itemRows = itemsContainer.querySelectorAll('.order-item-row');
     itemRows.forEach(row => {
         const productId = row.dataset.productId;
-        const productName = row.querySelector('.product-name').textContent;
-        const quantity = parseInt(row.querySelector('.product-quantity').value) || 1;
-        const price = parseFloat(row.querySelector('.product-price').value) || 0;
+        const productName = row.querySelector('.product-name')?.textContent || '';
+        const quantityInput = row.querySelector('.order-quantity');
+        const priceInput = row.querySelector('.product-price');
+        
+        if (!quantityInput || !priceInput) {
+            console.warn('⚠️ 주문 아이템에서 입력 필드를 찾을 수 없음:', productId);
+            return;
+        }
+        
+        const quantity = parseInt(quantityInput.value) || 1;
+        const price = parseFloat(priceInput.value) || 0;
         
         if (productId && quantity > 0) {
             items.push({
@@ -428,105 +479,132 @@ function getOrderItems() {
     return items;
 }
 
-// 상품 추가 모달 열기
+// 상품 재고 업데이트
+async function updateProductStock(orderItems, mode) {
+    try {
+        console.log('📦 상품 재고 업데이트:', mode);
+        // 재고 업데이트 로직 구현
+    } catch (error) {
+        console.error('❌ 재고 업데이트 실패:', error);
+    }
+}
+
+// 주문 수정
+export function editOrder(orderId) {
+    try {
+        console.log('✏️ 주문 수정:', orderId);
+        
+        // 주문 데이터 로드
+        loadOrders().then(orders => {
+            const order = orders.find(o => o.id === orderId);
+            if (order) {
+                // 폼에 데이터 채우기
+                document.getElementById('order-id').value = order.id;
+                document.getElementById('order-customer-name').value = order.customer_name || '';
+                document.getElementById('order-customer-phone').value = order.customer_phone || '';
+                document.getElementById('order-customer-address').value = order.customer_address || '';
+                document.getElementById('order-date').value = order.order_date || '';
+                document.getElementById('order-status').value = order.order_status || '주문접수';
+                document.getElementById('order-tracking').value = order.tracking_number || '';
+                document.getElementById('order-shipping-fee').value = order.shipping_fee || 0;
+                document.getElementById('order-discount').value = order.discount_amount || 0;
+                document.getElementById('order-total-amount').value = order.total_amount || 0;
+                document.getElementById('order-memo').value = order.memo || '';
+                
+                // 모달 열기
+                openOrderModal(orderId);
+            }
+        });
+        
+    } catch (error) {
+        console.error('❌ 주문 수정 실패:', error);
+    }
+}
+
+// 주문 삭제
+export function deleteOrder(orderId) {
+    try {
+        console.log('🗑️ 주문 삭제:', orderId);
+        
+        if (confirm('정말로 이 주문을 삭제하시겠습니까?')) {
+            loadOrders().then(orders => {
+                const filteredOrders = orders.filter(order => order.id !== orderId);
+                localStorage.setItem('farm_orders', JSON.stringify(filteredOrders));
+                
+                // UI 업데이트
+                renderOrdersTable();
+                
+                console.log('✅ 주문 삭제 완료');
+                if (window.showToast) {
+                    window.showToast('✅ 주문이 삭제되었습니다', 3000);
+                }
+            });
+        }
+        
+    } catch (error) {
+        console.error('❌ 주문 삭제 실패:', error);
+    }
+}
+
+// 상품 선택 모달 열기
 export function openProductSelectModal() {
     try {
         console.log('🛍️ 상품 선택 모달 열기');
         
-        // 상품 선택 모달이 없으면 생성
-        if (!document.getElementById('product-select-modal')) {
-            createProductSelectModal();
-        }
-        
         const modal = document.getElementById('product-select-modal');
-        modal.classList.remove('hidden');
-        
-        // 상품 목록 로드
-        loadProductsForOrder();
+        if (modal) {
+            modal.classList.remove('hidden');
+            loadProductsForOrder();
+        }
         
     } catch (error) {
         console.error('❌ 상품 선택 모달 열기 실패:', error);
     }
 }
 
-// 상품 선택 모달 생성
-function createProductSelectModal() {
-    const modalHTML = `
-        <div id="product-select-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-            <div class="flex items-center justify-center min-h-screen" style="padding: 3px;">
-                <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
-                    <div style="padding: 3px;" class="border-b border-gray-200">
-                        <div class="flex justify-between items-center">
-                            <h3 style="font-size: 14px; font-weight: 600;" class="text-gray-800">상품 선택</h3>
-                            <button onclick="closeProductSelectModal()" class="text-gray-400 hover:text-gray-600">
-                                <i class="fas fa-times" style="font-size: 14px;"></i>
-                            </button>
-                        </div>
-                    </div>
-                    
-                    <div style="padding: 3px;" class="overflow-y-auto max-h-[60vh]">
-                        <div style="margin-bottom: 3px;">
-                            <input type="text" id="product-search-input" placeholder="상품명으로 검색..." 
-                                   style="font-size: 14px;" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        </div>
-                        
-                        <div id="product-select-list" style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 3px;">
-                            <!-- 상품 목록이 여기에 표시됩니다 -->
-                        </div>
-                    </div>
-                    
-                    <div style="padding: 3px;" class="border-t border-gray-200">
-                        <div class="flex justify-end" style="gap: 3px;">
-                            <button onclick="closeProductSelectModal()" 
-                                    style="padding: 3px 6px; font-size: 14px;" class="text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg">
-                                취소
-                            </button>
-                            <button onclick="addSelectedProducts()" 
-                                    style="padding: 3px 6px; font-size: 14px;" class="bg-green-600 hover:bg-green-700 text-white rounded-lg">
-                                선택한 상품 추가
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-}
-
 // 상품 선택 모달 닫기
 export function closeProductSelectModal() {
-    const modal = document.getElementById('product-select-modal');
-    if (modal) {
-        modal.classList.add('hidden');
+    try {
+        const modal = document.getElementById('product-select-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+        }
+        console.log('✅ 상품 선택 모달 닫기 완료');
+    } catch (error) {
+        console.error('❌ 상품 선택 모달 닫기 실패:', error);
     }
 }
 
 // 주문용 상품 목록 로드
 async function loadProductsForOrder() {
     try {
-        console.log('📦 주문용 상품 목록 로드...');
+        console.log('🛍️ 주문용 상품 목록 로드 시작...');
         
-        // 상품 데이터 로드 (올바른 키 사용)
-        const productsData = localStorage.getItem('farm_management_farm_products');
-        if (!productsData) {
-            console.log('⚠️ 상품 데이터가 없습니다');
+        // 상품 데이터 로드
+        const productsData = localStorage.getItem('farm_products') || localStorage.getItem('products');
+        const products = productsData ? JSON.parse(productsData) : [];
+        
+        console.log(`📦 로드된 상품 수: ${products.length}개`);
+        
+        const productList = document.getElementById('product-list');
+        if (!productList) {
+            console.error('❌ 상품 목록 컨테이너를 찾을 수 없습니다');
             return;
         }
-        
-        const products = JSON.parse(productsData);
-        const productList = document.getElementById('product-select-list');
         
         if (products.length === 0) {
             productList.innerHTML = `
                 <div class="text-center py-8 text-gray-500">
-                    <i class="fas fa-box text-2xl mb-2"></i>
-                    <p>등록된 상품이 없습니다</p>
+                    <i class="fas fa-leaf text-4xl mb-2"></i><br>
+                    등록된 상품이 없습니다
                 </div>
             `;
             return;
         }
+        
+        // 상품 데이터를 전역 변수로 설정
+        window.allProducts = products;
+        console.log('🌍 전역 상품 데이터 설정:', products.length, '개');
         
         // 상품 목록 렌더링 (3개씩 그리드)
         productList.innerHTML = products.map(product => `
@@ -557,19 +635,25 @@ async function loadProductsForOrder() {
         
         // 검색 기능
         const searchInput = document.getElementById('product-search-input');
-        searchInput.addEventListener('input', (e) => {
-            const searchTerm = e.target.value.toLowerCase();
-            const productItems = productList.querySelectorAll('.product-item');
-            
-            productItems.forEach(item => {
-                const productName = item.querySelector('h4').textContent.toLowerCase();
-                if (productName.includes(searchTerm)) {
-                    item.style.display = 'block';
-                } else {
-                    item.style.display = 'none';
-                }
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                const productItems = document.querySelectorAll('.product-item');
+                
+                productItems.forEach(item => {
+                    const productName = item.querySelector('h4').textContent.toLowerCase();
+                    const productCategory = item.querySelector('p').textContent.toLowerCase();
+                    
+                    if (productName.includes(searchTerm) || productCategory.includes(searchTerm)) {
+                        item.style.display = 'block';
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
             });
-        });
+        }
+        
+        console.log('✅ 주문용 상품 목록 로드 완료');
         
     } catch (error) {
         console.error('❌ 주문용 상품 목록 로드 실패:', error);
@@ -601,16 +685,21 @@ function addSelectedProducts() {
             const productName = productItem.querySelector('h4').textContent;
             const quantityInput = productItem.querySelector('.product-quantity');
             const quantity = parseInt(quantityInput.value) || 1;
-            // 가격 찾기 (더 정확한 선택자 사용)
-            const priceElement = productItem.querySelector('.text-gray-900');
-            let price = 0;
             
-            if (priceElement) {
-                const priceText = priceElement.textContent;
-                console.log('🔍 가격 텍스트:', priceText);
-                price = parseFloat(priceText.replace(/[^0-9]/g, '')) || 0;
-            } else {
-                console.warn('⚠️ 가격 요소를 찾을 수 없음');
+            // 상품 데이터에서 직접 가격 가져오기
+            let price = 0;
+            try {
+                // 상품 목록에서 해당 상품 찾기
+                const allProducts = window.allProducts || [];
+                const product = allProducts.find(p => p.id === productId);
+                if (product && product.price) {
+                    price = parseFloat(product.price) || 0;
+                    console.log('💰 상품 데이터에서 가격 가져옴:', product.name, price);
+                } else {
+                    console.warn('⚠️ 상품 데이터에서 가격을 찾을 수 없음:', productId);
+                }
+            } catch (error) {
+                console.error('❌ 가격 가져오기 실패:', error);
             }
             
             console.log('💰 최종 가격:', price);
@@ -732,127 +821,21 @@ function calculateOrderTotal() {
             totalAmountInput.value = totalAmount;
         }
         
-        console.log('💰 주문 총액 계산 완료:', { productAmount, shippingFee, discount, totalAmount });
+        console.log(`💰 계산 완료: 상품금액=${productAmount}, 배송비=${shippingFee}, 할인=${discount}, 총액=${totalAmount}`);
         
     } catch (error) {
         console.error('❌ 주문 총액 계산 실패:', error);
     }
 }
 
-// 상품 재고 차감/복구 처리
-async function updateProductStock(orderItems, mode) {
-    try {
-        console.log('📦 상품 재고 처리 시작...', { mode, items: orderItems.length });
-        
-        // 상품 데이터 로드
-        const productsData = localStorage.getItem('farm_management_farm_products');
-        if (!productsData) {
-            console.log('⚠️ 상품 데이터가 없습니다');
-            return;
-        }
-        
-        const products = JSON.parse(productsData);
-        let updated = false;
-        
-        orderItems.forEach(item => {
-            const product = products.find(p => p.id === item.product_id);
-            if (product) {
-                const currentStock = parseInt(product.stock) || 0;
-                const orderQuantity = parseInt(item.quantity) || 0;
-                
-                if (mode === 'new') {
-                    // 새 주문: 재고 차감
-                    const newStock = Math.max(0, currentStock - orderQuantity);
-                    product.stock = newStock;
-                    console.log(`📉 ${product.name}: ${currentStock} → ${newStock} (차감: ${orderQuantity})`);
-                    
-                    if (newStock === 0) {
-                        console.log(`⚠️ ${product.name} 재고 부족!`);
-                    }
-                } else if (mode === 'update') {
-                    // 주문 수정: 이전 차감량 복구 후 새로 차감
-                    // (실제로는 이전 주문과 비교해야 하지만 간단히 처리)
-                    const newStock = Math.max(0, currentStock - orderQuantity);
-                    product.stock = newStock;
-                    console.log(`🔄 ${product.name}: ${currentStock} → ${newStock} (수정: ${orderQuantity})`);
-                }
-                
-                updated = true;
-            }
-        });
-        
-        if (updated) {
-            // 상품 데이터 저장
-            localStorage.setItem('farm_management_farm_products', JSON.stringify(products));
-            console.log('✅ 상품 재고 업데이트 완료');
-            
-            // 상품관리 화면 새로고침 (만약 열려있다면)
-            if (window.renderProductsTable) {
-                window.renderProductsTable();
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ 상품 재고 처리 실패:', error);
-    }
-}
-
-// 주소검색 기능
-export function openAddressSearch() {
-    try {
-        console.log('🏠 주소검색 시작...');
-        
-        // 카카오 주소 API 로드 확인
-        if (typeof daum === 'undefined') {
-            console.error('❌ 카카오 주소 API가 로드되지 않았습니다');
-            alert('주소검색 서비스를 사용할 수 없습니다.');
-            return;
-        }
-        
-        new daum.Postcode({
-            oncomplete: function(data) {
-                let addr = '';
-                let extraAddr = '';
-                
-                if (data.userSelectedType === 'R') {
-                    addr = data.roadAddress;
-                } else {
-                    addr = data.jibunAddress;
-                }
-                
-                if (data.userSelectedType === 'R') {
-                    if (data.bname !== '' && /[동|로|가]$/g.test(data.bname)) {
-                        extraAddr += data.bname;
-                    }
-                    if (data.buildingName !== '' && data.apartment === 'Y') {
-                        extraAddr += (extraAddr !== '' ? ', ' + data.buildingName : data.buildingName);
-                    }
-                    if (extraAddr !== '') {
-                        extraAddr = ' (' + extraAddr + ')';
-                    }
-                    addr += extraAddr;
-                }
-                
-                // 주소 입력 필드에 값 설정
-                document.getElementById('order-customer-address').value = addr;
-                
-                console.log('✅ 주소검색 완료:', addr);
-            }
-        }).open();
-        
-    } catch (error) {
-        console.error('❌ 주소검색 실패:', error);
-    }
-}
-
-// 고객명 자동완성 기능
+// 고객명 자동완성 초기화
 export function initCustomerAutocomplete() {
     try {
         console.log('👤 고객명 자동완성 초기화...');
         
         const customerNameInput = document.getElementById('order-customer-name');
         if (!customerNameInput) {
-            console.log('⚠️ 고객명 입력 필드를 찾을 수 없습니다');
+            console.warn('⚠️ 고객명 입력 필드를 찾을 수 없습니다');
             return;
         }
         
@@ -872,262 +855,74 @@ export function initCustomerAutocomplete() {
 // 고객명 입력 처리
 function handleCustomerNameInput(event) {
     const input = event.target;
-    const value = input.value.trim();
+    const value = input.value.toLowerCase();
     
-    // 기존 자동완성 드롭다운 제거
-    removeAutocompleteDropdown();
-    
-    if (value.length === 0) {
+    if (value.length < 2) {
+        hideCustomerSuggestions();
         return;
     }
     
     // 고객 데이터에서 검색
-    const matchingCustomers = searchCustomers(value);
+    const customersData = localStorage.getItem('farm_customers') || localStorage.getItem('customers');
+    const customers = customersData ? JSON.parse(customersData) : [];
+    
+    const matchingCustomers = customers.filter(customer => 
+        customer.name && customer.name.toLowerCase().includes(value)
+    );
     
     if (matchingCustomers.length > 0) {
-        showAutocompleteDropdown(input, matchingCustomers);
+        showCustomerSuggestions(matchingCustomers, input);
     } else {
-        // 일치하는 고객이 없으면 새 고객 등록 확인
-        showNewCustomerConfirmation(input, value);
+        hideCustomerSuggestions();
     }
 }
 
-// 고객 검색
-function searchCustomers(searchTerm) {
-    try {
-        console.log('🔍 고객 검색 시작:', searchTerm);
-        
-        // 고객 데이터 로드 (여러 키 시도)
-        let customersData = localStorage.getItem('farm_customers');
-        if (!customersData) {
-            customersData = localStorage.getItem('customers');
-        }
-        if (!customersData) {
-            customersData = localStorage.getItem('farm_customers_data');
-        }
-        
-        if (!customersData) {
-            console.log('⚠️ 고객 데이터가 없습니다');
-            console.log('🔍 사용 가능한 LocalStorage 키들:', Object.keys(localStorage));
-            return [];
-        }
-        
-        const customers = JSON.parse(customersData);
-        console.log('📊 전체 고객 수:', customers.length);
-        console.log('📋 고객 목록:', customers.map(c => c.name));
-        
-        // 검색어와 일치하는 고객 필터링
-        const matchingCustomers = customers.filter(customer => {
-            const name = customer.name || '';
-            const phone = customer.phone || '';
-            const email = customer.email || '';
-            
-            console.log(`🔍 검색 대상: "${name}" (전화: ${phone})`);
-            
-            const nameMatch = name.toLowerCase().includes(searchTerm.toLowerCase());
-            const phoneMatch = phone.includes(searchTerm);
-            const emailMatch = email.toLowerCase().includes(searchTerm.toLowerCase());
-            
-            console.log(`📝 매칭 결과: 이름=${nameMatch}, 전화=${phoneMatch}, 이메일=${emailMatch}`);
-            
-            if (nameMatch || phoneMatch || emailMatch) {
-                console.log('✅ 매칭된 고객:', customer.name, customer.phone);
-            }
-            
-            return nameMatch || phoneMatch || emailMatch;
+// 고객 제안 표시
+function showCustomerSuggestions(customers, input) {
+    hideCustomerSuggestions();
+    
+    const suggestions = document.createElement('div');
+    suggestions.id = 'customer-suggestions';
+    suggestions.className = 'absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg max-h-48 overflow-y-auto';
+    
+    customers.forEach(customer => {
+        const item = document.createElement('div');
+        item.className = 'px-3 py-2 hover:bg-gray-100 cursor-pointer text-sm';
+        item.textContent = customer.name;
+        item.addEventListener('click', () => {
+            selectCustomer(customer);
+            hideCustomerSuggestions();
         });
-        
-        console.log('🎯 매칭된 고객 수:', matchingCustomers.length);
-        
-        // 최대 5개까지만 표시
-        return matchingCustomers.slice(0, 5);
-        
-    } catch (error) {
-        console.error('❌ 고객 검색 실패:', error);
-        return [];
-    }
-}
-
-// 자동완성 드롭다운 표시
-function showAutocompleteDropdown(input, customers) {
-    try {
-        // 기존 드롭다운 제거
-        removeAutocompleteDropdown();
-        
-        // 드롭다운 생성
-        const dropdown = document.createElement('div');
-        dropdown.id = 'customer-autocomplete-dropdown';
-        dropdown.className = 'absolute z-50 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-48 overflow-y-auto';
-        
-        // 고객 목록 HTML 생성
-        const customerItems = customers.map(customer => `
-            <div class="customer-item px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                 data-customer-id="${customer.id}">
-                <div class="flex justify-between items-center">
-                    <div>
-                        <div class="font-medium text-gray-900">${customer.name || '이름 없음'}</div>
-                        <div class="text-sm text-gray-500">
-                            ${customer.phone || '전화번호 없음'} 
-                            ${customer.email ? `| ${customer.email}` : ''}
-                        </div>
-                    </div>
-                    <div class="text-xs text-gray-400">
-                        <i class="fas fa-user"></i>
-                    </div>
-                </div>
-            </div>
-        `).join('');
-        
-        dropdown.innerHTML = customerItems;
-        
-        // 입력 필드 위치 계산
-        const inputRect = input.getBoundingClientRect();
-        const containerRect = input.closest('.relative')?.getBoundingClientRect();
-        
-        if (containerRect) {
-            dropdown.style.position = 'absolute';
-            dropdown.style.top = '100%';
-            dropdown.style.left = '0';
-            dropdown.style.width = '100%';
-            dropdown.style.zIndex = '50';
-        }
-        
-        // 드롭다운을 입력 필드의 부모 컨테이너에 추가
-        const container = input.closest('.relative') || input.parentElement;
-        container.appendChild(dropdown);
-        
-        // 고객 선택 이벤트 리스너 추가
-        dropdown.addEventListener('click', (e) => {
-            const customerItem = e.target.closest('.customer-item');
-            if (customerItem) {
-                const customerId = customerItem.dataset.customerId;
-                selectCustomer(customerId, customers);
-            }
-        });
-        
-        // 외부 클릭 시 드롭다운 닫기
-        document.addEventListener('click', (e) => {
-            if (!dropdown.contains(e.target) && e.target !== input) {
-                removeAutocompleteDropdown();
-            }
-        });
-        
-        console.log('✅ 자동완성 드롭다운 표시:', customers.length, '개 고객');
-        
-    } catch (error) {
-        console.error('❌ 자동완성 드롭다운 표시 실패:', error);
-    }
+        suggestions.appendChild(item);
+    });
+    
+    input.parentNode.style.position = 'relative';
+    input.parentNode.appendChild(suggestions);
 }
 
 // 고객 선택
-function selectCustomer(customerId, customers) {
+function selectCustomer(customer) {
+    document.getElementById('order-customer-name').value = customer.name;
+    document.getElementById('order-customer-phone').value = customer.phone || '';
+    document.getElementById('order-customer-address').value = customer.address || '';
+}
+
+// 고객 제안 숨기기
+function hideCustomerSuggestions() {
+    const suggestions = document.getElementById('customer-suggestions');
+    if (suggestions) {
+        suggestions.remove();
+    }
+}
+
+// 주소 검색 열기
+export function openAddressSearch() {
     try {
-        const customer = customers.find(c => c.id === customerId);
-        if (!customer) {
-            console.error('❌ 선택한 고객을 찾을 수 없습니다');
-            return;
-        }
-        
-        // 고객 정보를 주문 폼에 자동 입력
-        const customerNameInput = document.getElementById('order-customer-name');
-        const customerPhoneInput = document.getElementById('order-customer-phone');
-        const customerAddressInput = document.getElementById('order-customer-address');
-        
-        if (customerNameInput) customerNameInput.value = customer.name || '';
-        if (customerPhoneInput) customerPhoneInput.value = customer.phone || '';
-        if (customerAddressInput) customerAddressInput.value = customer.address || '';
-        
-        // 드롭다운 제거
-        removeAutocompleteDropdown();
-        
-        console.log('✅ 고객 선택 완료:', customer.name);
-        
+        console.log('🏠 주소 검색 열기');
+        // 주소 검색 로직 구현
+        alert('주소 검색 기능은 준비 중입니다.');
     } catch (error) {
-        console.error('❌ 고객 선택 실패:', error);
-    }
-}
-
-// 자동완성 드롭다운 제거
-function removeAutocompleteDropdown() {
-    const dropdown = document.getElementById('customer-autocomplete-dropdown');
-    if (dropdown) {
-        dropdown.remove();
-    }
-}
-
-// 새 고객 등록 확인 표시
-function showNewCustomerConfirmation(input, customerName) {
-    try {
-        console.log('👤 새 고객 등록 확인:', customerName);
-        
-        // 기존 확인 메시지 제거
-        removeNewCustomerConfirmation();
-        
-        // 확인 메시지 생성
-        const confirmation = document.createElement('div');
-        confirmation.id = 'new-customer-confirmation';
-        confirmation.className = 'absolute z-50 w-full bg-blue-50 border border-blue-200 rounded-lg shadow-lg mt-1 p-4';
-        
-        confirmation.innerHTML = `
-            <div class="flex items-center space-x-3">
-                <div class="flex-shrink-0">
-                    <i class="fas fa-user-plus text-blue-600 text-lg"></i>
-                </div>
-                <div class="flex-1">
-                    <h4 class="text-sm font-medium text-blue-900">새 고객 등록</h4>
-                    <p class="text-sm text-blue-700 mt-1">
-                        '<strong>${customerName}</strong>' 고객이 등록되어 있지 않습니다.<br>
-                        새 고객으로 등록하시겠습니까?
-                    </p>
-                </div>
-            </div>
-            <div class="flex justify-end space-x-2 mt-3">
-                <button onclick="cancelNewCustomerRegistration()" 
-                        class="px-3 py-1 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded">
-                    취소
-                </button>
-                <button onclick="confirmNewCustomerRegistration('${customerName}')" 
-                        class="px-3 py-1 text-sm bg-blue-600 hover:bg-blue-700 text-white rounded">
-                    새 고객 등록
-                </button>
-            </div>
-        `;
-        
-        // 입력 필드 위치 계산
-        const inputRect = input.getBoundingClientRect();
-        const containerRect = input.closest('.relative')?.getBoundingClientRect();
-        
-        if (containerRect) {
-            confirmation.style.position = 'absolute';
-            confirmation.style.top = '100%';
-            confirmation.style.left = '0';
-            confirmation.style.width = '100%';
-            confirmation.style.zIndex = '50';
-        }
-        
-        // 확인 메시지를 입력 필드의 부모 컨테이너에 추가
-        const container = input.closest('.relative') || input.parentElement;
-        container.appendChild(confirmation);
-        
-        // 외부 클릭 시 확인 메시지 닫기
-        document.addEventListener('click', (e) => {
-            if (!confirmation.contains(e.target) && e.target !== input) {
-                removeNewCustomerConfirmation();
-            }
-        });
-        
-        console.log('✅ 새 고객 등록 확인 메시지 표시');
-        
-    } catch (error) {
-        console.error('❌ 새 고객 등록 확인 표시 실패:', error);
-    }
-}
-
-// 새 고객 등록 확인 메시지 제거
-function removeNewCustomerConfirmation() {
-    const confirmation = document.getElementById('new-customer-confirmation');
-    if (confirmation) {
-        confirmation.remove();
+        console.error('❌ 주소 검색 열기 실패:', error);
     }
 }
 
@@ -1135,14 +930,7 @@ function removeNewCustomerConfirmation() {
 export function cancelNewCustomerRegistration() {
     try {
         console.log('❌ 새 고객 등록 취소');
-        removeNewCustomerConfirmation();
-        
-        // 고객명 입력 필드 초기화
-        const customerNameInput = document.getElementById('order-customer-name');
-        if (customerNameInput) {
-            customerNameInput.value = '';
-        }
-        
+        // 새 고객 등록 취소 로직
     } catch (error) {
         console.error('❌ 새 고객 등록 취소 실패:', error);
     }
@@ -1152,92 +940,9 @@ export function cancelNewCustomerRegistration() {
 export function confirmNewCustomerRegistration(customerName) {
     try {
         console.log('✅ 새 고객 등록 확인:', customerName);
-        
-        // 확인 메시지 제거
-        removeNewCustomerConfirmation();
-        
-        // 주문 모달에서 고객 등록을 요청했음을 표시
-        window.isCustomerRegistrationFromOrder = true;
-        
-        // 고객 등록 모달 열기
-        if (window.openCustomerModal) {
-            window.openCustomerModal();
-            
-            // 고객명 미리 입력
-            setTimeout(() => {
-                const customerNameInput = document.getElementById('customer-name');
-                if (customerNameInput) {
-                    customerNameInput.value = customerName;
-                }
-            }, 100);
-        } else {
-            console.error('❌ 고객 등록 모달을 열 수 없습니다');
-            alert('고객 등록 기능을 사용할 수 없습니다.');
-        }
-        
+        // 새 고객 등록 확인 로직
     } catch (error) {
         console.error('❌ 새 고객 등록 확인 실패:', error);
-    }
-}
-
-// 주문 수정
-export function editOrder(orderId) {
-    try {
-        console.log('✏️ 주문 수정:', orderId);
-        
-        // 주문 데이터 로드
-        loadOrders().then(orders => {
-            const order = orders.find(o => o.id === orderId);
-            if (order) {
-                // 폼에 데이터 채우기
-                document.getElementById('order-id').value = order.id;
-                document.getElementById('order-customer-name').value = order.customer_name || '';
-                document.getElementById('order-customer-phone').value = order.customer_phone || '';
-                document.getElementById('order-customer-address').value = order.customer_address || '';
-                document.getElementById('order-date').value = order.order_date || '';
-                document.getElementById('order-status').value = order.order_status || '주문접수';
-                document.getElementById('order-tracking').value = order.tracking_number || '';
-                document.getElementById('order-shipping-fee').value = order.shipping_fee || 0;
-                document.getElementById('order-discount').value = order.discount_amount || 0;
-                document.getElementById('order-total-amount').value = order.total_amount || 0;
-                document.getElementById('order-memo').value = order.memo || '';
-                
-                // 모달 열기
-                openOrderModal(orderId);
-            }
-        });
-        
-    } catch (error) {
-        console.error('❌ 주문 수정 실패:', error);
-    }
-}
-
-// 주문 삭제
-export function deleteOrder(orderId) {
-    try {
-        console.log('🗑️ 주문 삭제:', orderId);
-        
-        if (confirm('정말로 이 주문을 삭제하시겠습니까?')) {
-            // 주문 데이터 로드
-            loadOrders().then(orders => {
-                const filteredOrders = orders.filter(order => order.id !== orderId);
-                
-                // LocalStorage에 저장
-                localStorage.setItem('farm_orders', JSON.stringify(filteredOrders));
-                
-                // UI 업데이트
-                renderOrdersTable();
-                
-                console.log('✅ 주문 삭제 완료');
-                
-                if (window.showToast) {
-                    window.showToast('✅ 주문이 삭제되었습니다', 3000);
-                }
-            });
-        }
-        
-    } catch (error) {
-        console.error('❌ 주문 삭제 실패:', error);
     }
 }
 
@@ -1263,3 +968,24 @@ window.deleteOrder = deleteOrder;
 window.openProductSelectModal = openProductSelectModal;
 window.closeProductSelectModal = closeProductSelectModal;
 window.addSelectedProducts = addSelectedProducts;
+
+// 디버깅 함수들
+window.checkOrderData = function() {
+    console.log('🔍 주문 데이터 확인:');
+    console.log('farm_orders:', localStorage.getItem('farm_orders'));
+    console.log('orders:', localStorage.getItem('orders'));
+    
+    const farmOrders = JSON.parse(localStorage.getItem('farm_orders') || '[]');
+    const orders = JSON.parse(localStorage.getItem('orders') || '[]');
+    
+    console.log('farm_orders 개수:', farmOrders.length);
+    console.log('orders 개수:', orders.length);
+    
+    return { farmOrders, orders };
+};
+
+window.clearAllOrderData = function() {
+    localStorage.removeItem('farm_orders');
+    localStorage.removeItem('orders');
+    console.log('🗑️ 모든 주문 데이터 삭제됨');
+};
