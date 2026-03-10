@@ -34,17 +34,16 @@ window.SUPABASE_PRODUCTION_CONFIG = window.SUPABASE_PRODUCTION_CONFIG || {
 window.enableSupabaseProduction = function() {
     console.log('🚀 Supabase 프로덕션 설정 활성화...');
     
-    // 강제 로컬 모드가 활성화된 경우 차단
-    if (window.FORCE_LOCAL_MODE) {
-        console.warn('🛑 강제 로컬 모드로 인해 Supabase 프로덕션 설정 불가');
-        alert('현재 강제 로컬 모드가 활성화되어 있습니다.\nSupabase 프로덕션 설정을 활성화할 수 없습니다.');
+    // 설정 검증
+    if (!SUPABASE_PRODUCTION_CONFIG.url || SUPABASE_PRODUCTION_CONFIG.url.includes('your-project')) {
+        console.error('❌ Supabase URL이 설정되지 않았습니다');
+        alert('❌ Supabase URL을 먼저 설정해주세요.\n\n1. Supabase 프로젝트 생성\n2. 이 파일에서 URL과 API Key 업데이트');
         return false;
     }
     
-    // 모드 스위치 시스템 체크
-    if (window.MODE_SWITCH && window.MODE_SWITCH.getCurrentMode() === 'local') {
-        console.warn('🏠 로컬 모드로 인해 Supabase 프로덕션 설정 불가');
-        alert('현재 로컬 모드입니다.\nAPI 모드로 전환 후 Supabase 프로덕션 설정을 활성화하세요.');
+    if (!SUPABASE_PRODUCTION_CONFIG.anonKey || SUPABASE_PRODUCTION_CONFIG.anonKey.includes('your-anon-key')) {
+        console.error('❌ Supabase API Key가 설정되지 않았습니다');
+        alert('❌ Supabase API Key를 먼저 설정해주세요.\n\n1. Supabase 프로젝트 생성\n2. 이 파일에서 URL과 API Key 업데이트');
         return false;
     }
     
@@ -86,53 +85,70 @@ window.enableSupabaseProduction = function() {
 
 // 프로덕션 설정 비활성화 함수
 window.disableSupabaseProduction = function() {
-    console.log('🔄 Supabase 프로덕션 설정 비활성화...');
-    
     try {
-        // 백업된 설정 복원
+        console.log('🔄 Supabase 프로덕션 설정 비활성화...');
+        
+        // 백업된 설정으로 복원
         if (window.SUPABASE_CONFIG_BACKUP) {
-            window.SUPABASE_CONFIG = { ...window.SUPABASE_CONFIG_BACKUP };
-            delete window.SUPABASE_CONFIG_BACKUP;
+            Object.assign(window.SUPABASE_CONFIG, window.SUPABASE_CONFIG_BACKUP);
+            console.log('✅ Supabase 설정이 백업된 상태로 복원되었습니다');
         } else {
-            // 기본 로컬 모드 설정
+            // 기본 로컬 모드로 설정
             if (window.SUPABASE_CONFIG) {
+                window.SUPABASE_CONFIG.disabled = true;
                 window.SUPABASE_CONFIG.url = null;
                 window.SUPABASE_CONFIG.anonKey = null;
-                window.SUPABASE_CONFIG.disabled = true;
             }
+            console.log('✅ Supabase가 로컬 모드로 설정되었습니다');
         }
-        
-        console.log('✅ Supabase 프로덕션 설정 비활성화 완료');
         
         // 앱 새로고침
         if (window.app) {
             window.app.refreshAllTabs();
         }
         
+        alert('🔄 Supabase 프로덕션 설정이 비활성화되었습니다.\n이제 로컬 데이터를 사용합니다.');
+        
         return true;
     } catch (error) {
         console.error('❌ Supabase 프로덕션 설정 비활성화 실패:', error);
+        alert('❌ 설정 비활성화 실패\n다시 시도해주세요.');
         return false;
     }
 };
 
-// 설정 상태 확인 함수
-window.checkSupabaseProductionStatus = function() {
-    if (!window.SUPABASE_CONFIG) {
-        console.log('❌ Supabase 설정이 없습니다.');
+// Supabase 연결 테스트 함수
+window.testSupabaseConnection = async function() {
+    try {
+        console.log('🧪 Supabase 연결 테스트 시작...');
+        
+        if (!window.SUPABASE_CONFIG || !window.SUPABASE_CONFIG.url || !window.SUPABASE_CONFIG.anonKey) {
+            console.error('❌ Supabase 설정이 완료되지 않았습니다');
+            alert('❌ Supabase 설정을 먼저 완료해주세요.\n\n1. Supabase 프로젝트 생성\n2. URL과 API Key 설정\n3. 테이블 생성');
+            return false;
+        }
+        
+        // 간단한 API 호출 테스트
+        const response = await fetch(`${window.SUPABASE_CONFIG.url}/rest/v1/farm_customers?select=count&limit=1`, {
+            headers: {
+                'apikey': window.SUPABASE_CONFIG.anonKey,
+                'Authorization': `Bearer ${window.SUPABASE_CONFIG.anonKey}`,
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            console.log('✅ Supabase 연결 성공!');
+            alert('✅ Supabase 연결 성공!\n이제 클라우드 데이터베이스를 사용할 수 있습니다.');
+            return true;
+        } else {
+            console.error('❌ Supabase 연결 실패:', response.status, response.statusText);
+            alert(`❌ Supabase 연결 실패\n상태: ${response.status}\n설정을 확인해주세요.`);
+            return false;
+        }
+    } catch (error) {
+        console.error('❌ Supabase 연결 테스트 실패:', error);
+        alert('❌ Supabase 연결 실패\n네트워크 연결과 설정을 확인해주세요.');
         return false;
     }
-    
-    const isProduction = !window.SUPABASE_CONFIG.disabled && 
-                        window.SUPABASE_CONFIG.url && 
-                        window.SUPABASE_CONFIG.url !== 'https://your-project.supabase.co';
-    
-    console.log(`📊 Supabase 프로덕션 상태: ${isProduction ? '활성화' : '비활성화'}`);
-    console.log(`🔗 URL: ${window.SUPABASE_CONFIG.url || '설정되지 않음'}`);
-    console.log(`🔑 Key: ${window.SUPABASE_CONFIG.anonKey ? '설정됨' : '설정되지 않음'}`);
-    
-    return isProduction;
 };
-
-console.log('✅ Supabase 프로덕션 설정 모듈 로드 완료');
-

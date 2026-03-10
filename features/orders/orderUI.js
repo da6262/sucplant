@@ -198,8 +198,6 @@ async function loadOrderModal() {
 // 주문 모달 닫기
 export function closeOrderModal() {
     try {
-        console.log('주문 모달 닫기');
-        
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
