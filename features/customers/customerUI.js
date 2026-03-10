@@ -567,17 +567,12 @@ window.editCustomer = async function(customerId) {
             }
         }
         
-        // 모달 열기
+        // 모달 열기 (customerId를 넘겨서 탭이 표시되게 함)
         if (window.openCustomerModal) {
-            window.openCustomerModal();
+            await window.openCustomerModal(customerId);
         } else {
             console.warn('⚠️ openCustomerModal 함수를 찾을 수 없습니다');
         }
-        
-        // 잠시 후 폼에 데이터 채우기 (DOM이 완전히 렌더링되도록)
-        setTimeout(() => {
-            window.fillCustomerForm(customer);
-        }, 100);
         
     } catch (error) {
         console.error('❌ 고객 수정 실패:', error);
