@@ -16,8 +16,8 @@ if %errorlevel% equ 0 (
 REM Node.js가 설치되어 있는지 확인
 node --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✅ Node.js로 서버 시작...
-    npx http-server -p 8000 -c-1
+    echo ✅ Node.js로 서버 시작 (MIME 타입 문제 해결)...
+    node server.js
     goto :end
 )
 

@@ -23,36 +23,22 @@ export function mapTable(name) {
     return TABLE_MAP[name] || name; 
 }
 
-// LocalStorage 키 생성 함수
-export function getLocalStorageKey(tableName) {
-    return `farm_management_${tableName}`;
+// Supabase 전용 - LocalStorage 함수들 제거됨
+// 모든 데이터는 Supabase를 통해 관리됩니다.
+
+// Supabase 테이블명 매핑
+export function getSupabaseTableName(tableName) {
+    const tableMapping = {
+        'farm_customers': 'farm_customers',
+        'farm_orders': 'farm_orders', 
+        'farm_products': 'farm_products',
+        'farm_categories': 'farm_categories',
+        'farm_waitlist': 'farm_waitlist',
+        'farm_channels': 'farm_channels',
+        'farm_order_statuses': 'farm_order_statuses'
+    };
+    return tableMapping[tableName] || tableName;
 }
 
-// LocalStorage CRUD 헬퍼 함수들
-export function loadLocal(table) {
-    try {
-        return JSON.parse(localStorage.getItem(table)) || [];
-    } catch {
-        return [];
-    }
-}
-
-export function saveLocal(table, rows) {
-    localStorage.setItem(table, JSON.stringify(rows));
-}
-
-export function upsertOne(table, row, key = 'id') {
-    const list = loadLocal(table);
-    const i = list.findIndex(x => x[key] === row[key]);
-    if (i === -1) {
-        list.push(row);
-    } else {
-        list[i] = row;
-    }
-    saveLocal(table, list);
-}
-
-export function removeOne(table, id, key = 'id') {
-    const list = loadLocal(table).filter(x => x[key] !== id);
-    saveLocal(table, list);
-}
+// Supabase 전용 - LocalStorage 함수들 제거됨
+// 모든 CRUD 작업은 Supabase 데이터 매니저를 통해 수행됩니다.

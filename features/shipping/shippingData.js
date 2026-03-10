@@ -7,22 +7,23 @@ export class ShippingData {
         this.trackingData = [];
     }
 
-    // 배송 주문 로드
+    // 배송 주문 로드 (Supabase 전용)
     async loadShippingOrders() {
         try {
             console.log('📦 배송 주문 로드 시작...');
             
-            // 로컬 스토리지에서 주문 데이터 가져오기
-            const ordersData = localStorage.getItem('farm_orders');
-            if (ordersData) {
-                const orders = JSON.parse(ordersData);
+            // Supabase에서 주문 데이터 가져오기
+            if (window.orderDataManager) {
+                await window.orderDataManager.loadOrders();
+                const orders = window.orderDataManager.getAllOrders();
+                
                 // 배송 가능한 주문만 필터링 (입금확인, 배송준비, 배송시작 상태)
                 this.shippingOrders = orders.filter(order => 
                     ['입금확인', '배송준비', '배송시작', '배송완료'].includes(order.status)
                 );
                 console.log(`✅ 배송 주문 ${this.shippingOrders.length}개 로드 완료`);
             } else {
-                console.log('⚠️ 주문 데이터가 없습니다');
+                console.error('❌ orderDataManager를 찾을 수 없습니다.');
                 this.shippingOrders = [];
             }
             
@@ -33,34 +34,27 @@ export class ShippingData {
         }
     }
 
-    // 송장번호 업데이트
+    // 송장번호 업데이트 (Supabase 전용)
     async updateTrackingNumber(orderId, trackingNumber) {
         try {
             console.log(`📦 송장번호 업데이트: ${orderId} -> ${trackingNumber}`);
             
-            // 로컬 스토리지에서 주문 데이터 가져오기
-            const ordersData = localStorage.getItem('farm_orders');
-            if (ordersData) {
-                const orders = JSON.parse(ordersData);
-                const orderIndex = orders.findIndex(order => order.id === orderId);
+            // Supabase를 통해 주문 업데이트
+            if (window.orderDataManager) {
+                const success = await window.orderDataManager.updateOrder(orderId, {
+                    tracking_number: trackingNumber,
+                    status: '배송시작'
+                });
                 
-                if (orderIndex !== -1) {
-                    // 송장번호 업데이트
-                    orders[orderIndex].tracking_number = trackingNumber;
-                    orders[orderIndex].status = '배송시작';
-                    orders[orderIndex].updated_at = new Date().toISOString();
-                    
-                    // 로컬 스토리지에 저장
-                    localStorage.setItem('farm_orders', JSON.stringify(orders));
-                    
+                if (success) {
                     console.log(`✅ 송장번호 업데이트 완료: ${orderId}`);
                     return true;
                 } else {
-                    console.error(`❌ 주문을 찾을 수 없습니다: ${orderId}`);
+                    console.error(`❌ 주문 업데이트 실패: ${orderId}`);
                     return false;
                 }
             } else {
-                console.error('❌ 주문 데이터가 없습니다');
+                console.error('❌ orderDataManager를 찾을 수 없습니다');
                 return false;
             }
         } catch (error) {
@@ -94,30 +88,26 @@ export class ShippingData {
         }
     }
 
-    // 배송 상태 업데이트
+    // 배송 상태 업데이트 (Supabase 전용)
     async updateShippingStatus(orderId, status) {
         try {
             console.log(`📦 배송 상태 업데이트: ${orderId} -> ${status}`);
             
-            const ordersData = localStorage.getItem('farm_orders');
-            if (ordersData) {
-                const orders = JSON.parse(ordersData);
-                const orderIndex = orders.findIndex(order => order.id === orderId);
+            // Supabase를 통해 주문 상태 업데이트
+            if (window.orderDataManager) {
+                const success = await window.orderDataManager.updateOrder(orderId, {
+                    status: status
+                });
                 
-                if (orderIndex !== -1) {
-                    orders[orderIndex].status = status;
-                    orders[orderIndex].updated_at = new Date().toISOString();
-                    
-                    localStorage.setItem('farm_orders', JSON.stringify(orders));
-                    
+                if (success) {
                     console.log(`✅ 배송 상태 업데이트 완료: ${orderId}`);
                     return true;
                 } else {
-                    console.error(`❌ 주문을 찾을 수 없습니다: ${orderId}`);
+                    console.error(`❌ 주문 상태 업데이트 실패: ${orderId}`);
                     return false;
                 }
             } else {
-                console.error('❌ 주문 데이터가 없습니다');
+                console.error('❌ orderDataManager를 찾을 수 없습니다');
                 return false;
             }
         } catch (error) {

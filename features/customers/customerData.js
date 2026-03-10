@@ -1,52 +1,267 @@
 // 고객 데이터 관리 모듈
 // features/customers/customerData.js
 
-// LocalStorage 키 생성 함수
-function getLocalStorageKey(key) {
-    return `farm_management_${key}`;
-}
+// Supabase 전용 - localStorage 완전 제거됨
 
 class CustomerDataManager {
     constructor() {
         this.farm_customers = [];
         this.currentEditingCustomer = null;
         this.customerSortBy = 'newest'; // 기본값: 최근 등록순
+        // DB에 address_detail 컬럼이 없는 환경이 있을 수 있어 자동 감지/폴백합니다.
+        // - null: 미확인
+        // - true: 지원함
+        // - false: 지원 안 함(저장 시 address_detail 제거)
+        this.supportsAddressDetail = null;
     }
 
-    // 고객 데이터 로드 (LocalStorage 전용)
+    /** 전화번호 정규화 (숫자만) — 중복 판별용 */
+    _normalizePhone(phone) {
+        if (phone == null) return '';
+        return String(phone).replace(/\D/g, '');
+    }
+
+    /** 전화번호 기준 중복 제거. 동일 전화번호면 created_at 최신 1건만 유지 */
+    _dedupeCustomersByPhone(customers) {
+        if (!Array.isArray(customers) || customers.length === 0) return customers;
+        const byPhone = new Map();
+        for (const c of customers) {
+            const key = this._normalizePhone(c.phone) || `no-phone-${c.id}`;
+            const existing = byPhone.get(key);
+            if (!existing || (c.created_at && existing.created_at && new Date(c.created_at) > new Date(existing.created_at))) {
+                byPhone.set(key, c);
+            }
+        }
+        return Array.from(byPhone.values());
+    }
+
+    // 고객 데이터 로드 (Supabase 전용) - 안전한 방식으로 개선
     async loadCustomers() {
         try {
             console.log('👥 고객 데이터 로드 시작...');
             
-            // LocalStorage에서 직접 로드 (키 통일: farm_customers)
-            const data = localStorage.getItem('farm_customers');
-            this.farm_customers = data ? JSON.parse(data) : [];
+            // Supabase 연결 상태 확인
+            console.log('🔍 Supabase 연결 상태 확인:');
+            console.log('- window.supabase:', !!window.supabase);
+            console.log('- window.supabaseClient:', !!window.supabaseClient);
+            console.log('- window.SUPABASE_CONFIG:', window.SUPABASE_CONFIG);
             
-            console.log(`📦 LocalStorage에서 고객 ${this.farm_customers.length}개 로드됨`);
+            if (!window.supabaseClient) {
+                console.warn('⚠️ Supabase 클라이언트가 연결되지 않음. 로컬 백업에서 로드 시도...');
+                return await this.loadFromBackup();
+            }
+            
+            console.log('☁️ Supabase에서 고객 데이터 로드 중...');
+            
+            // 타임아웃 설정 (10초)
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error('Supabase 쿼리 타임아웃')), 10000);
+            });
+            
+            const queryPromise = window.supabaseClient
+                .from('farm_customers')
+                .select('*')
+                .order('created_at', { ascending: false });
+            
+            const { data, error } = await Promise.race([queryPromise, timeoutPromise]);
+            
+            if (error) {
+                console.error('❌ Supabase 쿼리 오류:', error);
+                console.warn('⚠️ Supabase 로드 실패. 로컬 백업에서 로드 시도...');
+                return await this.loadFromBackup();
+            }
+            
+            // 로드 후 grade 없음(null/빈값) → 'GENERAL'(일반)으로 통일, 상세주소 항상 보존
+            let list = (data || []).map(c => ({
+                ...c,
+                grade: (c.grade && String(c.grade).trim()) ? String(c.grade).trim() : 'GENERAL',
+                address_detail: c.address_detail != null ? String(c.address_detail) : ''
+            }));
+            // 전화번호 기준 중복 제거 (같은 사람이 두 번 나오는 현상 방지) — 최신(created_at) 1건만 유지
+            this.farm_customers = this._dedupeCustomersByPhone(list);
+            console.log(`✅ Supabase에서 고객 ${this.farm_customers.length}개 로드됨 (중복 제거 후)`);
+            
+            // 성공적으로 로드된 데이터를 로컬 백업으로 저장
+            await this.saveToBackup();
+            
             return this.farm_customers;
             
         } catch (error) {
             console.error('❌ 고객 데이터 로드 실패:', error);
+            console.warn('⚠️ 로컬 백업에서 로드 시도...');
+            return await this.loadFromBackup();
+        }
+    }
+    
+    // 로컬 백업에서 데이터 로드
+    async loadFromBackup() {
+        try {
+            console.log('🔄 Supabase 백업에서 고객 데이터 로드 시도...');
+            
+            // Supabase에서 백업 데이터 조회
+            if (window.supabaseDataManager && window.supabaseDataManager.initialized) {
+                try {
+                    const backupData = await window.supabaseDataManager.getData('customer_backups', {});
+                    if (backupData && backupData.length > 0) {
+                        // 가장 최근 백업 사용
+                        const latestBackup = backupData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+                        const raw = latestBackup.data || [];
+                        let list = raw.map(c => ({
+                            ...c,
+                            grade: (c.grade && String(c.grade).trim()) ? String(c.grade).trim() : 'GENERAL',
+                            address_detail: c.address_detail != null ? String(c.address_detail) : ''
+                        }));
+                        this.farm_customers = this._dedupeCustomersByPhone(list);
+                        console.log(`✅ Supabase 백업에서 고객 ${this.farm_customers.length}개 로드됨 (${latestBackup.backup_date}, 중복 제거 후)`);
+                    } else {
+                        console.warn('⚠️ Supabase 백업이 없습니다.');
+                        this.farm_customers = [];
+                    }
+                } catch (error) {
+                    console.error('❌ Supabase 백업 로드 실패:', error);
+                    this.farm_customers = [];
+                }
+            } else {
+                console.warn('⚠️ Supabase가 초기화되지 않았습니다.');
+                this.farm_customers = [];
+            }
+            
+            return this.farm_customers;
+            
+        } catch (error) {
+            console.error('❌ 로컬 백업 로드 실패:', error);
             this.farm_customers = [];
-            return [];
+            return this.farm_customers;
+        }
+    }
+    
+    // Supabase 백업 저장 (localStorage 대신 Supabase 사용)
+    async saveToBackup() {
+        try {
+            console.log('💾 Supabase 백업 저장 시작...');
+            // Supabase에 백업 데이터 저장
+            if (window.supabaseDataManager && window.supabaseDataManager.initialized) {
+                const backupData = {
+                    backup_date: new Date().toISOString().split('T')[0],
+                    data: this.farm_customers,
+                    created_at: new Date().toISOString()
+                };
+                
+                await window.supabaseDataManager.saveData('customer_backups', backupData);
+                console.log('✅ Supabase 백업 저장 완료');
+            } else {
+                console.warn('⚠️ Supabase가 초기화되지 않았습니다. 백업을 건너뜁니다.');
+            }
+        } catch (error) {
+            console.error('❌ Supabase 백업 저장 실패:', error);
         }
     }
 
-    // 고객 데이터 저장 (LocalStorage 전용)
+    // 고객 데이터 저장 (Supabase 전용) - 안전한 방식으로 개선
     async saveCustomers() {
         try {
             console.log('💾 고객 데이터 저장 시작...');
             
-            // LocalStorage에 직접 저장 (키 통일: farm_customers)
-            localStorage.setItem('farm_customers', JSON.stringify(this.farm_customers));
-            console.log('✅ LocalStorage에 고객 데이터 저장 완료');
+            // Supabase 연결 상태 확인
+            if (!window.supabaseClient) {
+                throw new Error('Supabase 클라이언트가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
+            }
+            
+            // 연결 테스트
+            const { data: testData, error: testError } = await window.supabaseClient
+                .from('farm_customers')
+                .select('id')
+                .limit(1);
+            
+            if (testError) {
+                throw new Error(`Supabase 연결 실패: ${testError.message}`);
+            }
+            
+            console.log('☁️ Supabase에 고객 데이터 저장 중...');
+            
+            // 안전한 저장 방식: upsert 사용 (기존 데이터 삭제하지 않음)
+            if (this.farm_customers.length > 0) {
+                const customersToSave = (this.supportsAddressDetail === false)
+                    ? this.farm_customers.map(c => {
+                        // eslint-disable-next-line no-unused-vars
+                        const { address_detail, ...rest } = c;
+                        return rest;
+                    })
+                    : this.farm_customers;
+
+                let { data, error } = await window.supabaseClient
+                    .from('farm_customers')
+                    .upsert(customersToSave, { 
+                        onConflict: 'id',
+                        ignoreDuplicates: false 
+                    });
+                
+                if (error) {
+                    console.error('❌ Supabase upsert 실패:', error);
+                    // address_detail 컬럼이 DB에 없을 때 폴백: 상세주소 제외 후 재시도
+                    const msg = String(error.message || '');
+                    if (msg.includes("address_detail") && msg.includes("Could not find")) {
+                        console.warn('⚠️ DB에 address_detail 컬럼이 없어 폴백 저장을 시도합니다. (상세주소는 저장되지 않음)');
+                        this.supportsAddressDetail = false;
+
+                        const customersWithoutDetail = this.farm_customers.map(c => {
+                            // eslint-disable-next-line no-unused-vars
+                            const { address_detail, ...rest } = c;
+                            return rest;
+                        });
+
+                        const retry = await window.supabaseClient
+                            .from('farm_customers')
+                            .upsert(customersWithoutDetail, {
+                                onConflict: 'id',
+                                ignoreDuplicates: false
+                            });
+
+                        if (retry.error) {
+                            console.error('❌ 폴백 저장도 실패:', retry.error);
+                            throw new Error(`Supabase 저장 실패: ${retry.error.message}`);
+                        }
+
+                        // 사용자에게 마이그레이션 안내 (가능하면 Toast 사용)
+                        if (window.showToast) {
+                            window.showToast('⚠️ DB에 상세주소 컬럼이 없어 상세주소는 저장되지 않았습니다. 관리자에게 컬럼 추가를 요청하세요.', 5000);
+                        } else {
+                            console.warn('⚠️ DB에 상세주소 컬럼이 없어 상세주소는 저장되지 않았습니다. add-address-detail-column.sql 실행 필요');
+                        }
+
+                        data = retry.data;
+                    } else {
+                        throw new Error(`Supabase 저장 실패: ${error.message}`);
+                    }
+                } else {
+                    // 정상 저장이 되었다면(그리고 이전에 미확인이었다면) 지원함으로 마킹
+                    if (this.supportsAddressDetail === null) {
+                        this.supportsAddressDetail = true;
+                    }
+                }
+                
+                console.log('✅ Supabase에 고객 데이터 저장 완료');
+            } else {
+                console.log('📝 저장할 고객 데이터가 없습니다');
+            }
+            
             return true;
             
         } catch (error) {
             console.error('❌ 고객 데이터 저장 실패:', error);
-            return false;
+            
+            // Supabase 백업 저장 (긴급 상황 대비)
+            try {
+                await this.saveToBackup();
+            } catch (backupError) {
+                console.error('❌ Supabase 백업 저장 실패:', backupError);
+            }
+            
+            throw error; // 오류를 다시 던져서 호출자에게 알림
         }
     }
+
+    // Supabase 전용 - localStorage 캐시 제거됨
 
     // 새 고객 추가
     async addCustomer(customerData) {
@@ -59,24 +274,38 @@ class CustomerDataManager {
             }
             
             // 전화번호 중복 확인
-            const existingCustomer = this.farm_customers.find(c => c.phone === customerData.phone);
-            if (existingCustomer) {
+            const existingPhone = this.farm_customers.find(c => c.phone === customerData.phone);
+            if (existingPhone) {
                 throw new Error('이미 등록된 전화번호입니다.');
             }
             
+            // 고객명 중복 확인 (중복 시 등록 차단)
+            const existingName = this.farm_customers.find(c => c.name === customerData.name.trim());
+            if (existingName) {
+                console.warn('⚠️ 동일한 고객명이 이미 존재합니다:', customerData.name);
+                throw new Error(`"${customerData.name}" 이름의 고객이 이미 등록되어 있습니다. 다른 이름을 사용하거나 기존 고객을 선택해주세요.`);
+            }
+            
             // 새 고객 객체 생성
+            const now = new Date();
+            const today = now.toISOString().split('T')[0];
+            const nowISO = now.toISOString();
+            
             const newCustomer = {
-                id: 'customer_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                // UUID 생성 (Supabase 호환)
+                id: crypto.randomUUID(),
                 name: customerData.name.trim(),
                 phone: customerData.phone.trim(),
                 address: customerData.address || '',
+                address_detail: customerData.address_detail || '', // 상세주소 추가
                 email: customerData.email || '',
                 grade: customerData.grade || 'GENERAL',
-                registration_date: new Date().toISOString().split('T')[0],
-                memo: customerData.memo || '',
-                created_at: new Date().toISOString(),
-                updated_at: new Date().toISOString()
+                registration_date: customerData.registration_date || today, // DATE 형식
+                memo: customerData.memo || ''
+                // created_at, updated_at는 Supabase에서 자동 생성
             };
+            
+            console.log('📅 고객 등록일 설정:', newCustomer.registration_date);
             
             // 고객 목록에 추가
             this.farm_customers.push(newCustomer);
@@ -89,6 +318,11 @@ class CustomerDataManager {
             
         } catch (error) {
             console.error('❌ 고객 추가 실패:', error);
+            console.error('❌ 에러 상세:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             throw error;
         }
     }
@@ -103,10 +337,17 @@ class CustomerDataManager {
                 throw new Error('고객을 찾을 수 없습니다.');
             }
             
+            console.log('🔍 수정할 고객 인덱스:', customerIndex);
+            console.log('🔍 기존 고객 정보:', this.farm_customers[customerIndex]);
+            
             // 전화번호 중복 확인 (자신 제외)
             if (updateData.phone) {
+                console.log('🔍 전화번호 중복 체크:', updateData.phone);
                 const existingCustomer = this.farm_customers.find(c => c.phone === updateData.phone && c.id !== customerId);
+                console.log('🔍 중복된 고객:', existingCustomer);
+                
                 if (existingCustomer) {
+                    console.log('❌ 전화번호 중복 발견:', existingCustomer.name, existingCustomer.phone);
                     throw new Error('이미 등록된 전화번호입니다.');
                 }
             }
@@ -126,6 +367,11 @@ class CustomerDataManager {
             
         } catch (error) {
             console.error('❌ 고객 정보 수정 실패:', error);
+            console.error('❌ 에러 상세:', {
+                message: error.message,
+                stack: error.stack,
+                name: error.name
+            });
             throw error;
         }
     }
@@ -273,6 +519,100 @@ class CustomerDataManager {
             return false;
         }
     }
+    
+    // 데이터 복구 기능
+    async recoverData() {
+        try {
+            console.log('🔄 고객 데이터 복구 시작...');
+            
+            // 1. Supabase 백업에서 최신 데이터 찾기
+            if (!window.supabaseDataManager || !window.supabaseDataManager.initialized) {
+                throw new Error('Supabase가 초기화되지 않았습니다.');
+            }
+            
+            const backupData = await window.supabaseDataManager.getData('customer_backups', {});
+            if (!backupData || backupData.length === 0) {
+                throw new Error('복구할 백업 데이터가 없습니다.');
+            }
+            
+            // 가장 최근 백업 사용
+            const latestBackup = backupData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
+            const backupCustomers = latestBackup.data || [];
+            
+            console.log(`📦 백업 데이터 발견: ${backupCustomers.length}개 고객 (${latestBackup.backup_date})`);
+            
+            // 2. 메모리에 로드
+            this.farm_customers = backupData;
+            
+            // 3. Supabase에 복구 시도
+            if (window.supabaseClient) {
+                try {
+                    const { data, error } = await window.supabaseClient
+                        .from('farm_customers')
+                        .upsert(backupData, { onConflict: 'id' });
+                    
+                    if (error) {
+                        console.warn('⚠️ Supabase 복구 실패:', error);
+                    } else {
+                        console.log('✅ Supabase에 데이터 복구 완료');
+                    }
+                } catch (supabaseError) {
+                    console.warn('⚠️ Supabase 복구 중 오류:', supabaseError);
+                }
+            }
+            
+            console.log('✅ 고객 데이터 복구 완료');
+            return this.farm_customers;
+            
+        } catch (error) {
+            console.error('❌ 고객 데이터 복구 실패:', error);
+            throw error;
+        }
+    }
+    
+    // 백업 목록 조회 (Supabase 전용)
+    async getBackupList() {
+        try {
+            if (!window.supabaseDataManager || !window.supabaseDataManager.initialized) {
+                console.warn('⚠️ Supabase가 초기화되지 않았습니다.');
+                return [];
+            }
+            
+            const backupData = await window.supabaseDataManager.getData('customer_backups', {});
+            return backupData.map(backup => ({
+                key: backup.id,
+                date: backup.backup_date,
+                count: backup.data ? backup.data.length : 0,
+                size: JSON.stringify(backup.data || []).length,
+                created_at: backup.created_at
+            })).sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+        } catch (error) {
+            console.error('❌ 백업 목록 조회 실패:', error);
+            return [];
+        }
+    }
+}
+
+// Supabase 연결 상태 확인 함수
+function checkSupabaseConnection() {
+    try {
+        console.log('🔍 Supabase 연결 상태 확인:');
+        console.log('- window.supabase:', !!window.supabase);
+        console.log('- window.supabaseClient:', !!window.supabaseClient);
+        console.log('- window.SUPABASE_CONFIG:', window.SUPABASE_CONFIG);
+        
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase 클라이언트가 연결되지 않았습니다');
+            return false;
+        }
+        
+        console.log('✅ Supabase 클라이언트 연결됨');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ Supabase 연결 확인 실패:', error);
+        return false;
+    }
 }
 
 // 인스턴스 생성
@@ -280,6 +620,48 @@ const customerDataManager = new CustomerDataManager();
 
 // 전역 인스턴스 생성
 window.customerDataManager = customerDataManager;
+window.checkSupabaseConnection = checkSupabaseConnection;
+
+// 긴급 데이터 복구 함수들
+window.recoverCustomerData = async function() {
+    try {
+        console.log('🚨 긴급 고객 데이터 복구 시작...');
+        const recoveredData = await customerDataManager.recoverData();
+        console.log(`✅ 복구 완료: ${recoveredData.length}개 고객`);
+        alert(`고객 데이터 복구 완료!\n복구된 고객 수: ${recoveredData.length}명`);
+        return recoveredData;
+    } catch (error) {
+        console.error('❌ 데이터 복구 실패:', error);
+        alert('데이터 복구에 실패했습니다: ' + error.message);
+        return [];
+    }
+};
+
+window.showBackupList = function() {
+    try {
+        const backups = customerDataManager.getBackupList();
+        console.log('📦 백업 목록:', backups);
+        
+        if (backups.length === 0) {
+            alert('백업 데이터가 없습니다.');
+            return;
+        }
+        
+        let message = '📦 백업 데이터 목록:\n\n';
+        backups.forEach((backup, index) => {
+            message += `${index + 1}. ${backup.date}\n`;
+            message += `   - 고객 수: ${backup.count}명\n`;
+            message += `   - 크기: ${Math.round(backup.size / 1024)}KB\n\n`;
+        });
+        
+        alert(message);
+        return backups;
+    } catch (error) {
+        console.error('❌ 백업 목록 조회 실패:', error);
+        alert('백업 목록 조회에 실패했습니다.');
+        return [];
+    }
+};
 
 // 모듈 내보내기 (ES6 모듈 지원시)
 if (typeof module !== 'undefined' && module.exports) {

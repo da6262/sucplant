@@ -10,6 +10,9 @@ module.exports = {
     extend: {
       fontFamily: {
         'sans': ['Noto Sans KR', 'sans-serif']
+      },
+      fontSize: {
+        '2xs': '0.5rem', // 8px
       }
     },
   },

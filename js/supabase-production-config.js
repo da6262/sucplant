@@ -5,10 +5,16 @@
  */
 
 // 실제 Supabase 프로젝트 설정
-const SUPABASE_PRODUCTION_CONFIG = {
-    // TODO: 실제 Supabase 프로젝트 정보로 교체
-    url: 'https://your-project.supabase.co',  // ← 실제 Project URL 입력
-    anonKey: 'your-anon-key-here',           // ← 실제 anon key 입력
+window.SUPABASE_PRODUCTION_CONFIG = window.SUPABASE_PRODUCTION_CONFIG || {
+    // ⚠️ 실제 Supabase 프로젝트 정보로 교체 필요
+    url: 'https://orodbihdndyzgaushsmy.supabase.co',  // ← 실제 Project URL 입력
+    anonKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yb2RiaWhkbmR5emdhdXNoc215Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAwNzkwMzgsImV4cCI6MjA3NTY1NTAzOH0.Sv0_rGrWcu14gkPvFBn1r4WLfFGCSowexuWS3egbfag',           // ← 실제 anon key 입력
+    serviceKey: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9yb2RiaWhkbmR5emdhdXNoc215Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2MDA3OTAzOCwiZXhwIjoyMDc1NjU1MDM4fQ.seV0po3SU5XHkwtQpPT07UIHux0bhkS621TQWUijWl0',     // ← 서버 사이드용 키
+    
+    // 전환 모드 설정
+    migrationMode: true,  // 마이그레이션 모드 활성화
+    autoSync: true,       // 자동 동기화 활성화
+    realtimeEnabled: true, // 실시간 동기화 활성화
     
     // 테이블 이름 매핑
     tables: {

@@ -16,13 +16,15 @@ window.mobileSync = async function() {
         }
         
         // 2. 로컬 데이터 추출
+        // Supabase 전용 모드 - localStorage 사용 금지
+        console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
         const localData = {
-            farm_customers: JSON.parse(localStorage.getItem('farm_customers') || '[]'),
-            orders: JSON.parse(localStorage.getItem('orders') || '[]'),
-            products: JSON.parse(localStorage.getItem('products') || '[]'),
-            waitlist: JSON.parse(localStorage.getItem('waitlist') || '[]'),
-            categories: JSON.parse(localStorage.getItem('categories') || '[]'),
-            order_sources: JSON.parse(localStorage.getItem('order_sources') || '[]')
+            farm_customers: [],
+            orders: [],
+            products: [],
+            waitlist: [],
+            categories: [],
+            order_sources: []
         };
         
         console.log('📊 핸드폰 로컬 데이터:');
@@ -76,11 +78,13 @@ window.mobileSync = async function() {
 
 // 데이터 비교 함수
 window.compareData = function() {
+    // Supabase 전용 모드 - localStorage 사용 금지
+    console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
     const localData = {
-        customers: JSON.parse(localStorage.getItem('customers') || '[]'),
-        orders: JSON.parse(localStorage.getItem('orders') || '[]'),
-        products: JSON.parse(localStorage.getItem('products') || '[]'),
-        waitlist: JSON.parse(localStorage.getItem('waitlist') || '[]')
+        customers: [],
+        orders: [],
+        products: [],
+        waitlist: []
     };
     
     console.log('📊 핸드폰 로컬 데이터 현황:');

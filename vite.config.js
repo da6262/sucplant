@@ -1,20 +1,31 @@
-// vite.config.js
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-  root: '.',
+  base: '/',
   build: {
-    outDir: 'dist-web',
-    emptyOutDir: true,
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: false,
+    minify: 'terser',
     rollupOptions: {
-      input: [
-        'index.html',
-        'system-admin.html',
-        'sync-test.html'
-      ]
+      output: {
+        manualChunks: {
+          vendor: ['@supabase/supabase-js'],
+          components: [
+            './components/header/header.js',
+            './components/navigation/navigation.js',
+            './components/dashboard/dashboard.js'
+          ]
+        }
+      }
     }
   },
-  server: { port: 5173, open: false }
-});
-
-
+  server: {
+    port: 8000,
+    host: true
+  },
+  preview: {
+    port: 8000,
+    host: true
+  }
+})

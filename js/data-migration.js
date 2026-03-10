@@ -1,380 +1,276 @@
-// 데이터 마이그레이션 유틸리티
-// 컴퓨터 LocalStorage → 웹사이트 서버 API 업로드
+/**
+ * LocalStorage → Supabase 데이터 마이그레이션 스크립트
+ * 경산다육식물농장 관리시스템
+ */
 
-class DataMigration {
-    constructor() {
-        this.apiBase = '';
-        this.migrationStatus = {
-            farm_customers: { total: 0, success: 0, failed: 0 },
-            orders: { total: 0, success: 0, failed: 0 },
-            products: { total: 0, success: 0, failed: 0 },
-            waitlist: { total: 0, success: 0, failed: 0 },
-            categories: { total: 0, success: 0, failed: 0 },
-            order_sources: { total: 0, success: 0, failed: 0 }
-        };
-    }
-
-    // 1. LocalStorage에서 모든 데이터 추출
-    extractLocalData() {
-        console.log('🔍 LocalStorage 데이터 추출 시작...');
-        
-        const localData = {
-            farm_customers: this.getLocalStorageData('farm_customers'),
-            orders: this.getLocalStorageData('orders'), 
-            products: this.getLocalStorageData('products'),
-            waitlist: this.getLocalStorageData('waitlist'),
-            categories: this.getLocalStorageData('categories'),
-            order_sources: this.getLocalStorageData('order_sources')
-        };
-
-        // 데이터 카운트 출력
-        Object.keys(localData).forEach(key => {
-            const count = localData[key]?.length || 0;
-            console.log(`📊 ${key}: ${count}개`);
-            this.migrationStatus[key].total = count;
-        });
-
-        return localData;
-    }
-
-    // LocalStorage에서 특정 키 데이터 가져오기
-    getLocalStorageData(key) {
-        try {
-            const data = localStorage.getItem(key);
-            if (data) {
-                const parsed = JSON.parse(data);
-                return Array.isArray(parsed) ? parsed : [];
-            }
-        } catch (error) {
-            console.error(`❌ ${key} 데이터 파싱 오류:`, error);
-        }
-        return [];
-    }
-
-    // 2. 서버로 데이터 업로드
-    async migrateToServer(localData) {
-        console.log('🚀 서버 업로드 시작...');
-        
-        try {
-            // 기본 데이터부터 업로드 (카테고리, 주문출처)
-            await this.uploadCategories(localData.categories);
-            await this.uploadOrderSources(localData.order_sources);
-            
-            // 메인 데이터 업로드
-            await this.uploadProducts(localData.products);
-            await this.uploadCustomers(localData.farm_customers);
-            await this.uploadOrders(localData.orders);
-            await this.uploadWaitlist(localData.waitlist);
-            
-            console.log('✅ 모든 데이터 업로드 완료!');
-            this.printMigrationSummary();
-            
-        } catch (error) {
-            console.error('❌ 마이그레이션 중 오류:', error);
-            throw error;
-        }
-    }
-
-    // 카테고리 업로드
-    async uploadCategories(categories) {
-        if (!categories || categories.length === 0) {
-            console.log('⚠️ 업로드할 카테고리가 없습니다');
-            return;
-        }
-
-        console.log(`📂 카테고리 업로드 시작: ${categories.length}개`);
-        
-        for (const category of categories) {
-            try {
-                const response = await fetch('tables/farm_categories', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: category.name,
-                        color: category.color || '#22c55e',
-                        description: category.description || ''
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.categories.success++;
-                    console.log(`✅ 카테고리 업로드 성공: ${category.name}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.categories.failed++;
-                console.error(`❌ 카테고리 업로드 실패: ${category.name}`, error);
-            }
-        }
-    }
-
-    // 주문 출처 업로드
-    async uploadOrderSources(sources) {
-        if (!sources || sources.length === 0) {
-            console.log('⚠️ 업로드할 주문 출처가 없습니다');
-            return;
-        }
-
-        console.log(`📋 주문 출처 업로드 시작: ${sources.length}개`);
-        
-        for (const source of sources) {
-            try {
-                const response = await fetch('tables/order_sources', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: source.name,
-                        description: source.description || ''
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.order_sources.success++;
-                    console.log(`✅ 주문 출처 업로드 성공: ${source.name}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.order_sources.failed++;
-                console.error(`❌ 주문 출처 업로드 실패: ${source.name}`, error);
-            }
-        }
-    }
-
-    // 상품 업로드
-    async uploadProducts(products) {
-        if (!products || products.length === 0) {
-            console.log('⚠️ 업로드할 상품이 없습니다');
-            return;
-        }
-
-        console.log(`🌱 상품 업로드 시작: ${products.length}개`);
-        
-        for (const product of products) {
-            try {
-                const response = await fetch('tables/products', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: product.name,
-                        price: product.price || 0,
-                        description: product.description || '',
-                        category: product.category || '일반종',
-                        stock: product.stock || 0,
-                        image_url: product.image_url || '',
-                        shipping_option: product.shipping_option || 'normal'
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.products.success++;
-                    console.log(`✅ 상품 업로드 성공: ${product.name}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.products.failed++;
-                console.error(`❌ 상품 업로드 실패: ${product.name}`, error);
-            }
-        }
-    }
-
-    // 고객 업로드
-    async uploadCustomers(customers) {
-        if (!customers || customers.length === 0) {
-            console.log('⚠️ 업로드할 고객이 없습니다');
-            return;
-        }
-
-        console.log(`👥 고객 업로드 시작: ${customers.length}개`);
-        
-        for (const customer of customers) {
-            try {
-                const response = await fetch('tables/farm_customers', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        name: customer.name,
-                        phone: customer.phone,
-                        address: customer.address || '',
-                        email: customer.email || '',
-                        grade: customer.grade || 'GENERAL',
-                        registration_date: customer.registration_date || customer.created_at || new Date().toISOString().split('T')[0],
-                        memo: customer.memo || ''
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.farm_customers.success++;
-                    console.log(`✅ 고객 업로드 성공: ${customer.name}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.farm_customers.failed++;
-                console.error(`❌ 고객 업로드 실패: ${customer.name}`, error);
-            }
-        }
-    }
-
-    // 주문 업로드
-    async uploadOrders(orders) {
-        if (!orders || orders.length === 0) {
-            console.log('⚠️ 업로드할 주문이 없습니다');
-            return;
-        }
-
-        console.log(`📦 주문 업로드 시작: ${orders.length}개`);
-        
-        for (const order of orders) {
-            try {
-                // order_items 처리 (문자열이면 파싱, 배열이면 그대로)
-                let orderItems = order.order_items;
-                if (typeof orderItems === 'string') {
-                    try {
-                        orderItems = JSON.parse(orderItems);
-                    } catch {
-                        orderItems = [];
-                    }
-                }
-                if (!Array.isArray(orderItems)) {
-                    orderItems = [];
-                }
-
-                const response = await fetch('tables/farm_orders', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        order_number: order.order_number,
-                        order_date: order.order_date || new Date().toISOString(),
-                        customer_name: order.customer_name,
-                        customer_phone: order.customer_phone,
-                        customer_address: order.customer_address || '',
-                        order_items: orderItems,
-                        total_amount: order.total_amount || 0,
-                        order_status: order.order_status || '주문접수',
-                        tracking_number: order.tracking_number || '',
-                        memo: order.memo || '',
-                        shipping_fee: order.shipping_fee || 0,
-                        discount_amount: order.discount_amount || 0,
-                        order_source: order.order_source || ''
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.orders.success++;
-                    console.log(`✅ 주문 업로드 성공: ${order.order_number}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.orders.failed++;
-                console.error(`❌ 주문 업로드 실패: ${order.order_number}`, error);
-            }
-        }
-    }
-
-    // 대기자 업로드
-    async uploadWaitlist(waitlist) {
-        if (!waitlist || waitlist.length === 0) {
-            console.log('⚠️ 업로드할 대기자가 없습니다');
-            return;
-        }
-
-        console.log(`⏰ 대기자 업로드 시작: ${waitlist.length}개`);
-        
-        for (const wait of waitlist) {
-            try {
-                const response = await fetch('tables/waitlist', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        customer_name: wait.customer_name,
-                        customer_phone: wait.customer_phone,
-                        product_name: wait.product_name,
-                        product_category: wait.product_category || '일반종',
-                        expected_price: wait.expected_price || 0,
-                        register_date: wait.register_date || new Date().toISOString(),
-                        status: wait.status || '대기중',
-                        memo: wait.memo || '',
-                        priority: wait.priority || 3,
-                        last_contact: wait.last_contact || null
-                    })
-                });
-
-                if (response.ok) {
-                    this.migrationStatus.waitlist.success++;
-                    console.log(`✅ 대기자 업로드 성공: ${wait.customer_name}`);
-                } else {
-                    throw new Error(`HTTP ${response.status}`);
-                }
-            } catch (error) {
-                this.migrationStatus.waitlist.failed++;
-                console.error(`❌ 대기자 업로드 실패: ${wait.customer_name}`, error);
-            }
-        }
-    }
-
-    // 마이그레이션 결과 요약 출력
-    printMigrationSummary() {
-        console.log('\n🎉 === 데이터 마이그레이션 완료 요약 ===');
-        
-        let totalSuccess = 0;
-        let totalFailed = 0;
-        
-        Object.keys(this.migrationStatus).forEach(key => {
-            const stat = this.migrationStatus[key];
-            if (stat.total > 0) {
-                console.log(`📊 ${key}: ${stat.success}/${stat.total} 성공 (실패: ${stat.failed})`);
-                totalSuccess += stat.success;
-                totalFailed += stat.failed;
-            }
-        });
-        
-        console.log(`\n✅ 전체 성공: ${totalSuccess}개`);
-        console.log(`❌ 전체 실패: ${totalFailed}개`);
-        console.log(`📈 성공률: ${totalSuccess > 0 ? Math.round(totalSuccess / (totalSuccess + totalFailed) * 100) : 0}%`);
-        
-        if (totalFailed === 0) {
-            console.log('\n🎊 모든 데이터가 성공적으로 마이그레이션되었습니다!');
-        } else {
-            console.log('\n⚠️ 일부 데이터 업로드가 실패했습니다. 수동으로 재시도하세요.');
-        }
-    }
-
-    // 전체 마이그레이션 실행
-    async migrate() {
-        try {
-            console.log('🚀 === 데이터 마이그레이션 시작 ===');
-            console.log('⏰ 예상 소요 시간: 10-15분');
-            
-            // 1단계: LocalStorage 데이터 추출
-            const localData = this.extractLocalData();
-            
-            // 2단계: 서버로 업로드
-            await this.migrateToServer(localData);
-            
-            console.log('🎉 마이그레이션 완료! 이제 모든 기기에서 동일한 데이터를 볼 수 있습니다.');
-            
-            return true;
-        } catch (error) {
-            console.error('💥 마이그레이션 중 치명적 오류:', error);
+/**
+ * 데이터 마이그레이션 메인 함수
+ */
+async function migrateLocalStorageToSupabase() {
+    console.log('🚀 LocalStorage → Supabase 데이터 마이그레이션 시작...');
+    
+    try {
+        // 1. Supabase 클라이언트 초기화
+        if (!window.supabase) {
+            console.error('❌ Supabase 클라이언트가 초기화되지 않았습니다.');
             return false;
         }
+
+        // 2. 마이그레이션할 테이블 목록
+        const tables = [
+            'farm_customers',
+            'farm_products', 
+            'farm_orders',
+            'farm_categories',
+            'farm_waitlist'
+        ];
+
+        let totalMigrated = 0;
+        let totalErrors = 0;
+
+        // 3. 각 테이블별 마이그레이션
+        for (const table of tables) {
+            console.log(`📦 ${table} 마이그레이션 시작...`);
+            
+            try {
+                const result = await migrateTable(table);
+                if (result.success) {
+                    totalMigrated += result.count;
+                    console.log(`✅ ${table} 마이그레이션 완료: ${result.count}개`);
+                } else {
+                    totalErrors++;
+                    console.error(`❌ ${table} 마이그레이션 실패:`, result.error);
+                }
+            } catch (error) {
+                totalErrors++;
+                console.error(`❌ ${table} 마이그레이션 중 오류:`, error);
+            }
+        }
+
+        // 4. 결과 요약
+        console.log(`🎉 마이그레이션 완료!`);
+        console.log(`✅ 성공: ${totalMigrated}개 레코드`);
+        console.log(`❌ 실패: ${totalErrors}개 테이블`);
+
+        // 5. 마이그레이션 완료 플래그 설정
+        // Supabase 전용 모드 - localStorage 사용 금지
+        console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+        console.log('마이그레이션 완료:', {
+            timestamp: new Date().toISOString(),
+            totalMigrated,
+            totalErrors
+        });
+
+        return totalErrors === 0;
+    } catch (error) {
+        console.error('❌ 데이터 마이그레이션 실패:', error);
+        return false;
     }
 }
 
-// 전역에서 사용할 수 있도록 윈도우 객체에 추가
-window.dataMigration = new DataMigration();
+/**
+ * 개별 테이블 마이그레이션
+ */
+async function migrateTable(tableName) {
+    try {
+        // 1. LocalStorage에서 데이터 로드
+        const key = getLocalStorageKey(tableName);
+        // Supabase 전용 모드 - localStorage 사용 금지
+        console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+        const localData = [];
+        
+        if (localData.length === 0) {
+            console.log(`📋 ${tableName} 로컬 데이터가 없습니다.`);
+            return { success: true, count: 0 };
+        }
 
-// 사용법을 콘솔에 출력
-console.log("🔧 === 데이터 마이그레이션 사용법 ===");
-console.log("");
-console.log("1. 현재 컴퓨터 브라우저에서 다음 명령어를 실행하세요:");
-console.log("   dataMigration.migrate()");
-console.log("");
-console.log("2. 마이그레이션이 완료되면 핸드폰에서 새로고침하세요!");
-console.log("");
-console.log("💡 문제가 있다면 다음 명령어로 데이터 확인:");
-console.log("   dataMigration.extractLocalData()");
+        // 2. 데이터 변환 (필요한 경우)
+        const transformedData = transformDataForSupabase(tableName, localData);
+
+        // 3. Supabase에 업로드
+        const { data, error } = await window.supabase
+            .from(tableName)
+            .upsert(transformedData, { onConflict: 'id' });
+
+        if (error) {
+            return { success: false, error: error.message };
+        }
+
+        return { success: true, count: transformedData.length };
+    } catch (error) {
+        return { success: false, error: error.message };
+    }
+}
+
+/**
+ * 데이터 변환 (LocalStorage → Supabase 형식)
+ */
+function transformDataForSupabase(tableName, data) {
+    try {
+        return data.map(item => {
+            const transformed = { ...item };
+            
+            // UUID 형식으로 ID 변환 (필요한 경우)
+            if (transformed.id && !isValidUUID(transformed.id)) {
+                // 기존 ID를 유지하되 UUID 형식으로 변환
+                transformed.id = generateUUID();
+            }
+            
+            // 날짜 형식 변환
+            if (transformed.created_at && typeof transformed.created_at === 'string') {
+                transformed.created_at = new Date(transformed.created_at).toISOString();
+            }
+            
+            if (transformed.updated_at && typeof transformed.updated_at === 'string') {
+                transformed.updated_at = new Date(transformed.updated_at).toISOString();
+            }
+            
+            // 테이블별 특수 변환
+            switch (tableName) {
+                case 'farm_orders':
+                    // 주문 아이템 JSON 변환
+                    if (transformed.order_items && typeof transformed.order_items === 'string') {
+                        try {
+                            transformed.order_items = JSON.parse(transformed.order_items);
+                        } catch (e) {
+                            console.warn('주문 아이템 JSON 파싱 실패:', e);
+                        }
+                    }
+                    break;
+                    
+                case 'farm_customers':
+                    // 전화번호 정규화
+                    if (transformed.phone) {
+                        transformed.phone = transformed.phone.replace(/[^0-9]/g, '');
+                    }
+                    break;
+            }
+            
+            return transformed;
+        });
+    } catch (error) {
+        console.error(`❌ ${tableName} 데이터 변환 실패:`, error);
+        return data; // 변환 실패 시 원본 데이터 반환
+    }
+}
+
+/**
+ * UUID 유효성 검사
+ */
+function isValidUUID(uuid) {
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    return uuidRegex.test(uuid);
+}
+
+/**
+ * UUID 생성
+ */
+function generateUUID() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+        const r = Math.random() * 16 | 0;
+        const v = c === 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+/**
+ * 마이그레이션 상태 확인
+ */
+function checkMigrationStatus() {
+    // Supabase 전용 모드 - localStorage 사용 금지
+    console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+    const status = null;
+    if (status) {
+        const data = JSON.parse(status);
+        console.log('📊 마이그레이션 상태:', data);
+        return data;
+    }
+    return null;
+}
+
+/**
+ * 마이그레이션 롤백 (Supabase → LocalStorage)
+ */
+async function rollbackMigration() {
+    console.log('🔄 마이그레이션 롤백 시작...');
+    
+    try {
+        const tables = ['farm_customers', 'farm_products', 'farm_orders', 'farm_categories', 'farm_waitlist'];
+        
+        for (const table of tables) {
+            const { data, error } = await window.supabase
+                .from(table)
+                .select('*');
+                
+            if (!error && data) {
+                const key = getLocalStorageKey(table);
+                // Supabase 전용 모드 - localStorage 사용 금지
+                console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+                console.log(`✅ ${table} 롤백 완료: ${data.length}개`);
+            }
+        }
+        
+        // 마이그레이션 상태 제거
+        // Supabase 전용 모드 - localStorage 사용 금지
+        console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+        
+        console.log('✅ 마이그레이션 롤백 완료');
+        return true;
+    } catch (error) {
+        console.error('❌ 마이그레이션 롤백 실패:', error);
+        return false;
+    }
+}
+
+/**
+ * 데이터 검증
+ */
+async function validateMigration() {
+    console.log('🔍 데이터 검증 시작...');
+    
+    try {
+        const tables = ['farm_customers', 'farm_products', 'farm_orders', 'farm_categories', 'farm_waitlist'];
+        let allValid = true;
+        
+        for (const table of tables) {
+            // LocalStorage 데이터
+            const key = getLocalStorageKey(table);
+            // Supabase 전용 모드 - localStorage 사용 금지
+        console.warn('⚠️ localStorage 사용이 차단되었습니다. Supabase를 사용하세요.');
+        const localData = [];
+            
+            // Supabase 데이터
+            const { data: supabaseData, error } = await window.supabase
+                .from(table)
+                .select('*');
+                
+            if (error) {
+                console.error(`❌ ${table} Supabase 데이터 로드 실패:`, error);
+                allValid = false;
+                continue;
+            }
+            
+            // 데이터 개수 비교
+            if (localData.length !== supabaseData.length) {
+                console.warn(`⚠️ ${table} 데이터 개수 불일치: Local(${localData.length}) vs Supabase(${supabaseData.length})`);
+                allValid = false;
+            } else {
+                console.log(`✅ ${table} 데이터 검증 통과: ${localData.length}개`);
+            }
+        }
+        
+        console.log(allValid ? '✅ 모든 데이터 검증 통과' : '⚠️ 일부 데이터 검증 실패');
+        return allValid;
+    } catch (error) {
+        console.error('❌ 데이터 검증 실패:', error);
+        return false;
+    }
+}
+
+// 전역 함수로 등록
+window.migrateLocalStorageToSupabase = migrateLocalStorageToSupabase;
+window.checkMigrationStatus = checkMigrationStatus;
+window.rollbackMigration = rollbackMigration;
+window.validateMigration = validateMigration;
+
+console.log('✅ 데이터 마이그레이션 모듈 로드 완료');

@@ -162,26 +162,146 @@ class NavigationManager {
      * 직접 탭 전환 (폴백)
      */
     directTabSwitch(tabName) {
+        console.log(`🔄 직접 탭 전환 시작: ${tabName}`);
+        
+        // 모든 섹션 강제 숨기기 (최우선)
+        this.hideAllSections();
+        
         // 모든 탭 버튼 비활성화
         document.querySelectorAll('.tab-button').forEach(btn => {
             btn.classList.remove('active');
         });
 
-        // 모든 섹션 숨기기
-        document.querySelectorAll('.tab-section').forEach(section => {
-            section.style.display = 'none';
-        });
-
         // 선택된 탭 활성화
-        const targetButton = document.querySelector(`[data-tab="${tabName}"]`);
+        const targetButton = document.querySelector(`#tab-${tabName}`);
         const targetSection = document.querySelector(`#${tabName}-section`);
 
         if (targetButton) {
             targetButton.classList.add('active');
+            console.log(`✅ 탭 버튼 활성화: ${tabName}`);
         }
 
         if (targetSection) {
             targetSection.style.display = 'block';
+            targetSection.style.visibility = 'visible';
+            targetSection.classList.add('active');
+            console.log(`✅ 섹션 표시: ${tabName}-section`);
+            
+            // 대기자 관리 탭인 경우 컴포넌트 로드
+            if (tabName === 'waitlist') {
+                this.loadWaitlistComponent();
+            }
+        } else {
+            console.warn(`⚠️ 대상 섹션을 찾을 수 없습니다: ${tabName}-section`);
+        }
+    }
+    
+    /**
+     * 모든 섹션 강제 숨기기
+     */
+    hideAllSections() {
+        console.log('🗑️ 모든 섹션 강제 숨기기 시작...');
+        
+        // 모든 가능한 섹션 선택자들
+        const selectors = [
+            '.section-content',
+            '[id$="-section"]',
+            '.tab-content',
+            '.content-section',
+            '#shipping-section',
+            '#waitlist-section',
+            '#dashboard-section',
+            '#customers-section',
+            '#orders-section',
+            '#products-section'
+        ];
+        
+        selectors.forEach(selector => {
+            const sections = document.querySelectorAll(selector);
+            sections.forEach(section => {
+                section.style.display = 'none';
+                section.style.visibility = 'hidden';
+                section.style.opacity = '0';
+                section.classList.remove('active');
+                console.log(`🗑️ 섹션 숨김: ${section.id || section.className}`);
+            });
+        });
+        
+        console.log('✅ 모든 섹션 숨기기 완료');
+    }
+    
+    /**
+     * 대기자 관리 컴포넌트 로드
+     */
+    async loadWaitlistComponent() {
+        try {
+            console.log('📋 대기자 관리 컴포넌트 로드 시작...');
+            
+            // DOM이 완전히 로드될 때까지 대기
+            if (document.readyState !== 'complete') {
+                console.log('⏳ DOM 로딩 완료 대기 중...');
+                await new Promise(resolve => {
+                    if (document.readyState === 'complete') {
+                        resolve();
+                    } else {
+                        window.addEventListener('load', resolve, { once: true });
+                    }
+                });
+            }
+            
+            // DOM이 로드될 때까지 대기
+            let waitlistSection = document.getElementById('waitlist-section');
+            let retryCount = 0;
+            const maxRetries = 50; // 재시도 횟수 대폭 증가
+            
+            while (!waitlistSection && retryCount < maxRetries) {
+                console.log(`🔍 대기자 관리 섹션 찾는 중... (${retryCount + 1}/${maxRetries})`);
+                console.log(`🔍 DOM 상태: ${document.readyState}`);
+                console.log(`🔍 현재 시간: ${new Date().toISOString()}`);
+                
+                await new Promise(resolve => setTimeout(resolve, 200)); // 대기 시간 증가
+                waitlistSection = document.getElementById('waitlist-section');
+                retryCount++;
+            }
+            
+            if (!waitlistSection) {
+                console.error('❌ 대기자 관리 섹션을 찾을 수 없습니다. DOM 로드 완료 후 다시 시도해주세요.');
+                console.log('🔍 현재 DOM 상태 확인:', document.readyState);
+                console.log('🔍 waitlist-section 요소 존재 여부:', !!document.getElementById('waitlist-section'));
+                console.log('🔍 모든 section-content 요소들:', document.querySelectorAll('.section-content'));
+                console.log('🔍 body의 모든 자식 요소들:', Array.from(document.body.children).map(el => el.id || el.tagName));
+                return false;
+            }
+            
+            // 이미 로드되었는지 확인
+            if (waitlistSection.innerHTML.trim() !== '<!-- 대기자 관리 컴포넌트가 여기에 로드됩니다 -->') {
+                console.log('📋 대기자 관리 컴포넌트가 이미 로드되었습니다.');
+                return true;
+            }
+            
+            // 대기자 관리 컴포넌트 로드
+            if (window.loadWaitlistManagementComponent) {
+                await window.loadWaitlistManagementComponent();
+                console.log('✅ 대기자 관리 컴포넌트 로드 완료');
+                
+                // 컴포넌트 로드 후 대기자 데이터 새로고침
+                setTimeout(() => {
+                    if (window.waitlistUI && window.waitlistDataManager) {
+                        console.log('🔄 대기자 데이터 새로고침');
+                        const allWaitlist = window.waitlistDataManager.getAllWaitlist();
+                        console.log('🔍 새로고침된 대기자 데이터:', allWaitlist.length, '개');
+                        window.waitlistUI.renderWaitlistTable(allWaitlist);
+                    }
+                }, 200);
+            } else {
+                console.error('❌ loadWaitlistManagementComponent 함수를 찾을 수 없습니다.');
+            }
+            
+            return true;
+            
+        } catch (error) {
+            console.error('❌ 대기자 관리 컴포넌트 로드 실패:', error);
+            return false;
         }
     }
 
