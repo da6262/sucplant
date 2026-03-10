@@ -1,10 +1,19 @@
 {
   "hosting": {
-    "public": "dist",
+    "public": ".",
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "dist/**",
+      "dist-web/**",
+      "**/*debug*",
+      "**/*test*",
+      "**/*-test*",
+      "deploy-to-web.js",
+      "vite.config.js",
+      "package.json",
+      "package-lock.json"
     ],
     "rewrites": [
       {
