@@ -13,7 +13,10 @@
       "deploy-to-web.js",
       "vite.config.js",
       "package.json",
-      "package-lock.json"
+      "package-lock.json",
+      "**/*.exe",
+      "**/*.dll",
+      "**/*.bin"
     ],
     "rewrites": [
       {
