@@ -23,8 +23,10 @@
   "author": "경산다육식물농장",
   "license": "MIT",
   "devDependencies": {
-    "vite": "^5.0.0",
-    "firebase-tools": "^13.0.0"
+    "autoprefixer": "^10.4.27",
+    "firebase-tools": "^13.0.0",
+    "tailwindcss": "^4.2.2",
+    "vite": "^5.0.0"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.38.0"
