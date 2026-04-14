@@ -12,8 +12,8 @@ export function showSettingsTab(tabName) {
         });
         
         // 모든 탭 버튼 비활성화
-        document.querySelectorAll('.settings-tab').forEach(tab => {
-            tab.classList.remove('border-blue-500', 'text-blue-600');
+        document.querySelectorAll('[id^="settings-tab-"]').forEach(tab => {
+            tab.classList.remove('active', 'border-blue-500', 'text-blue-600');
             tab.classList.add('border-transparent', 'text-gray-500');
         });
         
@@ -28,7 +28,7 @@ export function showSettingsTab(tabName) {
             // 탭 버튼 활성화
             if (targetTabButton) {
                 targetTabButton.classList.remove('border-transparent', 'text-gray-500');
-                targetTabButton.classList.add('border-blue-500', 'text-blue-600');
+                targetTabButton.classList.add('active');
             }
             
             // 탭별 데이터 로드
