@@ -366,99 +366,47 @@ if (!window.showSettingsTab) {
     };
 }
 
-// SMS 설정 로드 함수
+// SMS 설정 로드 — 템플릿 리스트 방식 (settingsUI.js와 동일)
 async function loadSMSSettings() {
     try {
-        console.log('📱 SMS 설정 로드 시작');
-        
-        // 설정 데이터 매니저에서 SMS 설정 가져오기
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
-        
-        // SMS 템플릿 필드들에 값 설정
-        const smsFields = {
-            'sms-order-confirm': smsSettings.orderConfirm || '',
-            'sms-payment-confirm': smsSettings.paymentConfirm || '',
-            'sms-shipping-start': smsSettings.shippingStart || '',
-            'sms-shipping-complete': smsSettings.shippingComplete || '',
-            'sms-waitlist-notify': smsSettings.waitlistNotify || ''
-        };
-        
-        // 각 필드에 값 설정
-        Object.entries(smsFields).forEach(([fieldId, value]) => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.value = value;
-            }
+        const container = document.getElementById('sms-templates-list');
+        if (!container) return;
+        container.innerHTML = '';
+        const templates = [
+            { key: 'orderConfirm',    label: '주문확인',  fieldId: 'sms-order-confirm',    vars: '{customerName} {orderNumber} {orderDetails} {totalAmount} {shippingFee} {paymentInfo}' },
+            { key: 'paymentConfirm',  label: '입금확인',  fieldId: 'sms-payment-confirm',   vars: '{customerName} {orderNumber}' },
+            { key: 'shippingStart',   label: '배송시작',  fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
+            { key: 'shippingComplete',label: '배송완료',  fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
+            { key: 'waitlistNotify',  label: '대기품목',  fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+        ];
+        templates.forEach(tpl => {
+            const value = smsSettings[tpl.key] || '';
+            const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
+            const item = document.createElement('div');
+            item.id = `sms-item-${tpl.key}`;
+            item.className = 'border-b border-gray-100 last:border-0';
+            item.innerHTML = `
+                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
+                    <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${tpl.label}</span>
+                    <span class="sms-preview text-xs text-gray-400 flex-1 truncate">${preview}</span>
+                    <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
+                </div>
+                <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
+                    <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                    <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
+                    <div class="flex justify-end mt-1.5">
+                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary" style="padding:3px 10px;font-size:11px;">저장</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
         });
-        
-        // SMS 설정 저장/취소 버튼 이벤트 리스너 추가
-        setupSMSSettingsEventListeners();
-        
-        console.log('✅ SMS 설정 로드 완료');
     } catch (error) {
         console.error('❌ SMS 설정 로드 실패:', error);
     }
 }
 
-// SMS 설정 이벤트 리스너 설정
-function setupSMSSettingsEventListeners() {
-    try {
-        // SMS 설정 저장 버튼
-        const saveBtn = document.getElementById('save-sms-settings');
-        if (saveBtn) {
-            saveBtn.onclick = saveSMSSettings;
-        }
-        
-        // SMS 설정 취소 버튼
-        const cancelBtn = document.getElementById('cancel-sms-settings');
-        if (cancelBtn) {
-            cancelBtn.onclick = () => {
-                loadSMSSettings(); // 원래 값으로 되돌리기
-            };
-        }
-        
-        console.log('✅ SMS 설정 이벤트 리스너 설정 완료');
-    } catch (error) {
-        console.error('❌ SMS 설정 이벤트 리스너 설정 실패:', error);
-    }
-}
-
-// SMS 설정 저장
-async function saveSMSSettings() {
-    try {
-        console.log('💾 SMS 설정 저장 시작');
-        
-        // SMS 템플릿 필드들에서 값 가져오기
-        const smsTemplates = {
-            orderConfirm: document.getElementById('sms-order-confirm')?.value || '',
-            paymentConfirm: document.getElementById('sms-payment-confirm')?.value || '',
-            shippingStart: document.getElementById('sms-shipping-start')?.value || '',
-            shippingComplete: document.getElementById('sms-shipping-complete')?.value || '',
-            waitlistNotify: document.getElementById('sms-waitlist-notify')?.value || ''
-        };
-        
-        // 설정 데이터 매니저를 통해 저장
-        if (window.settingsDataManager) {
-            await window.settingsDataManager.updateSetting('smsTemplates', 'orderConfirm', smsTemplates.orderConfirm);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'paymentConfirm', smsTemplates.paymentConfirm);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingStart', smsTemplates.shippingStart);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingComplete', smsTemplates.shippingComplete);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'waitlistNotify', smsTemplates.waitlistNotify);
-            
-            console.log('✅ SMS 설정 저장 완료');
-            alert('SMS 설정이 저장되었습니다.');
-        } else {
-            console.error('❌ 설정 데이터 매니저를 찾을 수 없습니다');
-            alert('설정 저장에 실패했습니다.');
-        }
-        
-    } catch (error) {
-        console.error('❌ SMS 설정 저장 실패:', error);
-        alert('SMS 설정 저장에 실패했습니다: ' + error.message);
-    }
-}
-
 // 전역 함수로 등록
 window.loadSMSSettings = loadSMSSettings;
-window.saveSMSSettings = saveSMSSettings;

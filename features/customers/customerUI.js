@@ -173,62 +173,48 @@ export async function renderCustomersTable(gradeFilter = 'all') {
         
         if (customers.length === 0) {
             container.innerHTML = `
-                <div class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</div>
+                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</td></tr>
             `;
             return;
         }
-        
+
         // 전화번호별 최근 주문일 조회 (farm_orders에서)
         const lastOrderMap = await fetchLastOrderDatesByPhone();
-        
+
         for (const customer of customers) {
             const gradeDisplayName = await getGradeDisplayName(customer.grade);
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
             const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
-            const card = document.createElement('div');
-            card.className = 'customer-list-card group px-3 py-2 rounded-lg border border-gray-100 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm cursor-pointer transition-all';
-            card.setAttribute('data-customer-id', customer.id);
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50 cursor-pointer';
+            tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = (customer.phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
-            card.innerHTML = `
-                <div class="flex items-center justify-between gap-2">
-                    <div class="min-w-0 flex-1">
-                        <div class="flex items-center gap-1.5">
-                            <span class="font-semibold text-gray-900 truncate text-sm">${escapeHtml(customer.name || '-')}</span>
-                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded shrink-0 ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
-                        </div>
-                        <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
-                            <span>${phoneDisplay || '-'}</span>
-                            <span class="text-gray-200">·</span>
-                            <span>최근 주문 ${lastOrderDate}</span>
-                        </div>
-                    </div>
-                    <div class="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
-                        <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                        <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
-                    </div>
-                </div>
+            tr.innerHTML = `
+                <td class="px-3 py-2 text-xs font-medium text-gray-900">${escapeHtml(customer.name || '-')}</td>
+                <td class="px-3 py-2 text-xs text-gray-500">${phoneDisplay || '-'}</td>
+                <td class="px-3 py-2 text-xs text-gray-500">${lastOrderDate}</td>
+                <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="px-3 py-2">
+                    <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
+                    <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                </td>
             `;
-            card.addEventListener('click', (e) => {
+            tr.addEventListener('click', (e) => {
                 if (e.target.closest('button')) return;
                 showCustomerDetail(customer.id);
             });
-            container.appendChild(card);
+            container.appendChild(tr);
         }
-        
-        console.log('✅ 고객 리스트(카드) 렌더링 완료');
+
+        console.log('✅ 고객 리스트(테이블) 렌더링 완료');
         
     } catch (error) {
         console.error('❌ 고객 리스트 렌더링 실패:', error);
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <div class="text-center py-8 text-red-500">
-                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
-                    </div>
-                    <p class="text-sm font-medium">고객 목록을 불러오는 중 오류가 발생했습니다.</p>
-                </div>
+                <tr><td colspan="5" class="text-center py-8 text-red-500 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
             `;
         }
     }
@@ -646,13 +632,22 @@ async function showCustomerDetailInPanel(customer) {
     try {
         console.log('📋 고객 상세 정보 패널 업데이트:', customer.name);
         
-        // 고객 상세 정보 컨테이너 찾기
-        const detailContent = document.getElementById('customer-detail-content');
-        if (!detailContent) {
-            console.error('❌ 고객 상세 정보 컨테이너를 찾을 수 없습니다.');
-            return;
+        // 고객 상세 정보 컨테이너 찾기 (없으면 동적 생성, 숨겨져 있으면 다시 표시)
+        let detailContent = document.getElementById('customer-detail-content');
+        let panel = document.getElementById('_dyn_detail_panel');
+        if (!detailContent || !panel) {
+            if (!panel) {
+                panel = document.createElement('div');
+                panel.id = '_dyn_detail_panel';
+                panel.style.cssText = 'position:fixed;top:80px;right:20px;width:380px;height:calc(100vh - 110px);display:flex;flex-direction:column;background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);border:1px solid #e2e8f0;z-index:200;overflow:hidden;';
+                panel.innerHTML = '<div style="padding:8px 12px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;"><span style="font-size:13px;font-weight:600;">고객 상세</span><button onclick="document.getElementById(\'_dyn_detail_panel\').style.display=\'none\'" style="color:#9ca3af;font-size:16px;background:none;border:none;cursor:pointer;">✕</button></div><div id="customer-detail-content" style="flex:1;overflow-y:auto;padding:12px;min-height:0;"></div>';
+                document.body.appendChild(panel);
+            }
+            detailContent = document.getElementById('customer-detail-content');
         }
-        
+        // 패널이 숨겨져 있으면 다시 표시
+        if (panel) panel.style.display = 'flex';
+
         console.log('✅ 고객 상세 정보 컨테이너 찾음:', detailContent);
         
         // 등급명을 비동기로 가져오기
@@ -794,106 +789,36 @@ async function loadCustomerOrders(customerId) {
             throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
         }
         
-        console.log('🌐 Supabase에서 주문내역 로드 중...');
-        
-        // 디버깅: 모든 주문 데이터 먼저 확인
-        const { data: allOrders, error: allOrdersError } = await window.supabaseClient
-            .from('farm_orders')
-            .select('*')
-            .order('order_date', { ascending: false })
-            .limit(10);
-        
-        if (allOrdersError) {
-            console.error('❌ 전체 주문 데이터 조회 실패:', allOrdersError);
-        } else {
-            console.log('📊 전체 주문 데이터 샘플:', allOrders?.slice(0, 3));
-            if (allOrders && allOrders.length > 0) {
-                console.log('📞 주문 데이터의 고객 전화번호 샘플:', allOrders.slice(0, 3).map(order => ({
-                    id: order.id,
-                    customer_phone: order.customer_phone,
-                    customer_name: order.customer_name
-                })));
-                
-                // 주문 아이템 데이터 구조 상세 분석
-                console.log('🔍 주문 아이템 데이터 구조 분석:');
-                allOrders.slice(0, 3).forEach((order, index) => {
-                    console.log(`📦 주문 ${index + 1} 아이템 데이터:`, {
-                        orderId: order.id,
-                        orderNumber: order.order_number,
-                        items: order.items,
-                        order_items: order.order_items,
-                        itemsType: typeof order.items,
-                        order_itemsType: typeof order.order_items,
-                        itemsLength: order.items ? order.items.length : 'N/A',
-                        order_itemsLength: order.order_items ? order.order_items.length : 'N/A'
-                    });
-                    
-                    // order_items가 JSON 문자열인 경우 파싱 시도
-                    if (order.order_items && typeof order.order_items === 'string') {
-                        try {
-                            const parsedItems = JSON.parse(order.order_items);
-                            console.log(`📦 주문 ${index + 1} 파싱된 아이템:`, parsedItems);
-                        } catch (e) {
-                            console.warn(`⚠️ 주문 ${index + 1} order_items JSON 파싱 실패:`, e);
-                        }
-                    }
-                });
-            }
-        }
-        
-        // 고객 전화번호로 주문 검색 (다양한 형식 지원)
-        console.log('🔍 고객 전화번호로 주문 검색:', customer.phone);
-        
         // 전화번호 정규화 (하이픈 제거, 공백 제거)
         const normalizedPhone = customer.phone.replace(/[-\s]/g, '');
-        console.log('📞 정규화된 전화번호:', normalizedPhone);
-        
+
         const { data: ordersData, error } = await window.supabaseClient
             .from('farm_orders')
-            .select('*')
+            .select('*, farm_order_items(*)')
             .or(`customer_phone.eq.${customer.phone},customer_phone.eq.${normalizedPhone}`)
             .order('order_date', { ascending: false });
-        
+
         if (error) {
-            console.error('❌ Supabase 주문내역 로드 실패:', error);
-            throw new Error(`Supabase 주문내역 로드 실패: ${error.message}`);
+            console.error('❌ 주문내역 로드 실패:', error);
+            throw new Error(`주문내역 로드 실패: ${error.message}`);
         }
-        
+
         const orders = ordersData || [];
-        console.log(`✅ Supabase에서 주문 ${orders.length}개 로드됨`);
-        console.log('🔍 로드된 주문 데이터:', orders);
-        
-        // 디버깅: 주문 데이터 상세 분석
-        if (orders.length > 0) {
-            console.log('🔍 주문 데이터 상세 분석:');
-            orders.forEach((order, index) => {
-                console.log(`📋 주문 ${index + 1}:`, {
-                    id: order.id,
-                    order_number: order.order_number,
-                    customer_name: order.customer_name,
-                    customer_phone: order.customer_phone,
-                    total_amount: order.total_amount,
-                    order_items_type: typeof order.order_items,
-                    order_items_length: order.order_items ? (Array.isArray(order.order_items) ? order.order_items.length : 'not_array') : 'null',
-                    order_items_preview: order.order_items ? (typeof order.order_items === 'string' ? order.order_items.substring(0, 100) + '...' : order.order_items) : 'null'
-                });
-            });
-        }
+        orders.forEach(o => { o.items = o.farm_order_items || []; });
         
         // 전화번호 매칭이 안되는 경우 다른 방법으로 시도
         if (orders.length === 0) {
             console.log('🔄 전화번호 매칭 실패, 대안 방법들 시도...');
             
             // 1. 고객명으로 검색
-            console.log('🔍 고객명으로 검색:', customer.name);
             const { data: ordersByName, error: nameError } = await window.supabaseClient
                 .from('farm_orders')
-                .select('*')
+                .select('*, farm_order_items(*)')
                 .eq('customer_name', customer.name)
                 .order('order_date', { ascending: false });
-            
+
             if (!nameError && ordersByName && ordersByName.length > 0) {
-                console.log(`✅ 고객명으로 주문 ${ordersByName.length}개 발견`);
+                ordersByName.forEach(o => { o.items = o.farm_order_items || []; });
                 updateCustomerTotalPurchaseDisplay(ordersByName);
                 await renderCustomerOrders(ordersByName, ordersList);
                 return;
@@ -913,15 +838,14 @@ async function loadCustomerOrders(customerId) {
             
             for (const phoneFormat of phoneVariations) {
                 if (phoneFormat && phoneFormat !== customer.phone) {
-                    console.log(`🔍 전화번호 형식 시도: ${phoneFormat}`);
                     const { data: ordersByPhone, error: phoneError } = await window.supabaseClient
                         .from('farm_orders')
-                        .select('*')
+                        .select('*, farm_order_items(*)')
                         .eq('customer_phone', phoneFormat)
                         .order('order_date', { ascending: false });
-                    
+
                     if (!phoneError && ordersByPhone && ordersByPhone.length > 0) {
-                        console.log(`✅ 전화번호 형식 ${phoneFormat}로 주문 ${ordersByPhone.length}개 발견`);
+                        ordersByPhone.forEach(o => { o.items = o.farm_order_items || []; });
                         updateCustomerTotalPurchaseDisplay(ordersByPhone);
                         await renderCustomerOrders(ordersByPhone, ordersList);
                         return;
@@ -935,12 +859,12 @@ async function loadCustomerOrders(customerId) {
             if (phoneDigits.length >= 8) { // 최소 8자리 이상일 때만
                 const { data: ordersByPartial, error: partialError } = await window.supabaseClient
                     .from('farm_orders')
-                    .select('*')
-                    .like('customer_phone', `%${phoneDigits.slice(-8)}%`) // 뒤 8자리로 검색
+                    .select('*, farm_order_items(*)')
+                    .like('customer_phone', `%${phoneDigits.slice(-8)}%`)
                     .order('order_date', { ascending: false });
-                
+
                 if (!partialError && ordersByPartial && ordersByPartial.length > 0) {
-                    console.log(`✅ 부분 매칭으로 주문 ${ordersByPartial.length}개 발견`);
+                    ordersByPartial.forEach(o => { o.items = o.farm_order_items || []; });
                     updateCustomerTotalPurchaseDisplay(ordersByPartial);
                     await renderCustomerOrders(ordersByPartial, ordersList);
                     return;
@@ -985,51 +909,18 @@ async function renderCustomerOrders(orders, container) {
             return;
         }
         
-        // 먼저 모든 주문의 상품명을 비동기로 조회
-        const ordersWithItems = await Promise.all(orders.map(async (order) => {
-            let itemsInfo = '';
-            console.log('🔍 주문 아이템 데이터 확인:', {
-                orderId: order.id,
-                items: order.items,
-                order_items: order.order_items,
-                itemsType: typeof order.items,
-                order_itemsType: typeof order.order_items
-            });
-            
-            if (order.items && Array.isArray(order.items) && order.items.length > 0) {
-                console.log('📦 items 배열로 파싱:', order.items);
-                itemsInfo = order.items.map(item => {
-                    const name = item.name || item.product_name || '상품명 없음';
-                    const quantity = item.quantity || item.qty || 1;
+        // order.items는 loadCustomerOrders에서 farm_order_items로 pre-attach됨
+        const ordersWithItems = orders.map(order => {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const itemsInfo = items.length > 0
+                ? items.map(item => {
+                    const name = item.product_name || item.name || '상품명 없음';
+                    const quantity = item.quantity || 1;
                     return `${name} × ${quantity}`;
-                }).join(', ');
-            } else if (order.items && typeof order.items === 'string') {
-                console.log('📦 items 문자열로 파싱:', order.items);
-                try {
-                    const parsedItems = JSON.parse(order.items);
-                    if (Array.isArray(parsedItems)) {
-                        itemsInfo = parsedItems.map(item => {
-                            const name = item.name || item.product_name || '상품명 없음';
-                            const quantity = item.quantity || item.qty || 1;
-                            return `${name} × ${quantity}`;
-                        }).join(', ');
-                    }
-                } catch (e) {
-                    console.warn('⚠️ items JSON 파싱 실패:', e);
-                    itemsInfo = order.items; // 원본 문자열 사용
-                }
-            } else {
-                console.log('⚠️ 주문 아이템 정보를 찾을 수 없음:', {
-                    hasItems: !!order.items,
-                    hasOrderItems: !!order.order_items,
-                    itemsValue: order.items,
-                    orderItemsValue: order.order_items
-                });
-                itemsInfo = '상품 정보 없음';
-            }
-            
+                  }).join(', ')
+                : '상품 정보 없음';
             return { ...order, itemsInfo };
-        }));
+        });
         
         // 주문 이력 테이블: 주문일 | 상품명 | 금액 | 상태 (보기 링크 포함)
         const rowsHTML = ordersWithItems.map(order => {
