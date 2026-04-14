@@ -1,231 +1,136 @@
-<!-- 고객 등록/수정 모달 - UX 개선 버전 -->
-<div id="customer-modal" class="fixed inset-0 bg-black/60 backdrop-blur-md z-[999999] flex items-center justify-center" style="position: fixed !important; z-index: 999999 !important; display: none;">
-    <div class="flex items-center justify-center w-full p-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-2xl max-h-[92vh] overflow-hidden" id="customer-modal-content" style="position: relative !important; z-index: 1000000 !important;">
+<!-- 고객 등록/수정 모달 -->
+<div id="customer-modal" class="fixed inset-0 bg-black/50 z-[999999] flex items-center justify-center" style="display:none;">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-sm mx-4 flex flex-col max-h-[90vh]" id="customer-modal-content">
 
-            <!-- 모달 헤더 -->
-            <div class="bg-gradient-to-r from-blue-600 to-blue-700 text-white px-6 py-5">
-                <div class="flex justify-between items-center">
-                    <div class="flex items-center space-x-3">
-                        <div class="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                            <i class="fas fa-user-plus text-white"></i>
+        <!-- 헤더 -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+            <span id="customer-modal-title" class="text-sm font-semibold text-gray-800">새 고객 등록</span>
+            <button onclick="window.closeCustomerModal()" class="text-gray-400 hover:text-gray-600 p-1">
+                <i class="fas fa-times text-sm"></i>
+            </button>
+        </div>
+
+        <!-- 폼 -->
+        <div class="overflow-y-auto flex-1">
+            <form id="customer-form" class="px-4 py-3 space-y-2.5">
+                <input type="hidden" id="customer-id">
+
+                <!-- 고객명 -->
+                <div class="relative">
+                    <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">고객명 <span class="text-red-500">*</span></label>
+                    <input type="text" id="customer-form-name" placeholder="홍길동" required
+                           oninput="window.handleCustomerNameInput(this.value)"
+                           onblur="window.handleCustomerNameBlur()"
+                           onfocus="window.handleCustomerNameFocus(this.value)"
+                           onkeydown="window.handleCustomerNameKeydown(event)"
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    <div id="customer-name-autocomplete" class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-0.5 hidden max-h-40 overflow-y-auto"></div>
+                </div>
+
+                <!-- 전화번호 -->
+                <div>
+                    <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">전화번호 <span class="text-red-500">*</span></label>
+                    <input type="tel" id="customer-form-phone" placeholder="010-1234-5678" required maxlength="13"
+                           oninput="window.formatPhoneNumber(this); window.checkPhoneDuplicate(this.value)"
+                           onblur="window.checkPhoneDuplicate(this.value)"
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    <div id="phone-duplicate-message" class="text-xs mt-1 hidden"></div>
+                </div>
+
+                <!-- 주소 -->
+                <div>
+                    <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">주소</label>
+                    <div class="flex gap-1.5">
+                        <input type="text" id="customer-form-address" placeholder="주소 검색" readonly
+                               class="flex-1 min-w-0 px-3 py-2 border border-gray-200 rounded-lg text-sm bg-gray-50 text-gray-600">
+                        <button type="button" id="customer-form-address-search" onclick="window.openAddressSearch()"
+                                class="px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs font-medium whitespace-nowrap">
+                            <i class="fas fa-search mr-1"></i>검색
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 상세주소 -->
+                <div>
+                    <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">상세주소</label>
+                    <input type="text" id="customer-form-address-detail" placeholder="동, 호수 등"
+                           class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                </div>
+
+                <!-- 추가정보 토글 -->
+                <button type="button" onclick="window.toggleCustomerExtraInfo()"
+                        class="w-full flex items-center justify-between py-1.5 text-xs text-gray-400 hover:text-gray-600">
+                    <span>추가 정보 <span class="text-gray-300">(이메일 · 등급 · 상태 · 메모)</span></span>
+                    <i id="toggle-extra-info-icon" class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
+                </button>
+
+                <div id="extra-info-content" class="hidden space-y-2.5 border-t border-gray-100 pt-2.5">
+
+                    <!-- 이메일 -->
+                    <div>
+                        <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">이메일</label>
+                        <input type="email" id="customer-form-email" placeholder="example@email.com"
+                               class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+
+                    <!-- 등록일 + 등급 -->
+                    <div class="grid grid-cols-2 gap-2">
+                        <div>
+                            <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">등록일</label>
+                            <div class="flex gap-1">
+                                <input type="date" id="customer-form-registration-date"
+                                       class="flex-1 min-w-0 px-2 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <button type="button" onclick="window.setCustomerRegistrationDateToday()"
+                                        class="px-2 py-2 bg-gray-100 hover:bg-gray-200 text-gray-600 rounded-lg text-xs whitespace-nowrap">오늘</button>
+                            </div>
                         </div>
                         <div>
-                            <h3 id="customer-modal-title" class="text-lg font-bold text-white">새 고객 등록</h3>
-                            <p class="text-blue-100 text-xs mt-0.5">
-                                <span class="text-red-300 font-bold">*</span> 표시 항목은 필수입니다
-                            </p>
+                            <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">등급</label>
+                            <select id="customer-form-grade"
+                                    class="w-full px-2 py-2 border border-gray-200 rounded-lg text-xs focus:outline-none focus:ring-1 focus:ring-blue-500">
+                                <option value="GENERAL">일반</option>
+                            </select>
                         </div>
                     </div>
-                    <button id="close-customer-modal" onclick="window.closeCustomerModal()"
-                            class="w-9 h-9 bg-white/20 hover:bg-white/30 rounded-xl flex items-center justify-center transition-all duration-200 hover:scale-105">
-                        <i class="fas fa-times text-white"></i>
-                    </button>
+
+                    <!-- 상태 -->
+                    <div>
+                        <label class="text-[11px] font-medium text-gray-500 mb-0.5 block">상태</label>
+                        <div class="flex gap-1.5">
+                            <button type="button" data-status="ACTIVE" onclick="window.setCustomerStatus('ACTIVE')"
+                                    class="customer-status-btn flex-1 py-1.5 rounded-lg text-xs font-medium border-2 border-green-500 bg-green-50 text-green-700">활성</button>
+                            <button type="button" data-status="INACTIVE" onclick="window.setCustomerStatus('INACTIVE')"
+                                    class="customer-status-btn flex-1 py-1.5 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-gray-500">비활성</button>
+                            <button type="button" data-status="SUSPENDED" onclick="window.setCustomerStatus('SUSPENDED')"
+                                    class="customer-status-btn flex-1 py-1.5 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-gray-500">정지</button>
+                        </div>
+                        <input type="hidden" id="customer-form-status" value="ACTIVE">
+                    </div>
+
+                    <!-- 메모 -->
+                    <div>
+                        <div class="flex justify-between mb-0.5">
+                            <label class="text-[11px] font-medium text-gray-500">메모</label>
+                            <span id="memo-char-count" class="text-[11px] text-gray-400">0 / 200</span>
+                        </div>
+                        <textarea id="customer-form-memo" rows="2" placeholder="특이사항, 선호도 등" maxlength="200"
+                                  oninput="window.updateMemoCharCount(this.value)"
+                                  class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"></textarea>
+                    </div>
+
                 </div>
-            </div>
-
-            <!-- 모달 콘텐츠 -->
-            <div class="overflow-y-auto max-h-[calc(92vh-148px)] bg-gray-50">
-                <form id="customer-form" class="p-5 space-y-4">
-                    <input type="hidden" id="customer-id" name="customer-id">
-
-                    <!-- 필수 정보 섹션 -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-blue-100">
-                        <div class="flex items-center mb-4">
-                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center mr-2.5">
-                                <i class="fas fa-star text-blue-600 text-xs"></i>
-                            </div>
-                            <h4 class="text-sm font-bold text-gray-900">필수 정보</h4>
-                        </div>
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-
-                            <!-- 고객명 -->
-                            <div class="relative">
-                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">
-                                    고객명 <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-user text-gray-400 text-xs"></i>
-                                    </div>
-                                    <input type="text" id="customer-form-name" placeholder="홍길동" required
-                                           oninput="window.handleCustomerNameInput(this.value)"
-                                           onblur="window.handleCustomerNameBlur()"
-                                           onfocus="window.handleCustomerNameFocus(this.value)"
-                                           onkeydown="window.handleCustomerNameKeydown(event)"
-                                           class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200 hover:border-gray-300">
-                                </div>
-                                <!-- 자동완성 드롭다운 -->
-                                <div id="customer-name-autocomplete" class="absolute z-50 w-full bg-white border border-gray-200 rounded-xl shadow-xl mt-1 hidden max-h-48 overflow-y-auto"></div>
-                            </div>
-
-                            <!-- 전화번호 -->
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">
-                                    전화번호 <span class="text-red-500">*</span>
-                                </label>
-                                <div class="relative">
-                                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                        <i class="fas fa-phone text-gray-400 text-xs"></i>
-                                    </div>
-                                    <input type="tel" id="customer-form-phone" placeholder="010-1234-5678" required maxlength="13"
-                                           oninput="window.formatPhoneNumber(this); window.checkPhoneDuplicate(this.value)"
-                                           onblur="window.checkPhoneDuplicate(this.value)"
-                                           class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200 hover:border-gray-300">
-                                </div>
-                                <div id="phone-duplicate-message" class="text-xs mt-1.5 hidden"></div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 주소 섹션 -->
-                    <div class="bg-white rounded-2xl p-5 shadow-sm border border-gray-100">
-                        <div class="flex items-center mb-4">
-                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center mr-2.5">
-                                <i class="fas fa-map-marker-alt text-green-600 text-xs"></i>
-                            </div>
-                            <h4 class="text-sm font-bold text-gray-900">주소</h4>
-                            <span class="ml-2 text-xs text-gray-400">선택사항</span>
-                        </div>
-                        <div class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">기본 주소</label>
-                                <div class="flex gap-2">
-                                    <input type="text" id="customer-form-address" placeholder="검색 버튼을 눌러 주소를 찾아주세요" readonly
-                                           class="flex-1 px-4 py-2.5 border border-gray-200 rounded-xl text-sm bg-gray-50 text-gray-600 cursor-not-allowed">
-                                    <button type="button" id="customer-form-address-search"
-                                            onclick="window.openAddressSearch()"
-                                            class="flex items-center gap-1.5 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-semibold transition-all duration-200 hover:scale-105 shadow-sm whitespace-nowrap">
-                                        <i class="fas fa-search text-xs"></i>
-                                        <span>주소 검색</span>
-                                    </button>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-gray-600 mb-1.5">상세 주소</label>
-                                <input type="text" id="customer-form-address-detail" placeholder="동, 호수 등 나머지 주소를 입력하세요"
-                                       class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200 hover:border-gray-300">
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 추가 정보 섹션 (접기/펼치기) -->
-                    <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
-                        <button type="button" id="toggle-extra-info" onclick="window.toggleCustomerExtraInfo()"
-                                class="w-full flex items-center justify-between px-5 py-4 hover:bg-gray-50 transition-colors duration-200">
-                            <div class="flex items-center">
-                                <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center mr-2.5">
-                                    <i class="fas fa-sliders-h text-purple-600 text-xs"></i>
-                                </div>
-                                <h4 class="text-sm font-bold text-gray-900">추가 정보</h4>
-                                <span class="ml-2 text-xs text-gray-400">이메일 · 등급 · 상태 · 메모</span>
-                            </div>
-                            <div class="flex items-center gap-2">
-                                <span id="extra-info-hint" class="text-xs text-gray-400">클릭하여 펼치기</span>
-                                <i id="toggle-extra-info-icon" class="fas fa-chevron-down text-gray-400 text-xs transition-transform duration-200"></i>
-                            </div>
-                        </button>
-                        <div id="extra-info-content" class="hidden border-t border-gray-100">
-                            <div class="px-5 pb-5 pt-4 space-y-4">
-
-                                <!-- 이메일 -->
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-1.5">이메일</label>
-                                    <div class="relative">
-                                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                                            <i class="fas fa-envelope text-gray-400 text-xs"></i>
-                                        </div>
-                                        <input type="email" id="customer-form-email" placeholder="example@email.com"
-                                               class="w-full pl-9 pr-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200 hover:border-gray-300">
-                                    </div>
-                                </div>
-
-                                <!-- 등록일 + 등급 -->
-                                <div class="grid grid-cols-2 gap-3">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">등록일</label>
-                                        <div class="flex gap-2">
-                                            <input type="date" id="customer-form-registration-date"
-                                                   class="flex-1 min-w-0 px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200">
-                                            <button type="button" onclick="window.setCustomerRegistrationDateToday()"
-                                                    class="px-2.5 py-2.5 bg-gray-100 hover:bg-blue-100 hover:text-blue-700 text-gray-600 rounded-xl text-xs font-semibold transition-all duration-200 whitespace-nowrap">
-                                                오늘
-                                            </button>
-                                        </div>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-semibold text-gray-600 mb-1.5">고객등급</label>
-                                        <select id="customer-form-grade" class="w-full px-3 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-sm transition-all duration-200">
-                                            <option value="GENERAL">일반</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <!-- 고객 상태 -->
-                                <div>
-                                    <label class="block text-xs font-semibold text-gray-600 mb-2">고객 상태</label>
-                                    <div class="flex gap-2">
-                                        <button type="button" data-status="ACTIVE"
-                                                onclick="window.setCustomerStatus('ACTIVE')"
-                                                class="customer-status-btn flex-1 py-2 px-3 rounded-xl text-xs font-semibold border-2 transition-all duration-200 border-green-500 bg-green-50 text-green-700">
-                                            <i class="fas fa-check-circle mr-1"></i>활성
-                                        </button>
-                                        <button type="button" data-status="INACTIVE"
-                                                onclick="window.setCustomerStatus('INACTIVE')"
-                                                class="customer-status-btn flex-1 py-2 px-3 rounded-xl text-xs font-semibold border-2 transition-all duration-200 border-gray-200 bg-white text-gray-500">
-                                            <i class="fas fa-pause-circle mr-1"></i>비활성
-                                        </button>
-                                        <button type="button" data-status="SUSPENDED"
-                                                onclick="window.setCustomerStatus('SUSPENDED')"
-                                                class="customer-status-btn flex-1 py-2 px-3 rounded-xl text-xs font-semibold border-2 transition-all duration-200 border-gray-200 bg-white text-gray-500">
-                                            <i class="fas fa-ban mr-1"></i>정지
-                                        </button>
-                                    </div>
-                                    <input type="hidden" id="customer-form-status" value="ACTIVE">
-                                </div>
-
-                                <!-- 메모 -->
-                                <div>
-                                    <div class="flex items-center justify-between mb-1.5">
-                                        <label class="block text-xs font-semibold text-gray-600">메모</label>
-                                        <span id="memo-char-count" class="text-xs text-gray-400">0 / 200</span>
-                                    </div>
-                                    <textarea id="customer-form-memo" rows="3"
-                                              placeholder="고객 특이사항, 선호도, 주의사항 등"
-                                              maxlength="200"
-                                              oninput="window.updateMemoCharCount(this.value)"
-                                              class="w-full px-4 py-2.5 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none text-sm transition-all duration-200 hover:border-gray-300"></textarea>
-                                </div>
-
-                            </div>
-                        </div>
-                    </div>
-
-                </form>
-            </div>
-
-            <!-- 모달 푸터 -->
-            <div class="bg-white border-t border-gray-100 px-6 py-4">
-                <div class="flex items-center justify-between">
-                    <p class="text-xs text-gray-400 hidden sm:flex items-center gap-1">
-                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[10px]">Ctrl</kbd>
-                        +
-                        <kbd class="px-1.5 py-0.5 bg-gray-100 rounded text-gray-500 font-mono text-[10px]">Enter</kbd>
-                        <span>로 저장</span>
-                    </p>
-                    <div class="flex gap-3 ml-auto">
-                        <button type="button" onclick="window.closeCustomerModal()"
-                                class="px-5 py-2.5 text-gray-600 hover:text-gray-800 border border-gray-200 rounded-xl hover:bg-gray-50 transition-all duration-200 text-sm font-semibold">
-                            <i class="fas fa-times mr-1.5"></i>취소
-                        </button>
-                        <button type="button" id="customer-save-btn"
-                                class="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white rounded-xl transition-all duration-200 text-sm font-semibold shadow-lg hover:shadow-xl hover:scale-105">
-                            <i class="fas fa-save mr-1.5"></i>저장
-                        </button>
-                    </div>
-                </div>
-            </div>
-
+            </form>
         </div>
+
+        <!-- 푸터 -->
+        <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
+            <button type="button" onclick="window.closeCustomerModal()"
+                    class="px-4 py-2 text-xs font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">취소</button>
+            <button type="button" id="customer-save-btn"
+                    class="px-4 py-2 text-xs font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-lg">
+                <i class="fas fa-save mr-1"></i>저장
+            </button>
+        </div>
+
     </div>
 </div>
