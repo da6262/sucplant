@@ -263,40 +263,26 @@ export async function loadCustomerGrades() {
         
         if (!settings.customerGrades || settings.customerGrades.length === 0) {
             console.warn('⚠️ 고객등급 데이터가 없습니다');
-            container.innerHTML = '<div class="text-gray-500 text-center py-4">고객등급이 없습니다.</div>';
+            container.innerHTML = '<div class="text-gray-500 text-center py-4 text-xs">고객등급이 없습니다.</div>';
             return;
         }
-        
+
         settings.customerGrades.forEach((grade, index) => {
-            console.log(`📋 등급 ${index}:`, grade);
-            const gradeElement = document.createElement('div');
-            gradeElement.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg mb-3 shadow-sm hover:shadow-md transition-shadow';
-            gradeElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4" style="background-color: ${grade.color}">
-                        <i class="${grade.icon} text-white text-sm"></i>
-                    </div>
-                    <div>
-                        <div class="font-semibold text-gray-800">${grade.name}</div>
-                        <div class="text-xs text-gray-600">
-                            <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs mr-2">${grade.code}</span>
-                            최소 ${grade.minAmount.toLocaleString()}원
-                        </div>
-                        <div class="text-xs text-gray-500 mt-1">
-                            <i class="fas fa-percentage mr-1"></i>할인 ${grade.discount}%
-                        </div>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="editCustomerGrade(${index})" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="편집">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteCustomerGrade(${index})" class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+            const row = document.createElement('div');
+            row.className = 'flex items-center gap-2 px-3 py-2 border-b border-gray-100 last:border-0';
+            row.innerHTML = `
+                <input type="text" id="grade-name-${index}" value="${grade.name}"
+                       class="input-ui flex-1 text-xs" placeholder="등급명">
+                <input type="number" id="grade-minamount-${index}" value="${grade.minAmount}"
+                       class="input-ui w-28 text-xs text-right" placeholder="0" min="0">
+                <span class="text-xs text-gray-400 shrink-0">원 이상</span>
+                <input type="number" id="grade-discount-${index}" value="${grade.discount}"
+                       class="input-ui w-14 text-xs text-right" placeholder="0" min="0" max="100">
+                <span class="text-xs text-gray-400 shrink-0">%</span>
+                <button onclick="saveInlineGrade(${index})" class="btn-primary shrink-0" style="padding:3px 10px;font-size:11px;">저장</button>
+                <button onclick="deleteCustomerGrade(${index})" class="btn-secondary shrink-0" style="padding:3px 8px;font-size:11px;"><i class="fas fa-trash text-xs"></i></button>
             `;
-            container.appendChild(gradeElement);
+            container.appendChild(row);
         });
         
         console.log('✅ 고객 등급 관리 로드 완료');
@@ -1008,6 +994,31 @@ window.editCustomerGrade = async function(index) {
     } catch (error) {
         console.error('❌ 고객등급 편집 실패:', error);
         alert('등급 편집에 실패했습니다.');
+    }
+};
+
+// 인라인 저장
+window.saveInlineGrade = async function(index) {
+    try {
+        const name = document.getElementById(`grade-name-${index}`)?.value.trim();
+        const minAmount = parseInt(document.getElementById(`grade-minamount-${index}`)?.value) || 0;
+        const discount = parseInt(document.getElementById(`grade-discount-${index}`)?.value) || 0;
+
+        if (!name) { alert('등급명을 입력해주세요.'); return; }
+        if (discount < 0 || discount > 100) { alert('할인율은 0-100% 사이로 입력해주세요.'); return; }
+
+        const settings = window.settingsDataManager.getAllSettings();
+        const existing = settings.customerGrades[index];
+        await window.settingsDataManager.updateCustomerGrade(index, {
+            ...existing,
+            name,
+            minAmount,
+            discount
+        });
+        setTimeout(() => { loadCustomerGrades(); }, 100);
+    } catch (error) {
+        console.error('❌ 고객등급 저장 실패:', error);
+        alert('저장에 실패했습니다.');
     }
 };
 

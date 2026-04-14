@@ -1,101 +1,124 @@
-<!-- 고객관리(CRM) 메인 컴포넌트 -->
-<div id="customers-section" class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
-
-    <!-- 헤더 -->
-    <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-200 shrink-0">
-        <span class="text-sm font-semibold text-gray-800">고객 관리</span>
-        <div class="flex items-center gap-1.5">
-            <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
-            <button class="btn-secondary" title="내보내기"><i class="fas fa-download"></i></button>
-            <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
+<!-- 고객관리(CRM) 메인 컴포넌트 - 플로팅 패널 레이아웃 -->
+<div id="customers-section" class="section-content">
+    <div class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
+        <!-- 상단: 제목 + 액션 -->
+        <div class="page-header px-3 py-2 border-b border-gray-200 shrink-0 mb-0">
+            <div>
+                <div class="page-title">고객 관리</div>
+                <div class="page-desc">고객 정보를 관리하고 구매 이력을 확인하세요</div>
+            </div>
+            <div class="flex items-center gap-1.5">
+                <button id="manage-customer-grades-btn" class="btn-secondary" title="등급 관리"><i class="fas fa-crown"></i> 등급 관리</button>
+                <button class="btn-secondary" title="내보내기"><i class="fas fa-download"></i></button>
+                <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i> 고객 등록</button>
+            </div>
         </div>
-    </div>
 
-    <!-- 검색 + 필터 한 줄 -->
-    <div class="flex flex-wrap items-center gap-1.5 px-3 py-1.5 border-b border-gray-100 shrink-0">
-        <div class="relative">
-            <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
-                   class="input-ui py-1 pl-2 pr-7 w-44" autocomplete="off">
-            <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
-            <div id="customer-search-suggestions" class="absolute left-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden" style="min-width:200px;"></div>
+        <!-- 고객관리 레이아웃: 리스트 전체폭 + 플로팅 상세 패널 -->
+        <div class="customer-admin-layout flex-1 min-h-0">
+            <!-- 고객 리스트 (전체폭) -->
+            <div class="customer-admin-sidebar">
+                <!-- 검색·필터 고정 -->
+                <div class="shrink-0 px-2 py-2 border-b border-gray-200 bg-white space-y-2">
+                    <div class="relative">
+                        <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
+                               class="w-full py-1.5 pl-2 pr-7 border border-gray-200 rounded text-sm focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"
+                               autocomplete="off">
+                        <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                        <div id="customer-search-suggestions" class="absolute left-0 right-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden"></div>
+                    </div>
+                    <div class="flex flex-wrap items-center gap-1.5">
+                        <select id="customer-sort" class="py-1.5 px-2 border border-gray-200 rounded text-sm w-28">
+                            <option value="newest">최근등록순</option>
+                            <option value="name_asc">이름↑</option>
+                            <option value="name_desc">이름↓</option>
+                            <option value="grade_high">등급순</option>
+                        </select>
+                        <button id="apply-customer-sort" class="btn-primary py-1 px-2 text-xs">적용</button>
+                        <button id="reset-customer-search" class="btn-secondary py-1 px-2 text-xs"><i class="fas fa-refresh"></i></button>
+                    </div>
+                    <!-- 등급별 필터 + 미납/대기 필터 -->
+                    <div class="flex flex-wrap items-center gap-1">
+                        <span class="text-xs text-gray-500 mr-0.5">등급:</span>
+                        <button id="customer-grade-all" class="customer-tab-btn px-2 py-1 rounded text-xs text-gray-700 hover:bg-emerald-50 hover:text-emerald-700 font-medium"><span>전체</span> <span id="customer-count-all" class="ml-0.5">0</span></button>
+                        <button id="customer-grade-BLACK_DIAMOND" class="customer-tab-btn px-2 py-1 rounded text-xs text-gray-700 hover:bg-gray-200"><span>블랙</span> <span id="customer-count-BLACK_DIAMOND" class="ml-0.5">0</span></button>
+                        <button id="customer-grade-PURPLE_EMPEROR" class="customer-tab-btn px-2 py-1 rounded text-xs text-purple-700 hover:bg-purple-50"><span>퍼플</span> <span id="customer-count-PURPLE_EMPEROR" class="ml-0.5">0</span></button>
+                        <button id="customer-grade-RED_RUBY" class="customer-tab-btn px-2 py-1 rounded text-xs text-red-700 hover:bg-red-50"><span>레드</span> <span id="customer-count-RED_RUBY" class="ml-0.5">0</span></button>
+                        <button id="customer-grade-GREEN_LEAF" class="customer-tab-btn px-2 py-1 rounded text-xs text-green-700 hover:bg-green-50"><span>그린</span> <span id="customer-count-GREEN_LEAF" class="ml-0.5">0</span></button>
+                        <button id="customer-grade-GENERAL" class="customer-tab-btn px-2 py-1 rounded text-xs text-blue-700 hover:bg-blue-50"><span>일반</span> <span id="customer-count-GENERAL" class="ml-0.5">0</span></button>
+                        <span class="text-gray-300 mx-0.5">|</span>
+                        <label class="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                            <input type="checkbox" id="filter-unpaid" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"> 미납
+                        </label>
+                        <label class="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
+                            <input type="checkbox" id="filter-waitlist" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"> 대기
+                        </label>
+                    </div>
+                </div>
+                <!-- 고객 리스트 카드 영역 (스크롤) -->
+                <div class="flex-1 overflow-auto px-2 py-1">
+                    <div class="text-xs text-gray-500 px-1 py-0.5 flex justify-between">
+                        <span class="font-medium">고객 목록</span>
+                        <span id="customer-list-count">0명</span>
+                    </div>
+                    <div id="customer-list-container" class="space-y-1.5 pb-2">
+                        <!-- 카드들이 JS로 채워짐 -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- 플로팅 상세 패널 (JS에서 detail-open 시 표시) -->
+            <div class="customer-admin-main">
+                <!-- 드래그 핸들 · 상세 내용 · 리사이즈 핸들은 JS에서 동적 삽입 -->
+                <div id="customer-detail-content" class="flex-1 overflow-y-auto p-3 min-h-0">
+                    <div class="text-center text-gray-400 py-12 text-sm" id="customer-detail-placeholder">
+                        <i class="fas fa-user text-3xl mb-3 block opacity-50"></i>
+                        <p>목록에서 고객을 선택하세요</p>
+                    </div>
+                </div>
+            </div>
         </div>
-        <select id="customer-sort" class="input-ui py-1 w-28">
-            <option value="newest">최근등록순</option>
-            <option value="name_asc">이름↑</option>
-            <option value="name_desc">이름↓</option>
-            <option value="grade_high">등급순</option>
-        </select>
-        <button id="apply-customer-sort" class="btn-primary py-1 px-2 text-xs">적용</button>
-        <button id="reset-customer-search" class="btn-secondary py-1 px-2 text-xs"><i class="fas fa-refresh"></i></button>
-        <span class="text-gray-300">|</span>
-        <span class="text-xs text-gray-500">등급:</span>
-        <button id="customer-grade-all"           class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
-        <button id="customer-grade-BLACK_DIAMOND"  class="customer-tab-btn px-2 py-0.5 rounded text-xs text-gray-700 hover:bg-gray-200">블랙 <span id="customer-count-BLACK_DIAMOND">0</span></button>
-        <button id="customer-grade-PURPLE_EMPEROR" class="customer-tab-btn px-2 py-0.5 rounded text-xs text-purple-700 hover:bg-purple-50">퍼플 <span id="customer-count-PURPLE_EMPEROR">0</span></button>
-        <button id="customer-grade-RED_RUBY"       class="customer-tab-btn px-2 py-0.5 rounded text-xs text-red-700 hover:bg-red-50">레드 <span id="customer-count-RED_RUBY">0</span></button>
-        <button id="customer-grade-GREEN_LEAF"     class="customer-tab-btn px-2 py-0.5 rounded text-xs text-green-700 hover:bg-green-50">그린 <span id="customer-count-GREEN_LEAF">0</span></button>
-        <button id="customer-grade-GENERAL"        class="customer-tab-btn px-2 py-0.5 rounded text-xs text-blue-700 hover:bg-blue-50">일반 <span id="customer-count-GENERAL">0</span></button>
-        <span class="text-gray-300">|</span>
-        <label class="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-            <input type="checkbox" id="filter-unpaid" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"> 미납
-        </label>
-        <label class="inline-flex items-center gap-1 text-xs text-gray-600 cursor-pointer">
-            <input type="checkbox" id="filter-waitlist" class="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500"> 대기
-        </label>
-    </div>
 
-    <!-- 테이블 -->
-    <div class="flex-1 overflow-auto">
-        <table class="min-w-full divide-y divide-gray-100">
-            <thead class="bg-gray-50 sticky top-0 z-10">
-                <tr>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">고객명</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">전화번호</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">최근주문</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">등급</th>
-                    <th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">관리</th>
-                </tr>
-            </thead>
-            <tbody id="customer-list-container" class="bg-white divide-y divide-gray-100">
-                <!-- JS로 채워짐 -->
-            </tbody>
-        </table>
+        <!-- 하단 상태 바: 총 고객 수 · 오늘 신규 가입 -->
+        <footer id="customer-status-footer" class="shrink-0 px-3 py-1.5 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
+            <span>총 <strong id="customer-status-total">0</strong>명</span>
+            <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
+        </footer>
     </div>
-
-    <!-- 하단 상태 바 -->
-    <footer id="customer-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
-        <span>총 <strong id="customer-status-total">0</strong>명 · <span id="customer-list-count">0명 표시</span></span>
-        <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
-    </footer>
 </div>
 
 <!-- 고객등급 관리 모달 -->
 <div id="customer-grades-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div class="flex items-center justify-between p-4 border-b border-gray-200">
+            <div class="flex items-center justify-between p-6 border-b border-gray-200">
                 <div class="flex items-center space-x-3">
-                    <div class="w-8 h-8 bg-purple-100 rounded-lg flex items-center justify-center">
-                        <i class="fas fa-crown text-purple-600 text-sm"></i>
+                    <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-crown text-purple-600"></i>
                     </div>
-                    <h3 class="text-sm font-semibold text-gray-900">고객등급 관리</h3>
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">고객등급 관리</h3>
+                        <p class="text-sm text-gray-600">고객등급을 설정하고 관리하세요</p>
+                    </div>
                 </div>
                 <button id="close-customer-grades-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
-                    <i class="fas fa-times"></i>
+                    <i class="fas fa-times text-xl"></i>
                 </button>
             </div>
-            <div class="p-4 overflow-y-auto max-h-[calc(90vh-120px)]">
-                <div class="mb-4">
-                    <div class="flex items-center justify-between mb-3">
-                        <h4 class="text-sm font-medium text-gray-900">고객등급 목록</h4>
-                        <button id="add-customer-grade-btn" class="btn-primary text-xs"><i class="fas fa-plus"></i>등급 추가</button>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+                <div class="mb-6">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="text-md font-medium text-gray-900">고객등급 목록</h4>
+                        <button id="add-customer-grade-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
+                            <i class="fas fa-plus mr-2"></i>등급 추가
+                        </button>
                     </div>
-                    <div id="customer-grades-list" class="space-y-2"></div>
+                    <div id="customer-grades-list" class="space-y-3"></div>
                 </div>
             </div>
-            <div class="flex items-center justify-end space-x-2 px-4 py-3 border-t border-gray-200 bg-gray-50">
-                <button id="cancel-customer-grades" class="btn-secondary">취소</button>
-                <button id="save-customer-grades" class="btn-primary">저장</button>
+            <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
+                <button id="cancel-customer-grades" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">취소</button>
+                <button id="save-customer-grades" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">저장</button>
             </div>
         </div>
     </div>

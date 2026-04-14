@@ -2037,14 +2037,15 @@ async function loadProductManagementComponent() {
         }
         
         // 이미 로드되었는지 확인
-        if (productsContainer.innerHTML.trim() !== '' &&
+        if (productsContainer.innerHTML.trim() !== '' && 
             !productsContainer.innerHTML.includes('여기에 로드됩니다')) {
             console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
-
-            // 컴포넌트 재초기화 (이벤트 리스너 재연결)
+            
+            // 컴포넌트 재초기화
             if (window.ProductManagementComponent) {
                 const productManagementComponent = new window.ProductManagementComponent();
                 await productManagementComponent.init(productsContainer);
+                // 전역에 저장
                 window.productManagementComponent = productManagementComponent;
                 console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
             }
@@ -2071,7 +2072,7 @@ async function loadProductManagementComponent() {
         } else {
             console.error('❌ ProductManagementComponent를 찾을 수 없습니다');
         }
-
+        
         return true;
         
     } catch (error) {
