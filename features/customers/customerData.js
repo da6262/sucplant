@@ -290,18 +290,7 @@ class CustomerDataManager {
                 throw new Error('고객명과 전화번호는 필수입니다.');
             }
             
-            // 전화번호 중복 확인
-            const existingPhone = this.farm_customers.find(c => c.phone === customerData.phone);
-            if (existingPhone) {
-                throw new Error('이미 등록된 전화번호입니다.');
-            }
-            
-            // 고객명 중복 확인 (중복 시 등록 차단)
-            const existingName = this.farm_customers.find(c => c.name === customerData.name.trim());
-            if (existingName) {
-                console.warn('⚠️ 동일한 고객명이 이미 존재합니다:', customerData.name);
-                throw new Error(`"${customerData.name}" 이름의 고객이 이미 등록되어 있습니다. 다른 이름을 사용하거나 기존 고객을 선택해주세요.`);
-            }
+            // (전화번호·고객명 중복은 UI 레이어에서 confirm으로 처리)
             
             // 새 고객 객체 생성
             const now = new Date();
@@ -360,17 +349,7 @@ class CustomerDataManager {
             console.log('🔍 수정할 고객 인덱스:', customerIndex);
             console.log('🔍 기존 고객 정보:', this.farm_customers[customerIndex]);
             
-            // 전화번호 중복 확인 (자신 제외)
-            if (updateData.phone) {
-                console.log('🔍 전화번호 중복 체크:', updateData.phone);
-                const existingCustomer = this.farm_customers.find(c => c.phone === updateData.phone && c.id !== customerId);
-                console.log('🔍 중복된 고객:', existingCustomer);
-                
-                if (existingCustomer) {
-                    console.log('❌ 전화번호 중복 발견:', existingCustomer.name, existingCustomer.phone);
-                    throw new Error('이미 등록된 전화번호입니다.');
-                }
-            }
+            // (전화번호 중복은 UI 레이어에서 경고 표시로 처리)
             
             // 고객 정보 업데이트
             this.farm_customers[customerIndex] = this._sanitizeCustomer({
