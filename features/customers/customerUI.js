@@ -131,7 +131,7 @@ function initCustomerModalSaveHandlers() {
 }
 
 // 고객 테이블 렌더링 함수 (등급 필터링 지원)
-export async function renderCustomersTable(gradeFilter = 'all') {
+export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '') {
     console.log(`🎨 고객 테이블 렌더링 시작 (등급 필터: ${gradeFilter})`);
     
     try {
@@ -144,10 +144,14 @@ export async function renderCustomersTable(gradeFilter = 'all') {
         const sortedCustomers = customerDataManager.sortCustomers(sortBy);
         console.log(`📊 정렬 적용: ${sortBy}`);
         
-        // 등급 필터링 로직
-        const customers = (gradeFilter === 'all')
-            ? sortedCustomers
-            : sortedCustomers.filter(c => c.grade === gradeFilter);
+        // 등급 + 검색어 필터링
+        const term = (searchTerm || '').toLowerCase().trim();
+        const customers = sortedCustomers
+            .filter(c => gradeFilter === 'all' || c.grade === gradeFilter)
+            .filter(c => !term ||
+                (c.name || '').toLowerCase().includes(term) ||
+                (c.phone || '').replace(/[-\s]/g, '').includes(term.replace(/[-\s]/g, ''))
+            );
         
         console.log(`🎯 필터링된 고객 수: ${customers.length}`);
         
