@@ -187,20 +187,25 @@ export async function renderCustomersTable(gradeFilter = 'all') {
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
             const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
             const card = document.createElement('div');
-            card.className = 'customer-list-card p-2.5 rounded-lg border border-gray-200 bg-white hover:border-emerald-300 hover:shadow-sm cursor-pointer transition-all';
+            card.className = 'customer-list-card group px-3 py-2 rounded-lg border border-gray-100 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm cursor-pointer transition-all';
             card.setAttribute('data-customer-id', customer.id);
+            const phoneDisplay = (customer.phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
             card.innerHTML = `
-                <div class="flex items-start justify-between gap-1">
+                <div class="flex items-center justify-between gap-2">
                     <div class="min-w-0 flex-1">
-                        <div class="font-semibold text-gray-900 truncate">${escapeHtml(customer.name || '-')}</div>
-                        <div class="mt-0.5 flex flex-wrap items-center gap-1">
-                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
-                            <span class="text-[10px] text-gray-500">최근 주문 ${lastOrderDate}</span>
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-semibold text-gray-900 truncate text-sm">${escapeHtml(customer.name || '-')}</span>
+                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded shrink-0 ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
+                        </div>
+                        <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
+                            <span>${phoneDisplay || '-'}</span>
+                            <span class="text-gray-200">·</span>
+                            <span>최근 주문 ${lastOrderDate}</span>
                         </div>
                     </div>
-                    <div class="flex gap-0.5 shrink-0" onclick="event.stopPropagation()">
-                        <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-600 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                        <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-600 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                    <div class="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                        <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
+                        <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
                     </div>
                 </div>
             `;
@@ -456,7 +461,20 @@ function fillCustomerForm(customer) {
                 failCount++;
             }
         });
-        
+
+        // 상태 버튼 UI 동기화
+        const customerStatus = customer.status || 'ACTIVE';
+        const statusHidden = document.getElementById('customer-form-status');
+        if (statusHidden) statusHidden.value = customerStatus;
+        window.setCustomerStatus(customerStatus);
+
+        // 메모 글자수 업데이트
+        window.updateMemoCharCount(customer.memo || '');
+
+        // 추가 정보에 해당하는 값이 있으면 섹션 자동 펼치기
+        const hasExtra = !!(customer.email || customer.memo || (customer.status && customer.status !== 'ACTIVE'));
+        if (hasExtra) expandExtraInfoSection();
+
         // 고객 ID 설정 (수정 모드)
         const customerIdField = document.getElementById('customer-id');
         if (customerIdField) {
@@ -1473,6 +1491,33 @@ export async function openCustomerModal(customerId = null, tempName = null, call
         // 저장 이벤트(중복 방지 + 즉시 disabled) 바인딩
         initCustomerModalSaveHandlers();
 
+        // 추가 정보 섹션 초기화 (접힌 상태)
+        resetExtraInfoSection();
+
+        // 상태 버튼 초기화 (활성)
+        window.setCustomerStatus('ACTIVE');
+
+        // 메모 글자수 초기화
+        window.updateMemoCharCount('');
+
+        // 이름 필드 자동 포커스
+        setTimeout(() => {
+            const nameField = document.getElementById('customer-form-name');
+            if (nameField) nameField.focus();
+        }, 80);
+
+        // Ctrl+Enter 저장 단축키
+        const modalContent = document.getElementById('customer-modal-content');
+        if (modalContent) {
+            modalContent.onkeydown = (e) => {
+                if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                    e.preventDefault();
+                    const saveBtn = document.getElementById('customer-save-btn');
+                    if (saveBtn && !saveBtn.disabled) saveBtn.click();
+                }
+            };
+        }
+
         console.log('✅ 고객 모달 열기 완료');
         
     } catch (error) {
@@ -1839,6 +1884,91 @@ window.handleCustomerNameBlur = handleCustomerNameBlur;
 window.handleCustomerNameKeydown = handleCustomerNameKeydown;
 window.selectAutocompleteItem = selectAutocompleteItem;
 
+// ====== 고객 폼 UX 헬퍼 함수 ======
+
+// 추가 정보 섹션 토글 (접기/펼치기)
+window.toggleCustomerExtraInfo = function() {
+    const content = document.getElementById('extra-info-content');
+    const icon = document.getElementById('toggle-extra-info-icon');
+    const hint = document.getElementById('extra-info-hint');
+    if (!content) return;
+    const isHidden = content.classList.contains('hidden');
+    if (isHidden) {
+        content.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (hint) hint.textContent = '클릭하여 접기';
+    } else {
+        content.classList.add('hidden');
+        if (icon) icon.style.transform = '';
+        if (hint) hint.textContent = '클릭하여 펼치기';
+    }
+};
+
+// 등록일 오늘로 빠른 설정
+window.setCustomerRegistrationDateToday = function() {
+    const dateField = document.getElementById('customer-form-registration-date');
+    if (dateField) {
+        dateField.value = new Date().toISOString().split('T')[0];
+    }
+};
+
+// 고객 상태 버튼 선택 (hidden input + 버튼 UI 동기화)
+window.setCustomerStatus = function(status) {
+    const hiddenInput = document.getElementById('customer-form-status');
+    if (hiddenInput) hiddenInput.value = status;
+
+    const styleMap = {
+        'ACTIVE':    { on: ['border-green-500',  'bg-green-50',  'text-green-700'],  off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
+        'INACTIVE':  { on: ['border-yellow-400', 'bg-yellow-50', 'text-yellow-700'], off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
+        'SUSPENDED': { on: ['border-red-400',    'bg-red-50',    'text-red-700'],    off: ['border-gray-200', 'bg-white', 'text-gray-500'] }
+    };
+
+    document.querySelectorAll('#customer-modal .customer-status-btn').forEach(btn => {
+        const btnStatus = btn.dataset.status;
+        const s = styleMap[btnStatus] || styleMap['ACTIVE'];
+        if (btnStatus === status) {
+            btn.classList.remove(...s.off);
+            btn.classList.add(...s.on);
+        } else {
+            btn.classList.remove(...s.on);
+            btn.classList.add(...s.off);
+        }
+    });
+};
+
+// 메모 글자 수 카운터 업데이트
+window.updateMemoCharCount = function(value) {
+    const counter = document.getElementById('memo-char-count');
+    if (!counter) return;
+    const len = (value || '').length;
+    counter.textContent = `${len} / 200`;
+    counter.className = len > 180
+        ? 'text-xs text-red-500 font-medium'
+        : 'text-xs text-gray-400';
+};
+
+// 추가 정보 섹션 내부 상태 리셋 유틸
+function resetExtraInfoSection() {
+    const content = document.getElementById('extra-info-content');
+    const icon = document.getElementById('toggle-extra-info-icon');
+    const hint = document.getElementById('extra-info-hint');
+    if (content) content.classList.add('hidden');
+    if (icon) icon.style.transform = '';
+    if (hint) hint.textContent = '클릭하여 펼치기';
+}
+
+// 추가 정보 섹션 펼치기 유틸
+function expandExtraInfoSection() {
+    const content = document.getElementById('extra-info-content');
+    const icon = document.getElementById('toggle-extra-info-icon');
+    const hint = document.getElementById('extra-info-hint');
+    if (content && content.classList.contains('hidden')) {
+        content.classList.remove('hidden');
+        if (icon) icon.style.transform = 'rotate(180deg)';
+        if (hint) hint.textContent = '클릭하여 접기';
+    }
+}
+
 // 고객 폼 초기화 함수
 function resetCustomerForm() {
     try {
@@ -1875,7 +2005,18 @@ function resetCustomerForm() {
             dateField.value = today;
             console.log('📅 등록일 자동 설정:', today);
         }
-        
+
+        // 상태 초기화 (활성)
+        const statusField = document.getElementById('customer-form-status');
+        if (statusField) statusField.value = 'ACTIVE';
+        window.setCustomerStatus('ACTIVE');
+
+        // 메모 글자수 초기화
+        window.updateMemoCharCount('');
+
+        // 추가 정보 섹션 접기
+        resetExtraInfoSection();
+
         // 고객 ID 초기화 (새 고객 등록)
         const customerIdField = document.getElementById('customer-id');
         if (customerIdField) {

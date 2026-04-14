@@ -33,10 +33,15 @@ class ProductDataManager {
                 throw new Error('❌ Supabase 초기화 실패. Supabase 연결이 필요합니다.');
             }
             
-            // 카테고리가 없으면 기본 카테고리 생성
+            // 카테고리가 없으면 기본 카테고리 생성 (인증된 경우에만)
             if (this.categories.length === 0) {
-                console.log('📝 기본 카테고리 생성 중...');
-                await this.createDefaultCategories();
+                const { data: { user } } = await window.supabaseClient.auth.getUser().catch(() => ({ data: { user: null } }));
+                if (user) {
+                    console.log('📝 기본 카테고리 생성 중...');
+                    await this.createDefaultCategories();
+                } else {
+                    console.log('⚠️ 미인증 상태 — 기본 카테고리 생성 건너뜀');
+                }
             }
             
             console.log('✅ ProductDataManager 초기화 완료');
