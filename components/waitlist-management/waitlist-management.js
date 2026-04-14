@@ -100,7 +100,17 @@ async function loadWaitlistManagementComponent() {
             return true;
         }
         
-        // 다른 섹션은 건드리지 않음 — 네비게이션 매니저가 show/hide 담당
+        // 기존 모든 섹션 완전 제거 (대기자 관리 전환 시)
+        console.log('🗑️ 기존 모든 섹션 제거 시작...');
+        const allSections = document.querySelectorAll('[id$="-section"], .tab-content, .content-section, .section-content');
+        allSections.forEach(section => {
+            if (section.id !== 'waitlist-section') { // 대기자 섹션은 제외
+                console.log(`🗑️ 섹션 제거: ${section.id || section.className}`);
+                section.style.display = 'none';
+                section.style.visibility = 'hidden';
+                section.classList.remove('active');
+            }
+        });
         
         // 컴포넌트 HTML 로드
         console.log('📦 대기자관리 HTML 컴포넌트 로드 시작...');

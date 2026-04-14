@@ -173,48 +173,62 @@ export async function renderCustomersTable(gradeFilter = 'all') {
         
         if (customers.length === 0) {
             container.innerHTML = `
-                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</td></tr>
+                <div class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</div>
             `;
             return;
         }
-
+        
         // 전화번호별 최근 주문일 조회 (farm_orders에서)
         const lastOrderMap = await fetchLastOrderDatesByPhone();
-
+        
         for (const customer of customers) {
             const gradeDisplayName = await getGradeDisplayName(customer.grade);
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
             const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-gray-50 cursor-pointer';
-            tr.setAttribute('data-customer-id', customer.id);
+            const card = document.createElement('div');
+            card.className = 'customer-list-card group px-3 py-2 rounded-lg border border-gray-100 bg-white hover:border-emerald-300 hover:bg-emerald-50/30 hover:shadow-sm cursor-pointer transition-all';
+            card.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = (customer.phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
-            tr.innerHTML = `
-                <td class="px-3 py-2 text-xs font-medium text-gray-900">${escapeHtml(customer.name || '-')}</td>
-                <td class="px-3 py-2 text-xs text-gray-500">${phoneDisplay || '-'}</td>
-                <td class="px-3 py-2 text-xs text-gray-500">${lastOrderDate}</td>
-                <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="px-3 py-2">
-                    <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                    <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
-                </td>
+            card.innerHTML = `
+                <div class="flex items-center justify-between gap-2">
+                    <div class="min-w-0 flex-1">
+                        <div class="flex items-center gap-1.5">
+                            <span class="font-semibold text-gray-900 truncate text-sm">${escapeHtml(customer.name || '-')}</span>
+                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded shrink-0 ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
+                        </div>
+                        <div class="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400">
+                            <span>${phoneDisplay || '-'}</span>
+                            <span class="text-gray-200">·</span>
+                            <span>최근 주문 ${lastOrderDate}</span>
+                        </div>
+                    </div>
+                    <div class="flex gap-0.5 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" onclick="event.stopPropagation()">
+                        <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
+                        <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                    </div>
+                </div>
             `;
-            tr.addEventListener('click', (e) => {
+            card.addEventListener('click', (e) => {
                 if (e.target.closest('button')) return;
                 showCustomerDetail(customer.id);
             });
-            container.appendChild(tr);
+            container.appendChild(card);
         }
-
-        console.log('✅ 고객 리스트(테이블) 렌더링 완료');
+        
+        console.log('✅ 고객 리스트(카드) 렌더링 완료');
         
     } catch (error) {
         console.error('❌ 고객 리스트 렌더링 실패:', error);
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <tr><td colspan="5" class="text-center py-8 text-red-500 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
+                <div class="text-center py-8 text-red-500">
+                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
+                    </div>
+                    <p class="text-sm font-medium">고객 목록을 불러오는 중 오류가 발생했습니다.</p>
+                </div>
             `;
         }
     }
