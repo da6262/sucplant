@@ -219,8 +219,8 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
                 <td class="px-3 py-2 text-xs text-gray-500">${lastOrderDate}</td>
                 <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
                 <td class="px-3 py-2">
-                    <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                    <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                    <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                    <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                 </td>
             `;
             tr.addEventListener('click', (e) => {
@@ -716,8 +716,8 @@ async function showCustomerDetailInPanel(customer) {
                         </div>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button onclick="editCustomer('${customer.id}')" class="py-1.5 px-3 rounded text-xs font-medium bg-indigo-600 text-white hover:bg-indigo-700">수정</button>
-                        <button onclick="deleteCustomer('${customer.id}')" class="py-1.5 px-3 rounded text-xs font-medium bg-gray-200 text-gray-700 hover:bg-gray-300">삭제</button>
+                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                        <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>
                 <!-- 2단: 통합 주문 이력 [주문일 | 상품명 | 금액 | 상태] -->
@@ -968,14 +968,14 @@ async function renderCustomerOrders(orders, container) {
         }).join('');
         
         container.innerHTML = `
-            <table class="w-full text-xs border-collapse">
+            <table class="tbl-ui">
                 <thead>
-                    <tr class="bg-gray-50 text-gray-600 text-left">
-                        <th class="px-2 py-1.5 font-medium">주문일</th>
-                        <th class="px-2 py-1.5 font-medium">상품명</th>
-                        <th class="px-2 py-1.5 font-medium">금액</th>
-                        <th class="px-2 py-1.5 font-medium">상태</th>
-                        <th class="px-2 py-1.5 font-medium text-center w-12">보기</th>
+                    <tr>
+                        <th>주문일</th>
+                        <th>상품명</th>
+                        <th class="th-num">금액</th>
+                        <th>상태</th>
+                        <th class="text-center w-12">보기</th>
                     </tr>
                 </thead>
                 <tbody>${rowsHTML}</tbody>

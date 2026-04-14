@@ -442,14 +442,14 @@ class ProductManagementComponent {
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <div class="flex gap-1">
-                    <button class="edit-product-btn text-blue-500 hover:text-blue-700 p-1 rounded" data-product-id="${product.id}" title="수정">
-                        <i class="fas fa-edit" style="font-size:11px;"></i>
+                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
+                        <i class="fas fa-edit"></i>
                     </button>
-                    <button class="duplicate-product-btn text-emerald-500 hover:text-emerald-700 p-1 rounded" data-product-id="${product.id}" title="복제">
-                        <i class="fas fa-copy" style="font-size:11px;"></i>
+                    <button class="duplicate-product-btn btn-icon" data-product-id="${product.id}" title="복제" style="color:#059669;">
+                        <i class="fas fa-copy"></i>
                     </button>
-                    <button class="delete-product-btn text-red-400 hover:text-red-600 p-1 rounded" data-product-id="${product.id}" title="삭제">
-                        <i class="fas fa-trash" style="font-size:11px;"></i>
+                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제">
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </td>
@@ -1493,12 +1493,12 @@ class ProductManagementComponent {
         if (countEl) countEl.textContent = `총 ${products.length}개`;
         const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션'];
         const keys = ['name','category','price','cost','stock','size','shipping_option'];
-        let html = `<table class="min-w-full text-xs"><thead class="bg-gray-50 sticky top-0"><tr>` +
-            cols.map(c => `<th class="px-2 py-1.5 text-left font-semibold text-gray-600 whitespace-nowrap">${c}</th>`).join('') +
+        let html = `<table class="tbl-ui"><thead><tr>` +
+            cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
             `</tr></thead><tbody>` +
-            products.slice(0, 20).map((p, i) =>
-                `<tr class="${i%2===0?'bg-white':'bg-gray-50'}">` +
-                keys.map(k => `<td class="px-2 py-1 text-gray-700 whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
+            products.slice(0, 20).map(p =>
+                `<tr>` +
+                keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
                 `</tr>`
             ).join('') +
             (products.length > 20 ? `<tr><td colspan="7" class="px-2 py-2 text-center text-gray-400">... 외 ${products.length-20}개</td></tr>` : '') +
