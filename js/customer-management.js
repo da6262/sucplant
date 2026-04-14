@@ -316,15 +316,10 @@ function attachCustomerGradesEventListeners() {
     // 등급 관리 → 환경설정 탭으로 이동
     const manageGradesBtn = document.getElementById('manage-customer-grades-btn');
     if (manageGradesBtn) {
-        manageGradesBtn.addEventListener('click', () => {
+        manageGradesBtn.addEventListener('click', async () => {
             if (window.switchTab) {
-                window.switchTab('settings');
-                // 환경설정 로드 후 고객등급 탭 자동 선택 (컴포넌트 fetch 완료 대기)
-                setTimeout(() => {
-                    const gradeTab = document.getElementById('settings-tab-customers');
-                    if (gradeTab) gradeTab.click();
-                    else setTimeout(() => document.getElementById('settings-tab-customers')?.click(), 400);
-                }, 600);
+                await window.switchTab('settings');
+                document.getElementById('settings-tab-customers')?.click();
             }
         });
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
