@@ -5,70 +5,51 @@
 async function loadCustomerManagementComponent() {
     try {
         console.log('🔄 고객관리 컴포넌트 로드 중...');
-        
-        // 기존 고객관리 섹션이 있으면 제거
-        const existingSection = document.getElementById('customers-section');
-        if (existingSection) {
-            console.log('🗑️ 기존 고객관리 섹션 제거');
-            existingSection.remove();
+
+        // 기존 customers-section 내용만 초기화 (섹션 자체는 유지)
+        const customersSection = document.getElementById('customers-section');
+        if (!customersSection) {
+            throw new Error('customers-section 요소를 찾을 수 없습니다.');
         }
-        
-        // 다른 섹션들은 제거하지 않음 (화면 전환을 위해 유지)
-        console.log('📋 다른 섹션들은 화면 전환을 위해 유지');
-        
-        // 메인 콘텐츠 확인
-        const mainContentElement = document.getElementById('mainContent');
-        console.log('🔍 메인 콘텐츠 요소:', mainContentElement);
-        
-        if (!mainContentElement) {
-            throw new Error('메인 콘텐츠 영역을 찾을 수 없습니다.');
-        }
-        
-        // 컴포넌트 로드 (캐시 방지로 항상 최신 레이아웃 적용)
-        console.log('🌐 컴포넌트 파일 요청 중...');
+        customersSection.innerHTML = '';
+
+        // 컴포넌트 로드 (캐시 방지)
         const response = await fetch('components/customer-management/customer-management.html?v=' + Date.now(), { cache: 'no-store' });
-        console.log('📡 응답 상태:', response.status, response.ok);
-        
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        
         const html = await response.text();
-        console.log('📄 HTML 로드 완료, 길이:', html.length);
-        
-        // HTML을 직접 메인 콘텐츠에 삽입
-        mainContentElement.insertAdjacentHTML('beforeend', html);
+
+        // customers-section에 HTML 삽입
+        customersSection.innerHTML = html;
         console.log('📝 HTML 삽입 완료');
-        
-        // 삽입된 섹션을 활성화
-        const newSection = document.getElementById('customers-section');
-        if (newSection) {
-            // 동적 컴포넌트임을 표시
-            newSection.setAttribute('data-dynamic', 'true');
-            
-            // 모든 섹션 완전히 숨기기
-            document.querySelectorAll('.section-content').forEach(section => {
+
+        // 고객관리 섹션 표시
+        customersSection.classList.remove('hidden');
+        customersSection.style.display = 'block';
+        customersSection.style.visibility = 'visible';
+        customersSection.style.opacity = '1';
+
+        // 다른 모든 섹션 숨기기 (section-content, tab-content, id="-section")
+        document.querySelectorAll('.section-content, .tab-content, [id$="-section"]').forEach(section => {
+            if (section.id !== 'customers-section') {
                 section.classList.remove('active');
+                section.classList.add('hidden');
                 section.style.display = 'none';
-            });
-            
-            // 고객관리 섹션만 활성화
-            newSection.classList.add('active');
-            newSection.style.display = 'block';
-            console.log('✅ 고객관리 컴포넌트 로드 완료');
-            
-            // 로드 완료 후 추가 초기화
-            setTimeout(async () => {
-                if (typeof window.initCustomerManagementSection === 'function') {
-                    await window.initCustomerManagementSection();
-                } else {
-                    await runCustomerManagementInit();
-                }
-            }, 100);
+            }
+        });
+        customersSection.classList.add('active');
+        customersSection.setAttribute('data-dynamic', 'true');
+
+        console.log('✅ 고객관리 컴포넌트 로드 완료');
+
+        // 초기화
+        if (typeof window.initCustomerManagementSection === 'function') {
+            await window.initCustomerManagementSection();
         } else {
-            throw new Error('고객관리 섹션을 찾을 수 없습니다.');
+            await runCustomerManagementInit();
         }
-        
+
     } catch (error) {
         console.error('❌ 고객관리 컴포넌트 로드 실패:', error);
         console.error('❌ 오류 상세:', error.stack);
