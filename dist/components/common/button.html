@@ -1,0 +1,101 @@
+<!-- 공통 버튼 컴포넌트 -->
+<template id="button-template">
+    <button class="btn {{variant}} {{size}} {{class}}">
+        <i class="{{icon}}" v-if="icon"></i>
+        <span>{{text}}</span>
+    </button>
+</template>
+
+<style>
+/* 버튼 기본 스타일 */
+.btn {
+    @apply inline-flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+}
+
+/* 버튼 변형 */
+.btn-primary {
+    @apply bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500;
+}
+
+.btn-secondary {
+    @apply bg-gray-600 text-white hover:bg-gray-700 focus:ring-gray-500;
+}
+
+.btn-success {
+    @apply bg-green-600 text-white hover:bg-green-700 focus:ring-green-500;
+}
+
+.btn-danger {
+    @apply bg-red-600 text-white hover:bg-red-700 focus:ring-red-500;
+}
+
+.btn-warning {
+    @apply bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500;
+}
+
+.btn-info {
+    @apply bg-cyan-600 text-white hover:bg-cyan-700 focus:ring-cyan-500;
+}
+
+/* 버튼 크기 */
+.btn-sm {
+    @apply px-2 py-1 text-xs;
+}
+
+.btn-md {
+    @apply px-4 py-2 text-sm;
+}
+
+.btn-lg {
+    @apply px-6 py-3 text-base;
+}
+
+.btn-xl {
+    @apply px-8 py-4 text-lg;
+}
+</style>
+
+<script>
+// 버튼 컴포넌트 JavaScript
+class ButtonComponent {
+    constructor(options = {}) {
+        this.variant = options.variant || 'primary';
+        this.size = options.size || 'md';
+        this.text = options.text || 'Button';
+        this.icon = options.icon || '';
+        this.class = options.class || '';
+        this.onClick = options.onClick || null;
+    }
+    
+    render() {
+        const template = document.getElementById('button-template');
+        const clone = template.content.cloneNode(true);
+        const button = clone.querySelector('button');
+        
+        // 클래스 적용
+        button.className = `btn ${this.variant} ${this.size} ${this.class}`;
+        
+        // 텍스트 설정
+        const textSpan = button.querySelector('span');
+        if (textSpan) textSpan.textContent = this.text;
+        
+        // 아이콘 설정
+        const icon = button.querySelector('i');
+        if (icon && this.icon) {
+            icon.className = this.icon;
+        } else if (icon && !this.icon) {
+            icon.remove();
+        }
+        
+        // 클릭 이벤트
+        if (this.onClick) {
+            button.addEventListener('click', this.onClick);
+        }
+        
+        return button;
+    }
+}
+
+// 전역으로 사용할 수 있도록 등록
+window.ButtonComponent = ButtonComponent;
+</script>

@@ -1,0 +1,333 @@
+<!-- 공통 모달 컴포넌트 -->
+<template id="modal-template">
+    <div class="modal-overlay {{class}}" @click="handleOverlayClick">
+        <div class="modal-container {{size}}">
+            <div class="modal-header" v-if="title || showClose">
+                <h3 v-if="title" class="modal-title">{{title}}</h3>
+                <button v-if="showClose" class="modal-close" @click="close">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-body">
+                <slot name="content"></slot>
+            </div>
+            <div class="modal-footer" v-if="showFooter">
+                <slot name="footer">
+                    <button class="btn btn-secondary" @click="close">취소</button>
+                    <button class="btn btn-primary" @click="confirm">확인</button>
+                </slot>
+            </div>
+        </div>
+    </div>
+</template>
+
+<style>
+/* 모달 기본 스타일 */
+.modal-overlay {
+    @apply fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4;
+}
+
+.modal-container {
+    @apply bg-white rounded-lg shadow-xl max-h-screen overflow-hidden;
+}
+
+.modal-header {
+    @apply flex items-center justify-between p-6 border-b border-gray-200;
+}
+
+.modal-title {
+    @apply text-lg font-semibold text-gray-900;
+}
+
+.modal-close {
+    @apply text-gray-400 hover:text-gray-600 transition-colors;
+}
+
+.modal-body {
+    @apply p-6 overflow-y-auto;
+}
+
+.modal-footer {
+    @apply flex justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50;
+}
+
+/* 모달 크기 */
+.modal-sm {
+    @apply max-w-sm;
+}
+
+.modal-md {
+    @apply max-w-md;
+}
+
+.modal-lg {
+    @apply max-w-lg;
+}
+
+.modal-xl {
+    @apply max-w-xl;
+}
+
+.modal-2xl {
+    @apply max-w-2xl;
+}
+
+.modal-3xl {
+    @apply max-w-3xl;
+}
+
+.modal-4xl {
+    @apply max-w-4xl;
+}
+
+.modal-5xl {
+    @apply max-w-5xl;
+}
+
+.modal-6xl {
+    @apply max-w-6xl;
+}
+
+.modal-full {
+    @apply max-w-full mx-4;
+}
+
+/* 모달 애니메이션 */
+.modal-overlay {
+    @apply transition-opacity duration-300;
+}
+
+.modal-container {
+    @apply transition-all duration-300 transform;
+}
+
+.modal-overlay.hidden {
+    @apply opacity-0;
+}
+
+.modal-overlay.hidden .modal-container {
+    @apply scale-95 opacity-0;
+}
+
+/* 모달 상태 */
+.modal-loading .modal-body {
+    @apply flex items-center justify-center;
+}
+
+.modal-error .modal-header {
+    @apply bg-red-50 border-red-200;
+}
+
+.modal-success .modal-header {
+    @apply bg-green-50 border-green-200;
+}
+
+.modal-warning .modal-header {
+    @apply bg-yellow-50 border-yellow-200;
+}
+</style>
+
+<script>
+// 모달 컴포넌트 JavaScript
+class ModalComponent {
+    constructor(options = {}) {
+        this.title = options.title || '';
+        this.content = options.content || '';
+        this.size = options.size || 'md';
+        this.class = options.class || '';
+        this.showClose = options.showClose !== false;
+        this.showFooter = options.showFooter !== false;
+        this.closeOnOverlay = options.closeOnOverlay !== false;
+        this.closeOnEscape = options.closeOnEscape !== false;
+        this.onClose = options.onClose || null;
+        this.onConfirm = options.onConfirm || null;
+        this.element = null;
+    }
+    
+    render() {
+        const template = document.getElementById('modal-template');
+        const clone = template.content.cloneNode(true);
+        const modal = clone.querySelector('.modal-overlay');
+        
+        // 클래스 적용
+        modal.className = `modal-overlay ${this.class}`;
+        
+        // 컨테이너 크기 설정
+        const container = modal.querySelector('.modal-container');
+        container.className = `modal-container ${this.size}`;
+        
+        // 헤더 설정
+        this.setupHeader(modal);
+        
+        // 본문 설정
+        this.setupBody(modal);
+        
+        // 푸터 설정
+        this.setupFooter(modal);
+        
+        // 이벤트 리스너 추가
+        this.addEventListeners(modal);
+        
+        this.element = modal;
+        return modal;
+    }
+    
+    setupHeader(modal) {
+        const header = modal.querySelector('.modal-header');
+        if (!header) return;
+        
+        if (!this.title && !this.showClose) {
+            header.remove();
+            return;
+        }
+        
+        if (this.title) {
+            const title = header.querySelector('.modal-title');
+            if (title) title.textContent = this.title;
+        }
+        
+        if (!this.showClose) {
+            const closeBtn = header.querySelector('.modal-close');
+            if (closeBtn) closeBtn.remove();
+        }
+    }
+    
+    setupBody(modal) {
+        const body = modal.querySelector('.modal-body');
+        if (body && this.content) {
+            body.innerHTML = this.content;
+        }
+    }
+    
+    setupFooter(modal) {
+        if (!this.showFooter) {
+            const footer = modal.querySelector('.modal-footer');
+            if (footer) footer.remove();
+        }
+    }
+    
+    addEventListeners(modal) {
+        // 오버레이 클릭
+        if (this.closeOnOverlay) {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) {
+                    this.close();
+                }
+            });
+        }
+        
+        // ESC 키
+        if (this.closeOnEscape) {
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && this.isOpen()) {
+                    this.close();
+                }
+            });
+        }
+        
+        // 닫기 버튼
+        const closeBtn = modal.querySelector('.modal-close');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => this.close());
+        }
+        
+        // 확인 버튼
+        const confirmBtn = modal.querySelector('.btn-primary');
+        if (confirmBtn && this.onConfirm) {
+            confirmBtn.addEventListener('click', () => {
+                this.onConfirm();
+                this.close();
+            });
+        }
+    }
+    
+    show() {
+        if (!this.element) {
+            this.element = this.render();
+        }
+        
+        document.body.appendChild(this.element);
+        document.body.classList.add('modal-open');
+        
+        // 애니메이션을 위한 지연
+        setTimeout(() => {
+            this.element.classList.remove('hidden');
+        }, 10);
+    }
+    
+    close() {
+        if (!this.element) return;
+        
+        this.element.classList.add('hidden');
+        
+        setTimeout(() => {
+            if (this.element && this.element.parentNode) {
+                this.element.parentNode.removeChild(this.element);
+            }
+            document.body.classList.remove('modal-open');
+            
+            if (this.onClose) {
+                this.onClose();
+            }
+        }, 300);
+    }
+    
+    isOpen() {
+        return this.element && this.element.parentNode;
+    }
+    
+    // 정적 메서드들
+    static alert(message, title = '알림') {
+        const modal = new ModalComponent({
+            title,
+            content: `<p>${message}</p>`,
+            showFooter: true,
+            onConfirm: () => {}
+        });
+        modal.show();
+        return modal;
+    }
+    
+    static confirm(message, title = '확인') {
+        return new Promise((resolve) => {
+            const modal = new ModalComponent({
+                title,
+                content: `<p>${message}</p>`,
+                showFooter: true,
+                onConfirm: () => resolve(true),
+                onClose: () => resolve(false)
+            });
+            modal.show();
+        });
+    }
+    
+    static prompt(message, defaultValue = '', title = '입력') {
+        return new Promise((resolve) => {
+            const input = document.createElement('input');
+            input.type = 'text';
+            input.value = defaultValue;
+            input.className = 'w-full px-3 py-2 border border-gray-300 rounded-md';
+            
+            const content = document.createElement('div');
+            content.innerHTML = `<p class="mb-3">${message}</p>`;
+            content.appendChild(input);
+            
+            const modal = new ModalComponent({
+                title,
+                content: content.outerHTML,
+                showFooter: true,
+                onConfirm: () => {
+                    const value = input.value;
+                    resolve(value);
+                },
+                onClose: () => resolve(null)
+            });
+            
+            modal.show();
+        });
+    }
+}
+
+// 전역으로 사용할 수 있도록 등록
+window.ModalComponent = ModalComponent;
+</script>

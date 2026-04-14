@@ -1,0 +1,220 @@
+<!-- 공통 카드 컴포넌트 -->
+<template id="card-template">
+    <div class="card {{variant}} {{size}} {{class}}">
+        <div v-if="header" class="card-header">
+            <h3 class="card-title">{{title}}</h3>
+            <div v-if="actions" class="card-actions">
+                <slot name="actions"></slot>
+            </div>
+        </div>
+        <div class="card-body">
+            <slot name="content"></slot>
+        </div>
+        <div v-if="footer" class="card-footer">
+            <slot name="footer"></slot>
+        </div>
+    </div>
+</template>
+
+<style>
+/* 카드 기본 스타일 */
+.card {
+    @apply bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden;
+}
+
+.card-header {
+    @apply px-6 py-4 border-b border-gray-200 bg-gray-50;
+}
+
+.card-title {
+    @apply text-lg font-semibold text-gray-900;
+}
+
+.card-actions {
+    @apply flex items-center space-x-2;
+}
+
+.card-body {
+    @apply px-6 py-4;
+}
+
+.card-footer {
+    @apply px-6 py-4 border-t border-gray-200 bg-gray-50;
+}
+
+/* 카드 변형 */
+.card-primary {
+    @apply border-blue-200;
+}
+
+.card-primary .card-header {
+    @apply bg-blue-50 border-blue-200;
+}
+
+.card-success {
+    @apply border-green-200;
+}
+
+.card-success .card-header {
+    @apply bg-green-50 border-green-200;
+}
+
+.card-warning {
+    @apply border-yellow-200;
+}
+
+.card-warning .card-header {
+    @apply bg-yellow-50 border-yellow-200;
+}
+
+.card-danger {
+    @apply border-red-200;
+}
+
+.card-danger .card-header {
+    @apply bg-red-50 border-red-200;
+}
+
+/* 카드 크기 */
+.card-sm {
+    @apply text-sm;
+}
+
+.card-sm .card-header,
+.card-sm .card-body,
+.card-sm .card-footer {
+    @apply px-4 py-3;
+}
+
+.card-lg {
+    @apply text-lg;
+}
+
+.card-lg .card-header,
+.card-lg .card-body,
+.card-lg .card-footer {
+    @apply px-8 py-6;
+}
+
+/* 카드 상태 */
+.card-hover {
+    @apply transition-shadow duration-200 hover:shadow-md;
+}
+
+.card-clickable {
+    @apply cursor-pointer transition-all duration-200 hover:shadow-lg hover:-translate-y-1;
+}
+</style>
+
+<script>
+// 카드 컴포넌트 JavaScript
+class CardComponent {
+    constructor(options = {}) {
+        this.title = options.title || '';
+        this.variant = options.variant || 'default';
+        this.size = options.size || 'md';
+        this.class = options.class || '';
+        this.header = options.header !== false;
+        this.footer = options.footer || false;
+        this.actions = options.actions || null;
+        this.content = options.content || '';
+        this.onClick = options.onClick || null;
+    }
+    
+    render() {
+        const template = document.getElementById('card-template');
+        const clone = template.content.cloneNode(true);
+        const card = clone.querySelector('.card');
+        
+        // 클래스 적용
+        card.className = `card ${this.variant} ${this.size} ${this.class}`;
+        
+        // 헤더 설정
+        if (this.header) {
+            const header = card.querySelector('.card-header');
+            if (header) {
+                const title = header.querySelector('.card-title');
+                if (title) title.textContent = this.title;
+                
+                if (this.actions) {
+                    const actionsContainer = header.querySelector('.card-actions');
+                    if (actionsContainer) {
+                        actionsContainer.innerHTML = this.actions;
+                    }
+                }
+            }
+        } else {
+            const header = card.querySelector('.card-header');
+            if (header) header.remove();
+        }
+        
+        // 본문 설정
+        const body = card.querySelector('.card-body');
+        if (body && this.content) {
+            body.innerHTML = this.content;
+        }
+        
+        // 푸터 설정
+        if (!this.footer) {
+            const footer = card.querySelector('.card-footer');
+            if (footer) footer.remove();
+        }
+        
+        // 클릭 이벤트
+        if (this.onClick) {
+            card.addEventListener('click', this.onClick);
+            card.classList.add('card-clickable');
+        }
+        
+        return card;
+    }
+    
+    // 정적 메서드들
+    static createSimpleCard(title, content, options = {}) {
+        return new CardComponent({
+            title,
+            content,
+            ...options
+        }).render();
+    }
+    
+    static createInfoCard(title, content, options = {}) {
+        return new CardComponent({
+            title,
+            content,
+            variant: 'primary',
+            ...options
+        }).render();
+    }
+    
+    static createSuccessCard(title, content, options = {}) {
+        return new CardComponent({
+            title,
+            content,
+            variant: 'success',
+            ...options
+        }).render();
+    }
+    
+    static createWarningCard(title, content, options = {}) {
+        return new CardComponent({
+            title,
+            content,
+            variant: 'warning',
+            ...options
+        }).render();
+    }
+    
+    static createErrorCard(title, content, options = {}) {
+        return new CardComponent({
+            title,
+            content,
+            variant: 'danger',
+            ...options
+        }).render();
+    }
+}
+
+// 전역으로 사용할 수 있도록 등록
+window.CardComponent = CardComponent;
+</script>
