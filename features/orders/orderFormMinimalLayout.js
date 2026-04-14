@@ -109,9 +109,10 @@ window.generateOrderFormHTMLMinimal = function () {
                                 </div>
                                 <div style="position:relative">
                                     <input type="text" id="product-search" class="xf-inp"
-                                           placeholder="상품명 검색 후 클릭하여 추가"
+                                           placeholder="클릭하거나 상품명 검색"
                                            oninput="searchProducts(this.value)" autocomplete="off"
-                                           onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}">
+                                           onfocus="searchProducts(this.value)"
+                                           onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}if(event.key==='Escape'){document.getElementById('product-search-results')?.classList.add('hidden');this.blur();}">
                                     <div id="product-search-results"
                                          class="hidden"
                                          style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:140px;overflow-y:auto;z-index:20;font-size:13px"></div>

@@ -2197,73 +2197,47 @@ function openNewCustomerRegistration(customerName) {
 function searchProducts(query) {
     try {
         console.log('🔍 상품 검색:', query);
-        
-        if (!query || query.length < 1) {
-            const resultsDiv = document.getElementById('product-search-results');
-            if (resultsDiv) {
-                resultsDiv.classList.add('hidden');
-            }
+
+        if (!window.supabaseClient) {
+            console.warn('⚠️ Supabase 클라이언트를 찾을 수 없습니다');
             return;
         }
-        
-        // Supabase에서 상품 검색
-        if (window.supabaseClient) {
-            window.supabaseClient
-                .from('farm_products')
-                .select('id, name, price, stock, category, description, image_url')
-                .or(`name.ilike.%${query}%,category.ilike.%${query}%,description.ilike.%${query}%`)
-                .limit(8)
-                .then(({ data, error }) => {
+
+        // 빈 쿼리: 전체 상품 목록 표시 (클릭 시), 아닌 경우 필터 검색
+        const dbQuery = window.supabaseClient
+            .from('farm_products')
+            .select('id, name, price, stock, category, description, image_url');
+
+        const promise = (!query || query.trim().length === 0)
+            ? dbQuery.order('name', { ascending: true }).limit(30)
+            : dbQuery.or(`name.ilike.%${query}%,category.ilike.%${query}%,description.ilike.%${query}%`).limit(15);
+
+        promise.then(({ data, error }) => {
                     if (error) {
                         console.error('❌ 상품 검색 오류:', error);
                         return;
                     }
-                    
+
                     const resultsDiv = document.getElementById('product-search-results');
                     if (!resultsDiv) return;
-                    
+
                     if (data && data.length > 0) {
-                        // 검색 결과 표시 (이미지 썸네일 포함)
                         resultsDiv.innerHTML = data.map(product => `
-                            <div class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                                 onclick="addProductToCart('${product.id}', '${product.name}', ${product.price}, ${product.stock}, event)">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                                        ${product.image_url ? 
-                                            `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` :
-                                            `<i class="fas fa-leaf text-gray-400"></i>`
-                                        }
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium text-gray-900 truncate">${product.name}</div>
-                                        <div class="text-xs text-gray-500">${product.category || '카테고리 없음'}</div>
-                                        <div class="flex items-center space-x-2 mt-1">
-                                            <span class="text-sm font-semibold text-blue-600">${product.price.toLocaleString()}원</span>
-                                            <span class="text-xs text-gray-400">재고: ${product.stock}개</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-xs text-gray-400">
-                                        <i class="fas fa-plus"></i>
-                                    </div>
-                                </div>
+                            <div style="padding:6px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid #f0f0f0;"
+                                 onmousedown="event.preventDefault();"
+                                 onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
+                                <span style="flex:1;font-size:12px;font-weight:500;color:#222;">${product.name}</span>
+                                <span style="font-size:11px;color:#888;">${(product.category||'')}</span>
+                                <span style="font-size:12px;font-weight:600;color:#059669;white-space:nowrap;">${product.price.toLocaleString()}원</span>
+                                <span style="font-size:11px;color:#bbb;white-space:nowrap;">재고 ${product.stock}</span>
                             </div>
                         `).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
-                        // 검색 결과가 없을 때
-                        resultsDiv.innerHTML = `
-                            <div class="p-3 text-center text-gray-500">
-                                <i class="fas fa-search text-gray-400 mb-2"></i>
-                                <div class="text-sm">검색 결과가 없습니다</div>
-                                <div class="text-xs">다른 키워드로 검색해보세요</div>
-                            </div>
-                        `;
+                        resultsDiv.innerHTML = `<div style="padding:10px;text-align:center;color:#999;font-size:12px;">검색 결과가 없습니다</div>`;
                         resultsDiv.classList.remove('hidden');
                     }
                 });
-        } else {
-            console.warn('⚠️ Supabase 클라이언트를 찾을 수 없습니다');
-        }
         
     } catch (error) {
         console.error('❌ 상품 검색 실패:', error);
