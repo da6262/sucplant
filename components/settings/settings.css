@@ -1,0 +1,402 @@
+/* 환경설정 전용 CSS */
+/* components/settings/settings.css */
+
+/* 탭 버튼 — 다른 섹션과 통일 */
+.settings-tab-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    color: #4b5563;
+    white-space: nowrap;
+}
+.settings-tab-btn.active {
+    background: #059669 !important;
+    color: #fff !important;
+    font-weight: 600;
+}
+
+/* 환경설정 컨테이너 */
+.settings-container {
+    display: block;
+    width: 100%;
+    padding: 0;
+    margin: 0;
+    background: transparent;
+}
+
+/* 환경설정 헤더 */
+.settings-header {
+    margin-bottom: 1.5rem;
+}
+
+.settings-header h2 {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #1f2937;
+    margin: 0;
+}
+
+.settings-header p {
+    color: #6b7280;
+    margin-top: 0.25rem;
+    margin-bottom: 0;
+}
+
+/* 환경설정 버튼 그룹 */
+.settings-buttons {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.settings-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.5rem 1rem;
+    border-radius: 0.5rem;
+    font-weight: 500;
+    transition: all 0.2s;
+    border: none;
+    cursor: pointer;
+}
+
+.settings-btn-save {
+    background-color: #16a34a;
+    color: white;
+    cursor: pointer;
+    pointer-events: auto;
+    opacity: 1;
+}
+
+.settings-btn-save:hover:not(:disabled) {
+    background-color: #15803d;
+}
+
+.settings-btn-save:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+.settings-btn-reset {
+    background-color: #ffffff;
+    color: #64748b;
+    border: 1px solid #e2e8f0;
+}
+
+.settings-btn-reset:hover {
+    background-color: #f8fafc;
+    color: #475569;
+}
+
+/* 환경설정 탭 네비게이션 */
+.settings-tabs-container {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    margin-bottom: 1.5rem;
+}
+
+.settings-tabs-nav {
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    gap: 2rem;
+    padding: 0 1.5rem;
+}
+
+.settings-tab {
+    padding: 1rem 0.25rem;
+    border-bottom: 2px solid transparent;
+    color: #6b7280;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-tab:hover {
+    color: #374151;
+}
+
+.settings-tab.active {
+    border-bottom-color: #059669;
+    color: #059669;
+}
+
+/* 환경설정 콘텐츠 */
+.settings-content {
+    display: block;
+}
+
+.settings-content.hidden {
+    display: none;
+}
+
+/* 환경설정 섹션 */
+.settings-section {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+    padding: 1.5rem;
+}
+
+.settings-section h3 {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin-bottom: 1rem;
+}
+
+/* 환경설정 폼 */
+.settings-form {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+.settings-form-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.settings-form-label {
+    display: block;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #374151;
+    margin-bottom: 0.5rem;
+}
+
+.settings-form-input {
+    width: 100%;
+    padding: 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    transition: all 0.2s;
+}
+
+.settings-form-input:focus {
+    outline: none;
+    border-color: #059669;
+    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+}
+
+.settings-form-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.settings-form-input-group .settings-form-input {
+    flex: 1;
+}
+
+.settings-form-input-suffix {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+
+/* 환경설정 리스트 */
+.settings-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.settings-list-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem;
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 0.5rem;
+    transition: all 0.2s;
+}
+
+.settings-list-item:hover {
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+.settings-list-item-content {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.settings-list-item-icon {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    font-size: 0.75rem;
+}
+
+.settings-list-item-info h4 {
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.settings-list-item-info p {
+    font-size: 0.75rem;
+    color: #6b7280;
+    margin: 0.25rem 0 0 0;
+}
+
+.settings-list-item-actions {
+    display: flex;
+    gap: 0.5rem;
+}
+
+.settings-action-btn {
+    padding: 0.5rem;
+    border: none;
+    background: transparent;
+    border-radius: 0.375rem;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: #6b7280;
+}
+
+.settings-action-btn:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.settings-action-btn-edit:hover {
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.settings-action-btn-delete:hover {
+    color: #dc2626;
+    background: #fef2f2;
+}
+
+/* 환경설정 모달 */
+.settings-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.settings-modal-content {
+    background: white;
+    border-radius: 0.5rem;
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 28rem;
+    margin: 1rem;
+}
+
+.settings-modal-header {
+    padding: 1.5rem;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.settings-modal-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+}
+
+.settings-modal-close {
+    color: #9ca3af;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.25rem;
+    border-radius: 0.25rem;
+}
+
+.settings-modal-close:hover {
+    color: #6b7280;
+    background: #f3f4f6;
+}
+
+.settings-modal-body {
+    padding: 1.5rem;
+}
+
+.settings-modal-footer {
+    padding: 1.5rem;
+    border-top: 1px solid #e5e7eb;
+    display: flex;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+/* 환경설정 상태 표시 */
+.settings-status-active {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background-color: #10b981;
+}
+
+.settings-status-inactive {
+    width: 0.75rem;
+    height: 0.75rem;
+    border-radius: 50%;
+    background-color: #9ca3af;
+}
+
+/* 환경설정 빈 상태 */
+.settings-empty {
+    text-align: center;
+    color: #6b7280;
+    padding: 2rem;
+}
+
+/* 반응형 디자인 */
+@media (max-width: 768px) {
+    .settings-buttons {
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+    
+    .settings-tabs-nav {
+        flex-direction: column;
+        gap: 0;
+    }
+    
+    .settings-tab {
+        padding: 0.75rem 0;
+        border-bottom: 1px solid #e5e7eb;
+        border-right: none;
+    }
+    
+    .settings-tab.active {
+        border-bottom-color: #3b82f6;
+        border-right: none;
+    }
+    
+    .settings-list-item {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .settings-list-item-actions {
+        align-self: flex-end;
+    }
+}

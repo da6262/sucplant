@@ -1,0 +1,131 @@
+<!-- 좌측 사이드바 (데스크톱) -->
+<aside class="sidebar" role="navigation" aria-label="주 메뉴">
+
+    <!-- 로고 영역 -->
+    <div class="flex items-center gap-2.5 px-4 py-4" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
+        <div class="w-9 h-9 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0" style="box-shadow: 0 2px 8px rgba(5,150,105,0.4);">
+            <i class="fas fa-seedling text-white text-sm"></i>
+        </div>
+        <div class="min-w-0">
+            <div class="text-white text-sm font-bold leading-tight">경산다육</div>
+            <div class="text-[11px] leading-tight" style="color: #64748b;">식물농장 관리</div>
+        </div>
+    </div>
+
+    <!-- 구분선 + 메뉴 라벨 -->
+    <div class="px-5 pt-4 pb-1">
+        <span class="text-[10px] font-semibold uppercase tracking-widest" style="color: #475569;">메뉴</span>
+    </div>
+
+    <!-- 네비게이션 메뉴 -->
+    <nav class="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto">
+        <button id="nav-dashboard" class="nav-btn active" type="button">
+            <i class="fas fa-tachometer-alt"></i>
+            <span>대시보드</span>
+        </button>
+        <button id="nav-customers" class="nav-btn" type="button">
+            <i class="fas fa-users"></i>
+            <span>고객관리</span>
+        </button>
+        <button id="nav-orders" class="nav-btn" type="button">
+            <i class="fas fa-shopping-cart"></i>
+            <span>주문관리</span>
+        </button>
+        <button id="nav-products" class="nav-btn" type="button">
+            <i class="fas fa-box"></i>
+            <span>상품관리</span>
+        </button>
+<button id="nav-waitlist" class="nav-btn" type="button">
+            <i class="fas fa-clock"></i>
+            <span>대기자관리</span>
+        </button>
+
+        <div class="px-2 pt-4 pb-1">
+            <span class="text-[10px] font-semibold uppercase tracking-widest" style="color: #475569;">시스템</span>
+        </div>
+        <button id="nav-settings" class="nav-btn" type="button">
+            <i class="fas fa-cog"></i>
+            <span>환경설정</span>
+        </button>
+    </nav>
+
+    <!-- 하단: 사용자 정보 + 액션 -->
+    <div class="px-3 py-4" style="border-top: 1px solid rgba(255,255,255,0.07);">
+        <div class="flex items-center gap-2 px-2 mb-3">
+            <div class="w-7 h-7 rounded-full bg-emerald-700 flex items-center justify-center flex-shrink-0">
+                <i class="fas fa-user text-emerald-200 text-xs"></i>
+            </div>
+            <span id="userInfo" class="text-xs truncate flex-1" style="color: #94a3b8;"></span>
+        </div>
+        <div class="flex items-center gap-1.5">
+            <button id="refresh-btn" type="button"
+                class="flex-1 flex items-center justify-center gap-1.5 px-2 py-1.5 rounded-lg text-xs transition-all"
+                style="color: #64748b;"
+                onmouseover="this.style.background='rgba(255,255,255,0.07)'; this.style.color='#f1f5f9';"
+                onmouseout="this.style.background='transparent'; this.style.color='#64748b';"
+                title="새로고침">
+                <i class="fas fa-sync-alt text-xs"></i>
+                <span>새로고침</span>
+            </button>
+            <div class="relative">
+                <button id="admin-menu-btn" type="button"
+                    class="p-1.5 rounded-lg transition-all"
+                    style="color: #64748b;"
+                    onmouseover="this.style.background='rgba(255,255,255,0.07)'; this.style.color='#f1f5f9';"
+                    onmouseout="this.style.background='transparent'; this.style.color='#64748b';"
+                    title="관리자 메뉴">
+                    <i class="fas fa-ellipsis-v text-sm"></i>
+                </button>
+                <div id="admin-dropdown" class="hidden absolute bottom-full right-0 mb-1 w-44 bg-white rounded-xl shadow-2xl border border-gray-100 py-1 z-50">
+                    <button id="change-password-btn" type="button" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                        <i class="fas fa-key text-gray-400 text-xs"></i>
+                        비밀번호 변경
+                    </button>
+                    <button id="profile-btn" type="button" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2 transition-colors">
+                        <i class="fas fa-user-circle text-gray-400 text-xs"></i>
+                        프로필 보기
+                    </button>
+                    <hr class="my-1 border-gray-100">
+                    <button id="dropdown-logout-btn" type="button" class="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 flex items-center gap-2 transition-colors">
+                        <i class="fas fa-sign-out-alt text-red-400 text-xs"></i>
+                        로그아웃
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</aside>
+
+<!-- 모바일 전용 하단 메뉴 -->
+<nav class="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 md:hidden z-50" aria-label="하단 메뉴">
+    <div class="flex justify-around items-center py-2 px-1">
+        <button id="mobile-nav-dashboard" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-tachometer-alt text-lg mb-0.5"></i>
+            <span class="text-[10px]">대시보드</span>
+        </button>
+        <button id="mobile-nav-customers" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-users text-lg mb-0.5"></i>
+            <span class="text-[10px]">고객</span>
+        </button>
+        <button id="mobile-nav-orders" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-shopping-cart text-lg mb-0.5"></i>
+            <span class="text-[10px]">주문</span>
+        </button>
+        <button id="mobile-nav-products" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-box text-lg mb-0.5"></i>
+            <span class="text-[10px]">상품</span>
+        </button>
+        <button id="mobile-nav-shipping" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-truck text-lg mb-0.5"></i>
+            <span class="text-[10px]">배송</span>
+        </button>
+        <button id="mobile-nav-waitlist" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-clock text-lg mb-0.5"></i>
+            <span class="text-[10px]">대기</span>
+        </button>
+        <button id="mobile-nav-settings" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
+            <i class="fas fa-cog text-lg mb-0.5"></i>
+            <span class="text-[10px]">설정</span>
+        </button>
+    </div>
+</nav>
