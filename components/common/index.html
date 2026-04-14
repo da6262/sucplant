@@ -1,0 +1,168 @@
+<!-- 공통 컴포넌트 인덱스 -->
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>공통 컴포넌트 라이브러리</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-6xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-900 mb-8">공통 컴포넌트 라이브러리</h1>
+        
+        <!-- 버튼 컴포넌트 섹션 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">버튼 컴포넌트</h2>
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div id="button-examples"></div>
+            </div>
+        </section>
+        
+        <!-- 폼 컴포넌트 섹션 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">폼 컴포넌트</h2>
+            <div class="max-w-md">
+                <div id="form-example"></div>
+            </div>
+        </section>
+        
+        <!-- 카드 컴포넌트 섹션 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">카드 컴포넌트</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <div id="card-examples"></div>
+            </div>
+        </section>
+        
+        <!-- 모달 컴포넌트 섹션 -->
+        <section class="mb-12">
+            <h2 class="text-2xl font-semibold text-gray-800 mb-6">모달 컴포넌트</h2>
+            <div class="space-x-4">
+                <button id="alert-btn" class="btn btn-primary">Alert 모달</button>
+                <button id="confirm-btn" class="btn btn-secondary">Confirm 모달</button>
+                <button id="prompt-btn" class="btn btn-success">Prompt 모달</button>
+                <button id="custom-btn" class="btn btn-warning">커스텀 모달</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- 컴포넌트 스크립트들 -->
+    <script type="module" src="button.html"></script>
+    <script type="module" src="form.html"></script>
+    <script type="module" src="card.html"></script>
+    <script type="module" src="modal.html"></script>
+    
+    <script>
+        // 컴포넌트 예제 생성
+        document.addEventListener('DOMContentLoaded', function() {
+            // 버튼 예제들
+            const buttonExamples = document.getElementById('button-examples');
+            if (buttonExamples && window.ButtonComponent) {
+                const variants = ['primary', 'secondary', 'success', 'danger', 'warning', 'info'];
+                const sizes = ['sm', 'md', 'lg'];
+                
+                variants.forEach(variant => {
+                    sizes.forEach(size => {
+                        const button = new ButtonComponent({
+                            variant,
+                            size,
+                            text: `${variant} ${size}`,
+                            icon: 'fas fa-star'
+                        }).render();
+                        buttonExamples.appendChild(button);
+                    });
+                });
+            }
+            
+            // 폼 예제
+            const formExample = document.getElementById('form-example');
+            if (formExample && window.FormComponent) {
+                const form = new FormComponent({
+                    fields: [
+                        { name: 'name', label: '이름', type: 'text', required: true },
+                        { name: 'email', label: '이메일', type: 'email', required: true },
+                        { name: 'message', label: '메시지', type: 'textarea', rows: 4 },
+                        { name: 'category', label: '카테고리', type: 'select', options: [
+                            { value: '1', label: '일반' },
+                            { value: '2', label: '긴급' },
+                            { value: '3', label: '문의' }
+                        ]},
+                        { name: 'agree', label: '약관에 동의합니다', type: 'checkbox', required: true }
+                    ],
+                    submitText: '제출',
+                    cancelText: '취소',
+                    onSubmit: (formData) => {
+                        console.log('폼 제출:', formData);
+                        alert('폼이 제출되었습니다!');
+                    },
+                    onCancel: () => {
+                        console.log('폼 취소');
+                    }
+                }).render();
+                formExample.appendChild(form);
+            }
+            
+            // 카드 예제들
+            const cardExamples = document.getElementById('card-examples');
+            if (cardExamples && window.CardComponent) {
+                const cards = [
+                    { title: '기본 카드', content: '이것은 기본 카드입니다.', variant: 'default' },
+                    { title: '정보 카드', content: '이것은 정보 카드입니다.', variant: 'primary' },
+                    { title: '성공 카드', content: '이것은 성공 카드입니다.', variant: 'success' },
+                    { title: '경고 카드', content: '이것은 경고 카드입니다.', variant: 'warning' },
+                    { title: '오류 카드', content: '이것은 오류 카드입니다.', variant: 'danger' }
+                ];
+                
+                cards.forEach(cardData => {
+                    const card = new CardComponent(cardData).render();
+                    cardExamples.appendChild(card);
+                });
+            }
+            
+            // 모달 예제들
+            const alertBtn = document.getElementById('alert-btn');
+            const confirmBtn = document.getElementById('confirm-btn');
+            const promptBtn = document.getElementById('prompt-btn');
+            const customBtn = document.getElementById('custom-btn');
+            
+            if (alertBtn && window.ModalComponent) {
+                alertBtn.addEventListener('click', () => {
+                    ModalComponent.alert('이것은 알림 모달입니다!', '알림');
+                });
+            }
+            
+            if (confirmBtn && window.ModalComponent) {
+                confirmBtn.addEventListener('click', async () => {
+                    const result = await ModalComponent.confirm('정말로 진행하시겠습니까?', '확인');
+                    alert(result ? '확인을 선택했습니다!' : '취소를 선택했습니다!');
+                });
+            }
+            
+            if (promptBtn && window.ModalComponent) {
+                promptBtn.addEventListener('click', async () => {
+                    const result = await ModalComponent.prompt('이름을 입력하세요:', '홍길동', '입력');
+                    if (result !== null) {
+                        alert(`입력된 이름: ${result}`);
+                    }
+                });
+            }
+            
+            if (customBtn && window.ModalComponent) {
+                customBtn.addEventListener('click', () => {
+                    const modal = new ModalComponent({
+                        title: '커스텀 모달',
+                        content: '<p>이것은 커스텀 모달입니다.</p><p>원하는 내용을 자유롭게 추가할 수 있습니다.</p>',
+                        size: 'lg',
+                        onConfirm: () => {
+                            console.log('커스텀 모달 확인');
+                        }
+                    });
+                    modal.show();
+                });
+            }
+        });
+    </script>
+</body>
+</html>

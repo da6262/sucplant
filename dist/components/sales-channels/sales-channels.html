@@ -1,0 +1,122 @@
+<!-- 판매채널 관리 컴포넌트 -->
+<div id="sales-channels-component" class="card-ui">
+
+    <!-- 헤더 -->
+    <div class="page-header px-4 py-3 border-b border-gray-200">
+        <div>
+            <div class="page-title">판매 채널 관리</div>
+            <div class="page-desc">주문 출처 마스터 데이터 관리</div>
+        </div>
+        <button id="add-channel-btn" class="btn-primary">
+            <i class="fas fa-plus"></i>새 채널 추가
+        </button>
+    </div>
+
+    <!-- 채널 통계 -->
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-4 py-3 border-b border-gray-100">
+        <div class="card-ui p-3 flex items-center gap-2">
+            <i class="fas fa-store text-gray-500"></i>
+            <div>
+                <p class="text-[10px] text-gray-500">전체 채널</p>
+                <p class="text-base font-bold text-gray-800" id="total-channels-count">0</p>
+            </div>
+        </div>
+        <div class="card-ui p-3 flex items-center gap-2">
+            <i class="fas fa-check-circle text-green-500"></i>
+            <div>
+                <p class="text-[10px] text-gray-500">활성 채널</p>
+                <p class="text-base font-bold text-gray-800" id="active-channels-count">0</p>
+            </div>
+        </div>
+        <div class="card-ui p-3 flex items-center gap-2">
+            <i class="fas fa-pause-circle text-amber-500"></i>
+            <div>
+                <p class="text-[10px] text-gray-500">비활성 채널</p>
+                <p class="text-base font-bold text-gray-800" id="inactive-channels-count">0</p>
+            </div>
+        </div>
+        <div class="card-ui p-3 flex items-center gap-2">
+            <i class="fas fa-chart-line text-gray-500"></i>
+            <div>
+                <p class="text-[10px] text-gray-500">사용 중인 채널</p>
+                <p class="text-base font-bold text-gray-800" id="channel-usage-count">0</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 채널 목록 -->
+    <div class="p-4">
+        <div id="channels-list" class="space-y-2">
+            <!-- 채널 목록이 여기에 동적으로 로드됩니다 -->
+        </div>
+    </div>
+</div>
+
+<!-- 판매채널 추가/수정 모달 (인라인 — settings 탭 전용) -->
+<div id="channel-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-container">
+        <div class="modal-header">
+            <span id="channel-modal-title" class="modal-title">새 채널 추가</span>
+            <button id="close-channel-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div class="modal-body">
+            <form id="channel-form" class="space-y-4">
+                <input type="hidden" id="channel-id" name="channel-id">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">채널명 <span class="text-red-500">*</span></label>
+                    <input type="text" id="channel-name" name="channel-name" required
+                           class="input-ui"
+                           placeholder="예: 온라인쇼핑몰, 카카오톡, 전화주문">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">아이콘</label>
+                    <select id="channel-icon" name="channel-icon" class="input-ui">
+                        <option value="store">🏪 매장</option>
+                        <option value="shopping">🛒 온라인쇼핑</option>
+                        <option value="mobile">📱 모바일앱</option>
+                        <option value="phone">📞 전화</option>
+                        <option value="chat">💬 채팅</option>
+                        <option value="email">📧 이메일</option>
+                        <option value="social">📱 소셜미디어</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">색상</label>
+                    <select id="channel-color" name="channel-color" class="input-ui">
+                        <option value="green">🟢 초록</option>
+                        <option value="blue">🔵 파랑</option>
+                        <option value="purple">🟣 보라</option>
+                        <option value="orange">🟠 주황</option>
+                        <option value="red">🔴 빨강</option>
+                        <option value="yellow">🟡 노랑</option>
+                        <option value="gray">⚫ 회색</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                    <textarea id="channel-description" name="channel-description" rows="3"
+                              class="input-ui resize-none"
+                              placeholder="채널에 대한 설명을 입력하세요"></textarea>
+                </div>
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="channel-active" name="channel-active" checked
+                           class="h-4 w-4 text-emerald-600 border-gray-300 rounded">
+                    <label for="channel-active" class="text-sm text-gray-700">활성화</label>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <span></span>
+            <div class="flex gap-2">
+                <button type="button" id="cancel-channel-btn" class="btn-secondary">
+                    <i class="fas fa-times"></i>취소
+                </button>
+                <button type="submit" form="channel-form" id="save-channel-btn" class="btn-primary">
+                    <i class="fas fa-save"></i>저장
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

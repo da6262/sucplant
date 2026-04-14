@@ -1,0 +1,1094 @@
+// 환경설정 UI 관리
+// features/settings/settingsUI.js
+
+// 환경설정 탭 표시
+export function showSettingsTab(tabName) {
+    try {
+        console.log('⚙️ 환경설정 탭 표시:', tabName);
+        
+        // 모든 탭 숨기기
+        document.querySelectorAll('.settings-content').forEach(tab => {
+            tab.classList.add('hidden');
+        });
+        
+        // 모든 탭 버튼 비활성화
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.classList.remove('border-blue-500', 'text-blue-600');
+            tab.classList.add('border-transparent', 'text-gray-500');
+        });
+        
+        // 선택된 탭 표시
+        const targetTab = document.getElementById(`settings-${tabName}-section`);
+        const targetTabButton = document.getElementById(`settings-tab-${tabName}`);
+        
+        if (targetTab) {
+            targetTab.classList.remove('hidden');
+            console.log('✅ 환경설정 탭 표시 완료:', tabName);
+            
+            // 탭 버튼 활성화
+            if (targetTabButton) {
+                targetTabButton.classList.remove('border-transparent', 'text-gray-500');
+                targetTabButton.classList.add('border-blue-500', 'text-blue-600');
+            }
+            
+            // 탭별 데이터 로드
+            switch(tabName) {
+                case 'general':
+                    loadGeneralSettings();
+                    break;
+                case 'shipping':
+                    loadShippingSettings();
+                    break;
+                case 'channels':
+                    loadSalesChannels();
+                    break;
+                case 'orders':
+                    loadOrderStatuses();
+                    break;
+                case 'customers':
+                    loadCustomerGrades();
+                    break;
+                case 'sms':
+                    loadSMSSettings();
+                    break;
+            }
+        } else {
+            console.warn('⚠️ 환경설정 탭을 찾을 수 없습니다:', tabName);
+        }
+    } catch (error) {
+        console.error('❌ 환경설정 탭 표시 실패:', error);
+    }
+}
+
+// SMS 설정 로드
+async function loadSMSSettings() {
+    try {
+        console.log('📱 SMS 설정 로드 시작');
+        
+        // 설정 데이터 매니저에서 SMS 설정 가져오기
+        const settings = window.settingsDataManager?.getAllSettings();
+        const smsSettings = settings?.smsTemplates || {};
+        
+        // SMS 템플릿 필드들에 값 설정
+        const smsFields = {
+            'sms-order-confirm': smsSettings.orderConfirm || '',
+            'sms-payment-confirm': smsSettings.paymentConfirm || '',
+            'sms-shipping-start': smsSettings.shippingStart || '',
+            'sms-shipping-complete': smsSettings.shippingComplete || '',
+            'sms-waitlist-notify': smsSettings.waitlistNotify || ''
+        };
+        
+        // 각 필드에 값 설정
+        Object.entries(smsFields).forEach(([fieldId, value]) => {
+            const field = document.getElementById(fieldId);
+            if (field) {
+                field.value = value;
+            }
+        });
+        
+        // SMS 설정 저장/취소 버튼 이벤트 리스너 추가
+        setupSMSSettingsEventListeners();
+        
+        console.log('✅ SMS 설정 로드 완료');
+    } catch (error) {
+        console.error('❌ SMS 설정 로드 실패:', error);
+    }
+}
+
+// SMS 설정 이벤트 리스너 설정
+function setupSMSSettingsEventListeners() {
+    try {
+        // SMS 설정 저장 버튼
+        const saveBtn = document.getElementById('save-sms-settings');
+        if (saveBtn) {
+            saveBtn.onclick = saveSMSSettings;
+        }
+        
+        // SMS 설정 취소 버튼
+        const cancelBtn = document.getElementById('cancel-sms-settings');
+        if (cancelBtn) {
+            cancelBtn.onclick = () => {
+                loadSMSSettings(); // 원래 값으로 되돌리기
+            };
+        }
+        
+        console.log('✅ SMS 설정 이벤트 리스너 설정 완료');
+    } catch (error) {
+        console.error('❌ SMS 설정 이벤트 리스너 설정 실패:', error);
+    }
+}
+
+// SMS 설정 저장
+async function saveSMSSettings() {
+    try {
+        console.log('💾 SMS 설정 저장 시작');
+        
+        // SMS 템플릿 필드들에서 값 가져오기
+        const smsTemplates = {
+            orderConfirm: document.getElementById('sms-order-confirm')?.value || '',
+            paymentConfirm: document.getElementById('sms-payment-confirm')?.value || '',
+            shippingStart: document.getElementById('sms-shipping-start')?.value || '',
+            shippingComplete: document.getElementById('sms-shipping-complete')?.value || '',
+            waitlistNotify: document.getElementById('sms-waitlist-notify')?.value || ''
+        };
+        
+        // 설정 데이터 매니저를 통해 저장
+        if (window.settingsDataManager) {
+            await window.settingsDataManager.updateSetting('smsTemplates', 'orderConfirm', smsTemplates.orderConfirm);
+            await window.settingsDataManager.updateSetting('smsTemplates', 'paymentConfirm', smsTemplates.paymentConfirm);
+            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingStart', smsTemplates.shippingStart);
+            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingComplete', smsTemplates.shippingComplete);
+            await window.settingsDataManager.updateSetting('smsTemplates', 'waitlistNotify', smsTemplates.waitlistNotify);
+            
+            console.log('✅ SMS 설정 저장 완료');
+            alert('SMS 설정이 저장되었습니다.');
+        } else {
+            console.error('❌ 설정 데이터 매니저를 찾을 수 없습니다');
+            alert('설정 저장에 실패했습니다.');
+        }
+        
+    } catch (error) {
+        console.error('❌ SMS 설정 저장 실패:', error);
+        alert('SMS 설정 저장에 실패했습니다: ' + error.message);
+    }
+}
+
+// SMS 설정 관련 함수들을 전역으로 export
+window.loadSMSSettings = loadSMSSettings;
+window.saveSMSSettings = saveSMSSettings;
+
+// 일반 설정 로드
+export function loadGeneralSettings() {
+    try {
+        console.log('⚙️ 일반 설정 로드');
+        
+        const settings = window.settingsDataManager.getAllSettings();
+        
+        // 농장 정보 로드
+        const farmNameInput = document.getElementById('farm-name');
+        const farmOwnerInput = document.getElementById('farm-owner');
+        const farmPhoneInput = document.getElementById('farm-phone');
+        const farmAddressInput = document.getElementById('farm-address');
+        
+        if (farmNameInput) farmNameInput.value = settings.farm.name || '';
+        if (farmOwnerInput) farmOwnerInput.value = settings.farm.owner || '';
+        if (farmPhoneInput) farmPhoneInput.value = settings.farm.phone || '';
+        if (farmAddressInput) farmAddressInput.value = settings.farm.address || '';
+        
+        // 시스템 설정 로드
+        const autoBackupToggle = document.getElementById('auto-backup');
+        const systemLogsToggle = document.getElementById('system-logs');
+        const debugModeToggle = document.getElementById('debug-mode');
+        
+        if (autoBackupToggle) autoBackupToggle.checked = settings.system.autoBackup || false;
+        if (systemLogsToggle) systemLogsToggle.checked = settings.system.systemLogs || false;
+        if (debugModeToggle) debugModeToggle.checked = settings.system.debugMode || false;
+        
+        console.log('✅ 일반 설정 로드 완료');
+    } catch (error) {
+        console.error('❌ 일반 설정 로드 실패:', error);
+    }
+}
+
+// 배송 설정 로드
+export function loadShippingSettings() {
+    try {
+        console.log('🚚 배송 설정 로드');
+        
+        const settings = window.settingsDataManager.getAllSettings();
+        
+        const defaultShippingFeeInput = document.getElementById('default-shipping-fee');
+        const freeShippingThresholdInput = document.getElementById('free-shipping-threshold');
+        
+        if (defaultShippingFeeInput) defaultShippingFeeInput.value = settings.shipping.defaultShippingFee || 3000;
+        if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
+        
+        console.log('✅ 배송 설정 로드 완료');
+    } catch (error) {
+        console.error('❌ 배송 설정 로드 실패:', error);
+    }
+}
+
+// 알림 설정 로드
+export function loadNotificationSettings() {
+    try {
+        console.log('🔔 알림 설정 로드');
+        
+        const settings = window.settingsDataManager.getAllSettings();
+        
+        const emailNotificationsToggle = document.getElementById('email-notifications');
+        const smsNotificationsToggle = document.getElementById('sms-notifications');
+        const orderAlertsToggle = document.getElementById('order-alerts');
+        const lowStockAlertsToggle = document.getElementById('low-stock-alerts');
+        
+        if (emailNotificationsToggle) emailNotificationsToggle.checked = settings.notifications.emailNotifications || false;
+        if (smsNotificationsToggle) smsNotificationsToggle.checked = settings.notifications.smsNotifications || false;
+        if (orderAlertsToggle) orderAlertsToggle.checked = settings.notifications.orderAlerts || false;
+        if (lowStockAlertsToggle) lowStockAlertsToggle.checked = settings.notifications.lowStockAlerts || false;
+        
+        console.log('✅ 알림 설정 로드 완료');
+    } catch (error) {
+        console.error('❌ 알림 설정 로드 실패:', error);
+    }
+}
+
+// 고객 등급 관리
+export async function loadCustomerGrades() {
+    try {
+        console.log('👑 고객 등급 관리 로드');
+        
+        // Supabase에서 최신 데이터 강제 재로드
+        await window.forceReloadSettings();
+        
+        const settings = window.settingsDataManager.getAllSettings();
+        console.log('📋 설정 데이터:', settings);
+        console.log('📋 고객등급 데이터:', settings.customerGrades);
+        
+        // 등급 적용 기간 설정 로드
+        const gradePeriodSelect = document.getElementById('grade-period-select');
+        if (gradePeriodSelect && settings.gradePeriod) {
+            gradePeriodSelect.value = settings.gradePeriod;
+            console.log('📅 등급 적용 기간 설정 로드:', settings.gradePeriod);
+        }
+        
+        const container = document.getElementById('customer-grades-list');
+        console.log('📦 컨테이너 요소:', container);
+        
+        if (!container) {
+            console.error('❌ customer-grades-list 컨테이너를 찾을 수 없습니다');
+            return;
+        }
+        
+        container.innerHTML = '';
+        
+        if (!settings.customerGrades || settings.customerGrades.length === 0) {
+            console.warn('⚠️ 고객등급 데이터가 없습니다');
+            container.innerHTML = '<div class="text-gray-500 text-center py-4">고객등급이 없습니다.</div>';
+            return;
+        }
+        
+        settings.customerGrades.forEach((grade, index) => {
+            console.log(`📋 등급 ${index}:`, grade);
+            const gradeElement = document.createElement('div');
+            gradeElement.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg mb-3 shadow-sm hover:shadow-md transition-shadow';
+            gradeElement.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4" style="background-color: ${grade.color}">
+                        <i class="${grade.icon} text-white text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-800">${grade.name}</div>
+                        <div class="text-sm text-gray-600">
+                            <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs mr-2">${grade.code}</span>
+                            최소 ${grade.minAmount.toLocaleString()}원
+                        </div>
+                        <div class="text-sm text-gray-500 mt-1">
+                            <i class="fas fa-percentage mr-1"></i>할인 ${grade.discount}%
+                        </div>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="editCustomerGrade(${index})" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="편집">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteCustomerGrade(${index})" class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(gradeElement);
+        });
+        
+        console.log('✅ 고객 등급 관리 로드 완료');
+        
+        // 전체 고객 등급 재계산 버튼 이벤트 리스너 등록 (여기서 등록!)
+        setTimeout(() => {
+            const recalculateBtn = document.getElementById('recalculate-all-grades-btn');
+            console.log('🔍 고객등급 로드 후 재계산 버튼 찾기:', recalculateBtn);
+            
+            if (recalculateBtn && !recalculateBtn.dataset.listenerAdded) {
+                console.log('✅ 재계산 버튼에 이벤트 리스너 등록');
+                recalculateBtn.dataset.listenerAdded = 'true';
+                
+                recalculateBtn.addEventListener('click', async function() {
+                    console.log('🔄 전체 고객 등급 재계산 버튼 클릭됨!');
+                    
+                    if (!confirm('⚠️ 모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.')) {
+                        console.log('❌ 사용자가 재계산을 취소했습니다');
+                        return;
+                    }
+                    
+                    try {
+                        console.log('🔄 전체 고객 등급 재계산 시작...');
+                        this.disabled = true;
+                        this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
+                        
+                        if (!window.supabaseClient) {
+                            throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                        }
+                        
+                        // 1. 모든 고객 조회
+                        const { data: customers, error: customersError } = await window.supabaseClient
+                            .from('farm_customers')
+                            .select('id, phone');
+                        
+                        if (customersError) throw customersError;
+                        
+                        if (!customers || customers.length === 0) {
+                            alert('재계산할 고객이 없습니다.');
+                            return;
+                        }
+                        
+                        console.log(`📊 총 ${customers.length}명의 고객 등급 재계산 시작...`);
+                        
+                        // 2. 각 고객의 등급 재계산
+                        let successCount = 0;
+                        let failCount = 0;
+                        
+                        for (const customer of customers) {
+                            try {
+                                let totalPurchaseAmount = 0;
+                                const phone = (customer.phone || '').trim().replace(/[^0-9]/g, '');
+                                if (phone) {
+                                    const phoneWithDash = phone.length >= 10
+                                        ? `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7)}`
+                                        : phone;
+                                    const { data: orders, error: ordersError } = await window.supabaseClient
+                                        .from('farm_orders')
+                                        .select('total_amount')
+                                        .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneWithDash}`);
+                                    
+                                    if (ordersError) {
+                                        console.error(`❌ 고객 ${customer.id} 주문 조회 실패:`, ordersError);
+                                        failCount++;
+                                        continue;
+                                    }
+                                    totalPurchaseAmount = orders?.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0) || 0;
+                                }
+                                console.log(`💰 고객 ${customer.id} 총 구매금액:`, totalPurchaseAmount);
+                                
+                                if (window.updateCustomerGrade) {
+                                    await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
+                                    successCount++;
+                                } else {
+                                    console.error('❌ updateCustomerGrade 함수를 찾을 수 없습니다');
+                                    failCount++;
+                                }
+                            } catch (error) {
+                                console.error(`❌ 고객 ${customer.id} 등급 재계산 실패:`, error);
+                                failCount++;
+                            }
+                        }
+                        
+                        console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건`);
+                        alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
+                        
+                        // 고객 목록 새로고침
+                        if (window.renderCustomersTable) {
+                            window.renderCustomersTable('all');
+                        }
+                        
+                    } catch (error) {
+                        console.error('❌ 전체 고객 등급 재계산 실패:', error);
+                        alert('전체 고객 등급 재계산에 실패했습니다.');
+                    } finally {
+                        this.disabled = false;
+                        this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>전체 고객 등급 재계산';
+                    }
+                });
+            }
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ 고객 등급 관리 로드 실패:', error);
+    }
+}
+
+// 판매 채널 관리 — farm_channels 테이블 기준 단일 소스
+export async function loadSalesChannels() {
+    const container = document.getElementById('channels-list');
+    if (!container) {
+        console.error('❌ channels-list 컨테이너를 찾을 수 없습니다');
+        return;
+    }
+    try {
+        console.log('🏪 판매 채널 관리 로드 (farm_channels)');
+        if (!window.salesChannelsDataManager) {
+            container.innerHTML = '<div class="text-gray-500 text-center py-4">판매채널 모듈을 불러올 수 없습니다.</div>';
+            return;
+        }
+        const channels = await window.salesChannelsDataManager.loadChannels();
+        container.innerHTML = '';
+        if (!channels || channels.length === 0) {
+            container.innerHTML = '<div class="text-gray-500 text-center py-4">판매채널이 없습니다.</div>';
+            console.log('✅ 판매 채널 관리 로드 완료 (0개)');
+            return;
+        }
+        channels.forEach((channel, index) => {
+            const isActive = channel.is_active !== false;
+            const channelElement = document.createElement('div');
+            channelElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2';
+            channelElement.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-3 h-3 rounded-full mr-3 ${isActive ? 'bg-green-500' : 'bg-gray-400'}"></div>
+                    <div>
+                        <div class="font-medium">${(channel.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                        <div class="text-sm text-gray-600">${(channel.description || channel.icon || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="toggleSalesChannelByIndex(${index})" class="text-blue-600 hover:text-blue-800" title="${isActive ? '비활성화' : '활성화'}">
+                        <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
+                    </button>
+                    <button onclick="editSalesChannelByIndex(${index})" class="text-blue-600 hover:text-blue-800" title="편집">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteSalesChannelByIndex(${index})" class="text-red-600 hover:text-red-800" title="삭제">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(channelElement);
+        });
+        console.log('✅ 판매 채널 관리 로드 완료:', channels.length, '개');
+    } catch (error) {
+        console.error('❌ 판매 채널 관리 로드 실패:', error);
+        container.innerHTML = '<div class="text-red-500 text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
+    }
+}
+
+// 주문 상태 관리
+export function loadOrderStatuses() {
+    try {
+        console.log('📋 주문 상태 관리 로드');
+        
+        const settings = window.settingsDataManager.getAllSettings();
+        const container = document.getElementById('order-statuses-list');
+        
+        if (!container) return;
+        
+        container.innerHTML = '';
+        
+        settings.orderStatuses.forEach((status, index) => {
+            const statusElement = document.createElement('div');
+            statusElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2';
+            statusElement.innerHTML = `
+                <div class="flex items-center">
+                    <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${status.color}"></div>
+                    <div>
+                        <div class="font-medium">${status.label}</div>
+                        <div class="text-sm text-gray-600">${status.description}</div>
+                    </div>
+                </div>
+                <div class="flex space-x-2">
+                    <button onclick="editOrderStatus(${index})" class="text-blue-600 hover:text-blue-800">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button onclick="deleteOrderStatus(${index})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(statusElement);
+        });
+        
+        console.log('✅ 주문 상태 관리 로드 완료');
+    } catch (error) {
+        console.error('❌ 주문 상태 관리 로드 실패:', error);
+    }
+}
+
+// 설정 저장
+export function saveSettings() {
+    try {
+        console.log('💾 설정 저장');
+        
+        // 일반 설정 저장
+        const farmName = document.getElementById('farm-name')?.value || '';
+        const farmOwner = document.getElementById('farm-owner')?.value || '';
+        const farmPhone = document.getElementById('farm-phone')?.value || '';
+        const farmAddress = document.getElementById('farm-address')?.value || '';
+        
+        window.settingsDataManager.updateSetting('farm', 'name', farmName);
+        window.settingsDataManager.updateSetting('farm', 'owner', farmOwner);
+        window.settingsDataManager.updateSetting('farm', 'phone', farmPhone);
+        window.settingsDataManager.updateSetting('farm', 'address', farmAddress);
+        
+        // 시스템 설정 저장
+        const autoBackup = document.getElementById('auto-backup')?.checked || false;
+        const systemLogs = document.getElementById('system-logs')?.checked || false;
+        const debugMode = document.getElementById('debug-mode')?.checked || false;
+        
+        window.settingsDataManager.updateSetting('system', 'autoBackup', autoBackup);
+        window.settingsDataManager.updateSetting('system', 'systemLogs', systemLogs);
+        window.settingsDataManager.updateSetting('system', 'debugMode', debugMode);
+        
+        // 배송 설정 저장
+        const defaultShippingFee = parseInt(document.getElementById('default-shipping-fee')?.value) || 3000;
+        const freeShippingThreshold = parseInt(document.getElementById('free-shipping-threshold')?.value) || 50000;
+        
+        window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
+        window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
+        
+        // 알림 설정 저장
+        const emailNotifications = document.getElementById('email-notifications')?.checked || false;
+        const smsNotifications = document.getElementById('sms-notifications')?.checked || false;
+        const orderAlerts = document.getElementById('order-alerts')?.checked || false;
+        const lowStockAlerts = document.getElementById('low-stock-alerts')?.checked || false;
+        
+        window.settingsDataManager.updateSetting('notifications', 'emailNotifications', emailNotifications);
+        window.settingsDataManager.updateSetting('notifications', 'smsNotifications', smsNotifications);
+        window.settingsDataManager.updateSetting('notifications', 'orderAlerts', orderAlerts);
+        window.settingsDataManager.updateSetting('notifications', 'lowStockAlerts', lowStockAlerts);
+        
+        console.log('✅ 설정 저장 완료');
+        return true;
+    } catch (error) {
+        console.error('❌ 설정 저장 실패:', error);
+        return false;
+    }
+}
+
+// 환경설정 이벤트 리스너 설정
+function initSettingsEventListeners() {
+    try {
+        console.log('⚙️ 환경설정 이벤트 리스너 설정...');
+        
+        // 탭 전환 이벤트
+        document.querySelectorAll('.settings-tab').forEach(tab => {
+            tab.addEventListener('click', function() {
+                const tabName = this.id.replace('settings-tab-', '');
+                showSettingsTab(tabName);
+            });
+        });
+        
+        // 모든 설정 저장 버튼
+        const saveAllBtn = document.getElementById('save-all-settings-btn');
+        if (saveAllBtn) {
+            saveAllBtn.addEventListener('click', function() {
+                saveSettings();
+                alert('✅ 모든 설정이 저장되었습니다.');
+            });
+        }
+        
+        // 설정 초기화 버튼
+        const resetBtn = document.getElementById('reset-settings-btn');
+        if (resetBtn) {
+            resetBtn.addEventListener('click', function() {
+                if (confirm('⚠️ 모든 설정을 초기화하시겠습니까?')) {
+                    window.settingsDataManager.resetSettings();
+                    alert('✅ 설정이 초기화되었습니다.');
+                    location.reload();
+                }
+            });
+        }
+        
+        // 채널 추가 버튼 — farm_channels 테이블에 추가
+        const addChannelBtn = document.getElementById('add-channel-btn');
+        if (addChannelBtn) {
+            addChannelBtn.addEventListener('click', async function() {
+                const name = prompt('채널명을 입력하세요:');
+                if (name && name.trim()) {
+                    try {
+                        if (!window.addSalesChannel) {
+                            alert('판매채널 모듈을 불러올 수 없습니다.');
+                            return;
+                        }
+                        await window.addSalesChannel({
+                            name: name.trim(),
+                            icon: 'store',
+                            color: 'green',
+                            description: '',
+                            sort_order: (window.salesChannelsDataManager?.channels?.length || 0),
+                            is_active: true
+                        });
+                        await loadSalesChannels();
+                        console.log('✅ 판매채널 추가 완료:', name);
+                    } catch (error) {
+                        console.error('❌ 판매채널 추가 실패:', error);
+                        alert('채널 추가에 실패했습니다.');
+                    }
+                }
+            });
+        }
+        
+        // 등급 적용 기간 저장 버튼
+        const saveGradePeriodBtn = document.getElementById('save-grade-period-btn');
+        if (saveGradePeriodBtn) {
+            saveGradePeriodBtn.addEventListener('click', async function() {
+                const gradePeriodSelect = document.getElementById('grade-period-select');
+                if (!gradePeriodSelect) {
+                    alert('❌ 등급 적용 기간 설정을 찾을 수 없습니다.');
+                    return;
+                }
+                
+                try {
+                    const period = gradePeriodSelect.value;
+                    console.log('📅 등급 적용 기간 저장:', period);
+                    
+                    // Supabase에 저장
+                    if (!window.supabaseClient) {
+                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                    }
+                    
+                    const { data, error } = await window.supabaseClient
+                        .from('farm_settings')
+                        .select('settings')
+                        .eq('id', 1)
+                        .single();
+                    
+                    if (error) throw error;
+                    
+                    const updatedSettings = {
+                        ...data.settings,
+                        gradePeriod: period
+                    };
+                    
+                    const { error: updateError } = await window.supabaseClient
+                        .from('farm_settings')
+                        .update({ settings: updatedSettings })
+                        .eq('id', 1);
+                    
+                    if (updateError) throw updateError;
+                    
+                    // 로컬 설정도 업데이트
+                    await window.forceReloadSettings();
+                    
+                    alert('✅ 등급 적용 기간이 저장되었습니다.');
+                    console.log('✅ 등급 적용 기간 저장 완료:', period);
+                } catch (error) {
+                    console.error('❌ 등급 적용 기간 저장 실패:', error);
+                    alert('등급 적용 기간 저장에 실패했습니다.');
+                }
+            });
+        }
+        
+        // 전체 고객 등급 재계산 버튼
+        const recalculateAllGradesBtn = document.getElementById('recalculate-all-grades-btn');
+        console.log('🔍 전체 고객 등급 재계산 버튼 찾기:', recalculateAllGradesBtn);
+        if (recalculateAllGradesBtn) {
+            console.log('✅ 전체 고객 등급 재계산 버튼 이벤트 리스너 등록');
+            recalculateAllGradesBtn.addEventListener('click', async function() {
+                console.log('🔄 전체 고객 등급 재계산 버튼 클릭됨!');
+                if (!confirm('⚠️ 모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.')) {
+                    console.log('❌ 사용자가 재계산을 취소했습니다');
+                    return;
+                }
+                
+                try {
+                    console.log('🔄 전체 고객 등급 재계산 시작...');
+                    this.disabled = true;
+                    this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
+                    
+                    if (!window.supabaseClient) {
+                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                    }
+                    
+                    // 1. 모든 고객 조회
+                    const { data: customers, error: customersError } = await window.supabaseClient
+                        .from('farm_customers')
+                        .select('id, phone');
+                    
+                    if (customersError) throw customersError;
+                    
+                    if (!customers || customers.length === 0) {
+                        alert('재계산할 고객이 없습니다.');
+                        return;
+                    }
+                    
+                    console.log(`📊 총 ${customers.length}명의 고객 등급 재계산 시작...`);
+                    
+                    let successCount = 0;
+                    let failCount = 0;
+                    
+                    for (const customer of customers) {
+                        try {
+                            let totalPurchaseAmount = 0;
+                            const phone = (customer.phone || '').trim().replace(/[^0-9]/g, '');
+                            if (phone) {
+                                const phoneWithDash = phone.length >= 10
+                                    ? `${phone.slice(0, 3)}-${phone.slice(3, 7)}-${phone.slice(7)}`
+                                    : phone;
+                                const { data: orders, error: ordersError } = await window.supabaseClient
+                                    .from('farm_orders')
+                                    .select('total_amount')
+                                    .or(`customer_phone.eq.${phone},customer_phone.eq.${phoneWithDash}`);
+                                if (!ordersError && orders) {
+                                    totalPurchaseAmount = orders.reduce((sum, order) => sum + parseFloat(order.total_amount || 0), 0);
+                                }
+                            }
+                            if (window.updateCustomerGrade) {
+                                await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
+                                successCount++;
+                            } else {
+                                console.error('❌ updateCustomerGrade 함수를 찾을 수 없습니다');
+                                failCount++;
+                            }
+                        } catch (error) {
+                            console.error(`❌ 고객 ${customer.id} 등급 재계산 실패:`, error);
+                            failCount++;
+                        }
+                    }
+                    
+                    console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건`);
+                    alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
+                    
+                    // 고객 목록 새로고침
+                    if (window.renderCustomersTable) {
+                        window.renderCustomersTable('all');
+                    }
+                    
+                } catch (error) {
+                    console.error('❌ 전체 고객 등급 재계산 실패:', error);
+                    alert('전체 고객 등급 재계산에 실패했습니다.');
+                } finally {
+                    this.disabled = false;
+                    this.innerHTML = '<i class="fas fa-sync-alt mr-2"></i>전체 고객 등급 재계산';
+                }
+            });
+        }
+        
+        // 주문 상태 추가 버튼
+        const addOrderStatusBtn = document.getElementById('add-order-status-btn');
+        if (addOrderStatusBtn) {
+            addOrderStatusBtn.addEventListener('click', function() {
+                const label = prompt('상태명을 입력하세요:');
+                if (label) {
+                    window.settingsDataManager.addOrderStatus({
+                        value: label,
+                        label: label,
+                        color: '#6B7280',
+                        description: '새로 추가된 상태'
+                    });
+                    loadOrderStatuses();
+                }
+            });
+        }
+        
+        // 고객등급 추가 버튼
+        const addCustomerGradeBtn = document.getElementById('add-customer-grade-btn');
+        if (addCustomerGradeBtn) {
+            addCustomerGradeBtn.addEventListener('click', async function() {
+                const name = prompt('등급명을 입력하세요:');
+                if (name && name.trim() !== '') {
+                    try {
+                        await window.settingsDataManager.addCustomerGrade({
+                            name: name.trim(),
+                            code: name.trim().toUpperCase().replace(/\s+/g, '_'),
+                            minAmount: 0,
+                            discount: 0,
+                            color: '#6B7280',
+                            icon: 'fas fa-circle'
+                        });
+                        
+                        // 화면 새로고침
+                        setTimeout(() => {
+                            loadCustomerGrades();
+                            console.log('✅ 고객등급 추가 후 화면 새로고침 완료');
+                        }, 100);
+                        
+                        console.log('✅ 고객등급 추가 완료:', name);
+                    } catch (error) {
+                        console.error('❌ 고객등급 추가 실패:', error);
+                        alert('등급 추가에 실패했습니다.');
+                    }
+                }
+            });
+        }
+        
+        // 일반 설정 저장 버튼
+        const saveGeneralBtn = document.getElementById('save-general-settings');
+        if (saveGeneralBtn) {
+            saveGeneralBtn.addEventListener('click', async function() {
+                console.log('🔄 일반 설정 저장');
+                const farmName = document.getElementById('farm-name')?.value || '';
+                const farmOwner = document.getElementById('farm-owner')?.value || '';
+                const farmPhone = document.getElementById('farm-phone')?.value || '';
+                const farmAddress = document.getElementById('farm-address')?.value || '';
+                
+                try {
+                    await window.settingsDataManager.updateSetting('farm', 'name', farmName);
+                    await window.settingsDataManager.updateSetting('farm', 'owner', farmOwner);
+                    await window.settingsDataManager.updateSetting('farm', 'phone', farmPhone);
+                    await window.settingsDataManager.updateSetting('farm', 'address', farmAddress);
+                    
+                    alert('✅ 일반 설정이 Supabase에 저장되었습니다.');
+                } catch (error) {
+                    console.error('❌ 일반 설정 저장 실패:', error);
+                    alert(`❌ 설정 저장에 실패했습니다.\n\n${error.message}`);
+                }
+            });
+        }
+        
+        // 일반 설정 취소 버튼
+        const cancelGeneralBtn = document.getElementById('cancel-general-settings');
+        if (cancelGeneralBtn) {
+            cancelGeneralBtn.addEventListener('click', function() {
+                console.log('🔄 일반 설정 취소');
+                loadGeneralSettings();
+                alert('❌ 변경사항이 취소되었습니다.');
+            });
+        }
+        
+        // 배송 설정 저장 버튼
+        const saveShippingBtn = document.getElementById('save-shipping-settings');
+        if (saveShippingBtn) {
+            saveShippingBtn.addEventListener('click', async function() {
+                console.log('🔄 배송 설정 저장');
+                const defaultShippingFee = parseInt(document.getElementById('default-shipping-fee')?.value) || 3000;
+                const freeShippingThreshold = parseInt(document.getElementById('free-shipping-threshold')?.value) || 50000;
+                const expressShippingFee = parseInt(document.getElementById('express-shipping-fee')?.value) || 5000;
+                
+                try {
+                    await window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
+                    await window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
+                    await window.settingsDataManager.updateSetting('shipping', 'expressShippingFee', expressShippingFee);
+                    
+                    alert('✅ 배송 설정이 Supabase에 저장되었습니다.');
+                } catch (error) {
+                    console.error('❌ 배송 설정 저장 실패:', error);
+                    alert(`❌ 설정 저장에 실패했습니다.\n\n${error.message}`);
+                }
+            });
+        }
+        
+        // 배송 설정 취소 버튼
+        const cancelShippingBtn = document.getElementById('cancel-shipping-settings');
+        if (cancelShippingBtn) {
+            cancelShippingBtn.addEventListener('click', function() {
+                console.log('🔄 배송 설정 취소');
+                loadShippingSettings();
+                alert('❌ 변경사항이 취소되었습니다.');
+            });
+        }
+        
+        console.log('✅ 환경설정 이벤트 리스너 설정 완료');
+    } catch (error) {
+        console.error('❌ 환경설정 이벤트 리스너 설정 실패:', error);
+    }
+}
+
+// 전역 함수들 등록
+window.showSettingsTab = showSettingsTab;
+window.loadGeneralSettings = loadGeneralSettings;
+window.loadShippingSettings = loadShippingSettings;
+window.loadNotificationSettings = loadNotificationSettings;
+window.loadCustomerGrades = loadCustomerGrades;
+window.loadSalesChannels = loadSalesChannels;
+window.loadOrderStatuses = loadOrderStatuses;
+window.saveSettings = saveSettings;
+window.initSettingsEventListeners = initSettingsEventListeners;
+
+// 판매채널 관련 전역 함수 — farm_channels 기준 (index → id 변환 후 CRUD)
+window.toggleSalesChannelByIndex = async function(index) {
+    try {
+        const mgr = window.salesChannelsDataManager;
+        if (!mgr || !mgr.channels || !mgr.channels[index]) {
+            alert('토글할 채널을 찾을 수 없습니다.');
+            return;
+        }
+        const ch = mgr.channels[index];
+        await window.updateSalesChannel(ch.id, { is_active: !ch.is_active });
+        await loadSalesChannels();
+    } catch (error) {
+        console.error('❌ 판매채널 토글 실패:', error);
+        alert('채널 상태 변경에 실패했습니다.');
+    }
+};
+
+window.editSalesChannelByIndex = async function(index) {
+    try {
+        const mgr = window.salesChannelsDataManager;
+        if (!mgr || !mgr.channels || !mgr.channels[index]) {
+            alert('편집할 채널을 찾을 수 없습니다.');
+            return;
+        }
+        const ch = mgr.channels[index];
+        const newName = prompt('새 채널명을 입력하세요:', ch.name);
+        if (newName && newName.trim() !== '') {
+            await window.updateSalesChannel(ch.id, { name: newName.trim() });
+            await loadSalesChannels();
+        }
+    } catch (error) {
+        console.error('❌ 판매채널 편집 실패:', error);
+        alert('채널 편집에 실패했습니다.');
+    }
+};
+
+window.deleteSalesChannelByIndex = async function(index) {
+    try {
+        const mgr = window.salesChannelsDataManager;
+        if (!mgr || !mgr.channels || !mgr.channels[index]) {
+            alert('삭제할 채널을 찾을 수 없습니다.');
+            return;
+        }
+        if (!confirm('정말로 이 채널을 삭제하시겠습니까?')) return;
+        await window.deleteSalesChannel(mgr.channels[index].id);
+        await loadSalesChannels();
+    } catch (error) {
+        console.error('❌ 판매채널 삭제 실패:', error);
+        alert('채널 삭제에 실패했습니다.');
+    }
+};
+
+// 고객등급 관련 전역 함수들
+window.editCustomerGrade = async function(index) {
+    console.log('🔄 고객등급 편집:', index);
+    
+    try {
+        const settings = window.settingsDataManager.getAllSettings();
+        const currentGrade = settings.customerGrades[index];
+        
+        if (!currentGrade) {
+            alert('편집할 등급을 찾을 수 없습니다.');
+            return;
+        }
+        
+        // 상세 편집 폼 생성
+        const editForm = document.createElement('div');
+        editForm.id = 'edit-grade-modal';
+        editForm.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+        editForm.innerHTML = `
+            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                <div class="p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">고객등급 편집</h3>
+                        <button onclick="closeEditGradeModal()" class="text-gray-400 hover:text-gray-600">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">등급명</label>
+                            <input type="text" id="edit-grade-name" value="${currentGrade.name}" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">최소 구매금액 (원)</label>
+                            <input type="number" id="edit-grade-min-amount" value="${currentGrade.minAmount}" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">할인율 (%)</label>
+                            <input type="number" id="edit-grade-discount" value="${currentGrade.discount}" min="0" max="100"
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">색상</label>
+                            <input type="color" id="edit-grade-color" value="${currentGrade.color}" 
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-2">아이콘</label>
+                            <select id="edit-grade-icon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                <option value="fas fa-circle" ${currentGrade.icon === 'fas fa-circle' ? 'selected' : ''}>원형</option>
+                                <option value="fas fa-hexagon" ${currentGrade.icon === 'fas fa-hexagon' ? 'selected' : ''}>육각형</option>
+                                <option value="fas fa-octagon" ${currentGrade.icon === 'fas fa-octagon' ? 'selected' : ''}>팔각형</option>
+                                <option value="fas fa-pentagon" ${currentGrade.icon === 'fas fa-pentagon' ? 'selected' : ''}>오각형</option>
+                                <option value="fas fa-square" ${currentGrade.icon === 'fas fa-square' ? 'selected' : ''}>사각형</option>
+                                <option value="fas fa-star" ${currentGrade.icon === 'fas fa-star' ? 'selected' : ''}>별</option>
+                                <option value="fas fa-diamond" ${currentGrade.icon === 'fas fa-diamond' ? 'selected' : ''}>다이아몬드</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="flex justify-end space-x-3 mt-6">
+                        <button onclick="closeEditGradeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">
+                            취소
+                        </button>
+                        <button onclick="saveEditGrade(${index})" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                            저장
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        
+        document.body.appendChild(editForm);
+        
+    } catch (error) {
+        console.error('❌ 고객등급 편집 실패:', error);
+        alert('등급 편집에 실패했습니다.');
+    }
+};
+
+// 편집 모달 닫기
+window.closeEditGradeModal = function() {
+    const modal = document.getElementById('edit-grade-modal');
+    if (modal) {
+        modal.remove();
+        console.log('✅ 편집 모달 닫기 완료');
+    } else {
+        console.warn('⚠️ 편집 모달을 찾을 수 없습니다');
+    }
+};
+
+// 편집 저장
+window.saveEditGrade = async function(index) {
+    try {
+        const name = document.getElementById('edit-grade-name').value.trim();
+        const minAmount = parseInt(document.getElementById('edit-grade-min-amount').value) || 0;
+        const discount = parseInt(document.getElementById('edit-grade-discount').value) || 0;
+        const color = document.getElementById('edit-grade-color').value;
+        const icon = document.getElementById('edit-grade-icon').value;
+        
+        if (!name) {
+            alert('등급명을 입력해주세요.');
+            return;
+        }
+        
+        if (discount < 0 || discount > 100) {
+            alert('할인율은 0-100% 사이로 입력해주세요.');
+            return;
+        }
+        
+        // 고객등급 업데이트
+        const updatedGrade = {
+            name: name,
+            code: window.settingsDataManager.getAllSettings().customerGrades[index].code, // 코드는 유지
+            minAmount: minAmount,
+            discount: discount,
+            color: color,
+            icon: icon
+        };
+        
+        await window.settingsDataManager.updateCustomerGrade(index, updatedGrade);
+        
+        console.log('✅ 고객등급 편집 완료:', updatedGrade);
+        
+        // 모달 닫기
+        closeEditGradeModal();
+        
+        // 화면 새로고침
+        setTimeout(() => {
+            loadCustomerGrades();
+            console.log('✅ 고객등급 편집 후 화면 새로고침 완료');
+            alert('고객등급이 성공적으로 수정되었습니다.');
+        }, 100);
+        
+    } catch (error) {
+        console.error('❌ 고객등급 편집 실패:', error);
+        alert('등급 편집에 실패했습니다.');
+    }
+};
+
+window.deleteCustomerGrade = async function(index) {
+    console.log('🔄 고객등급 삭제:', index);
+    
+    try {
+        if (confirm('정말로 이 등급을 삭제하시겠습니까?')) {
+            // 고객등급 삭제
+            await window.settingsDataManager.deleteCustomerGrade(index);
+            
+            // 화면 새로고침
+            setTimeout(() => {
+                loadCustomerGrades();
+                console.log('✅ 고객등급 삭제 후 화면 새로고침 완료');
+            }, 100);
+            
+            console.log('✅ 고객등급 삭제 완료');
+        }
+    } catch (error) {
+        console.error('❌ 고객등급 삭제 실패:', error);
+        alert('등급 삭제에 실패했습니다.');
+    }
+};

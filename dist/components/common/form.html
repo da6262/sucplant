@@ -1,0 +1,243 @@
+<!-- 공통 폼 컴포넌트 -->
+<template id="form-template">
+    <form class="form {{class}}" @submit="handleSubmit">
+        <div class="form-group" v-for="field in fields" :key="field.name">
+            <label v-if="field.label" class="form-label">{{field.label}}</label>
+            <input 
+                v-if="field.type === 'text' || field.type === 'email' || field.type === 'password' || field.type === 'number'"
+                :type="field.type"
+                :name="field.name"
+                :placeholder="field.placeholder"
+                :required="field.required"
+                :value="field.value"
+                class="form-input"
+            />
+            <textarea 
+                v-else-if="field.type === 'textarea'"
+                :name="field.name"
+                :placeholder="field.placeholder"
+                :required="field.required"
+                :rows="field.rows || 3"
+                class="form-textarea"
+            >{{field.value}}</textarea>
+            <select 
+                v-else-if="field.type === 'select'"
+                :name="field.name"
+                :required="field.required"
+                class="form-select"
+            >
+                <option value="">{{field.placeholder}}</option>
+                <option v-for="option in field.options" :key="option.value" :value="option.value">
+                    {{option.label}}
+                </option>
+            </select>
+            <div v-else-if="field.type === 'checkbox'" class="form-checkbox">
+                <input 
+                    type="checkbox" 
+                    :name="field.name"
+                    :checked="field.checked"
+                    class="form-checkbox-input"
+                />
+                <label class="form-checkbox-label">{{field.label}}</label>
+            </div>
+        </div>
+        <div class="form-actions">
+            <button type="submit" class="btn btn-primary">{{submitText}}</button>
+            <button type="button" class="btn btn-secondary" @click="handleCancel">{{cancelText}}</button>
+        </div>
+    </form>
+</template>
+
+<style>
+/* 폼 기본 스타일 */
+.form {
+    @apply space-y-4;
+}
+
+.form-group {
+    @apply space-y-1;
+}
+
+.form-label {
+    @apply block text-sm font-medium text-gray-700;
+}
+
+.form-input,
+.form-textarea,
+.form-select {
+    @apply w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500;
+}
+
+.form-textarea {
+    @apply resize-none;
+}
+
+.form-checkbox {
+    @apply flex items-center space-x-2;
+}
+
+.form-checkbox-input {
+    @apply w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500;
+}
+
+.form-checkbox-label {
+    @apply text-sm text-gray-700;
+}
+
+.form-actions {
+    @apply flex justify-end space-x-3 pt-4;
+}
+
+/* 폼 상태 */
+.form-error {
+    @apply border-red-300 focus:ring-red-500 focus:border-red-500;
+}
+
+.form-success {
+    @apply border-green-300 focus:ring-green-500 focus:border-green-500;
+}
+</style>
+
+<script>
+// 폼 컴포넌트 JavaScript
+class FormComponent {
+    constructor(options = {}) {
+        this.fields = options.fields || [];
+        this.submitText = options.submitText || '제출';
+        this.cancelText = options.cancelText || '취소';
+        this.class = options.class || '';
+        this.onSubmit = options.onSubmit || null;
+        this.onCancel = options.onCancel || null;
+    }
+    
+    render() {
+        const template = document.getElementById('form-template');
+        const clone = template.content.cloneNode(true);
+        const form = clone.querySelector('form');
+        
+        // 클래스 적용
+        form.className = `form ${this.class}`;
+        
+        // 필드들 렌더링
+        this.renderFields(form);
+        
+        // 이벤트 리스너 추가
+        this.addEventListeners(form);
+        
+        return form;
+    }
+    
+    renderFields(form) {
+        const fieldsContainer = form.querySelector('.form-group');
+        if (!fieldsContainer) return;
+        
+        this.fields.forEach(field => {
+            const fieldElement = this.createFieldElement(field);
+            fieldsContainer.appendChild(fieldElement);
+        });
+    }
+    
+    createFieldElement(field) {
+        const div = document.createElement('div');
+        div.className = 'form-group';
+        
+        if (field.label && field.type !== 'checkbox') {
+            const label = document.createElement('label');
+            label.className = 'form-label';
+            label.textContent = field.label;
+            div.appendChild(label);
+        }
+        
+        const input = this.createInput(field);
+        div.appendChild(input);
+        
+        return div;
+    }
+    
+    createInput(field) {
+        let input;
+        
+        switch (field.type) {
+            case 'textarea':
+                input = document.createElement('textarea');
+                input.rows = field.rows || 3;
+                break;
+            case 'select':
+                input = document.createElement('select');
+                if (field.options) {
+                    const defaultOption = document.createElement('option');
+                    defaultOption.value = '';
+                    defaultOption.textContent = field.placeholder || '선택하세요';
+                    input.appendChild(defaultOption);
+                    
+                    field.options.forEach(option => {
+                        const optionElement = document.createElement('option');
+                        optionElement.value = option.value;
+                        optionElement.textContent = option.label;
+                        input.appendChild(optionElement);
+                    });
+                }
+                break;
+            case 'checkbox':
+                const checkboxContainer = document.createElement('div');
+                checkboxContainer.className = 'form-checkbox';
+                
+                input = document.createElement('input');
+                input.type = 'checkbox';
+                input.checked = field.checked || false;
+                
+                const label = document.createElement('label');
+                label.className = 'form-checkbox-label';
+                label.textContent = field.label;
+                
+                checkboxContainer.appendChild(input);
+                checkboxContainer.appendChild(label);
+                return checkboxContainer;
+            default:
+                input = document.createElement('input');
+                input.type = field.type || 'text';
+        }
+        
+        // 공통 속성 설정
+        if (field.name) input.name = field.name;
+        if (field.placeholder) input.placeholder = field.placeholder;
+        if (field.required) input.required = true;
+        if (field.value) input.value = field.value;
+        
+        input.className = this.getInputClassName(field.type);
+        
+        return input;
+    }
+    
+    getInputClassName(type) {
+        switch (type) {
+            case 'textarea':
+                return 'form-textarea';
+            case 'select':
+                return 'form-select';
+            default:
+                return 'form-input';
+        }
+    }
+    
+    addEventListeners(form) {
+        // 제출 이벤트
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if (this.onSubmit) {
+                const formData = new FormData(form);
+                this.onSubmit(formData);
+            }
+        });
+        
+        // 취소 버튼 이벤트
+        const cancelBtn = form.querySelector('.btn-secondary');
+        if (cancelBtn && this.onCancel) {
+            cancelBtn.addEventListener('click', this.onCancel);
+        }
+    }
+}
+
+// 전역으로 사용할 수 있도록 등록
+window.FormComponent = FormComponent;
+</script>

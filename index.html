@@ -29,14 +29,9 @@
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <style>
-        body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
-        
-    </style>
+    <link rel="stylesheet" href="styles/index-inline.css">
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen">
     <!-- 로그인 모달 -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: flex;">
         <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
@@ -94,17 +89,16 @@
         </div>
     </div>
 
-    <!-- 헤더(네비 통합) -->
-    <div id="header-container" class="shrink-0"></div>
+    <!-- 사이드바(네비 통합) -->
+    <div id="header-container"></div>
     <div id="navigation-container" class="hidden" aria-hidden="true"></div>
 
     <!-- 메인 콘텐츠 -->
-    <main id="mainContent" class="flex-1 min-h-0 w-full container mx-auto px-4 py-6 pb-20 md:pb-6 max-w-7xl" style="display: none;">
+    <main id="mainContent" class="min-h-screen md:pl-[180px] px-4 pt-4 pb-20 md:pb-6" style="display: none;">
         <div id="dashboard-section" class="tab-content min-h-0"></div>
         <div id="customers-section" class="tab-content hidden min-h-0"></div>
         <div id="orders-section" class="tab-content hidden min-h-0"></div>
         <div id="products-section" class="tab-content hidden min-h-0"></div>
-        <div id="shipping-section" class="tab-content hidden min-h-0"></div>
         <div id="waitlist-section" class="tab-content hidden min-h-0">
             <div class="py-4">
                 <h2 class="text-lg font-semibold text-gray-800">대기자 관리</h2>
@@ -467,12 +461,10 @@
                 // DOM이 완전히 로드될 때까지 대기
                 await waitForDOMReady();
                 
-                // 디버그: 현재 DOM 상태 확인
-                console.log('🔍 DOM 상태 확인 중...');
-                const allSections = document.querySelectorAll('[id$="-section"]');
-                console.log('🔍 발견된 섹션들:', Array.from(allSections).map(el => el.id));
-                
-                // 모든 섹션 숨기기 (강화된 버전)
+                // mainContent 직계 자식만 대상 (중첩 컴포넌트 div 제외)
+                const allSections = document.querySelectorAll('#mainContent > [id$="-section"]');
+
+                // 모든 섹션 숨기기
                 allSections.forEach(section => {
                     if (section.id !== `${tabId}-section`) {
                         section.classList.add('hidden');
@@ -485,6 +477,14 @@
                 document.querySelectorAll('.tab-button').forEach(button => {
                     button.classList.remove('active');
                 });
+
+                // 사이드바 네비게이션 활성 상태 동기화
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
+                const _activeNavBtn = document.getElementById(`nav-${tabId}`);
+                if (_activeNavBtn) _activeNavBtn.classList.add('active');
+                const _activeMobileNavBtn = document.getElementById(`mobile-nav-${tabId}`);
+                if (_activeMobileNavBtn) _activeMobileNavBtn.classList.add('active');
                 
                 // 선택된 섹션 표시
                 let targetSection = document.getElementById(`${tabId}-section`);
@@ -650,20 +650,6 @@
                             </div>
                         `;
                         break;
-                    case 'shipping':
-                        section.innerHTML = `
-                            <div class="mb-6">
-                                <h2 class="text-2xl font-bold text-gray-800">배송 관리</h2>
-                                <p class="text-gray-600 mt-1">배송 정보를 관리하세요</p>
-                            </div>
-                            <div class="text-center py-8 text-gray-500">
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                                    <i class="fas fa-truck text-green-600 text-lg"></i>
-                                </div>
-                                <p class="text-sm font-medium">배송관리 기능이 준비 중입니다...</p>
-                            </div>
-                        `;
-                        break;
                     case 'waitlist':
                         section.innerHTML = `
                             <div class="mb-6">
@@ -749,14 +735,6 @@
                         } else {
                             console.warn('⚠️ loadProductManagementComponent 함수를 찾을 수 없습니다.');
                             console.log('🔍 window 객체에서 사용 가능한 함수들:', Object.keys(window).filter(key => key.includes('Product')));
-                            await loadFallbackContent(tabId);
-                        }
-                        break;
-                    case 'shipping':
-                        if (window.loadShippingManagementComponent) {
-                            await window.loadShippingManagementComponent();
-                        } else {
-                            console.warn('⚠️ loadShippingManagementComponent 함수를 찾을 수 없습니다.');
                             await loadFallbackContent(tabId);
                         }
                         break;
@@ -1261,49 +1239,6 @@
             console.log('- window.sendSMS:', typeof window.sendSMS);
         }, 2000);
         
-        // 통합 배송관리 시스템 모듈 로드
-        import('./features/shipping/shippingManager.js').then(module => {
-            window.shippingManager = module.shippingManager;
-            console.log('✅ 통합 배송관리 시스템 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 통합 배송관리 시스템 모듈 로드 실패:', error);
-        });
-        
-        // 배송관리 개별 모듈들 로드
-        import('./features/shipping/trackingAPI.js').then(module => {
-            window.trackingAPI = module.trackingAPI;
-            console.log('✅ 배송 추적 API 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 추적 API 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/labelGenerator.js').then(module => {
-            window.labelGenerator = module.labelGenerator;
-            console.log('✅ 배송 라벨 생성기 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 라벨 생성기 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/analyticsDashboard.js').then(module => {
-            window.shippingAnalytics = module.shippingAnalytics;
-            console.log('✅ 배송 성과 분석 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 성과 분석 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/notificationSystem.js').then(module => {
-            window.notificationSystem = module.notificationSystem;
-            console.log('✅ 배송 알림 시스템 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 알림 시스템 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/routeOptimizer.js').then(module => {
-            window.routeOptimizer = module.routeOptimizer;
-            console.log('✅ 배송 경로 최적화 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 경로 최적화 모듈 로드 실패:', error);
-        });
         
         // Supabase 클라이언트 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -1348,9 +1283,6 @@
     
     <!-- 모듈 로딩 문제 해결 스크립트 -->
     <script src="fix-module-loading.js"></script>
-    
-    <!-- 배송관리 시스템 -->
-    <script type="module" src="js/shipping-management.js"></script>
     
     <!-- 웹 배포용 강화된 폴백 시스템 -->
     <script src="web-fallback-system.js"></script>

@@ -40,6 +40,7 @@ CREATE OR REPLACE FUNCTION public.get_order_rows(
 )
 RETURNS TABLE (
   order_id UUID,
+  order_number TEXT,
   order_created_at TIMESTAMPTZ,
   d_day INT,
   customer_name TEXT,
@@ -94,6 +95,7 @@ BEGIN
   )
   SELECT
     o.id AS order_id,
+    COALESCE(o.order_number, '') AS order_number,
     COALESCE(o.created_at, o.order_date) AS order_created_at,
     CASE
       WHEN COALESCE(o.order_status, '') IN ('배송완료','주문취소') THEN NULL::INT

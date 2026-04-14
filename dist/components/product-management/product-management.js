@@ -1,0 +1,2126 @@
+/**
+ * 상품 관리 컴포넌트 스크립트
+ * 경산다육식물농장 관리시스템
+ */
+
+// ProductUI 동적 import를 위한 함수
+async function loadProductUIModule() {
+    try {
+        const module = await import('./../../features/products/productUI.js');
+        return module.ProductUI;
+    } catch (error) {
+        console.error('❌ ProductUI 모듈 로드 실패:', error);
+        return null;
+    }
+}
+
+class ProductManagementComponent {
+    constructor() {
+        this.isInitialized = false;
+        this.products = [];
+        this.filteredProducts = [];
+        this.currentPage = 1;
+        this.itemsPerPage = 10;
+        this.totalPages = 0;
+        this.sortField = 'created_at';
+        this.sortOrder = 'desc';
+        this.productUI = null; // ProductUI 인스턴스
+    }
+
+    /**
+     * 컴포넌트 초기화
+     */
+    async init(container, data = {}) {
+        console.log('🏗️ ProductManagement 컴포넌트 초기화...');
+        
+        // ProductUI 인스턴스 생성
+        try {
+            const ProductUIClass = await loadProductUIModule();
+            if (ProductUIClass) {
+                this.productUI = new ProductUIClass();
+                console.log('✅ ProductUI 인스턴스 생성 완료');
+            } else {
+                console.warn('⚠️ ProductUI 클래스를 로드할 수 없습니다');
+            }
+        } catch (error) {
+            console.error('❌ ProductUI 인스턴스 생성 실패:', error);
+        }
+        
+        // 기존 이벤트 리스너 제거 (중복 방지)
+        this.removeEventListeners();
+        
+        // Supabase에서 상품 데이터 로드
+        try {
+            await this.loadProducts();
+        } catch (error) {
+            console.error('❌ 상품 데이터 로드 실패:', error);
+        }
+        
+        this.setupPagination();
+        
+        // DOM이 완전히 로드된 후 이벤트 리스너 설정
+        setTimeout(() => {
+            this.setupEventListeners();
+            console.log('✅ 이벤트 리스너 설정 완료');
+        }, 100);
+        
+        this.isInitialized = true;
+        console.log('✅ ProductManagement 컴포넌트 초기화 완료');
+    }
+    
+    /**
+     * 이벤트 리스너 제거
+     */
+    removeEventListeners() {
+        try {
+            console.log('🧹 상품관리 이벤트 리스너 정리 중...');
+            
+            // 상품 등록 버튼 정리
+            const addProductBtn = document.getElementById('add-product-btn');
+            if (addProductBtn) {
+                const newBtn = addProductBtn.cloneNode(true);
+                addProductBtn.parentNode.replaceChild(newBtn, addProductBtn);
+            }
+            
+            // 카테고리 관리 버튼 정리
+            const manageCategoriesBtn = document.getElementById('manage-categories-btn');
+            if (manageCategoriesBtn) {
+                const newBtn = manageCategoriesBtn.cloneNode(true);
+                manageCategoriesBtn.parentNode.replaceChild(newBtn, manageCategoriesBtn);
+            }
+            
+            // 일괄 등록 버튼 정리
+            const importBtn = document.getElementById('import-products-btn');
+            if (importBtn) {
+                const newBtn = importBtn.cloneNode(true);
+                importBtn.parentNode.replaceChild(newBtn, importBtn);
+            }
+            
+            // 내보내기 버튼 정리
+            const exportBtn = document.getElementById('export-products-btn');
+            if (exportBtn) {
+                const newBtn = exportBtn.cloneNode(true);
+                exportBtn.parentNode.replaceChild(newBtn, exportBtn);
+            }
+            
+            // 상품 테이블 정리
+            const productTable = document.getElementById('products-table-body');
+            if (productTable) {
+                const newTable = productTable.cloneNode(true);
+                productTable.parentNode.replaceChild(newTable, productTable);
+            }
+            
+            // 상품 모달 정리
+            const productModal = document.getElementById('product-modal');
+            if (productModal) {
+                const newModal = productModal.cloneNode(true);
+                productModal.parentNode.replaceChild(newModal, productModal);
+            }
+            
+            // 전역 이벤트 리스너 정리
+            if (window.productEventListeners) {
+                window.productEventListeners.forEach(listener => {
+                    if (listener.element && listener.event && listener.handler) {
+                        listener.element.removeEventListener(listener.event, listener.handler);
+                    }
+                });
+                window.productEventListeners = [];
+            }
+            
+            console.log('✅ 상품관리 이벤트 리스너 정리 완료');
+        } catch (error) {
+            console.error('❌ 상품관리 이벤트 리스너 정리 실패:', error);
+        }
+    }
+
+    /**
+     * 이벤트 리스너 설정
+     */
+    setupEventListeners() {
+        console.log('🔧 이벤트 리스너 설정 시작...');
+        
+        // 상품 등록 버튼
+        const addProductBtn = document.getElementById('add-product-btn');
+        console.log('🔍 add-product-btn 요소:', addProductBtn);
+        
+        if (addProductBtn) {
+            console.log('✅ 상품등록 버튼 이벤트 리스너 등록');
+            
+            // 기존 이벤트 리스너 제거 (중복 방지)
+            addProductBtn.removeEventListener('click', this.handleAddProductClick);
+            
+            // 새로운 이벤트 리스너 추가
+            this.handleAddProductClick = () => {
+                console.log('🔄 상품등록 버튼 클릭됨!');
+                this.openProductModal();
+            };
+            
+            addProductBtn.addEventListener('click', this.handleAddProductClick);
+            console.log('✅ 상품등록 버튼 이벤트 리스너 등록 완료');
+        } else {
+            console.error('❌ add-product-btn 요소를 찾을 수 없습니다');
+            console.log('🔍 현재 DOM 상태 확인:');
+            console.log('- products-section:', document.getElementById('products-section'));
+            console.log('- 모든 버튼들:', document.querySelectorAll('button[id*="product"]'));
+        }
+
+        // 카테고리 관리 버튼
+        const manageCategoriesBtn = document.getElementById('manage-categories-btn');
+        if (manageCategoriesBtn) {
+            manageCategoriesBtn.addEventListener('click', () => {
+                this.openCategoryManagement();
+            });
+        }
+
+        // 일괄 등록 버튼
+        const importBtn = document.getElementById('import-products-btn');
+        if (importBtn) {
+            importBtn.addEventListener('click', () => {
+                this.openImportModal();
+            });
+        }
+
+        // 내보내기 버튼
+        const exportBtn = document.getElementById('export-products-btn');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', () => {
+                this.exportProducts();
+            });
+        }
+
+        // 검색 및 필터
+        const searchInput = document.getElementById('product-search');
+        const categoryFilter = document.getElementById('product-category-filter');
+        const stockFilter = document.getElementById('product-stock-filter');
+        const priceFilter = document.getElementById('product-price-filter');
+        const filterBtn = document.getElementById('product-filter-btn');
+
+        if (searchInput) {
+            searchInput.addEventListener('input', () => {
+                this.debounceSearch();
+            });
+        }
+
+        if (categoryFilter) {
+            categoryFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        if (stockFilter) {
+            stockFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        if (priceFilter) {
+            priceFilter.addEventListener('change', () => {
+                this.applyFilters();
+            });
+        }
+
+        if (filterBtn) {
+            filterBtn.addEventListener('click', () => {
+                this.applyFilters();
+            });
+        }
+
+        // 전체 선택 체크박스
+        const selectAllCheckbox = document.getElementById('select-all-products');
+        if (selectAllCheckbox) {
+            selectAllCheckbox.addEventListener('change', (e) => {
+                this.toggleSelectAll(e.target.checked);
+            });
+        }
+
+        // 상품명 실시간 중복 체크 (모달이 로드된 후에 설정)
+        this.setupProductNameDuplicateCheck();
+    }
+
+    /**
+     * 상품 데이터 로드 (Supabase 전용)
+     */
+    async loadProducts() {
+        try {
+            console.log('📊 상품 데이터 로드 중...');
+            
+            // productDataManager가 초기화될 때까지 대기
+            if (!window.productDataManager) {
+                console.log('⏳ productDataManager 초기화 대기 중...');
+                let retryCount = 0;
+                const maxRetries = 30; // 3초 대기
+                
+                while (retryCount < maxRetries && !window.productDataManager) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                    retryCount++;
+                }
+                
+                if (!window.productDataManager) {
+                    console.error('❌ productDataManager 초기화 타임아웃');
+                    // productDataManager 강제 초기화 시도
+                    if (window.initializeProductDataManager) {
+                        console.log('🔄 productDataManager 강제 초기화 시도...');
+                        await window.initializeProductDataManager();
+                    }
+                }
+            }
+            
+            // Supabase에서 상품 데이터 로드
+            if (window.productDataManager) {
+                console.log('✅ productDataManager 발견, 상품 데이터 로드 시작...');
+                await window.productDataManager.loadProducts();
+                this.products = window.productDataManager.getAllProducts();
+                console.log(`📦 로드된 상품 수: ${this.products.length}`);
+            } else {
+                console.warn('⚠️ productDataManager를 찾을 수 없습니다. 빈 목록으로 초기화합니다.');
+                this.products = [];
+            }
+            
+            this.filteredProducts = [...this.products];
+            this.updatePagination();
+            this.renderProducts();
+            
+            console.log(`✅ 상품 데이터 로드 완료: ${this.products.length}개`);
+            
+        } catch (error) {
+            console.error('❌ 상품 데이터 로드 실패:', error);
+            this.products = [];
+            this.filteredProducts = [];
+            this.renderProducts();
+        }
+    }
+
+    /**
+     * 상품 목록 렌더링
+     */
+    renderProducts() {
+        console.log('📋 상품 목록 렌더링 시작...');
+        console.log('🔍 렌더링할 상품 수:', this.filteredProducts.length);
+        
+        const tbody = document.getElementById('products-table-body');
+        console.log('🔍 tbody 요소:', tbody);
+        
+        if (!tbody) {
+            console.error('❌ products-table-body 요소를 찾을 수 없습니다!');
+            return;
+        }
+
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
+        const endIndex = startIndex + this.itemsPerPage;
+        const pageProducts = this.filteredProducts.slice(startIndex, endIndex);
+        
+        console.log(`📄 현재 페이지: ${this.currentPage}, 표시할 상품: ${pageProducts.length}개`);
+
+        tbody.innerHTML = '';
+
+        if (pageProducts.length === 0) {
+            tbody.innerHTML = `
+                <tr>
+                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                        <div class="flex flex-col items-center">
+                            <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
+                            <p class="text-sm font-medium text-gray-600">등록된 상품이 없습니다</p>
+                            <p class="text-xs text-gray-500 mt-1">새 상품을 등록해보세요</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        pageProducts.forEach((product, index) => {
+            try {
+                console.log(`🔨 상품 행 생성 중 (${index + 1}/${pageProducts.length}):`, product.name);
+                const row = this.createProductRow(product);
+                tbody.appendChild(row);
+                console.log(`✅ 상품 행 추가 완료: ${product.name}`);
+            } catch (error) {
+                console.error(`❌ 상품 행 생성 실패 (${product.name}):`, error);
+            }
+        });
+
+        console.log(`✅ 총 ${pageProducts.length}개 상품 행 렌더링 완료`);
+        this.updatePaginationInfo();
+    }
+
+    /**
+     * 상품 행 생성
+     */
+    createProductRow(product) {
+        const row = document.createElement('tr');
+        row.className = 'hover:bg-gray-50 transition-colors duration-150';
+        row.dataset.productId = product.id;
+
+        // 재고 상태에 따른 색상
+        const stockStatus = this.getStockStatus(product.stock);
+        const stockColor = this.getStockColor(stockStatus);
+
+        row.innerHTML = `
+            <td class="px-4 py-3 whitespace-nowrap">
+                <input type="checkbox" class="product-checkbox rounded border-gray-300 text-orange-600 focus:ring-orange-500" data-product-id="${product.id}">
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0 h-10 w-10">
+                        ${product.image_url ? 
+                            `<img class="h-10 w-10 rounded-lg object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">` :
+                            `<div class="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
+                                <i class="fas fa-image text-gray-400 text-sm"></i>
+                            </div>`
+                        }
+                    </div>
+                    <div class="ml-3">
+                        <div class="text-sm font-medium text-gray-900">${product.name}</div>
+                        <div class="text-xs text-gray-500">${product.description || '설명 없음'}</div>
+                    </div>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
+                    ${product.category || '미분류'}
+                </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="text-sm font-semibold text-gray-900">${this.formatCurrency(product.price)}</div>
+                ${product.cost ? `<div class="text-xs text-gray-500">원가: ${this.formatCurrency(product.cost)}</div>` : ''}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex items-center">
+                    <span class="text-sm font-medium ${stockColor}">${product.stock || 0}</span>
+                    <span class="text-xs text-gray-500 ml-1">개</span>
+                </div>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${stockColor.replace('text-', 'bg-').replace('text-', 'text-')}">
+                    ${this.getStockStatusText(stockStatus)}
+                </span>
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
+                ${this.formatDate(product.created_at)}
+            </td>
+            <td class="px-4 py-3 whitespace-nowrap">
+                <div class="flex space-x-1">
+                    <button class="edit-product-btn text-blue-600 hover:text-blue-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="수정">
+                        <i class="fas fa-edit text-xs"></i>
+                    </button>
+                    <button class="duplicate-product-btn text-green-600 hover:text-green-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="복제">
+                        <i class="fas fa-copy text-xs"></i>
+                    </button>
+                    <button class="delete-product-btn text-red-600 hover:text-red-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="삭제">
+                        <i class="fas fa-trash text-xs"></i>
+                    </button>
+                </div>
+            </td>
+        `;
+
+        // 행 이벤트 리스너 추가
+        this.addRowEventListeners(row, product);
+
+        return row;
+    }
+
+    /**
+     * 행 이벤트 리스너 추가
+     */
+    addRowEventListeners(row, product) {
+        // 편집 버튼
+        const editBtn = row.querySelector('.edit-product-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', () => {
+                this.editProduct(product);
+            });
+        }
+
+        // 복제 버튼
+        const duplicateBtn = row.querySelector('.duplicate-product-btn');
+        if (duplicateBtn) {
+            duplicateBtn.addEventListener('click', () => {
+                this.duplicateProduct(product);
+            });
+        }
+
+        // 삭제 버튼
+        const deleteBtn = row.querySelector('.delete-product-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', () => {
+                this.deleteProduct(product);
+            });
+        }
+
+        // 체크박스
+        const checkbox = row.querySelector('.product-checkbox');
+        if (checkbox) {
+            checkbox.addEventListener('change', () => {
+                this.updateSelectAllState();
+            });
+        }
+    }
+
+    /**
+     * 재고 상태 확인
+     */
+    getStockStatus(stock) {
+        if (stock === 0) return 'out-of-stock';
+        if (stock <= 5) return 'low-stock';
+        return 'in-stock';
+    }
+
+    /**
+     * 재고 상태 색상
+     */
+    getStockColor(status) {
+        const colors = {
+            'in-stock': 'text-green-600',
+            'low-stock': 'text-yellow-600',
+            'out-of-stock': 'text-red-600'
+        };
+        return colors[status] || 'text-gray-600';
+    }
+
+    /**
+     * 재고 상태 텍스트
+     */
+    getStockStatusText(status) {
+        const texts = {
+            'in-stock': '재고 있음',
+            'low-stock': '재고 부족',
+            'out-of-stock': '품절'
+        };
+        return texts[status] || '알 수 없음';
+    }
+
+    /**
+     * 디바운스 검색
+     */
+    debounceSearch() {
+        clearTimeout(this.searchTimeout);
+        this.searchTimeout = setTimeout(() => {
+            this.applyFilters();
+        }, 300);
+    }
+
+    /**
+     * 필터 적용
+     */
+    applyFilters() {
+        const searchTerm = document.getElementById('product-search')?.value.toLowerCase() || '';
+        const categoryFilter = document.getElementById('product-category-filter')?.value || '';
+        const stockFilter = document.getElementById('product-stock-filter')?.value || '';
+        const priceFilter = document.getElementById('product-price-filter')?.value || '';
+
+        this.filteredProducts = this.products.filter(product => {
+            const matchesSearch = !searchTerm || 
+                product.name.toLowerCase().includes(searchTerm) ||
+                (product.description && product.description.toLowerCase().includes(searchTerm));
+            
+            const matchesCategory = !categoryFilter || product.category === categoryFilter;
+            
+            const matchesStock = !stockFilter || this.getStockStatus(product.stock) === stockFilter;
+            
+            const matchesPrice = !priceFilter || this.matchesPriceRange(product.price, priceFilter);
+
+            return matchesSearch && matchesCategory && matchesStock && matchesPrice;
+        });
+
+        this.currentPage = 1;
+        this.updatePagination();
+        this.renderProducts();
+    }
+
+    /**
+     * 가격 범위 매칭
+     */
+    matchesPriceRange(price, range) {
+        const priceNum = parseFloat(price) || 0;
+        
+        switch (range) {
+            case '0-10000':
+                return priceNum <= 10000;
+            case '10000-30000':
+                return priceNum > 10000 && priceNum <= 30000;
+            case '30000-50000':
+                return priceNum > 30000 && priceNum <= 50000;
+            case '50000+':
+                return priceNum > 50000;
+            default:
+                return true;
+        }
+    }
+
+    /**
+     * 페이지네이션 설정
+     */
+    setupPagination() {
+        const prevBtn = document.getElementById('products-pagination-prev');
+        const nextBtn = document.getElementById('products-pagination-next');
+
+        if (prevBtn) {
+            prevBtn.addEventListener('click', () => {
+                if (this.currentPage > 1) {
+                    this.currentPage--;
+                    this.renderProducts();
+                }
+            });
+        }
+
+        if (nextBtn) {
+            nextBtn.addEventListener('click', () => {
+                if (this.currentPage < this.totalPages) {
+                    this.currentPage++;
+                    this.renderProducts();
+                }
+            });
+        }
+    }
+
+    /**
+     * 페이지네이션 업데이트
+     */
+    updatePagination() {
+        this.totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+        this.renderPaginationNumbers();
+    }
+
+    /**
+     * 페이지네이션 번호 렌더링
+     */
+    renderPaginationNumbers() {
+        const container = document.getElementById('products-pagination-numbers');
+        if (!container) return;
+
+        container.innerHTML = '';
+
+        const startPage = Math.max(1, this.currentPage - 2);
+        const endPage = Math.min(this.totalPages, this.currentPage + 2);
+
+        for (let i = startPage; i <= endPage; i++) {
+            const pageBtn = document.createElement('button');
+            pageBtn.className = `relative inline-flex items-center px-3 py-2 text-sm font-medium transition-colors duration-150 ${
+                i === this.currentPage 
+                    ? 'z-10 bg-orange-500 text-white shadow-sm' 
+                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            }`;
+            pageBtn.textContent = i;
+            pageBtn.addEventListener('click', () => {
+                this.currentPage = i;
+                this.renderProducts();
+            });
+            container.appendChild(pageBtn);
+        }
+    }
+
+    /**
+     * 페이지네이션 정보 업데이트
+     */
+    updatePaginationInfo() {
+        const infoElement = document.getElementById('products-pagination-info');
+        if (!infoElement) return;
+
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredProducts.length);
+        const total = this.filteredProducts.length;
+
+        infoElement.textContent = `${startIndex}-${endIndex} / 총 ${total}개`;
+    }
+
+    /**
+     * 전체 선택 토글
+     */
+    toggleSelectAll(checked) {
+        const checkboxes = document.querySelectorAll('.product-checkbox');
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = checked;
+        });
+    }
+
+    /**
+     * 전체 선택 상태 업데이트
+     */
+    updateSelectAllState() {
+        const checkboxes = document.querySelectorAll('.product-checkbox');
+        const checkedBoxes = document.querySelectorAll('.product-checkbox:checked');
+        const selectAllCheckbox = document.getElementById('select-all-products');
+
+        if (selectAllCheckbox) {
+            selectAllCheckbox.checked = checkboxes.length > 0 && checkboxes.length === checkedBoxes.length;
+            selectAllCheckbox.indeterminate = checkedBoxes.length > 0 && checkedBoxes.length < checkboxes.length;
+        }
+    }
+
+    /**
+     * 상품 모달 열기
+     */
+    async openProductModal(productId = null) {
+        try {
+            console.log('📝 상품 등록 모달 열기:', productId);
+            
+            // 모달이 이미 로드되어 있는지 확인
+            let modal = document.getElementById('product-modal');
+            if (!modal) {
+                console.log('📦 상품 모달 동적 로드 중...');
+                if (window.loadProductModal) {
+                    const modalLoaded = await window.loadProductModal();
+                    if (modalLoaded) {
+                        modal = document.getElementById('product-modal');
+                        console.log('✅ 상품 모달 로드 완료');
+                    } else {
+                        console.error('❌ 상품 모달 로드 실패');
+                        return;
+                    }
+                } else {
+                    console.error('❌ loadProductModal 함수를 찾을 수 없습니다');
+                    return;
+                }
+            }
+            
+            // 모달 로드 후 폼 요소 존재 여부 확인
+            if (modal) {
+                const requiredFormElements = [
+                    'product-form-name',
+                    'product-form-category',
+                    'product-form-price',
+                    'product-form-stock'
+                ];
+                
+                const missingElements = requiredFormElements.filter(id => !document.getElementById(id));
+                if (missingElements.length > 0) {
+                    console.error('❌ 모달 로드 후 필수 폼 요소를 찾을 수 없습니다:', missingElements);
+                    console.log('🔍 DOM에서 product-form 요소들 검색:', document.querySelectorAll('[id*="product-form"]'));
+                    alert('상품 등록 폼이 완전히 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
+                    return;
+                }
+            }
+            
+            if (modal) {
+                console.log('✅ 상품 모달 발견, 표시 중...');
+                
+                // 모달 표시
+                modal.classList.remove('hidden');
+                modal.style.display = 'flex';
+                
+                // 애니메이션을 위한 약간의 지연
+                setTimeout(() => {
+                    const modalContent = document.getElementById('product-modal-content');
+                    if (modalContent) {
+                        modalContent.classList.remove('scale-95', 'opacity-0');
+                        modalContent.classList.add('scale-100', 'opacity-100');
+                    }
+                }, 10);
+                
+                // 모달 제목 설정
+                const modalTitle = document.getElementById('product-modal-title');
+                if (modalTitle) {
+                    if (productId) {
+                        modalTitle.textContent = '상품 수정';
+                        console.log('📝 모달 제목을 "상품 수정"으로 설정');
+                    } else {
+                        modalTitle.textContent = '새 상품 등록';
+                        console.log('➕ 모달 제목을 "새 상품 등록"으로 설정');
+                    }
+                }
+                
+                // 폼 초기화
+                this.resetProductForm();
+                
+                // 카테고리 드롭다운 초기화
+                console.log('🔄 카테고리 드롭다운 초기화 중...');
+                if (window.updateProductCategoryDropdown) {
+                    await window.updateProductCategoryDropdown();
+                }
+                console.log('✅ 카테고리 드롭다운 초기화 완료');
+                
+                // 카테고리 이벤트 리스너 설정 (새 카테고리 추가 기능)
+                console.log('🔄 카테고리 이벤트 리스너 설정 중...');
+                if (this.productUI && typeof this.productUI.setupCategoryEventListeners === 'function') {
+                    this.productUI.setupCategoryEventListeners();
+                    console.log('✅ 카테고리 이벤트 리스너 설정 완료');
+                } else {
+                    console.error('❌ ProductUI 또는 setupCategoryEventListeners를 찾을 수 없습니다');
+                    console.log('🔍 this.productUI:', this.productUI);
+                    
+                    // 대체 방법: 직접 이벤트 리스너 등록
+                    this.setupCategoryEventListenersFallback();
+                }
+                
+                // 상품명 중복 체크 기능 설정
+                console.log('🔄 상품명 중복 체크 기능 설정 중...');
+                this.setupProductNameDuplicateCheck();
+                console.log('✅ 상품명 중복 체크 기능 설정 완료');
+                
+                // 수정 모드인 경우 데이터 로드
+                if (productId) {
+                    await this.loadProductForEdit(productId);
+                }
+                
+                // ESC 키로 모달 닫기 이벤트 추가
+                this.setupModalKeyboardEvents();
+                
+                // 저장 버튼 이벤트 리스너 추가
+                this.setupModalSaveButton();
+                
+                console.log('✅ 상품 모달 열기 완료');
+            } else {
+                console.error('❌ 상품 모달을 찾을 수 없습니다');
+                console.log('🔍 DOM에서 product-modal 검색 결과:', document.querySelectorAll('[id*="product-modal"]'));
+            }
+        } catch (error) {
+            console.error('❌ 상품 모달 열기 실패:', error);
+            alert('상품 등록 모달을 열 수 없습니다. 오류: ' + error.message);
+        }
+    }
+
+    /**
+     * 상품 편집
+     */
+    async editProduct(product) {
+        console.log('✏️ 상품 편집:', product.name);
+        await this.openProductModal(product.id);
+    }
+
+    /**
+     * 상품 폼 초기화
+     */
+    resetProductForm() {
+        const form = document.getElementById('product-form');
+        if (form) {
+            form.reset();
+            // 숨겨진 필드들 초기화
+            document.getElementById('product-form-id').value = '';
+            document.getElementById('product-form-created-at').value = '';
+        }
+    }
+
+    /**
+     * 상품 저장
+     */
+    async saveProduct() {
+        try {
+            console.log('💾 상품 저장 시작...');
+            
+            // 안전한 폼 데이터 수집
+            const getFormValue = (elementId, defaultValue = '') => {
+                const element = document.getElementById(elementId);
+                return element ? element.value : defaultValue;
+            };
+            
+            const getFormNumber = (elementId, defaultValue = 0) => {
+                const element = document.getElementById(elementId);
+                if (!element) return defaultValue;
+                const value = parseFloat(element.value);
+                return isNaN(value) ? defaultValue : value;
+            };
+            
+            const formData = {
+                id: getFormValue('product-form-id'), // 수정 모드용 ID 추가
+                name: getFormValue('product-form-name'),
+                category: getFormValue('product-form-category'),
+                price: getFormNumber('product-form-price', 0),
+                cost: getFormNumber('product-form-wholesale-price', 0), // 올바른 ID 사용
+                stock: getFormNumber('product-form-stock', 0),
+                description: getFormValue('product-form-description'),
+                size: getFormValue('product-form-size-select'),
+                shipping_option: getFormValue('product-form-shipping')
+            };
+            
+            console.log('📋 수집된 폼 데이터:', formData);
+            
+            // 필수 필드 검증
+            if (!formData.name || !formData.category) {
+                alert('상품명과 카테고리는 필수 입력 항목입니다.');
+                return;
+            }
+            
+            // 폼 요소 존재 여부 확인
+            const requiredElements = [
+                'product-form-name',
+                'product-form-category', 
+                'product-form-price',
+                'product-form-stock'
+            ];
+            
+            const missingElements = requiredElements.filter(id => !document.getElementById(id));
+            if (missingElements.length > 0) {
+                console.error('❌ 필수 폼 요소를 찾을 수 없습니다:', missingElements);
+                alert('상품 등록 폼이 완전히 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+                return;
+            }
+            
+            console.log('📝 저장할 상품 데이터:', formData);
+            
+            // 수정 모드인지 확인 (ID가 있고 유효한 값인지 확인)
+            const isEditMode = formData.id && formData.id.trim() !== '' && formData.id !== 'undefined';
+            console.log('🔍 저장 모드:', isEditMode ? '수정' : '등록');
+            console.log('🔍 폼 데이터 ID:', formData.id);
+            
+            // Supabase를 통한 상품 저장/수정
+            if (window.productDataManager) {
+                if (isEditMode) {
+                    console.log('🌐 Supabase를 통한 상품 수정 시작...');
+                    await window.productDataManager.updateProduct(formData.id, formData);
+                    console.log('✅ Supabase 상품 수정 완료');
+                } else {
+                    console.log('🌐 Supabase를 통한 상품 등록 시작...');
+                    await window.productDataManager.addProduct(formData);
+                    console.log('✅ Supabase 상품 등록 완료');
+                }
+                
+                // 모달 닫기
+                this.closeProductModal();
+                
+                // 상품 목록 새로고침
+                await this.loadProducts();
+                
+                alert(`상품이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다.`);
+            } else {
+                console.error('❌ productDataManager를 찾을 수 없습니다');
+                alert('상품 데이터 관리자를 찾을 수 없습니다.');
+            }
+            
+        } catch (error) {
+            console.error('❌ 상품 저장 실패:', error);
+            
+            // 중복 상품명 에러인 경우 특별 처리
+            if (error.message.includes('이미 등록된 상품명입니다')) {
+                // 에러 메시지에 기존 상품 정보가 포함되어 있으므로 그대로 표시
+                alert(error.message);
+            } else {
+                // 기타 에러의 경우 일반적인 메시지 표시
+                alert('상품 저장 중 오류가 발생했습니다: ' + error.message);
+            }
+        }
+    }
+
+    /**
+     * 상품 모달 닫기
+     */
+    closeProductModal() {
+        const modal = document.getElementById('product-modal');
+        const modalContent = document.getElementById('product-modal-content');
+        
+        if (modal && modalContent) {
+            // 애니메이션 효과
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            // 애니메이션 완료 후 모달 숨기기
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                
+                // 애니메이션 클래스 초기화
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 300);
+        }
+    }
+    
+    /**
+     * 모달 키보드 이벤트 설정
+     */
+    setupModalKeyboardEvents() {
+        // ESC 키로 모달 닫기
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                this.closeProductModal();
+                document.removeEventListener('keydown', handleKeyDown);
+            }
+        };
+        
+        document.addEventListener('keydown', handleKeyDown);
+        
+        // 모달 배경 클릭으로 닫기
+        const modal = document.getElementById('product-modal');
+        if (modal) {
+            modal.addEventListener('click', (event) => {
+                if (event.target === modal) {
+                    this.closeProductModal();
+                }
+            });
+        }
+    }
+    
+    /**
+     * 모달 저장 버튼 이벤트 설정
+     */
+    setupModalSaveButton() {
+        const saveBtn = document.getElementById('save-product-btn');
+        if (saveBtn) {
+            // 기존 이벤트 리스너 제거 (중복 방지)
+            saveBtn.removeEventListener('click', this.handleSaveProduct);
+            
+            // 새로운 이벤트 리스너 추가
+            this.handleSaveProduct = async () => {
+                console.log('💾 상품 저장 버튼 클릭됨');
+                await this.saveProduct();
+            };
+            
+            saveBtn.addEventListener('click', this.handleSaveProduct);
+            console.log('✅ 모달 저장 버튼 이벤트 리스너 등록 완료');
+        }
+    }
+
+    /**
+     * 편집용 상품 데이터 로드
+     */
+    async loadProductForEdit(productId) {
+        try {
+            console.log('📝 편집용 상품 데이터 로드:', productId);
+            
+            if (window.productDataManager) {
+                const product = window.productDataManager.getProductById(productId);
+                if (product) {
+                    console.log('📦 편집할 상품 데이터:', product);
+                    
+                    // 폼 필드들이 로드될 때까지 기다리기
+                    await this.waitForFormFields();
+                    
+                    // 폼 필드에 데이터 채우기
+                    this.fillProductForm(product);
+                    
+                    console.log('✅ 편집용 상품 데이터 로드 완료');
+                } else {
+                    console.error('❌ 상품을 찾을 수 없습니다:', productId);
+                }
+            } else {
+                console.error('❌ productDataManager를 찾을 수 없습니다');
+            }
+        } catch (error) {
+            console.error('❌ 편집용 상품 데이터 로드 실패:', error);
+        }
+    }
+    
+    // 폼 필드들이 로드될 때까지 기다리는 함수
+    async waitForFormFields() {
+        const requiredFields = [
+            'product-form-name',
+            'product-form-category', 
+            'product-form-price',
+            'product-form-wholesale-price', // 실제 HTML 필드 ID
+            'product-form-stock',
+            'product-form-description',
+            'product-form-image',
+            'product-form-id',
+            'product-form-created-at'
+        ];
+        
+        let retryCount = 0;
+        const maxRetries = 50; // 5초 대기 (시간 증가)
+        
+        console.log('🔍 폼 필드 로드 대기 시작...');
+        console.log('🔍 찾는 필드들:', requiredFields);
+        
+        while (retryCount < maxRetries) {
+            const missingFields = requiredFields.filter(fieldId => !document.getElementById(fieldId));
+            
+            if (missingFields.length === 0) {
+                console.log('✅ 모든 폼 필드 로드 완료');
+                return;
+            }
+            
+            if (retryCount % 10 === 0) { // 10번마다 로그 출력
+                console.log(`🔄 폼 필드 로드 대기 중... (${retryCount + 1}/${maxRetries})`);
+                console.log('❌ 누락된 필드들:', missingFields);
+                
+                // DOM 구조 디버깅
+                console.log('🔍 현재 DOM에서 찾을 수 있는 폼 필드들:');
+                const allFormFields = document.querySelectorAll('#product-form input, #product-form select, #product-form textarea');
+                allFormFields.forEach(field => {
+                    console.log(`  - ${field.id}: ${field.type || field.tagName}`);
+                });
+            }
+            
+            await new Promise(resolve => setTimeout(resolve, 100));
+            retryCount++;
+        }
+        
+        console.error('❌ 폼 필드 로드 타임아웃');
+        throw new Error('상품 폼 필드들을 찾을 수 없습니다. 페이지를 새로고침해주세요.');
+    }
+    
+    // 상품 폼에 데이터 채우는 함수
+    fillProductForm(product) {
+        try {
+            const fields = {
+                'product-form-name': product.name || '',
+                'product-form-category': product.category || '',
+                'product-form-price': product.price || '',
+                'product-form-wholesale-price': product.cost || '', // 실제 HTML 필드 ID
+                'product-form-stock': product.stock || '',
+                'product-form-description': product.description || '',
+                'product-form-image': product.image_url || '',
+                'product-form-id': product.id,
+                'product-form-created-at': product.created_at
+            };
+            
+            Object.entries(fields).forEach(([fieldId, value]) => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.value = value;
+                    console.log(`✅ ${fieldId} 설정:`, value);
+                } else {
+                    console.warn(`⚠️ ${fieldId} 필드를 찾을 수 없습니다`);
+                }
+            });
+            
+        } catch (error) {
+            console.error('❌ 상품 폼 데이터 채우기 실패:', error);
+        }
+    }
+
+    /**
+     * 상품 복제
+     */
+    async duplicateProduct(product) {
+        if (confirm(`"${product.name}" 상품을 복제하시겠습니까?`)) {
+            try {
+                const duplicatedProduct = {
+                    ...product,
+                    id: this.generateUUID(),
+                    name: `${product.name} (복사본)`,
+                    created_at: new Date().toISOString(),
+                    updated_at: new Date().toISOString()
+                };
+
+                // productDataManager를 통해 복제
+                if (window.productDataManager) {
+                    await window.productDataManager.addProduct(duplicatedProduct);
+                    await this.loadProducts(); // 데이터 새로고침
+                    console.log('📋 상품 복제 완료:', duplicatedProduct.name);
+                } else {
+                    console.error('❌ productDataManager를 찾을 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('❌ 상품 복제 실패:', error);
+                alert('상품 복제에 실패했습니다: ' + error.message);
+            }
+        }
+    }
+
+    /**
+     * 상품 삭제
+     */
+    async deleteProduct(product) {
+        if (confirm(`정말로 "${product.name}" 상품을 삭제하시겠습니까?`)) {
+            try {
+                // productDataManager를 통해 삭제
+                if (window.productDataManager) {
+                    await window.productDataManager.deleteProduct(product.id);
+                    await this.loadProducts(); // 데이터 새로고침
+                    console.log('🗑️ 상품 삭제 완료:', product.name);
+                } else {
+                    console.error('❌ productDataManager를 찾을 수 없습니다.');
+                }
+            } catch (error) {
+                console.error('❌ 상품 삭제 실패:', error);
+                alert('상품 삭제에 실패했습니다: ' + error.message);
+            }
+        }
+    }
+
+    /**
+     * 일괄 등록 모달 열기
+     */
+    openImportModal() {
+        console.log('📤 상품 일괄 등록 모달 열기');
+        
+        const modal = document.getElementById('product-import-modal');
+        if (modal) {
+            modal.classList.remove('hidden');
+            modal.style.display = 'flex';
+            
+            // 모달 초기화
+            this.resetImportModal();
+            
+            // 이벤트 리스너 설정
+            this.setupImportModalEvents();
+            
+            console.log('✅ 상품 일괄등록 모달 열기 완료');
+        } else {
+            console.error('❌ 상품 일괄등록 모달을 찾을 수 없습니다');
+        }
+    }
+
+    /**
+     * 일괄등록 모달 초기화
+     */
+    resetImportModal() {
+        // 직접 입력 방식으로 초기화
+        document.getElementById('product-upload-method-manual').classList.add('active');
+        document.getElementById('product-upload-method-excel').classList.remove('active');
+        document.getElementById('product-manual-input-section').classList.remove('hidden');
+        document.getElementById('product-excel-upload-section').classList.add('hidden');
+        
+        // 입력 필드 초기화
+        document.getElementById('product-import-text').value = '';
+        document.getElementById('product-excel-input').value = '';
+        
+        // 미리보기 및 진행상황 숨김
+        document.getElementById('product-import-preview').classList.add('hidden');
+        document.getElementById('product-import-progress').classList.add('hidden');
+        
+        // 시작 버튼 비활성화
+        document.getElementById('product-import-start').disabled = true;
+        document.getElementById('product-import-info').textContent = '상품 정보를 입력하거나 파일을 업로드해주세요.';
+    }
+
+    /**
+     * 일괄등록 모달 이벤트 리스너 설정
+     */
+    setupImportModalEvents() {
+        // 업로드 방식 전환
+        document.getElementById('product-upload-method-manual').addEventListener('click', () => {
+            this.switchUploadMethod('manual');
+        });
+        
+        document.getElementById('product-upload-method-excel').addEventListener('click', () => {
+            this.switchUploadMethod('excel');
+        });
+        
+        // 직접 입력 텍스트 변경
+        document.getElementById('product-import-text').addEventListener('input', () => {
+            this.handleManualInput();
+        });
+        
+        // 엑셀 파일 업로드
+        document.getElementById('product-excel-input').addEventListener('change', (e) => {
+            this.handleExcelFileUpload(e);
+        });
+        
+        // 시작 버튼
+        document.getElementById('product-import-start').addEventListener('click', () => {
+            this.startProductImport();
+        });
+        
+        // 취소 버튼
+        document.getElementById('product-import-cancel').addEventListener('click', () => {
+            this.closeImportModal();
+        });
+        
+        // 닫기 버튼
+        document.getElementById('close-product-import-modal').addEventListener('click', () => {
+            this.closeImportModal();
+        });
+    }
+
+    /**
+     * 업로드 방식 전환
+     */
+    switchUploadMethod(method) {
+        const manualBtn = document.getElementById('product-upload-method-manual');
+        const excelBtn = document.getElementById('product-upload-method-excel');
+        const manualSection = document.getElementById('product-manual-input-section');
+        const excelSection = document.getElementById('product-excel-upload-section');
+        
+        if (method === 'manual') {
+            manualBtn.classList.add('active');
+            excelBtn.classList.remove('active');
+            manualSection.classList.remove('hidden');
+            excelSection.classList.add('hidden');
+        } else {
+            excelBtn.classList.add('active');
+            manualBtn.classList.remove('active');
+            excelSection.classList.remove('hidden');
+            manualSection.classList.add('hidden');
+        }
+        
+        // 시작 버튼 상태 업데이트
+        this.updateImportButtonState();
+    }
+
+    /**
+     * 직접 입력 처리
+     */
+    handleManualInput() {
+        const text = document.getElementById('product-import-text').value.trim();
+        if (text) {
+            this.parseManualInput(text);
+        } else {
+            this.hidePreview();
+        }
+        this.updateImportButtonState();
+    }
+
+    /**
+     * 직접 입력 데이터 파싱
+     */
+    parseManualInput(text) {
+        try {
+            const lines = text.split('\n').filter(line => line.trim());
+            const products = [];
+            
+            lines.forEach((line, index) => {
+                const parts = line.split(',').map(part => part.trim());
+                if (parts.length >= 4) { // 최소 상품명, 카테고리, 판매가, 매입가
+                    products.push({
+                        name: parts[0] || '',
+                        category: parts[1] || '',
+                        price: parseFloat(parts[2]) || 0,
+                        cost: parseFloat(parts[3]) || 0,
+                        stock: parseInt(parts[4]) || 0,
+                        size: parts[5] || '',
+                        shipping_option: parts[6] || '일반배송',
+                        description: parts[7] || '',
+                        row: index + 1
+                    });
+                }
+            });
+            
+            // 전역 변수에 데이터 저장
+            window.productImportData = products;
+            
+            if (products.length > 0) {
+                this.showPreview(products);
+            } else {
+                this.hidePreview();
+            }
+        } catch (error) {
+            console.error('❌ 직접 입력 파싱 실패:', error);
+            window.productImportData = null;
+            this.hidePreview();
+        }
+    }
+
+    /**
+     * 엑셀 파일 업로드 처리
+     */
+    handleExcelFileUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+        
+        // 파일 정보 표시
+        this.showFileInfo(file);
+        
+        // 파일 읽기
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                this.parseExcelData(e.target.result, file.name);
+            } catch (error) {
+                console.error('❌ 엑셀 파일 파싱 실패:', error);
+                alert('파일을 읽을 수 없습니다. 파일 형식을 확인해주세요.');
+            }
+        };
+        
+        if (file.name.endsWith('.csv')) {
+            reader.readAsText(file);
+        } else {
+            reader.readAsArrayBuffer(file);
+        }
+    }
+
+    /**
+     * 파일 정보 표시
+     */
+    showFileInfo(file) {
+        document.getElementById('product-upload-area-content').classList.add('hidden');
+        document.getElementById('product-upload-file-info').classList.remove('hidden');
+        document.getElementById('product-upload-file-name').textContent = file.name;
+        document.getElementById('product-upload-file-size').textContent = this.formatFileSize(file.size);
+    }
+
+    /**
+     * 파일 크기 포맷팅
+     */
+    formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+    }
+
+    /**
+     * 엑셀 데이터 파싱
+     */
+    parseExcelData(data, fileName) {
+        try {
+            let products = [];
+            
+            if (fileName.endsWith('.csv')) {
+                // CSV 파싱
+                const lines = data.split('\n').filter(line => line.trim());
+                lines.forEach((line, index) => {
+                    if (index === 0) return; // 헤더 스킵
+                    const parts = line.split(',').map(part => part.trim());
+                    if (parts.length >= 4) {
+                        products.push({
+                            name: parts[0] || '',
+                            category: parts[1] || '',
+                            price: parseFloat(parts[2]) || 0,
+                            cost: parseFloat(parts[3]) || 0,
+                            stock: parseInt(parts[4]) || 0,
+                            size: parts[5] || '',
+                            shipping_option: parts[6] || '일반배송',
+                            description: parts[7] || '',
+                            row: index + 1
+                        });
+                    }
+                });
+            } else {
+                // Excel 파일은 간단한 텍스트 파싱 (실제로는 XLSX 라이브러리 필요)
+                console.log('Excel 파일 파싱은 CSV로 변환 후 사용하세요.');
+                alert('Excel 파일은 CSV 형식으로 저장 후 업로드해주세요.');
+                return;
+            }
+            
+            if (products.length > 0) {
+                this.showPreview(products);
+            } else {
+                this.hidePreview();
+            }
+        } catch (error) {
+            console.error('❌ 엑셀 데이터 파싱 실패:', error);
+            this.hidePreview();
+        }
+    }
+
+    /**
+     * 미리보기 표시
+     */
+    showPreview(products) {
+        const previewContent = document.getElementById('product-preview-content');
+        const previewSection = document.getElementById('product-import-preview');
+        
+        let html = `
+            <div class="text-sm text-gray-600 mb-3">
+                총 <strong>${products.length}</strong>개의 상품이 등록됩니다.
+            </div>
+            <div class="overflow-x-auto">
+                <table class="min-w-full text-sm">
+                    <thead class="bg-gray-100">
+                        <tr>
+                            <th class="px-2 py-1 text-left">상품명</th>
+                            <th class="px-2 py-1 text-left">카테고리</th>
+                            <th class="px-2 py-1 text-right">판매가</th>
+                            <th class="px-2 py-1 text-right">매입가</th>
+                            <th class="px-2 py-1 text-right">재고</th>
+                            <th class="px-2 py-1 text-left">사이즈</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+        
+        products.slice(0, 10).forEach(product => {
+            html += `
+                <tr class="border-b border-gray-200">
+                    <td class="px-2 py-1">${product.name}</td>
+                    <td class="px-2 py-1">${product.category}</td>
+                    <td class="px-2 py-1 text-right">${product.price.toLocaleString()}</td>
+                    <td class="px-2 py-1 text-right">${product.cost.toLocaleString()}</td>
+                    <td class="px-2 py-1 text-right">${product.stock}</td>
+                    <td class="px-2 py-1">${product.size}</td>
+                </tr>
+            `;
+        });
+        
+        if (products.length > 10) {
+            html += `
+                <tr>
+                    <td colspan="6" class="px-2 py-1 text-center text-gray-500">
+                        ... 외 ${products.length - 10}개 상품
+                    </td>
+                </tr>
+            `;
+        }
+        
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+        
+        previewContent.innerHTML = html;
+        previewSection.classList.remove('hidden');
+        
+        // 전역 변수에 저장
+        window.productImportData = products;
+    }
+
+    /**
+     * 미리보기 숨김
+     */
+    hidePreview() {
+        document.getElementById('product-import-preview').classList.add('hidden');
+        window.productImportData = null;
+    }
+
+    /**
+     * 시작 버튼 상태 업데이트
+     */
+    updateImportButtonState() {
+        const startBtn = document.getElementById('product-import-start');
+        const hasData = window.productImportData && window.productImportData.length > 0;
+        startBtn.disabled = !hasData;
+        
+        if (hasData) {
+            document.getElementById('product-import-info').textContent = `${window.productImportData.length}개의 상품이 등록됩니다.`;
+        } else {
+            document.getElementById('product-import-info').textContent = '상품 정보를 입력하거나 파일을 업로드해주세요.';
+        }
+    }
+
+    /**
+     * 상품 일괄등록 시작
+     */
+    async startProductImport() {
+        if (!window.productImportData || window.productImportData.length === 0) {
+            alert('등록할 상품 데이터가 없습니다.');
+            return;
+        }
+        
+        const products = window.productImportData;
+        const total = products.length;
+        let successCount = 0;
+        let failCount = 0;
+        
+        // 진행상황 표시
+        this.showProgress();
+        
+        // productDataManager를 통한 일괄 저장
+        for (let i = 0; i < products.length; i++) {
+            try {
+                const product = products[i];
+                
+                // 필수 필드 검증
+                if (!product.name || !product.category) {
+                    console.warn(`⚠️ ${i + 1}번째 상품 필수 필드 누락:`, product);
+                    failCount++;
+                    continue;
+                }
+                
+                // Supabase를 통한 상품 저장
+                if (window.productDataManager) {
+                    await window.productDataManager.addProduct(product);
+                    successCount++;
+                    console.log(`✅ 상품 등록 성공: ${product.name}`);
+                } else {
+                    console.error('❌ productDataManager를 찾을 수 없습니다');
+                    failCount++;
+                }
+                
+                // 진행상황 업데이트
+                this.updateProgress(i + 1, total);
+                
+                // UI 업데이트를 위한 잠시 대기
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+            } catch (error) {
+                console.error(`❌ ${i + 1}번째 상품 등록 실패:`, error);
+                failCount++;
+            }
+        }
+        
+        // 완료 처리
+        this.hideProgress();
+        this.closeImportModal();
+        
+        // 결과 알림
+        if (successCount > 0) {
+            alert(`🎉 상품 일괄등록 완료!\n\n성공: ${successCount}개\n실패: ${failCount}개`);
+            
+            // 상품 목록 새로고침
+            await this.loadProducts();
+        } else {
+            alert(`❌ 상품 등록 실패\n\n실패: ${failCount}개`);
+        }
+    }
+
+    /**
+     * 진행상황 표시
+     */
+    showProgress() {
+        document.getElementById('product-import-progress').classList.remove('hidden');
+    }
+
+    /**
+     * 진행상황 업데이트
+     */
+    updateProgress(current, total) {
+        const progressBar = document.getElementById('product-progress-bar');
+        const progressText = document.getElementById('product-progress-text');
+        
+        const percentage = (current / total) * 100;
+        progressBar.style.width = `${percentage}%`;
+        progressText.textContent = `${current} / ${total}`;
+    }
+
+    /**
+     * 진행상황 숨김
+     */
+    hideProgress() {
+        document.getElementById('product-import-progress').classList.add('hidden');
+    }
+
+    /**
+     * 일괄등록 모달 닫기
+     */
+    closeImportModal() {
+        const modal = document.getElementById('product-import-modal');
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
+        }
+        
+        // 데이터 초기화
+        window.productImportData = null;
+        this.hidePreview();
+        this.hideProgress();
+    }
+
+    /**
+     * 상품 데이터 내보내기
+     */
+    exportProducts() {
+        console.log('📤 상품 데이터 내보내기');
+        // TODO: Excel 내보내기 구현
+    }
+
+    /**
+     * UUID 생성
+     */
+    generateUUID() {
+        return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+            const r = Math.random() * 16 | 0;
+            const v = c == 'x' ? r : (r & 0x3 | 0x8);
+            return v.toString(16);
+        });
+    }
+
+    /**
+     * 날짜 포맷팅
+     */
+    formatDate(dateString) {
+        if (!dateString) return '-';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('ko-KR');
+    }
+
+    /**
+     * 통화 포맷팅
+     */
+    formatCurrency(amount) {
+        return new Intl.NumberFormat('ko-KR', {
+            style: 'currency',
+            currency: 'KRW'
+        }).format(amount);
+    }
+
+    /**
+     * 카테고리 관리 모달 열기
+     */
+    openCategoryManagement() {
+        console.log('📂 카테고리 관리 모달 열기');
+        
+        try {
+            // 카테고리 관리 모달 열기
+            if (window.openCategoryModal) {
+                window.openCategoryModal();
+            } else {
+                console.error('❌ openCategoryModal 함수를 찾을 수 없습니다');
+                alert('카테고리 관리 기능을 사용할 수 없습니다. 페이지를 새로고침해주세요.');
+            }
+        } catch (error) {
+            console.error('❌ 카테고리 관리 모달 열기 실패:', error);
+            alert('카테고리 관리 모달을 열 수 없습니다: ' + error.message);
+        }
+    }
+
+    /**
+     * 상품명 실시간 중복 체크 설정
+     */
+    setupProductNameDuplicateCheck() {
+        console.log('🔍 상품명 실시간 중복 체크 설정 시작...');
+        
+        // 상품명 입력 필드가 로드될 때까지 대기
+        const checkForNameField = () => {
+            const nameField = document.getElementById('product-form-name');
+            if (nameField) {
+                console.log('✅ 상품명 입력 필드 발견, 이벤트 리스너 설정 중...');
+                
+                // 기존 이벤트 리스너 제거 (중복 방지)
+                nameField.removeEventListener('input', this.handleProductNameInput);
+                nameField.removeEventListener('blur', this.handleProductNameBlur);
+                nameField.removeEventListener('focus', this.handleProductNameFocus);
+                
+                // 새로운 이벤트 리스너 추가
+                this.handleProductNameInput = (e) => {
+                    this.checkProductNameDuplicate(e.target.value);
+                };
+                
+                this.handleProductNameBlur = (e) => {
+                    this.hideProductNameSuggestions();
+                };
+                
+                this.handleProductNameFocus = (e) => {
+                    if (e.target.value) {
+                        this.showProductNameSuggestions(e.target.value);
+                    }
+                };
+                
+                nameField.addEventListener('input', this.handleProductNameInput);
+                nameField.addEventListener('blur', this.handleProductNameBlur);
+                nameField.addEventListener('focus', this.handleProductNameFocus);
+                
+                console.log('✅ 상품명 실시간 중복 체크 설정 완료');
+            } else {
+                // 필드가 아직 로드되지 않았으면 다시 시도
+                setTimeout(checkForNameField, 100);
+            }
+        };
+        
+        checkForNameField();
+    }
+
+    /**
+     * 상품명 중복 체크
+     */
+    checkProductNameDuplicate(productName) {
+        try {
+            console.log('🔍 상품명 중복 체크:', productName);
+            
+            if (!productName || productName.trim() === '') {
+                this.hideDuplicateWarning();
+                this.hideProductNameSuggestions();
+                return;
+            }
+            
+            const trimmedName = productName.trim();
+            
+            // 현재 편집 중인 상품 ID 가져오기
+            const currentProductId = document.getElementById('product-form-id')?.value;
+            
+            // 중복 상품 찾기 (자기 자신 제외)
+            const duplicateProduct = this.products.find(p => 
+                p.name === trimmedName && p.id !== currentProductId
+            );
+            
+            if (duplicateProduct) {
+                console.log('⚠️ 중복된 상품명 발견:', duplicateProduct);
+                this.showDuplicateWarning(duplicateProduct);
+            } else {
+                console.log('✅ 상품명 중복 없음');
+                this.hideDuplicateWarning();
+            }
+            
+            // 자동완성 제안 표시
+            this.showProductNameSuggestions(trimmedName);
+            
+        } catch (error) {
+            console.error('❌ 상품명 중복 체크 실패:', error);
+        }
+    }
+
+    /**
+     * 중복 경고 표시
+     */
+    showDuplicateWarning(duplicateProduct) {
+        const warningElement = document.getElementById('product-name-duplicate-warning');
+        if (warningElement) {
+            warningElement.classList.remove('hidden');
+            warningElement.innerHTML = `
+                <i class="fas fa-exclamation-triangle mr-1"></i>
+                이미 등록된 상품명입니다 (카테고리: ${duplicateProduct.category}, 가격: ${this.formatCurrency(duplicateProduct.price)})
+            `;
+        }
+        
+        // 상품명 입력 필드 스타일 변경
+        const nameField = document.getElementById('product-form-name');
+        if (nameField) {
+            nameField.classList.add('border-orange-500', 'bg-orange-50');
+            nameField.classList.remove('border-gray-300');
+        }
+    }
+
+    /**
+     * 중복 경고 숨김
+     */
+    hideDuplicateWarning() {
+        const warningElement = document.getElementById('product-name-duplicate-warning');
+        if (warningElement) {
+            warningElement.classList.add('hidden');
+        }
+        
+        // 상품명 입력 필드 스타일 복원
+        const nameField = document.getElementById('product-form-name');
+        if (nameField) {
+            nameField.classList.remove('border-orange-500', 'bg-orange-50');
+            nameField.classList.add('border-gray-300');
+        }
+    }
+
+    /**
+     * 상품명 자동완성 제안 표시
+     */
+    showProductNameSuggestions(query) {
+        try {
+            if (!query || query.trim() === '') {
+                this.hideProductNameSuggestions();
+                return;
+            }
+            
+            const trimmedQuery = query.trim().toLowerCase();
+            
+            // 유사한 상품명 찾기
+            const suggestions = this.products
+                .filter(product => 
+                    product.name.toLowerCase().includes(trimmedQuery) &&
+                    product.name.toLowerCase() !== trimmedQuery
+                )
+                .slice(0, 5) // 최대 5개 제안
+                .map(product => ({
+                    name: product.name,
+                    category: product.category,
+                    price: product.price
+                }));
+            
+            if (suggestions.length > 0) {
+                this.renderProductNameSuggestions(suggestions);
+            } else {
+                this.hideProductNameSuggestions();
+            }
+            
+        } catch (error) {
+            console.error('❌ 상품명 자동완성 실패:', error);
+        }
+    }
+
+    /**
+     * 상품명 자동완성 제안 렌더링
+     */
+    renderProductNameSuggestions(suggestions) {
+        const suggestionsContainer = document.getElementById('product-name-suggestions');
+        if (!suggestionsContainer) return;
+        
+        const html = suggestions.map(suggestion => `
+            <div class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
+                 onclick="selectProductNameSuggestion('${suggestion.name}')">
+                <div class="text-sm font-medium text-gray-900">${suggestion.name}</div>
+                <div class="text-xs text-gray-500">${suggestion.category} • ${this.formatCurrency(suggestion.price)}</div>
+            </div>
+        `).join('');
+        
+        suggestionsContainer.innerHTML = html;
+        suggestionsContainer.classList.remove('hidden');
+    }
+
+    /**
+     * 상품명 자동완성 제안 숨김
+     */
+    hideProductNameSuggestions() {
+        const suggestionsContainer = document.getElementById('product-name-suggestions');
+        if (suggestionsContainer) {
+            suggestionsContainer.classList.add('hidden');
+        }
+    }
+
+    /**
+     * 상품명 제안 선택
+     */
+    selectProductNameSuggestion(productName) {
+        const nameField = document.getElementById('product-form-name');
+        if (nameField) {
+            nameField.value = productName;
+            nameField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        this.hideProductNameSuggestions();
+    }
+
+    /**
+     * 카테고리 이벤트 리스너 설정 (대체 방법)
+     */
+    setupCategoryEventListenersFallback() {
+        try {
+            console.log('🔄 대체 방법으로 카테고리 이벤트 리스너 설정 시작...');
+            
+            const categorySelect = document.getElementById('product-form-category');
+            if (categorySelect) {
+                console.log('🔍 카테고리 선택 필드 발견');
+                
+                // 이미 리스너가 추가되었는지 확인
+                if (!categorySelect.dataset.listenerAdded) {
+                    // 핸들러 함수 정의
+                    const handleCategoryChange = async (e) => {
+                        console.log('🔔 카테고리 선택 변경됨:', e.target.value);
+                        if (e.target.value === '__ADD_NEW__') {
+                            console.log('➕ 새 카테고리 추가 선택됨 - 모달 열기 시작');
+                            e.preventDefault();
+                            e.stopPropagation();
+                            
+                            // 선택 초기화
+                            categorySelect.value = '';
+                            
+                            // 상품 모달 숨기기
+                            const productModal = document.getElementById('product-modal');
+                            if (productModal) {
+                                productModal.style.display = 'none';
+                                console.log('✅ 상품 모달 숨김');
+                            }
+                            
+                            // 카테고리 관리 모달 열기
+                            if (window.openCategoryModal) {
+                                await window.openCategoryModal();
+                                console.log('✅ 카테고리 관리 모달 열림');
+                                
+                                // 카테고리 모달 닫기 이벤트 설정
+                                const categoryModal = document.getElementById('category-modal');
+                                if (categoryModal) {
+                                    const observer = new MutationObserver((mutations) => {
+                                        mutations.forEach((mutation) => {
+                                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                                const isHidden = categoryModal.classList.contains('hidden') || 
+                                                               categoryModal.style.display === 'none';
+                                                if (isHidden && productModal) {
+                                                    console.log('🔄 카테고리 모달이 닫힘 - 상품 모달 다시 표시');
+                                                    productModal.style.display = 'flex';
+                                                    
+                                                    // 카테고리 드롭다운 업데이트
+                                                    if (window.updateProductCategoryDropdown) {
+                                                        window.updateProductCategoryDropdown();
+                                                    }
+                                                    
+                                                    observer.disconnect();
+                                                }
+                                            }
+                                        });
+                                    });
+                                    
+                                    observer.observe(categoryModal, { attributes: true, attributeFilter: ['class', 'style'] });
+                                }
+                            } else {
+                                console.error('❌ openCategoryModal 함수를 찾을 수 없습니다');
+                                // 상품 모달 다시 표시
+                                if (productModal) {
+                                    productModal.style.display = 'flex';
+                                }
+                            }
+                        }
+                    };
+                    
+                    categorySelect.addEventListener('change', handleCategoryChange);
+                    categorySelect.dataset.listenerAdded = 'true';
+                    
+                    console.log('✅ 대체 방법으로 카테고리 선택 이벤트 리스너 추가 완료');
+                } else {
+                    console.log('ℹ️ 카테고리 선택 이벤트 리스너가 이미 등록되어 있습니다');
+                }
+            } else {
+                console.error('❌ 카테고리 선택 필드를 찾을 수 없습니다!');
+            }
+            
+        } catch (error) {
+            console.error('❌ 대체 방법으로 카테고리 이벤트 리스너 설정 실패:', error);
+        }
+    }
+
+    /**
+     * 컴포넌트 제거
+     */
+    destroy() {
+        console.log('🗑️ ProductManagement 컴포넌트 제거...');
+        this.isInitialized = false;
+    }
+}
+
+// 전역 함수들 등록
+window.clearProductUploadFile = function() {
+    document.getElementById('product-excel-input').value = '';
+    document.getElementById('product-upload-area-content').classList.remove('hidden');
+    document.getElementById('product-upload-file-info').classList.add('hidden');
+    
+    // 미리보기 숨김
+    if (window.productManagementComponent) {
+        window.productManagementComponent.hidePreview();
+        window.productManagementComponent.updateImportButtonState();
+    }
+};
+
+// 상품명 제안 선택 함수
+window.selectProductNameSuggestion = function(productName) {
+    if (window.productManagementComponent) {
+        window.productManagementComponent.selectProductNameSuggestion(productName);
+    }
+};
+
+// 전역에 ProductManagementComponent 클래스 등록
+window.ProductManagementComponent = ProductManagementComponent;
+
+// 컴포넌트 등록
+if (window.componentLoader) {
+    window.componentLoader.registerComponent('product-management', {
+        template: 'components/product-management/product-management.html',
+        script: 'components/product-management/product-management.js',
+        init: async (container, data) => {
+            const productManagementComponent = new ProductManagementComponent();
+            await productManagementComponent.init(container, data);
+            
+            // 전역에 등록
+            window.productManagementComponent = productManagementComponent;
+            console.log('✅ productManagementComponent 전역 등록 완료');
+            
+            return productManagementComponent;
+        }
+    });
+}
+
+// 전역 함수들 등록
+window.openProductModal = (productId = null) => {
+    if (window.productManagementComponent) {
+        window.productManagementComponent.openProductModal(productId);
+    }
+};
+
+window.closeProductModal = () => {
+    if (window.productManagementComponent) {
+        window.productManagementComponent.closeProductModal();
+    } else {
+        // 폴백: 기본 닫기 기능
+        const modal = document.getElementById('product-modal');
+        const modalContent = document.getElementById('product-modal-content');
+        
+        if (modal && modalContent) {
+            // 애니메이션 효과
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+            
+            // 애니메이션 완료 후 모달 숨기기
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+                
+                // 애니메이션 클래스 초기화
+                modalContent.classList.remove('scale-95', 'opacity-0');
+                modalContent.classList.add('scale-100', 'opacity-100');
+            }, 300);
+        }
+    }
+};
+
+// 카테고리 관리 함수들
+window.openCategoryManagement = () => {
+    if (window.productManagementComponent) {
+        window.productManagementComponent.openCategoryManagement();
+    }
+};
+
+// 상품관리 이벤트 리스너 정리 함수
+function cleanupProductEventListeners() {
+    try {
+        console.log('🧹 상품관리 이벤트 리스너 정리 중...');
+        
+        // ProductManagementComponent 인스턴스가 있으면 정리
+        if (window.productManagementComponent && window.productManagementComponent.removeEventListeners) {
+            window.productManagementComponent.removeEventListeners();
+        }
+        
+        // 전역 이벤트 리스너 정리
+        if (window.productEventListeners) {
+            window.productEventListeners.forEach(listener => {
+                if (listener.element && listener.event && listener.handler) {
+                    listener.element.removeEventListener(listener.event, listener.handler);
+                }
+            });
+            window.productEventListeners = [];
+        }
+        
+        console.log('✅ 상품관리 이벤트 리스너 정리 완료');
+    } catch (error) {
+        console.error('❌ 상품관리 이벤트 리스너 정리 실패:', error);
+    }
+}
+
+// 전역 함수로 등록
+window.cleanupProductEventListeners = cleanupProductEventListeners;
+
+// 상품 관리 컴포넌트 동적 로드 함수
+async function loadProductManagementComponent() {
+    try {
+        console.log('📋 상품 관리 컴포넌트 로드 시작...');
+        
+        const productsContainer = document.getElementById('products-section');
+        if (!productsContainer) {
+            console.error('❌ products-section 요소를 찾을 수 없습니다');
+            return false;
+        }
+        
+        // 이미 로드되었는지 확인
+        if (productsContainer.innerHTML.trim() !== '' && 
+            !productsContainer.innerHTML.includes('여기에 로드됩니다')) {
+            console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
+            
+            // 컴포넌트 재초기화
+            if (window.ProductManagementComponent) {
+                const productManagementComponent = new window.ProductManagementComponent();
+                await productManagementComponent.init(productsContainer);
+                // 전역에 저장
+                window.productManagementComponent = productManagementComponent;
+                console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
+            }
+            return true;
+        }
+        
+        // HTML 로드
+        const response = await fetch('components/product-management/product-management.html');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const html = await response.text();
+        productsContainer.innerHTML = html;
+        console.log('📦 HTML 로드 완료');
+        
+        // 컴포넌트 초기화
+        if (window.ProductManagementComponent) {
+            const productManagementComponent = new window.ProductManagementComponent();
+            await productManagementComponent.init(productsContainer);
+            // 전역에 저장
+            window.productManagementComponent = productManagementComponent;
+            console.log('✅ 상품 관리 컴포넌트 초기화 완료');
+        } else {
+            console.error('❌ ProductManagementComponent를 찾을 수 없습니다');
+        }
+        
+        return true;
+        
+    } catch (error) {
+        console.error('❌ 상품 관리 컴포넌트 로드 실패:', error);
+        return false;
+    }
+}
+
+// 상품 모달 로드 함수
+async function loadProductModal() {
+    try {
+        console.log('📦 상품 모달 로드 시작...');
+        
+        // 모달이 이미 존재하는지 확인
+        let modal = document.getElementById('product-modal');
+        if (modal) {
+            console.log('✅ 상품 모달이 이미 존재합니다');
+            return true;
+        }
+        
+        // 모달 HTML 로드
+        const response = await fetch('components/product-management/product-modal.html');
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const html = await response.text();
+        
+        // body에 모달 추가
+        document.body.insertAdjacentHTML('beforeend', html);
+        
+        console.log('✅ 상품 모달 HTML 로드 완료');
+        return true;
+        
+    } catch (error) {
+        console.error('❌ 상품 모달 로드 실패:', error);
+        return false;
+    }
+}
+
+// 전역 함수로 등록
+window.loadProductModal = loadProductModal;
+window.loadProductManagementComponent = loadProductManagementComponent;
+
+console.log('✅ ProductManagement 컴포넌트 스크립트 로드 완료');

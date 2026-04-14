@@ -41,9 +41,9 @@ export class LabelGenerator {
                 <!-- 발송인 정보 -->
                 <div class="sender-info" style="border-bottom: 1px solid #ccc; padding-bottom: 3mm; margin-bottom: 3mm;">
                     <div style="font-weight: bold; font-size: 12px; margin-bottom: 2mm;">발송인</div>
-                    <div>농장명: ${orderData.farm_name || '스마트팜'}</div>
-                    <div>주소: ${orderData.farm_address || '농장 주소'}</div>
-                    <div>연락처: ${orderData.farm_phone || '농장 전화번호'}</div>
+                    <div>농장명: ${orderData.farm_name || window.settingsDataManager?.settings?.farm?.name || '경산다육식물농장'}</div>
+                    <div>주소: ${orderData.farm_address || window.settingsDataManager?.settings?.farm?.address || ''}</div>
+                    <div>연락처: ${orderData.farm_phone || window.settingsDataManager?.settings?.farm?.phone || ''}</div>
                 </div>
 
                 <!-- 수취인 정보 -->

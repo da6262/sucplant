@@ -1,8 +1,20 @@
 // 주문 인쇄 관련 기능
 // features/orders/orderPrint.js
 
+// 환경설정에서 농장 정보 읽기
+function getFarmInfo() {
+    const farm = window.settingsDataManager?.settings?.farm || {};
+    return {
+        name:    farm.name    || '경산다육식물농장',
+        owner:   farm.owner   || '',
+        phone:   farm.phone   || '',
+        address: farm.address || '',
+    };
+}
+
 // 주문서 출력용 HTML 생성
 function generateOrderPrintHTML(order) {
+    const farm = getFarmInfo();
     // 주문 상품 목록 생성
     let productList = '';
     if (order.items && order.items.length > 0) {
@@ -182,7 +194,7 @@ function generateOrderPrintHTML(order) {
             <div class="invoice-container">
                 <!-- 헤더 -->
                 <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
+                    <div class="company-name">${farm.name}</div>
                     <div class="invoice-title">주문서 (ORDER INVOICE)</div>
                 </div>
                 
@@ -257,8 +269,8 @@ function generateOrderPrintHTML(order) {
                 
                 <!-- 푸터 -->
                 <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
+                    <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
+                    ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
                     <p>이 주문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>
             </div>
@@ -269,6 +281,7 @@ function generateOrderPrintHTML(order) {
 
 // 피킹 리스트 HTML 생성
 function generatePickingListHTML(pickingData) {
+    const farm = getFarmInfo();
     const { productSummary, customerSummary, totalOrders, totalItems, estimatedTime } = pickingData;
     
     // 상품별 피킹 목록 생성
@@ -540,7 +553,7 @@ function generatePickingListHTML(pickingData) {
             <div class="picking-container">
                 <!-- 헤더 -->
                 <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
+                    <div class="company-name">${farm.name}</div>
                     <div class="picking-title">피킹 리스트 (PICKING LIST)</div>
                 </div>
                 
@@ -599,7 +612,7 @@ function generatePickingListHTML(pickingData) {
                 
                 <!-- 푸터 -->
                 <div class="footer">
-                    <p>경산다육식물농장 피킹 리스트</p>
+                    <p>${farm.name} 피킹 리스트</p>
                     <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
                     <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>
@@ -611,6 +624,7 @@ function generatePickingListHTML(pickingData) {
 
 // 상품별 피킹만 HTML 생성
 function generatePickingOnlyHTML(pickingData) {
+    const farm = getFarmInfo();
     const { productSummary, totalOrders, totalItems, estimatedTime } = pickingData;
     
     const productList = productSummary.map((product, index) => `
@@ -739,7 +753,7 @@ function generatePickingOnlyHTML(pickingData) {
             <div class="invoice-container">
                 <!-- 헤더 -->
                 <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
+                    <div class="company-name">${farm.name}</div>
                     <div class="invoice-title">상품별 피킹 리스트 (PRODUCT PICKING LIST)</div>
                 </div>
                 
@@ -779,8 +793,8 @@ function generatePickingOnlyHTML(pickingData) {
                 
                 <!-- 푸터 -->
                 <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
+                    <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
+                    ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
                     <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
                     <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>
@@ -792,6 +806,7 @@ function generatePickingOnlyHTML(pickingData) {
 
 // 고객별 포장만 HTML 생성
 function generatePackagingOnlyHTML(pickingData) {
+    const farm = getFarmInfo();
     console.log('🔍 generatePackagingOnlyHTML 함수 호출됨:', pickingData);
     const { customerSummary, totalOrders, totalItems, estimatedTime } = pickingData;
     console.log('🔍 고객별 포장 데이터:', { customerSummary, totalOrders, totalItems, estimatedTime });
@@ -958,7 +973,7 @@ function generatePackagingOnlyHTML(pickingData) {
             <div class="invoice-container">
                 <!-- 헤더 -->
                 <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
+                    <div class="company-name">${farm.name}</div>
                     <div class="invoice-title">고객별 포장 리스트 (CUSTOMER PACKAGING LIST)</div>
                 </div>
                 
@@ -1001,8 +1016,8 @@ function generatePackagingOnlyHTML(pickingData) {
                 
                 <!-- 푸터 -->
                 <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
+                    <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
+                    ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
                     <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
                     <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>

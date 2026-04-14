@@ -104,6 +104,21 @@ class DashboardComponent {
                 this.handleChartPeriodChange(e.target.id);
             });
         });
+
+        // 빠른 업무 버튼
+        const quickMap = {
+            'quick-new-order':       () => { this.navigateToSection('orders'); setTimeout(() => { if (window.openOrderModal) window.openOrderModal(); }, 400); },
+            'quick-picking-list':    () => this.navigateToSection('orders'),
+            'quick-packaging-labels':() => this.navigateToSection('orders'),
+            'quick-new-customer':    () => { this.navigateToSection('customers'); setTimeout(() => { if (window.openCustomerModal) window.openCustomerModal(); }, 400); },
+            'quick-add-waitlist':    () => { this.navigateToSection('waitlist'); setTimeout(() => { if (window.orderSystem?.openWaitlistModal) window.orderSystem.openWaitlistModal(); }, 400); },
+            'quick-excel-export':    () => { if (window.exportToExcel) window.exportToExcel(); },
+            'quick-stock-update':    () => this.navigateToSection('products'),
+        };
+        Object.entries(quickMap).forEach(([id, fn]) => {
+            const btn = document.getElementById(id);
+            if (btn) btn.addEventListener('click', fn);
+        });
     }
 
     /**
@@ -796,14 +811,8 @@ class DashboardComponent {
      * 섹션으로 이동
      */
     navigateToSection(section) {
-        // 탭 변경 이벤트 발생
-        const event = new CustomEvent('tabChanged', {
-            detail: { 
-                previousTab: 'dashboard', 
-                currentTab: section 
-            }
-        });
-        document.dispatchEvent(event);
+        const btn = document.getElementById('mobile-nav-' + section) || document.getElementById('nav-' + section);
+        if (btn) btn.click();
     }
 
     /**
