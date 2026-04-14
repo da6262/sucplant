@@ -518,11 +518,23 @@ window.fillCustomerForm = fillCustomerForm;
 // 고객 삭제 함수 (전역)
 window.deleteCustomer = async function(customerId) {
     console.log('🗑️ 고객 삭제 요청:', customerId);
-    
+
+    // 연관 주문 확인
+    const { data: orders, error: checkError } = await window.supabaseClient
+        .from('farm_orders')
+        .select('id')
+        .eq('customer_id', customerId)
+        .limit(1);
+    if (checkError) { alert('삭제 확인 중 오류: ' + checkError.message); return; }
+    if (orders && orders.length > 0) {
+        alert('이 고객에게 주문 내역이 있어 삭제할 수 없습니다.\n주문을 먼저 삭제한 후 고객을 삭제하세요.');
+        return;
+    }
+
     if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) {
         return;
     }
-    
+
     try {
         if (window.customerDataManager) {
             await window.customerDataManager.deleteCustomer(customerId);
