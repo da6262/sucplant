@@ -241,52 +241,35 @@
         function loadScriptsSequentially(scripts, index) {
             if (index >= scripts.length) {
                 console.log('✅ 모든 스크립트 로드 완료');
-                // 모든 스크립트 로드 완료 후 네비게이션 초기화
-                setTimeout(() => {
-                    initializeNavigationAfterScriptsLoaded();
-                }, 100);
+                initializeNavigationAfterScriptsLoaded();
                 return;
             }
-            
+
             // 무한 루프 방지를 위한 최대 재시도 횟수
             if (index > scripts.length * 2) {
                 console.error('❌ 스크립트 로드 무한 루프 감지. 강제 종료.');
                 initializeNavigationAfterScriptsLoaded();
                 return;
             }
-            
+
             const scriptInfo = scripts[index];
             console.log(`📦 스크립트 로드 중 (${index + 1}/${scripts.length}): ${scriptInfo.src}`);
-            
+
             const script = document.createElement('script');
             script.src = scriptInfo.src;
             script.type = scriptInfo.type;
-            
+
             // 타임아웃 설정 (10초)
             const timeoutId = setTimeout(() => {
                 console.warn(`⏰ 스크립트 로드 타임아웃: ${scriptInfo.src}`);
-                // 타임아웃이 발생해도 다음 스크립트 계속 로드
-                if (index + 1 < scripts.length) {
-                    setTimeout(() => {
-                        loadScriptsSequentially(scripts, index + 1);
-                    }, 100);
-                } else {
-                    console.log('✅ 모든 스크립트 로드 완료 (타임아웃 포함)');
-                    setTimeout(() => {
-                        initializeNavigationAfterScriptsLoaded();
-                    }, 100);
-                }
+                loadScriptsSequentially(scripts, index + 1);
             }, 10000);
-            
+
             script.onload = function() {
                 clearTimeout(timeoutId);
-                console.log(`✅ 스크립트 로드 완료: ${scriptInfo.src}`);
-                // 다음 스크립트 로드
-                setTimeout(() => {
-                    loadScriptsSequentially(scripts, index + 1);
-                }, 100); // 100ms 간격으로 순차 로드
+                loadScriptsSequentially(scripts, index + 1);
             };
-            
+
             script.onerror = function() {
                 clearTimeout(timeoutId);
                 if (scriptInfo.conditional) {
@@ -294,18 +277,7 @@
                 } else {
                     console.error(`❌ 스크립트 로드 실패: ${scriptInfo.src}`);
                 }
-                // 실패해도 다음 스크립트 계속 로드 (무한 루프 방지)
-                if (index + 1 < scripts.length) {
-                    setTimeout(() => {
-                        loadScriptsSequentially(scripts, index + 1);
-                    }, 100);
-                } else {
-                    console.log('✅ 모든 스크립트 로드 완료 (일부 실패 포함)');
-                    // 모든 스크립트 로드 완료 후 네비게이션 초기화
-                    setTimeout(() => {
-                        initializeNavigationAfterScriptsLoaded();
-                    }, 100);
-                }
+                loadScriptsSequentially(scripts, index + 1);
             };
             
             document.head.appendChild(script);
