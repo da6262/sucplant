@@ -1,16 +1,25 @@
 /* 환경설정 전용 CSS */
 /* components/settings/settings.css */
 
-/* 탭 버튼 — 다른 섹션과 통일 */
+/* 탭 버튼 — status-tab-btn과 동일한 디자인 시스템 */
 .settings-tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #4b5563;
+    color: #6B7280;
     white-space: nowrap;
+    transition: all 0.15s;
+}
+.settings-tab-btn:hover {
+    background: #F3F4F6;
+    color: #374151;
 }
 .settings-tab-btn.active {
     background: #16A34A !important;

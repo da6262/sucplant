@@ -1,48 +1,31 @@
 <!-- 환경설정 컴포넌트 -->
-<div id="settings-content" class="app-section-frame flex flex-col h-[calc(100vh-3.5rem)] min-h-0">
+<div id="settings-content" class="section-content flex flex-col h-[calc(100vh-3.5rem)] min-h-0">
 
     <!-- 헤더 -->
-    <div class="app-section-header shrink-0">
-        <div class="app-section-heading">
-            <div class="app-section-icon">
-                <i class="fas fa-cog text-sm"></i>
-            </div>
-            <div>
-                <div class="app-section-title">환경설정</div>
-                <div class="app-section-subtitle">농장 기본값, 배송·채널·등급 등 시스템 설정을 관리하세요</div>
-            </div>
+    <div class="page-header px-3 py-3 border-b border-gray-200 shrink-0">
+        <div>
+            <div class="page-title">환경설정</div>
+            <div class="page-desc">농장 기본값, 배송·채널·등급 등 시스템 설정</div>
         </div>
-        <div class="app-toolbar">
+        <div class="flex gap-2">
             <button id="reset-settings-btn" class="btn-secondary">
-                <i class="fas fa-undo"></i> 초기화
+                <i class="fas fa-undo"></i>초기화
             </button>
             <button id="save-all-settings-btn" class="btn-primary">
-                <i class="fas fa-save"></i> 모든 설정 저장
+                <i class="fas fa-save"></i>모든 설정 저장
             </button>
         </div>
     </div>
 
     <!-- 탭 네비게이션 -->
-    <div class="shrink-0 px-2 py-1.5 border-b border-gray-100 bg-white">
+    <div class="shrink-0 px-3 py-2 border-b border-gray-100 bg-white">
         <div class="flex items-center gap-1 flex-nowrap overflow-x-auto" style="scrollbar-width:none;">
-            <button id="settings-tab-general" class="settings-tab-btn py-1.5 px-2.5 text-xs font-semibold rounded-md transition-all duration-150 active">
-                <i class="fas fa-cog"></i><span>일반 설정</span>
-            </button>
-            <button id="settings-tab-shipping" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-truck"></i><span>배송</span>
-            </button>
-            <button id="settings-tab-channels" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-store"></i><span>판매 채널</span>
-            </button>
-            <button id="settings-tab-orders" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-tasks"></i><span>주문 상태</span>
-            </button>
-            <button id="settings-tab-customers" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-crown"></i><span>고객등급</span>
-            </button>
-            <button id="settings-tab-sms" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-sms"></i><span>SMS</span>
-            </button>
+            <button id="settings-tab-general"   class="settings-tab-btn active"><i class="fas fa-cog"></i><span>일반 설정</span></button>
+            <button id="settings-tab-shipping"  class="settings-tab-btn"><i class="fas fa-truck"></i><span>배송</span></button>
+            <button id="settings-tab-channels"  class="settings-tab-btn"><i class="fas fa-store"></i><span>판매 채널</span></button>
+            <button id="settings-tab-orders"    class="settings-tab-btn"><i class="fas fa-tasks"></i><span>주문 상태</span></button>
+            <button id="settings-tab-customers" class="settings-tab-btn"><i class="fas fa-crown"></i><span>고객등급</span></button>
+            <button id="settings-tab-sms"       class="settings-tab-btn"><i class="fas fa-sms"></i><span>SMS</span></button>
         </div>
     </div>
 

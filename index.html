@@ -461,12 +461,10 @@
                 // DOM이 완전히 로드될 때까지 대기
                 await waitForDOMReady();
                 
-                // 디버그: 현재 DOM 상태 확인
-                console.log('🔍 DOM 상태 확인 중...');
-                const allSections = document.querySelectorAll('[id$="-section"]');
-                console.log('🔍 발견된 섹션들:', Array.from(allSections).map(el => el.id));
-                
-                // 모든 섹션 숨기기 (강화된 버전)
+                // mainContent 직계 자식만 대상 (중첩 컴포넌트 div 제외)
+                const allSections = document.querySelectorAll('#mainContent > [id$="-section"]');
+
+                // 모든 섹션 숨기기
                 allSections.forEach(section => {
                     if (section.id !== `${tabId}-section`) {
                         section.classList.add('hidden');
