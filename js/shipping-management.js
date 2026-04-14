@@ -1384,9 +1384,14 @@ function showBulkShippingModal() {
         console.log('📦 일괄 등록 모달 표시');
         
         const modalHTML = `
-            <div id="bulk-shipping-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div id="bulk-shipping-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" onclick="if(event.target===this)closeBulkShippingModal()">
                 <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">일괄 배송 등록</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-800">일괄 배송 등록</h3>
+                        <button onclick="closeBulkShippingModal()" class="text-gray-400 hover:text-gray-600 transition-colors">
+                            <i class="fas fa-times text-lg"></i>
+                        </button>
+                    </div>
                     
                     <div class="space-y-4">
                         <!-- 업로드 방법 선택 -->
@@ -1474,6 +1479,15 @@ function showBulkShippingModal() {
 function setupBulkShippingEventListeners() {
     // 취소 버튼
     document.getElementById('cancel-bulk-shipping').addEventListener('click', closeBulkShippingModal);
+
+    // ESC 키로 닫기
+    function onKeyDown(e) {
+        if (e.key === 'Escape') {
+            closeBulkShippingModal();
+            document.removeEventListener('keydown', onKeyDown);
+        }
+    }
+    document.addEventListener('keydown', onKeyDown);
     
     // 등록 방법 변경
     document.querySelectorAll('input[name="bulk-method"]').forEach(radio => {

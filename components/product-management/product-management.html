@@ -1,0 +1,239 @@
+<!-- 상품 관리 컴포넌트 -->
+<div id="products-section" class="tab-content">
+    <!-- 상품 관리 헤더 -->
+    <div class="page-header mb-4">
+        <div>
+            <div class="page-title">상품 관리</div>
+            <div class="page-desc">상품 정보를 등록하고 재고를 관리하세요</div>
+        </div>
+        <div class="flex gap-2">
+            <button id="export-products-btn"    class="btn-secondary"><i class="fas fa-download"></i>내보내기</button>
+            <button id="import-products-btn"    class="btn-secondary"><i class="fas fa-upload"></i>일괄 등록</button>
+            <button id="manage-categories-btn"  class="btn-secondary"><i class="fas fa-tags"></i>카테고리 관리</button>
+            <button id="add-product-btn"        class="btn-primary"><i class="fas fa-plus"></i>상품 등록</button>
+        </div>
+    </div>
+
+    <!-- 상품 검색 및 필터 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6">
+        <div class="flex items-center mb-4">
+            <i class="fas fa-filter text-gray-500 mr-2 text-sm"></i>
+            <h3 class="text-sm font-medium text-gray-700">검색 및 필터</h3>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">검색</label>
+                <input type="text" id="product-search" placeholder="상품명으로 검색..." 
+                       class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">카테고리</label>
+                <select id="product-category-filter" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+                    <option value="">전체 카테고리</option>
+                    <option value="다육식물">다육식물</option>
+                    <option value="화분">화분</option>
+                    <option value="용품">용품</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">재고 상태</label>
+                <select id="product-stock-filter" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+                    <option value="">전체</option>
+                    <option value="in-stock">재고 있음</option>
+                    <option value="low-stock">재고 부족</option>
+                    <option value="out-of-stock">품절</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-xs font-medium text-gray-600 mb-1">가격 범위</label>
+                <select id="product-price-filter" class="w-full px-3 py-2 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500 transition-colors">
+                    <option value="">전체</option>
+                    <option value="0-10000">1만원 이하</option>
+                    <option value="10000-30000">1-3만원</option>
+                    <option value="30000-50000">3-5만원</option>
+                    <option value="50000+">5만원 이상</option>
+                </select>
+            </div>
+            <div class="flex items-end">
+                <button id="product-filter-btn" class="w-full bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-2 rounded-lg transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md">
+                    <i class="fas fa-search mr-2 text-xs"></i>검색
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 상품 목록 테이블 -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        <div class="overflow-x-auto">
+            <table class="min-w-full divide-y divide-gray-100">
+                <thead class="bg-gray-50">
+                    <tr>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
+                            <input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-green-600 focus:ring-green-500">
+                        </th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">상품명</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">카테고리</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">가격</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">재고</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">상태</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">등록일</th>
+                        <th class="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">관리</th>
+                    </tr>
+                </thead>
+                <tbody id="products-table-body" class="bg-white divide-y divide-gray-100">
+                    <!-- 상품 데이터가 여기에 동적으로 로드됩니다 -->
+                </tbody>
+            </table>
+        </div>
+        
+        <!-- 페이지네이션 -->
+        <div class="bg-gray-50 px-6 py-4 flex items-center justify-between border-t border-gray-100">
+            <div class="flex-1 flex justify-between sm:hidden">
+                <button id="prev-products-page-btn" class="relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                    <i class="fas fa-chevron-left mr-1 text-xs"></i>이전
+                </button>
+                <button id="next-products-page-btn" class="ml-3 relative inline-flex items-center px-4 py-2 text-sm font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors">
+                    다음<i class="fas fa-chevron-right ml-1 text-xs"></i>
+                </button>
+            </div>
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                <div>
+                    <p class="text-sm text-gray-600">
+                        <span id="products-pagination-info">페이지 정보</span>
+                    </p>
+                </div>
+                <div>
+                    <nav class="relative z-0 inline-flex rounded-lg shadow-sm -space-x-px" aria-label="Pagination">
+                        <button id="products-pagination-prev" class="relative inline-flex items-center px-3 py-2 rounded-l-lg border border-gray-200 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                            <i class="fas fa-chevron-left text-xs"></i>
+                        </button>
+                        <div id="products-pagination-numbers" class="flex">
+                            <!-- 페이지 번호가 여기에 동적으로 생성됩니다 -->
+                        </div>
+                        <button id="products-pagination-next" class="relative inline-flex items-center px-3 py-2 rounded-r-lg border border-gray-200 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 hover:text-gray-700 transition-colors">
+                            <i class="fas fa-chevron-right text-xs"></i>
+                        </button>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상품 일괄 등록 모달 -->
+<div id="product-import-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white rounded-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto m-4">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex justify-between items-center">
+                <h3 class="text-xl font-semibold text-gray-800">
+                    <i class="fas fa-upload text-green-600 mr-2"></i>상품 일괄 등록
+                </h3>
+                <button id="close-import-modal" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+        </div>
+        
+        <div class="p-6">
+            <!-- 업로드 방식 선택 -->
+            <div class="flex space-x-2 mb-6">
+                <button id="product-upload-method-manual" class="flex-1 px-4 py-3 border-2 border-green-500 bg-green-50 text-green-700 rounded-lg font-medium hover:bg-green-100 transition-colors active">
+                    <i class="fas fa-keyboard mr-2"></i>직접 입력
+                </button>
+                <button id="product-upload-method-excel" class="flex-1 px-4 py-3 border-2 border-gray-300 text-gray-600 rounded-lg font-medium hover:bg-gray-50 transition-colors">
+                    <i class="fas fa-file-excel mr-2"></i>Excel 파일
+                </button>
+            </div>
+            
+            <!-- 직접 입력 섹션 -->
+            <div id="product-manual-input-section" class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">
+                        상품 정보 (한 줄에 하나씩)
+                    </label>
+                    <textarea 
+                        id="product-import-text" 
+                        rows="10" 
+                        class="w-full border border-gray-300 rounded-lg p-3 font-mono text-sm focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                        placeholder="상품명,카테고리,가격,재고,설명
+다육이1,다육식물,5000,10,예쁜 다육이
+다육이2,다육식물,3000,20,작은 다육이"></textarea>
+                </div>
+                
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-blue-900 mb-2">
+                        <i class="fas fa-info-circle mr-1"></i>입력 형식
+                    </h4>
+                    <ul class="text-xs text-blue-800 space-y-1">
+                        <li>• 첫 번째 줄: 상품명,카테고리,가격,재고,설명</li>
+                        <li>• 두 번째 줄부터: 실제 상품 데이터</li>
+                        <li>• 쉼표(,)로 구분</li>
+                        <li>• 예시: 다육이,다육식물,5000,10,예쁜 다육이</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- Excel 업로드 섹션 -->
+            <div id="product-excel-upload-section" class="hidden space-y-4">
+                <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
+                    <i class="fas fa-file-excel text-green-500 text-4xl mb-3"></i>
+                    <p class="text-sm text-gray-600 mb-3">Excel 파일을 선택하세요</p>
+                    <input type="file" id="product-excel-input" accept=".xlsx,.xls,.csv" class="hidden">
+                    <button id="product-select-excel" class="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors">
+                        파일 선택
+                    </button>
+                    <p class="text-xs text-gray-500 mt-3">
+                        지원 형식: .xlsx, .xls, .csv
+                    </p>
+                </div>
+                
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                    <h4 class="text-sm font-semibold text-yellow-900 mb-2">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>Excel 파일 형식
+                    </h4>
+                    <ul class="text-xs text-yellow-800 space-y-1">
+                        <li>• A열: 상품명 (필수)</li>
+                        <li>• B열: 카테고리</li>
+                        <li>• C열: 가격 (필수)</li>
+                        <li>• D열: 재고</li>
+                        <li>• E열: 설명</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <!-- 미리보기 -->
+            <div id="product-import-preview" class="hidden mt-6">
+                <h4 class="text-sm font-medium text-gray-700 mb-3">미리보기</h4>
+                <div class="border border-gray-300 rounded-lg overflow-x-auto">
+                    <table id="product-preview-table" class="min-w-full divide-y divide-gray-200">
+                        <!-- 미리보기 테이블이 여기에 표시됩니다 -->
+                    </table>
+                </div>
+            </div>
+            
+            <!-- 진행 상황 -->
+            <div id="product-import-progress" class="hidden mt-6">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-sm font-medium text-gray-700">등록 진행 중...</span>
+                    <span id="product-import-percentage" class="text-sm font-medium text-green-600">0%</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-2">
+                    <div id="product-import-progress-bar" class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                </div>
+                <p id="product-import-info" class="text-xs text-gray-500 mt-2">상품 정보를 입력하거나 파일을 업로드해주세요.</p>
+            </div>
+        </div>
+        
+        <div class="p-6 border-t border-gray-200 flex justify-end space-x-3">
+            <button id="product-import-cancel" class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                취소
+            </button>
+            <button id="product-import-preview-btn" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                <i class="fas fa-eye mr-2"></i>미리보기
+            </button>
+            <button id="product-import-start" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors" disabled>
+                <i class="fas fa-upload mr-2"></i>등록 시작
+            </button>
+        </div>
+    </div>
+</div>
