@@ -628,7 +628,6 @@ class OrderDataManager {
             return {
                 ...order,
                 items: normalizedItems,
-                order_items: normalizedItems,
                 status: order.order_status || order.status || '주문접수',
                 total_amount: order.total_amount != null ? Number(order.total_amount) : 0,
                 shipping_fee: order.shipping_fee != null ? Number(order.shipping_fee) : 0,
@@ -836,7 +835,7 @@ class OrderDataManager {
 
     // 상품 요약 1줄: 단일 "상품명 × 수량", 복수 "대표상품 외 N건"
     getOrderProductSummary(order) {
-        const items = order.items || order.order_items || [];
+        const items = order.items || [];
         if (!items.length) return '-';
         const first = items[0];
         const name = (first.product_name || '상품').trim() || '상품';

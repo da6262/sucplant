@@ -447,7 +447,13 @@
         // 탭 전환 함수
         async function switchTab(tabId) {
             console.log('🔄 탭 전환:', tabId);
-            
+
+            // 고객 상세 플로팅 패널 숨기기 (고객관리 외 탭 전환 시)
+            if (tabId !== 'customers') {
+                const dynPanel = document.getElementById('_dyn_detail_panel');
+                if (dynPanel) dynPanel.style.display = 'none';
+            }
+
             try {
                 // 현재 로딩 중인 컴포넌트가 있으면 대기
                 if (window.currentLoadingComponent) {
@@ -786,13 +792,19 @@
         async function loadCustomerManagementComponent() {
             try {
                 console.log('🔄 고객관리 메인 시스템 로드 시작...');
-                
+
                 const customersContainer = document.getElementById('customers-section');
                 if (!customersContainer) {
                     console.error('❌ customers-section 요소를 찾을 수 없습니다');
                     return false;
                 }
-                
+
+                // 재방문 시 재로드 건너뜀
+                if (customersContainer.dataset.loaded === 'true') {
+                    console.log('🔄 고객관리 이미 로드됨 — 재로드 건너뜀');
+                    return true;
+                }
+
                 // 고객관리 HTML 로드 (캐시 방지로 항상 최신 레이아웃 적용)
                 const response = await fetch('components/customer-management/customer-management.html?v=' + Date.now(), { cache: 'no-store' });
                 if (!response.ok) {
@@ -810,7 +822,8 @@
                 } else {
                     console.warn('⚠️ initCustomerManagementSection 없음 - 고객관리 JS 로드 순서 확인');
                 }
-                
+
+                customersContainer.dataset.loaded = 'true';
                 return true;
                 
             } catch (error) {
@@ -830,13 +843,13 @@
                     return false;
                 }
                 
-                // 🆕 이미 로드되었는지 확인
-                if (productsContainer.innerHTML.trim() !== '' && 
-                    !productsContainer.innerHTML.includes('여기에 로드됩니다') &&
-                    !productsContainer.innerHTML.includes('로드할 수 없습니다')) {
-                    console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
-                    
-                    // 컴포넌트 재초기화
+                // 🆕 이미 로드되었는지 확인 — 재방문 시 재초기화 없이 그대로 표시
+                if (productsContainer.dataset.loaded === 'true') {
+                    console.log('📋 상품 관리 컴포넌트가 이미 로드됨 — 재로드 건너뜀');
+                    return true;
+                }
+
+                if (false) { // 하위 호환 코드 비활성화
                     if (window.productManagementComponent && window.productManagementComponent.init) {
                         await window.productManagementComponent.init(productsContainer);
                         console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
@@ -875,6 +888,7 @@
                     // 전역에 등록
                     window.productManagementComponent = productManagementComponent;
                     console.log('✅ productManagementComponent 전역 등록 완료');
+                    productsContainer.dataset.loaded = 'true';
                 } else {
                     console.error('❌ ProductManagementComponent 클래스를 찾을 수 없습니다');
                     console.log('🔍 window 객체에서 사용 가능한 클래스들:', Object.keys(window).filter(key => key.includes('Component')));
@@ -888,6 +902,7 @@
                         await productManagementComponent.init(productsContainer);
                         window.productManagementComponent = productManagementComponent;
                         console.log('✅ 폴백 로드로 상품 관리 컴포넌트 초기화 완료');
+                        productsContainer.dataset.loaded = 'true';
                     } else {
                         throw new Error('ProductManagementComponent 클래스를 로드할 수 없습니다');
                     }
@@ -970,13 +985,19 @@
         async function loadWaitlistManagementComponent() {
             try {
                 console.log('📋 대기자 관리 컴포넌트 로드 시작...');
-                
+
                 const waitlistContainer = document.getElementById('waitlist-section');
                 if (!waitlistContainer) {
                     console.error('❌ waitlist-section 요소를 찾을 수 없습니다');
                     return false;
                 }
-                
+
+                // 재방문 시 재로드 건너뜀
+                if (waitlistContainer.dataset.loaded === 'true') {
+                    console.log('📋 대기자 관리 컴포넌트 이미 로드됨 — 재로드 건너뜀');
+                    return true;
+                }
+
                 // HTML 로드
                 const response = await fetch('components/waitlist-management/waitlist-management.html');
                 if (!response.ok) {
@@ -992,7 +1013,8 @@
                     await window.initializeWaitlistData();
                     console.log('✅ 대기자 관리 컴포넌트 초기화 완료');
                 }
-                
+
+                waitlistContainer.dataset.loaded = 'true';
                 return true;
                 
             } catch (error) {

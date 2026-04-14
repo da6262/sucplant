@@ -1,104 +1,62 @@
 <!-- 대기자 관리 컴포넌트 -->
-<div id="waitlist-section" class="section-content">
-    <div class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
+<div class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
 
-        <!-- 헤더 -->
-        <div class="page-header px-3 py-2 border-b border-gray-200 shrink-0 mb-0">
-            <div>
-                <div class="page-title">대기자 관리</div>
-                <div class="page-desc">상품 입고 시 연락할 고객들</div>
-            </div>
-            <div class="flex gap-2">
-                <button onclick="orderDataManager.emergencyWaitlistRecovery()" class="btn-secondary" title="대기자 데이터 복구">
-                    <i class="fas fa-ambulance"></i>복구
-                </button>
-                <button id="add-waitlist-btn" class="btn-primary">
-                    <i class="fas fa-user-clock"></i>새 대기자 등록
-                </button>
-            </div>
+    <!-- 헤더 -->
+    <div class="flex items-center justify-between px-3 py-1.5 border-b border-gray-200 shrink-0">
+        <span class="text-sm font-semibold text-gray-800">대기자 관리</span>
+        <div class="flex gap-1.5">
+            <button onclick="orderDataManager.emergencyWaitlistRecovery()" class="btn-secondary" title="대기자 데이터 복구">
+                <i class="fas fa-ambulance"></i>복구
+            </button>
+            <button id="add-waitlist-btn" class="btn-primary">
+                <i class="fas fa-user-clock"></i>새 대기자 등록
+            </button>
         </div>
-
-        <!-- 대기자 통계 -->
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-2 px-3 py-2 shrink-0 border-b border-gray-100">
-            <div class="card-ui p-3 flex items-center gap-2">
-                <i class="fas fa-clock text-amber-500"></i>
-                <div>
-                    <p class="text-[10px] text-gray-500">대기중</p>
-                    <p id="waitlist-waiting-count" class="text-base font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <div class="card-ui p-3 flex items-center gap-2">
-                <i class="fas fa-phone text-blue-500"></i>
-                <div>
-                    <p class="text-[10px] text-gray-500">연락완료</p>
-                    <p id="waitlist-contacted-count" class="text-base font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <div class="card-ui p-3 flex items-center gap-2">
-                <i class="fas fa-shopping-cart text-green-500"></i>
-                <div>
-                    <p class="text-[10px] text-gray-500">주문전환</p>
-                    <p id="waitlist-converted-count" class="text-base font-bold text-gray-800">0</p>
-                </div>
-            </div>
-            <div class="card-ui p-3 flex items-center gap-2">
-                <i class="fas fa-times-circle text-gray-400"></i>
-                <div>
-                    <p class="text-[10px] text-gray-500">취소</p>
-                    <p id="waitlist-cancelled-count" class="text-base font-bold text-gray-800">0</p>
-                </div>
-            </div>
-        </div>
-
-        <!-- 필터 + 검색 -->
-        <div class="shrink-0 px-3 py-2 border-b border-gray-100 bg-white space-y-2">
-            <nav class="flex gap-1 flex-wrap">
-                <button id="farm_waitlist-status-all" class="status-tab-btn active">
-                    전체 <span class="tab-count" id="waitlist-count-all">0</span>
-                </button>
-                <button id="farm_waitlist-status-대기중" class="status-tab-btn">
-                    대기중 <span class="tab-count" id="waitlist-count-대기중">0</span>
-                </button>
-                <button id="farm_waitlist-status-연락완료" class="status-tab-btn">
-                    연락완료 <span class="tab-count" id="waitlist-count-연락완료">0</span>
-                </button>
-                <button id="farm_waitlist-status-주문전환" class="status-tab-btn">
-                    주문전환 <span class="tab-count" id="waitlist-count-주문전환">0</span>
-                </button>
-                <button id="farm_waitlist-status-취소" class="status-tab-btn">
-                    취소 <span class="tab-count" id="waitlist-count-취소">0</span>
-                </button>
-            </nav>
-            <div class="flex gap-2">
-                <input type="text" id="waitlist-search" placeholder="고객명, 전화번호, 상품명으로 검색..."
-                       class="input-ui flex-1">
-                <button id="reset-waitlist-search" class="btn-secondary">
-                    <i class="fas fa-refresh"></i>
-                </button>
-            </div>
-        </div>
-
-        <!-- 대기자 목록 테이블 -->
-        <div class="flex-1 overflow-auto px-3 py-2">
-            <table class="table-ui">
-                <thead>
-                    <tr>
-                        <th>번호</th>
-                        <th>고객명</th>
-                        <th>연락처</th>
-                        <th>희망상품</th>
-                        <th>카테고리</th>
-                        <th>희망가격</th>
-                        <th>상태</th>
-                        <th>등록일</th>
-                        <th>관리</th>
-                    </tr>
-                </thead>
-                <tbody id="waitlist-tbody">
-                    <!-- 대기자 목록이 여기에 표시됩니다 -->
-                </tbody>
-            </table>
-        </div>
-
     </div>
+
+    <!-- 통계 + 필터 + 검색 (한 영역으로 통합) -->
+    <div class="shrink-0 border-b border-gray-100 bg-white">
+        <!-- 통계 인라인 -->
+        <div class="flex items-center gap-4 px-3 py-1 border-b border-gray-100 bg-gray-50">
+            <span class="text-[11px] text-gray-500">대기중 <strong id="waitlist-waiting-count" class="text-gray-800">0</strong></span>
+            <span class="text-[11px] text-gray-500">연락완료 <strong id="waitlist-contacted-count" class="text-gray-800">0</strong></span>
+            <span class="text-[11px] text-gray-500">주문전환 <strong id="waitlist-converted-count" class="text-gray-800">0</strong></span>
+            <span class="text-[11px] text-gray-500">취소 <strong id="waitlist-cancelled-count" class="text-gray-800">0</strong></span>
+        </div>
+        <!-- 상태 탭 + 검색 한 줄 -->
+        <div class="flex items-center gap-2 px-3 py-1.5">
+            <nav class="flex gap-0.5 flex-shrink-0">
+                <button id="farm_waitlist-status-all" class="status-tab-btn active">전체 <span class="tab-count" id="waitlist-count-all">0</span></button>
+                <button id="farm_waitlist-status-대기중" class="status-tab-btn">대기중 <span class="tab-count" id="waitlist-count-대기중">0</span></button>
+                <button id="farm_waitlist-status-연락완료" class="status-tab-btn">연락완료 <span class="tab-count" id="waitlist-count-연락완료">0</span></button>
+                <button id="farm_waitlist-status-주문전환" class="status-tab-btn">주문전환 <span class="tab-count" id="waitlist-count-주문전환">0</span></button>
+                <button id="farm_waitlist-status-취소" class="status-tab-btn">취소 <span class="tab-count" id="waitlist-count-취소">0</span></button>
+            </nav>
+            <input type="text" id="waitlist-search" placeholder="고객명, 전화번호, 상품명 검색..." class="input-ui flex-1">
+            <button id="reset-waitlist-search" class="btn-secondary flex-shrink-0"><i class="fas fa-times"></i></button>
+        </div>
+    </div>
+
+    <!-- 대기자 목록 테이블 -->
+    <div class="flex-1 overflow-auto">
+        <table class="table-ui">
+            <thead>
+                <tr>
+                    <th>번호</th>
+                    <th>고객명</th>
+                    <th>연락처</th>
+                    <th>희망상품</th>
+                    <th>카테고리</th>
+                    <th>희망가격</th>
+                    <th>상태</th>
+                    <th>등록일</th>
+                    <th>관리</th>
+                </tr>
+            </thead>
+            <tbody id="waitlist-tbody">
+                <!-- 대기자 목록이 여기에 표시됩니다 -->
+            </tbody>
+        </table>
+    </div>
+
 </div>

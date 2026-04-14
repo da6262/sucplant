@@ -55,6 +55,8 @@ async function loadCustomerManagementComponent() {
             // 고객관리 섹션만 활성화
             newSection.classList.add('active');
             newSection.style.display = 'block';
+            newSection.style.visibility = 'visible';
+            newSection.style.opacity = '1';
             console.log('✅ 고객관리 컴포넌트 로드 완료');
             
             // 로드 완료 후 추가 초기화
