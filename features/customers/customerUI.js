@@ -1692,12 +1692,9 @@ function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
                     return false; // 취소
                 }
             } else {
-                // 등록 모드 - 중복된 고객명이 있으면 등록을 막음
-                const message = `"${customerName}" 이름의 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n- 등록일: ${existingCustomer.registration_date}\n\n동일한 이름으로는 등록할 수 없습니다. 다른 이름을 사용하거나 기존 고객을 선택해주세요.`;
-                
-                alert(message);
-                console.log('❌ 중복된 고객명으로 인한 등록 차단');
-                return false; // 등록 차단
+                // 등록 모드 - 같은 이름이 있어도 전화번호가 다르면 등록 허용 (확인만)
+                const message = `"${customerName}" 이름의 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n\n다른 사람이 맞으면 확인을 눌러 계속 등록하세요.`;
+                return confirm(message); // 확인 → 계속, 취소 → 중단
             }
         }
         
