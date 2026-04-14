@@ -5,6 +5,20 @@ import { customerDataManager } from './customerData.js';
 import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
 
 // ----------------------------
+// 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
+// ----------------------------
+let _gradesCache = null;          // 고객등급 설정 캐시
+let _lastOrderCache = null;       // 전화번호→최근주문일 캐시
+let _lastOrderCacheTime = 0;      // 캐시 타임스탬프
+
+// 외부에서 캐시 무효화 (저장/삭제 후 호출)
+export function invalidateCustomerUICache() {
+    _gradesCache = null;
+    _lastOrderCache = null;
+    _lastOrderCacheTime = 0;
+}
+
+// ----------------------------
 // 고객 모달 저장(중복 방지) 유틸
 // ----------------------------
 let customerModalEventsAbortController = null;
@@ -160,33 +174,38 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             console.error('❌ 고객 리스트 컨테이너를 찾을 수 없습니다.');
             return;
         }
-        
-        container.innerHTML = '';
-        
+
         // 목록 개수 표시
         const countEl = document.getElementById('customer-list-count');
         if (countEl) countEl.textContent = `${customers.length}명`;
-        
-        // 하단 상태 바: 총 고객 수 · 오늘 신규
+
+        // 하단 상태 바
         const totalEl = document.getElementById('customer-status-total');
         const todayEl = document.getElementById('customer-status-today');
         if (totalEl) totalEl.textContent = String(allCustomers.length);
         const todayStr = new Date().toISOString().slice(0, 10);
         const todayCount = allCustomers.filter(c => (c.registration_date || '').slice(0, 10) === todayStr).length;
         if (todayEl) todayEl.textContent = String(todayCount);
-        
+
         if (customers.length === 0) {
-            container.innerHTML = `
-                <tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</td></tr>
-            `;
+            container.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</td></tr>`;
             return;
         }
 
-        // 전화번호별 최근 주문일 조회 (farm_orders에서)
-        const lastOrderMap = await fetchLastOrderDatesByPhone();
+        // 두 쿼리를 병렬로 실행 (캐시 있으면 즉시 반환)
+        const [lastOrderMap, grades] = await Promise.all([
+            fetchLastOrderDatesByPhone(),
+            loadCustomerGradesFromSettings()
+        ]);
 
+        // 등급명 맵 (동기 조회)
+        const gradeNameMap = Object.fromEntries(grades.map(g => [g.code, g.name]));
+
+        // HTML을 먼저 문자열로 조립한 뒤 한 번에 교체 (깜박임 방지)
+        const fragment = document.createDocumentFragment();
         for (const customer of customers) {
-            const gradeDisplayName = await getGradeDisplayName(customer.grade);
+            const normalized = (customer.grade && String(customer.grade).trim()) || 'GENERAL';
+            const gradeDisplayName = gradeNameMap[normalized] || normalized;
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
             const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
@@ -208,8 +227,11 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
                 if (e.target.closest('button')) return;
                 showCustomerDetail(customer.id);
             });
-            container.appendChild(tr);
+            fragment.appendChild(tr);
         }
+        // 기존 내용과 새 내용을 한 번에 교체
+        container.innerHTML = '';
+        container.appendChild(fragment);
 
         console.log('✅ 고객 리스트(테이블) 렌더링 완료');
         
@@ -241,7 +263,12 @@ function normalizePhoneForOrder(phone) {
     return String(phone).replace(/[-\s]/g, '');
 }
 async function fetchLastOrderDatesByPhone() {
-    const map = new Map(); // normalizedPhone -> order_date string
+    // 60초 캐시 — 렌더마다 주문 2000건 재쿼리 방지
+    const now = Date.now();
+    if (_lastOrderCache && (now - _lastOrderCacheTime) < 60000) {
+        return _lastOrderCache;
+    }
+    const map = new Map();
     if (!window.supabaseClient) return map;
     try {
         const { data: orders, error } = await window.supabaseClient
@@ -264,6 +291,8 @@ async function fetchLastOrderDatesByPhone() {
     } catch (e) {
         console.warn('최근 주문일 조회 실패:', e);
     }
+    _lastOrderCache = map;
+    _lastOrderCacheTime = now;
     return map;
 }
 
@@ -291,32 +320,24 @@ function getGradeGradient(grade) {
     return gradeGradients[grade] || 'bg-gradient-to-br from-gray-500 to-gray-600';
 }
 
-// 고객관리에서 고객등급 정보 로드
+// 고객관리에서 고객등급 정보 로드 (세션 캐시 — 설정 변경 시 invalidateCustomerUICache() 호출)
 async function loadCustomerGradesFromSettings() {
+    if (_gradesCache) return _gradesCache;
     try {
-        console.log('👥 고객관리에서 고객등급 정보 로드 중...');
-        
         if (window.supabaseClient) {
             const { data, error } = await window.supabaseClient
                 .from('farm_settings')
                 .select('settings')
                 .eq('id', 1)
                 .single();
-            
-            if (error) {
-                console.warn('⚠️ 고객등급 설정 로드 실패, 기본값 사용:', error);
-                return getDefaultCustomerGrades();
-            }
-            
-            if (data && data.settings && data.settings.customerGrades && Array.isArray(data.settings.customerGrades) && data.settings.customerGrades.length > 0) {
-                console.log('✅ 고객관리에서 고객등급 로드됨:', data.settings.customerGrades);
-                return data.settings.customerGrades;
+
+            if (!error && data?.settings?.customerGrades?.length > 0) {
+                _gradesCache = data.settings.customerGrades;
+                return _gradesCache;
             }
         }
-        
-        console.log('📋 기본 고객등급 사용 (환경설정과 동일한 공통 기본값)');
-        return getDefaultCustomerGrades();
-        
+        _gradesCache = getDefaultCustomerGrades();
+        return _gradesCache;
     } catch (error) {
         console.error('❌ 고객등급 로드 실패:', error);
         return getDefaultCustomerGrades();
