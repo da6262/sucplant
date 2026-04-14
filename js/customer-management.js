@@ -302,7 +302,9 @@ function attachCustomerGradesEventListeners() {
         manageGradesBtn.addEventListener('click', async () => {
             if (window.switchTab) {
                 await window.switchTab('settings');
-                document.getElementById('settings-tab-customers')?.click();
+                if (window.showSettingsTab) {
+                    window.showSettingsTab('customers');
+                }
             }
         });
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
