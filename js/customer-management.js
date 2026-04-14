@@ -319,6 +319,12 @@ function attachCustomerGradesEventListeners() {
         manageGradesBtn.addEventListener('click', () => {
             if (window.switchTab) {
                 window.switchTab('settings');
+                // 환경설정 로드 후 고객등급 탭 자동 선택 (컴포넌트 fetch 완료 대기)
+                setTimeout(() => {
+                    const gradeTab = document.getElementById('settings-tab-customers');
+                    if (gradeTab) gradeTab.click();
+                    else setTimeout(() => document.getElementById('settings-tab-customers')?.click(), 400);
+                }, 600);
             }
         });
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
@@ -936,8 +942,12 @@ function attachCustomerEventListeners() {
         const customerSearch = document.getElementById('customer-search');
         if (customerSearch) {
             customerSearch.addEventListener('input', function(e) {
-                console.log('🔍 고객 검색:', e.target.value);
-                // 검색 로직은 customerUI.js에서 처리
+                const searchTerm = e.target.value.trim();
+                const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+                const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+                if (window.renderCustomersTable) {
+                    window.renderCustomersTable(gradeFilter, searchTerm);
+                }
             });
             console.log('✅ 고객 검색 이벤트 리스너 연결 완료');
         }
@@ -1004,9 +1014,10 @@ function attachCustomerEventListeners() {
                     ? activeGradeButton.id.replace('customer-grade-', '')
                     : 'all';
                 
-                // 테이블 다시 렌더링
+                // 테이블 다시 렌더링 (검색어 유지)
+                const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(gradeFilter);
+                    window.renderCustomersTable(gradeFilter, searchTerm);
                 }
             });
             console.log('✅ 고객 정렬 이벤트 리스너 연결 완료');
@@ -1023,9 +1034,10 @@ function attachCustomerEventListeners() {
                 gradeTabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
                 
-                // 테이블 필터링
+                // 테이블 필터링 (검색어 유지)
+                const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(grade);
+                    window.renderCustomersTable(grade, searchTerm);
                 }
             });
         });
