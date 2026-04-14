@@ -558,6 +558,10 @@ function attachOrderDetailEventListeners(modal, order) {
                 if (window.generateOrderPrintHTML) {
                     const printHTML = window.generateOrderPrintHTML(order);
                     const printWindow = window.open('', '_blank');
+                    if (!printWindow) {
+                        alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+                        return;
+                    }
                     printWindow.document.write(printHTML);
                     printWindow.document.close();
                     printWindow.focus();
@@ -1600,10 +1604,14 @@ function printPickingList(pickingData, type) {
         if (printHTML) {
             // 새 창에서 출력
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+                return;
+            }
             printWindow.document.write(printHTML);
             printWindow.document.close();
             printWindow.focus();
-            
+
             // 인쇄 대화상자 열기
             setTimeout(() => {
                 printWindow.print();
@@ -1636,6 +1644,10 @@ function printPreviewContent() {
         
         // 새 창에서 인쇄
         const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+            return;
+        }
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -1644,8 +1656,8 @@ function printPreviewContent() {
                 <meta charset="UTF-8">
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { 
-                        font-family: 'Malgun Gothic', sans-serif; 
+                    body {
+                        font-family: 'Malgun Gothic', sans-serif;
                         padding: 20px;
                         background: white;
                     }
@@ -1661,7 +1673,7 @@ function printPreviewContent() {
         `);
         printWindow.document.close();
         printWindow.focus();
-        
+
         // 인쇄 대화상자 열기
         setTimeout(() => {
             printWindow.print();
