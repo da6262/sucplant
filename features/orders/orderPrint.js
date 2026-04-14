@@ -293,55 +293,54 @@ function _pickingCSS() {
         .invoice-container {
             max-width: 800px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 12px;
             background: white;
         }
         .header {
             text-align: center;
-            border-bottom: 3px solid #2c5aa0;
-            padding-bottom: 20px;
-            margin-bottom: 30px;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
         }
         .company-name {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
         .invoice-title {
-            font-size: 18px;
+            font-size: 13px;
             color: #666;
             font-weight: normal;
         }
         .summary-section {
             display: flex;
             justify-content: space-between;
-            margin-bottom: 30px;
-            padding: 20px;
+            margin-bottom: 12px;
+            padding: 10px 16px;
             background: #f8f9fa;
-            border-radius: 8px;
+            border-radius: 6px;
         }
         .summary-item {
             flex: 1;
             text-align: center;
-            margin: 0 10px;
         }
         .summary-value {
-            font-size: 20px;
+            font-size: 16px;
             font-weight: bold;
             color: #2c5aa0;
-            margin-bottom: 5px;
+            margin-bottom: 2px;
         }
         .summary-label {
-            font-size: 12px;
+            font-size: 11px;
             color: #666;
         }
         .section-title {
             background: #f8f9fa;
-            padding: 8px 12px;
-            margin: 20px 0 0 0;
+            padding: 6px 10px;
+            margin: 10px 0 0 0;
             border-left: 4px solid #2c5aa0;
-            font-size: 14px;
+            font-size: 12px;
             color: #2c5aa0;
             font-weight: bold;
         }
@@ -349,18 +348,18 @@ function _pickingCSS() {
             width: 100%;
             border-collapse: collapse;
             border: 1px solid #ddd;
-            margin-bottom: 24px;
+            margin-bottom: 10px;
         }
         .product-table th {
             background: #2c5aa0;
             color: white;
-            padding: 12px 8px;
+            padding: 8px 6px;
             text-align: center;
             font-weight: bold;
             font-size: 11px;
         }
         .product-table td {
-            padding: 10px 8px;
+            padding: 7px 6px;
             border: 1px solid #ddd;
             text-align: center;
             font-size: 11px;
@@ -368,14 +367,14 @@ function _pickingCSS() {
             word-break: break-all;
         }
         .product-table td:first-child { font-weight: bold; }
-        .product-table td.left { text-align: left; padding-left: 10px; }
-        .product-table td.right { text-align: right; font-weight: bold; padding-right: 10px; }
+        .product-table td.left { text-align: left; padding-left: 8px; }
+        .product-table td.right { text-align: right; font-weight: bold; padding-right: 8px; }
         .product-table tr:nth-child(even) { background: #f8f9fa; }
         .footer {
-            margin-top: 40px;
+            margin-top: 16px;
             text-align: center;
-            padding-top: 20px;
-            border-top: 2px solid #eee;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
             font-size: 10px;
             color: #666;
         }
