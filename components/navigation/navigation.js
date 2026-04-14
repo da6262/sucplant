@@ -364,14 +364,8 @@ class NavigationComponent {
             }
         });
         
-        // 초기 히스토리 상태 설정
-        const initialTab = window.location.hash.slice(1) || 'dashboard';
-        if (initialTab !== 'dashboard') {
-            this.handleTabChange(initialTab, true);
-        } else {
-            // 초기 상태를 히스토리에 추가
-            history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
-        }
+        // 초기 히스토리 상태 설정 — 항상 대시보드로 시작
+        history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
         
         this.historyEnabled = true;
         console.log('✅ 히스토리 관리 활성화');
