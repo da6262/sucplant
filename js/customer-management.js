@@ -9,12 +9,10 @@ async function loadCustomerManagementComponent() {
 
         const existingSection = document.getElementById('customers-section');
 
-        // ── 재방문: HTML 재로드 생략, 데이터만 새로고침 ──
+        // ── 재방문: 이미 내용이 있으면 데이터만 새로고침 ──
         if (existingSection && existingSection.dataset.loaded === 'true') {
             console.log('⚡ 고객관리 이미 로드됨 — 데이터만 갱신');
-            // 캐시된 데이터를 즉시 표시 (화면은 이미 있음)
             if (window.renderCustomersTable) window.renderCustomersTable('all');
-            // 백그라운드에서 최신 데이터 반영
             if (window.customerDataManager) {
                 window.customerDataManager.loadCustomers().then(() => {
                     if (window.renderCustomersTable) window.renderCustomersTable('all');
@@ -29,12 +27,23 @@ async function loadCustomerManagementComponent() {
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const html = await response.text();
-        mainContentElement.insertAdjacentHTML('beforeend', html);
 
-        const newSection = document.getElementById('customers-section');
-        if (!newSection) throw new Error('고객관리 섹션을 찾을 수 없습니다.');
+        if (existingSection) {
+            // index.html의 빈 placeholder가 있으면 내용을 직접 교체 (ID 중복 방지)
+            existingSection.innerHTML = html;
+            // customer-management.html 자체가 outer div를 포함하는 경우 내부 섹션으로 교체
+            const inner = existingSection.querySelector('#customers-section');
+            if (inner) {
+                existingSection.replaceWith(inner);
+            }
+        } else {
+            mainContentElement.insertAdjacentHTML('beforeend', html);
+        }
 
-        newSection.setAttribute('data-dynamic', 'true');
+        const section = document.getElementById('customers-section');
+        if (!section) throw new Error('고객관리 섹션을 찾을 수 없습니다.');
+
+        section.setAttribute('data-dynamic', 'true');
 
         if (typeof window.initCustomerManagementSection === 'function') {
             await window.initCustomerManagementSection();
@@ -42,7 +51,7 @@ async function loadCustomerManagementComponent() {
             await runCustomerManagementInit();
         }
 
-        newSection.dataset.loaded = 'true';
+        section.dataset.loaded = 'true';
         console.log('✅ 고객관리 컴포넌트 로드 완료');
         return true;
 
