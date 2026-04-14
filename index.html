@@ -1166,22 +1166,26 @@
                 cssLink.href = 'components/settings/settings.css';
                 document.head.appendChild(cssLink);
                 
-                // 환경설정 JavaScript 로드
-                const script = document.createElement('script');
-                script.src = 'components/settings/settings.js';
-                script.onload = () => {
-                    console.log('✅ 환경설정 JavaScript 로드 완료');
-                    // 환경설정 초기화
-                    if (window.SettingsComponent) {
-                        const settingsComponent = new window.SettingsComponent();
-                        settingsComponent.init(settingsContainer);
-                    }
-                };
-                script.onerror = () => {
-                    console.error('❌ 환경설정 JavaScript 로드 실패');
-                };
-                document.head.appendChild(script);
-                
+                // 환경설정 JavaScript 로드 (완료까지 대기)
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'components/settings/settings.js';
+                    script.onload = () => {
+                        console.log('✅ 환경설정 JavaScript 로드 완료');
+                        // 환경설정 초기화
+                        if (window.SettingsComponent) {
+                            const settingsComponent = new window.SettingsComponent();
+                            settingsComponent.init(settingsContainer);
+                        }
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        console.error('❌ 환경설정 JavaScript 로드 실패');
+                        resolve(); // 실패해도 진행
+                    };
+                    document.head.appendChild(script);
+                });
+
                 console.log('✅ 환경설정 컴포넌트 로드 완료');
                 return true;
                 
