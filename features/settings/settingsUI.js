@@ -278,11 +278,11 @@ export async function loadCustomerGrades() {
                     </div>
                     <div>
                         <div class="font-semibold text-gray-800">${grade.name}</div>
-                        <div class="text-sm text-gray-600">
+                        <div class="text-xs text-gray-600">
                             <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs mr-2">${grade.code}</span>
                             최소 ${grade.minAmount.toLocaleString()}원
                         </div>
-                        <div class="text-sm text-gray-500 mt-1">
+                        <div class="text-xs text-gray-500 mt-1">
                             <i class="fas fa-percentage mr-1"></i>할인 ${grade.discount}%
                         </div>
                     </div>
@@ -433,7 +433,7 @@ export async function loadSalesChannels() {
                     <div class="w-3 h-3 rounded-full mr-3 ${isActive ? 'bg-green-500' : 'bg-gray-400'}"></div>
                     <div>
                         <div class="font-medium">${(channel.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                        <div class="text-sm text-gray-600">${(channel.description || channel.icon || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
+                        <div class="text-xs text-gray-600">${(channel.description || channel.icon || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -477,7 +477,7 @@ export function loadOrderStatuses() {
                     <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${status.color}"></div>
                     <div>
                         <div class="font-medium">${status.label}</div>
-                        <div class="text-sm text-gray-600">${status.description}</div>
+                        <div class="text-xs text-gray-600">${status.description}</div>
                     </div>
                 </div>
                 <div class="flex space-x-2">
@@ -959,27 +959,27 @@ window.editCustomerGrade = async function(index) {
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">등급명</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">등급명</label>
                             <input type="text" id="edit-grade-name" value="${currentGrade.name}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">최소 구매금액 (원)</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">최소 구매금액 (원)</label>
                             <input type="number" id="edit-grade-min-amount" value="${currentGrade.minAmount}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">할인율 (%)</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">할인율 (%)</label>
                             <input type="number" id="edit-grade-discount" value="${currentGrade.discount}" min="0" max="100"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">색상</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">색상</label>
                             <input type="color" id="edit-grade-color" value="${currentGrade.color}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">아이콘</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">아이콘</label>
                             <select id="edit-grade-icon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="fas fa-circle" ${currentGrade.icon === 'fas fa-circle' ? 'selected' : ''}>원형</option>
                                 <option value="fas fa-hexagon" ${currentGrade.icon === 'fas fa-hexagon' ? 'selected' : ''}>육각형</option>

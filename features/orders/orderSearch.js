@@ -50,28 +50,42 @@ function searchExistingCustomers(query) {
 }
 
 // HTML에서 호출할 수 있는 래퍼 함수
-function selectCustomerFromHTML(customerId, name, phone, address) {
+function selectCustomerFromHTML(customerId, name, phone, address, addressDetail) {
     try {
-        console.log('🔍 HTML에서 고객 선택:', { customerId, name, phone, address });
-        
-        // 고객 정보를 주문 폼에 자동 입력
-        const customerNameInput = document.getElementById('order-customer-name');
-        const customerPhoneInput = document.getElementById('order-customer-phone');
-        const customerAddressInput = document.getElementById('order-customer-address');
-        
-        if (customerNameInput) customerNameInput.value = name;
-        if (customerPhoneInput) customerPhoneInput.value = phone;
-        if (customerAddressInput) customerAddressInput.value = address;
-        
+        console.log('🔍 HTML에서 고객 선택:', { customerId, name, phone, address, addressDetail });
+
+        const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
+        set('order-customer-id', customerId);
+        set('order-customer-name', name);
+        set('order-customer-phone', phone);
+        set('order-customer-address', address);
+        set('order-customer-address-detail', addressDetail);
+        set('order-customer-search', name); // 검색창에도 이름 표시
+
         // 검색 결과 숨기기
         const resultsDiv = document.getElementById('customer-search-results');
-        if (resultsDiv) {
-            resultsDiv.classList.add('hidden');
-        }
-        
+        if (resultsDiv) resultsDiv.classList.add('hidden');
+
+        if (window.updateOrderSubmitButtonState) window.updateOrderSubmitButtonState();
         console.log('✅ 고객 정보 자동 입력 완료');
     } catch (error) {
         console.error('❌ 고객 선택 실패:', error);
+    }
+}
+
+// 고객 ID로 Supabase에서 전체 정보 조회 후 폼에 입력
+async function fillOrderFormFromCustomerId(customerId) {
+    if (!customerId || !window.supabaseClient) return;
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_customers')
+            .select('id, name, phone, address, address_detail')
+            .eq('id', customerId)
+            .single();
+        if (error || !data) return;
+        selectCustomerFromHTML(data.id, data.name, data.phone, data.address, data.address_detail);
+    } catch (e) {
+        console.error('고객 정보 조회 실패:', e);
     }
 }
 
@@ -556,6 +570,7 @@ function closeProductSearch() {
 // 전역 스코프에 함수 등록
 window.searchExistingCustomers = searchExistingCustomers;
 window.selectCustomerFromHTML = selectCustomerFromHTML;
+window.fillOrderFormFromCustomerId = fillOrderFormFromCustomerId;
 window.searchProducts = searchProducts;
 window.selectProductFromSearch = selectProductFromSearch;
 window.addToCart = addToCart;

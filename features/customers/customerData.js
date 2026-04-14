@@ -21,6 +21,28 @@ class CustomerDataManager {
         return String(phone).replace(/\D/g, '');
     }
 
+    _sanitizeCustomer(customer) {
+        const safeCustomer = { ...customer };
+        const normalizedPhone = this._normalizePhone(safeCustomer.phone);
+
+        safeCustomer.name = safeCustomer.name != null ? String(safeCustomer.name).trim() : '';
+        safeCustomer.phone = safeCustomer.phone != null ? String(safeCustomer.phone).trim() : '';
+        safeCustomer.address = safeCustomer.address != null ? String(safeCustomer.address) : '';
+        safeCustomer.address_detail = safeCustomer.address_detail != null ? String(safeCustomer.address_detail) : '';
+        safeCustomer.email = safeCustomer.email != null ? String(safeCustomer.email).trim() : '';
+        safeCustomer.grade = (safeCustomer.grade && String(safeCustomer.grade).trim()) ? String(safeCustomer.grade).trim() : 'GENERAL';
+        safeCustomer.memo = safeCustomer.memo != null ? String(safeCustomer.memo) : '';
+        safeCustomer.phone_normalized = normalizedPhone || null;
+        safeCustomer.youtube_order_count = Number.isFinite(Number(safeCustomer.youtube_order_count))
+            ? Number(safeCustomer.youtube_order_count)
+            : 0;
+        safeCustomer.live_order_count = Number.isFinite(Number(safeCustomer.live_order_count))
+            ? Number(safeCustomer.live_order_count)
+            : 0;
+
+        return safeCustomer;
+    }
+
     /** 전화번호 기준 중복 제거. 동일 전화번호면 created_at 최신 1건만 유지 */
     _dedupeCustomersByPhone(customers) {
         if (!Array.isArray(customers) || customers.length === 0) return customers;
@@ -72,11 +94,7 @@ class CustomerDataManager {
             }
             
             // 로드 후 grade 없음(null/빈값) → 'GENERAL'(일반)으로 통일, 상세주소 항상 보존
-            let list = (data || []).map(c => ({
-                ...c,
-                grade: (c.grade && String(c.grade).trim()) ? String(c.grade).trim() : 'GENERAL',
-                address_detail: c.address_detail != null ? String(c.address_detail) : ''
-            }));
+            let list = (data || []).map(c => this._sanitizeCustomer(c));
             // 전화번호 기준 중복 제거 (같은 사람이 두 번 나오는 현상 방지) — 최신(created_at) 1건만 유지
             this.farm_customers = this._dedupeCustomersByPhone(list);
             console.log(`✅ Supabase에서 고객 ${this.farm_customers.length}개 로드됨 (중복 제거 후)`);
@@ -106,11 +124,7 @@ class CustomerDataManager {
                         // 가장 최근 백업 사용
                         const latestBackup = backupData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at))[0];
                         const raw = latestBackup.data || [];
-                        let list = raw.map(c => ({
-                            ...c,
-                            grade: (c.grade && String(c.grade).trim()) ? String(c.grade).trim() : 'GENERAL',
-                            address_detail: c.address_detail != null ? String(c.address_detail) : ''
-                        }));
+                        let list = raw.map(c => this._sanitizeCustomer(c));
                         this.farm_customers = this._dedupeCustomersByPhone(list);
                         console.log(`✅ Supabase 백업에서 고객 ${this.farm_customers.length}개 로드됨 (${latestBackup.backup_date}, 중복 제거 후)`);
                     } else {
@@ -181,13 +195,16 @@ class CustomerDataManager {
             
             // 안전한 저장 방식: upsert 사용 (기존 데이터 삭제하지 않음)
             if (this.farm_customers.length > 0) {
+                const normalizedCustomers = this.farm_customers.map(c => this._sanitizeCustomer(c));
+                this.farm_customers = normalizedCustomers;
+
                 const customersToSave = (this.supportsAddressDetail === false)
-                    ? this.farm_customers.map(c => {
+                    ? normalizedCustomers.map(c => {
                         // eslint-disable-next-line no-unused-vars
                         const { address_detail, ...rest } = c;
                         return rest;
                     })
-                    : this.farm_customers;
+                    : normalizedCustomers;
 
                 let { data, error } = await window.supabaseClient
                     .from('farm_customers')
@@ -301,8 +318,11 @@ class CustomerDataManager {
                 email: customerData.email || '',
                 grade: customerData.grade || 'GENERAL',
                 registration_date: customerData.registration_date || today, // DATE 형식
-                memo: customerData.memo || ''
-                // created_at, updated_at는 Supabase에서 자동 생성
+                memo: customerData.memo || '',
+                phone_normalized: this._normalizePhone(customerData.phone),
+                youtube_order_count: 0,
+                live_order_count: 0,
+                created_at: nowISO
             };
             
             console.log('📅 고객 등록일 설정:', newCustomer.registration_date);
@@ -353,11 +373,11 @@ class CustomerDataManager {
             }
             
             // 고객 정보 업데이트
-            this.farm_customers[customerIndex] = {
+            this.farm_customers[customerIndex] = this._sanitizeCustomer({
                 ...this.farm_customers[customerIndex],
                 ...updateData,
                 updated_at: new Date().toISOString()
-            };
+            });
             
             // 데이터 저장
             await this.saveCustomers();
@@ -380,21 +400,28 @@ class CustomerDataManager {
     async deleteCustomer(customerId) {
         try {
             console.log('🗑️ 고객 삭제:', customerId);
-            
+
             const customerIndex = this.farm_customers.findIndex(c => c.id === customerId);
             if (customerIndex === -1) {
                 throw new Error('고객을 찾을 수 없습니다.');
             }
-            
-            // 고객 삭제
+
             const deletedCustomer = this.farm_customers.splice(customerIndex, 1)[0];
-            
-            // 데이터 저장
-            await this.saveCustomers();
-            
+
+            // Supabase에서 실제 row 삭제 (upsert는 삭제 불가)
+            if (!window.supabaseClient) {
+                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
+            }
+            const { error } = await window.supabaseClient
+                .from('farm_customers')
+                .delete()
+                .eq('id', customerId);
+
+            if (error) throw new Error(`Supabase 삭제 실패: ${error.message}`);
+
             console.log('✅ 고객 삭제 완료:', deletedCustomer);
             return deletedCustomer;
-            
+
         } catch (error) {
             console.error('❌ 고객 삭제 실패:', error);
             throw error;
@@ -448,6 +475,12 @@ class CustomerDataManager {
                         return a.phone.localeCompare(b.phone);
                     case 'phone_desc':
                         return b.phone.localeCompare(a.phone);
+                    case 'grade_high': {
+                        const gradeOrder = { BLACK_DIAMOND: 0, PURPLE_EMPEROR: 1, RED_RUBY: 2, GREEN_LEAF: 3, GENERAL: 4 };
+                        const ga = gradeOrder[a.grade] ?? 5;
+                        const gb = gradeOrder[b.grade] ?? 5;
+                        return ga !== gb ? ga - gb : a.name.localeCompare(b.name);
+                    }
                     default:
                         return 0;
                 }

@@ -311,11 +311,13 @@ async function saveCustomer() {
 function attachCustomerGradesEventListeners() {
     console.log('🔄 고객등급관리 이벤트 리스너 연결 중...');
     
-    // 고객등급 관리 모달 열기
+    // 등급 관리 → 환경설정 탭으로 이동
     const manageGradesBtn = document.getElementById('manage-customer-grades-btn');
     if (manageGradesBtn) {
-        manageGradesBtn.addEventListener('click', openCustomerGradesModal);
-        console.log('✅ 고객등급 관리 버튼 이벤트 리스너 연결');
+        manageGradesBtn.addEventListener('click', () => {
+            if (window.switchTab) window.switchTab('settings');
+        });
+        console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
     
     console.log('✅ 고객등급관리 이벤트 리스너 연결 완료');

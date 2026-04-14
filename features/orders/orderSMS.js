@@ -420,3 +420,147 @@ window.closeSMSTemplateModal = closeSMSTemplateModal;
 window.sendOrderSMSFromModal = sendOrderSMSFromModal;
 window.sendWaitlistSMS = sendWaitlistSMS;
 
+// =============================================
+// Solapi API 직접 연동 (고객 문자 발송)
+// =============================================
+
+const SOLAPI_CONFIG = {
+    apiKey: 'NCS4ZXQ1JWMUPQ3W',
+    apiSecret: 'MLER1HFO30FJGXMZLEN9P82TZL6ZWEM2',
+    from: '01097456245'
+};
+
+// Web Crypto API로 HMAC-SHA256 서명 생성
+async function _createSolapiSignature(date, salt) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        'raw', enc.encode(SOLAPI_CONFIG.apiSecret),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${date}${salt}`));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function _randomHex(bytes) {
+    const arr = new Uint8Array(bytes);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Solapi SMS 발송 (저수준)
+async function sendSolapiSMS(phoneNumber, message) {
+    const normalizedPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
+    if (!normalizedPhone) throw new Error('전화번호가 없습니다.');
+
+    const date = new Date().toISOString();
+    const salt = _randomHex(16);
+    const signature = await _createSolapiSignature(date, salt);
+    const authHeader = `HMAC-SHA256 apiKey=${SOLAPI_CONFIG.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+
+    const response = await fetch('https://api.solapi.com/messages/v4/send', {
+        method: 'POST',
+        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: { to: normalizedPhone, from: SOLAPI_CONFIG.from, text: message } })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`솔라피 오류 ${response.status}: ${err}`);
+    }
+    return await response.json();
+}
+
+// 고객 문자 발송 모달
+function openCustomerSMSModal(phone, customerName) {
+    const existing = document.getElementById('customer-sms-modal');
+    if (existing) existing.remove();
+
+    const displayPhone = (phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+
+    const modal = document.createElement('div');
+    modal.id = 'customer-sms-modal';
+    modal.className = 'fixed inset-0 z-[600] flex items-center justify-center';
+    modal.innerHTML = `
+        <div class="absolute inset-0 bg-black bg-opacity-50" id="customer-sms-backdrop"></div>
+        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                <div class="flex items-center gap-2">
+                    <i class="fas fa-sms text-emerald-500"></i>
+                    <span class="font-semibold text-gray-800 text-sm">문자 발송</span>
+                </div>
+                <button id="customer-sms-close" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="px-4 py-3 space-y-2">
+                <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded px-3 py-2">
+                    <i class="fas fa-user text-gray-400"></i>
+                    <span class="font-medium">${escapeHtmlBasic(customerName || '')}</span>
+                    <span class="text-gray-400">·</span>
+                    <span>${escapeHtmlBasic(displayPhone)}</span>
+                </div>
+                <div>
+                    <textarea id="customer-sms-message" rows="5"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
+                        placeholder="[경산다육식물농장] 안녕하세요, ${escapeHtmlBasic(customerName || '고객')}님..."></textarea>
+                    <div class="text-right text-xs text-gray-400 mt-0.5"><span id="customer-sms-count">0</span>자</div>
+                </div>
+            </div>
+            <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
+                <button id="customer-sms-cancel" class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium">취소</button>
+                <button id="customer-sms-send" class="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-medium">
+                    <i class="fas fa-paper-plane mr-1"></i>발송
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const msgArea = modal.querySelector('#customer-sms-message');
+    const countEl = modal.querySelector('#customer-sms-count');
+    const sendBtn = modal.querySelector('#customer-sms-send');
+    const close = () => modal.remove();
+
+    modal.querySelector('#customer-sms-backdrop').addEventListener('click', close);
+    modal.querySelector('#customer-sms-close').addEventListener('click', close);
+    modal.querySelector('#customer-sms-cancel').addEventListener('click', close);
+    msgArea.addEventListener('input', () => { countEl.textContent = msgArea.value.length; });
+    msgArea.focus();
+
+    sendBtn.addEventListener('click', async () => {
+        const message = msgArea.value.trim();
+        if (!message) { alert('메시지를 입력해주세요.'); return; }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>발송중...';
+
+        try {
+            await sendSolapiSMS(phone, message);
+            modal.remove();
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 z-[700] px-4 py-2.5 bg-emerald-600 text-white text-sm rounded-lg shadow-lg flex items-center gap-2';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> SMS 발송 완료';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        } catch (err) {
+            console.error('SMS 발송 실패:', err);
+            alert('SMS 발송 실패: ' + err.message);
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>발송';
+        }
+    });
+}
+
+function escapeHtmlBasic(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// 고객 ID로 문자 발송 (테이블 행에서 사용)
+function openCustomerSMSById(customerId) {
+    const data = window._customerSMSMap?.[customerId];
+    if (!data) { alert('고객 정보를 찾을 수 없습니다.'); return; }
+    openCustomerSMSModal(data.phone, data.name);
+}
+
+window.sendSolapiSMS = sendSolapiSMS;
+window.openCustomerSMSModal = openCustomerSMSModal;
+window.openCustomerSMSById = openCustomerSMSById;
+

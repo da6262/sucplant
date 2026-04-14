@@ -9,9 +9,9 @@ function toIntegerWon(value) {
 }
 
 // 주문 모달 열기
-export async function openOrderModal(orderId = null) {
+export async function openOrderModal(orderId = null, customerData = null) {
     try {
-        console.log('주문 모달 열기:', orderId);
+        console.log('주문 모달 열기:', orderId, customerData);
         
         let modal = document.getElementById('order-modal');
         
@@ -43,15 +43,20 @@ export async function openOrderModal(orderId = null) {
         // 주문 등록 팝업 표시
         modal.classList.remove('hidden');
         modal.style.display = 'block';
-        
+
+        // ESC 키로 닫기
+        document.removeEventListener('keydown', _orderModalEscHandler);
+        document.addEventListener('keydown', _orderModalEscHandler);
+
         // 배경 스크롤 방지
         document.body.style.overflow = 'hidden';
         
         // 주문 폼 HTML 생성 (먼저 폼을 생성해야 함)
-        if (window.generateOrderFormHTML) {
+        const _genForm = window.generateOrderFormHTMLMinimal || window.generateOrderFormHTML;
+        if (_genForm) {
             const orderForm = document.getElementById('order-form');
             if (orderForm) {
-                const formHTML = window.generateOrderFormHTML();
+                const formHTML = _genForm();
                 console.log('🔍 생성된 HTML 길이:', formHTML.length);
                 console.log('🔍 cart-items-body 포함 여부:', formHTML.includes('cart-items-body'));
                 orderForm.innerHTML = formHTML;
@@ -125,6 +130,41 @@ export async function openOrderModal(orderId = null) {
             if (typeof window.applyShippingFeeSuggestionForNewOrder === 'function') {
                 await window.applyShippingFeeSuggestionForNewOrder();
             }
+            // 고객 데이터 자동 입력 — customerId가 있으면 DB에서 전체 조회
+            if (customerData && customerData.customerId) {
+                setTimeout(async () => {
+                    try {
+                        let name = customerData.customerName || '';
+                        let phone = customerData.customerPhone || '';
+                        let address = customerData.customerAddress || '';
+                        let addressDetail = '';
+                        let grade = 'GENERAL';
+
+                        if (window.supabaseClient) {
+                            const { data } = await window.supabaseClient
+                                .from('farm_customers')
+                                .select('name, phone, address, address_detail, grade')
+                                .eq('id', customerData.customerId)
+                                .single();
+                            if (data) {
+                                name = data.name || name;
+                                phone = data.phone || phone;
+                                address = data.address || address;
+                                addressDetail = data.address_detail || '';
+                                grade = data.grade || grade;
+                            }
+                        }
+
+                        if (typeof window.selectCustomerFromSearch === 'function') {
+                            window.selectCustomerFromSearch(
+                                customerData.customerId, name, phone, address, grade, addressDetail
+                            );
+                        }
+                    } catch (e) {
+                        console.error('고객 정보 자동입력 실패:', e);
+                    }
+                }, 250);
+            }
         }
         
         // 모달 드래그 기능 초기화
@@ -195,6 +235,11 @@ async function loadOrderModal() {
     }
 }
 
+// ESC 키 핸들러 (모달 열릴 때 등록, 닫힐 때 제거)
+function _orderModalEscHandler(e) {
+    if (e.key === 'Escape') closeOrderModal();
+}
+
 // 주문 모달 닫기
 export function closeOrderModal() {
     try {
@@ -203,16 +248,16 @@ export function closeOrderModal() {
             modal.classList.add('hidden');
             modal.style.display = 'none';
         }
-        
+
+        // ESC 리스너 제거
+        document.removeEventListener('keydown', _orderModalEscHandler);
+
         // 배경 스크롤 복원
         document.body.style.overflow = '';
-        
+
         // 수정 모드 변수 초기화
         window.currentEditingOrderId = null;
-        console.log('🔄 수정 모드 변수 초기화 완료');
-        
-        console.log('✅ 주문 모달 닫기 완료');
-        
+
     } catch (error) {
         console.error('❌ 주문 모달 닫기 실패:', error);
     }
@@ -328,10 +373,11 @@ async function loadOrderItemsToCart(items) {
             const orderForm = document.getElementById('order-form');
             if (!orderForm) {
                 console.log('🔄 주문 폼이 없어서 생성 시도...');
-                if (window.generateOrderFormHTML) {
+                const _gen = window.generateOrderFormHTMLMinimal || window.generateOrderFormHTML;
+                if (_gen) {
                     const orderFormContainer = document.querySelector('#order-modal .modal-body');
                     if (orderFormContainer) {
-                        orderFormContainer.innerHTML = window.generateOrderFormHTML();
+                        orderFormContainer.innerHTML = _gen();
                         console.log('✅ 주문 폼 생성 완료');
                         // 다시 장바구니 테이블 바디 찾기
                         cartItemsBody = document.getElementById('cart-items-body');

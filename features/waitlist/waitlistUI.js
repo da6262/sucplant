@@ -265,29 +265,29 @@ export class WaitlistUI {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
         row.innerHTML = `
-            <td class="px-4 py-3 text-sm text-gray-900">${index + 1}</td>
-            <td class="px-4 py-3 text-sm font-medium text-gray-900">${item.customer_name}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">${item.customer_phone || '-'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">${item.product_name}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">${item.product_category || '-'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">${item.expected_price ? item.expected_price.toLocaleString() + '원' : '-'}</td>
-            <td class="px-4 py-3 text-sm">
+            <td class="px-2.5 py-2 text-xs text-gray-900">${index + 1}</td>
+            <td class="px-2.5 py-2 text-xs font-medium text-gray-900">${item.customer_name}</td>
+            <td class="px-2.5 py-2 text-xs text-gray-900">${item.customer_phone || '-'}</td>
+            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_name}</td>
+            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_category || '-'}</td>
+            <td class="px-2.5 py-2 text-xs text-gray-900">${item.expected_price ? item.expected_price.toLocaleString() + '원' : '-'}</td>
+            <td class="px-2.5 py-2 text-xs">
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStatusBadgeClass(item.status)}">
                     ${item.status}
                 </span>
             </td>
-            <td class="px-4 py-3 text-sm text-gray-900">${item.register_date ? new Date(item.register_date).toLocaleDateString('ko-KR') : '-'}</td>
-            <td class="px-4 py-3 text-sm text-gray-900">
+            <td class="px-2.5 py-2 text-xs text-gray-900">${item.register_date ? new Date(item.register_date).toLocaleDateString('ko-KR') : '-'}</td>
+            <td class="px-2.5 py-2 text-xs text-gray-900">
                 <div class="flex space-x-2">
-                    <button onclick="waitlistUI.editWaitlist('${item.id}')" 
-                            class="text-blue-600 hover:text-blue-800 transition-colors" 
+                    <button onclick="waitlistUI.editWaitlist('${item.id}')"
+                            class="text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded p-1 transition-colors"
                             title="수정">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-edit text-xs"></i>
                     </button>
-                    <button onclick="waitlistUI.deleteWaitlist('${item.id}')" 
-                            class="text-red-600 hover:text-red-800 transition-colors" 
+                    <button onclick="waitlistUI.deleteWaitlist('${item.id}')"
+                            class="text-red-400 hover:text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
                             title="삭제">
-                        <i class="fas fa-trash"></i>
+                        <i class="fas fa-trash text-xs"></i>
                     </button>
                     <button onclick="waitlistUI.updateStatus('${item.id}')" 
                             class="text-green-600 hover:text-green-800 transition-colors" 

@@ -33,12 +33,12 @@ const PRODUCT_TABLE_COLUMNS = [
 const COMMON_STYLES = {
     table: {
         row: 'hover:bg-gray-50',
-        cell: 'px-3 py-3 text-sm text-gray-900',
-        cellCenter: 'px-3 py-3 text-center'
+        cell: 'px-2.5 py-2 text-xs text-gray-900',
+        cellCenter: 'px-2.5 py-2 text-center text-xs'
     },
     button: {
-        edit: 'inline-flex items-center px-3 py-2 text-sm font-medium text-blue-600 bg-blue-50 hover:bg-blue-100 border border-blue-200 hover:border-blue-300 rounded-lg transition-colors mr-2',
-        delete: 'inline-flex items-center px-3 py-2 text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 border border-red-200 hover:border-red-300 rounded-lg transition-colors',
+        edit: 'p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded cursor-pointer border-none bg-transparent',
+        delete: 'p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer border-none bg-transparent',
         primary: 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors',
         secondary: 'bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-colors'
     },

@@ -41,6 +41,10 @@ class OrderDataManager {
         this.filteredShippingOrders = [];
         this.currentPreviewOrders = null;
         this.currentPreviewType = null;
+
+        // 날짜 필터
+        this._dateFrom = null;  // Date 객체 또는 null
+        this._dateTo = null;    // Date 객체 또는 null
         
         // Master-Detail 패턴을 위한 선택된 고객 정보
         this.selectedCustomerId = null;
@@ -410,12 +414,28 @@ class OrderDataManager {
         try {
             const rows = Array.isArray(this.farm_order_rows) ? this.farm_order_rows : [];
             const norm = (s) => (s != null && String(s).trim() !== '') ? String(s).trim() : '주문접수';
-            if (!status || status === 'all') return rows;
-            if (status === 'work_todo') return rows.filter((r) => { const st = norm(r.order_status); return st === '상품준비' || st === '배송준비'; });
-            if (status === 'work_deposit') return rows.filter((r) => norm(r.order_status) === '입금대기');
-            if (status === 'work_ship_today') return rows.filter((r) => { const st = norm(r.order_status); return st === '배송준비' || st === '배송중'; });
-            if (status === 'work_done') return rows.filter((r) => norm(r.order_status) === '배송완료');
-            return rows.filter((r) => norm(r.order_status) === status);
+
+            let filtered;
+            if (!status || status === 'all') filtered = rows;
+            else if (status === 'work_todo') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '상품준비' || st === '배송준비'; });
+            else if (status === 'work_deposit') filtered = rows.filter((r) => norm(r.order_status) === '입금대기');
+            else if (status === 'work_ship_today') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '배송준비' || st === '배송중'; });
+            else if (status === 'work_done') filtered = rows.filter((r) => norm(r.order_status) === '배송완료');
+            else filtered = rows.filter((r) => norm(r.order_status) === status);
+
+            // 날짜 필터 적용
+            if (this._dateFrom || this._dateTo) {
+                filtered = filtered.filter(r => {
+                    const dateStr = r.order_created_at || r.order_date;
+                    if (!dateStr) return false;
+                    const d = new Date(dateStr);
+                    if (this._dateFrom && d < this._dateFrom) return false;
+                    if (this._dateTo && d > this._dateTo) return false;
+                    return true;
+                });
+            }
+
+            return filtered;
         } catch (error) {
             console.error('❌ OrderDataManager: filterOrdersByStatus 실패:', error);
             return [];
@@ -866,7 +886,24 @@ class OrderDataManager {
             const statusColor = this.getStatusColor(orderStatus);
             const customerName = (order.customer_name || '고객명 없음').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const totalAmount = Number(order.total_amount) || 0;
-            const orderNumber = (order.order_number || order.id || order.order_id || '-').toString().replace(/</g, '&lt;');
+            let orderNumber;
+            if (order.order_number) {
+                orderNumber = order.order_number.toString().replace(/</g, '&lt;');
+            } else {
+                // 주문번호 없는 기존 주문: 생성일+ID 끝 4자리로 폴백 번호 생성
+                const createdAt = order.order_created_at || order.created_at;
+                const uid = isRowSpec ? order.order_id : order.id;
+                if (createdAt && uid) {
+                    const d = new Date(createdAt);
+                    const yy = String(d.getFullYear()).slice(2);
+                    const mm = String(d.getMonth() + 1).padStart(2, '0');
+                    const dd2 = String(d.getDate()).padStart(2, '0');
+                    const shortId = uid.replace(/-/g, '').slice(-4).toUpperCase();
+                    orderNumber = `ORD-${yy}${mm}${dd2}-${shortId}`;
+                } else {
+                    orderNumber = '-';
+                }
+            }
             const productSummary = isRowSpec
                 ? String(order.order_items_summary ?? '-').replace(/</g, '&lt;').replace(/>/g, '&gt;')
                 : this.getOrderProductSummary(order).replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -899,8 +936,8 @@ class OrderDataManager {
                     </td>
                     <td class="px-2 py-1.5 text-center align-middle font-medium tabular-nums ${ddayWarn ? 'text-red-600 font-semibold' : 'text-gray-600'}">${ddayText}</td>
                     <td class="px-2 py-1.5 align-middle font-semibold text-gray-900">${customerName}</td>
-                    <td class="px-2 py-1.5 align-middle text-gray-700 truncate max-w-[200px]" title="${productSummary}">${productSummary}</td>
-                    <td class="px-2 py-1.5 align-middle text-[10px] text-gray-400">${orderNumber}</td>
+                    <td class="px-2 py-1.5 align-middle text-gray-700" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary}</div></td>
+                    <td class="px-2 py-1.5 align-middle whitespace-nowrap text-[10px] text-gray-400">${orderNumber}</td>
                     <td class="px-2 py-1.5 text-right align-middle font-medium text-gray-900 tabular-nums">${totalAmount.toLocaleString()}원</td>
                     <td class="px-2 py-1.5 align-middle relative" onclick="event.stopPropagation()">
                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${statusColor}" 
@@ -918,9 +955,9 @@ class OrderDataManager {
                     <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
-                        <button class="p-1 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                        <button class="p-1 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                    <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
+                        <button class="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-edit text-xs"></i></button>
+                        <button class="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash text-xs"></i></button>
                     </td>
                 </tr>
             `;

@@ -139,7 +139,6 @@ window.testSupabaseConnection = async function() {
         
         if (response.ok) {
             console.log('✅ Supabase 연결 성공!');
-            alert('✅ Supabase 연결 성공!\n이제 클라우드 데이터베이스를 사용할 수 있습니다.');
             return true;
         } else {
             console.error('❌ Supabase 연결 실패:', response.status, response.statusText);

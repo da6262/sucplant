@@ -1,7 +1,7 @@
 // Service Worker for 경산다육식물농장 관리시스템 ver 5.0
-const CACHE_NAME = 'korsucplant-v5.0.14-crm-layout';
-const STATIC_CACHE = 'korsucplant-static-v5.0.14-crm-layout';
-const DYNAMIC_CACHE = 'korsucplant-dynamic-v5.0.14-crm-layout';
+const CACHE_NAME = 'korsucplant-v5.1.0';
+const STATIC_CACHE = 'korsucplant-static-v5.1.0';
+const DYNAMIC_CACHE = 'korsucplant-dynamic-v5.1.0';
 
 // 캐시할 정적 자원들
 const STATIC_ASSETS = [
@@ -20,7 +20,6 @@ const STATIC_ASSETS = [
   '/main.js',
   '/components/header/header.html',
   '/components/header/header.js',
-  '/components/navigation/navigation.html',
   '/components/navigation/navigation.js',
   '/components/dashboard/dashboard.html',
   '/components/dashboard/dashboard.js',

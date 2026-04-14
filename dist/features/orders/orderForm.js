@@ -516,7 +516,7 @@ async function loadQuickProductsForMinimal() {
         const { data: products, error } = await window.supabaseClient
             .from('farm_products')
             .select('id, name, price')
-            .limit(8)
+            .limit(6)
             .order('created_at', { ascending: false });
         if (error || !products || products.length === 0) {
             container.innerHTML = '<div class="col-span-3 text-center text-gray-400 text-xs py-2">등록된 상품이 없습니다</div>';
@@ -1074,6 +1074,7 @@ async function initShippingFeeFromSettings() {
             if (settings && settings.shipping) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee || 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold || 50000;
+                window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
                 console.log('✅ 환경설정에서 배송비 설정 로드 완료:', SHIPPING_SETTINGS);
             }
             // 제안값 주입: 사용자가 한 번이라도 수정했으면 덮어쓰지 않음
@@ -1108,6 +1109,7 @@ window.applyShippingFeeSuggestionForNewOrder = async function () {
             if (settings && settings.shipping != null) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee ?? 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold ?? 50000;
+                window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
             }
         }
         if (!window._shippingFeeUserEdited) {
@@ -2134,6 +2136,8 @@ function selectCustomerFromSearch(customerId, name, phone, address, grade, addre
         if (customerIdInput) customerIdInput.value = customerId || '';
         const resultsDiv = document.getElementById('customer-search-results');
         if (resultsDiv) resultsDiv.classList.add('hidden');
+        // 버튼 활성화: 고객 선택 완료 시 저장 버튼 활성화
+        if (window.updateOrderSubmitButtonState) window.updateOrderSubmitButtonState();
     } catch (error) {
         console.error('❌ 고객 선택 처리 실패:', error);
     }
@@ -2616,7 +2620,14 @@ async function handleOrderSubmit(event) {
         // 단일 트랜잭션 RPC만 사용. 부분 저장 금지 — 실패 시 재시도/에러만.
         const rpcResult = await window.supabaseClient.rpc('upsert_order_with_items', {
             p_order_id: isEditMode ? window.currentEditingOrderId : null,
-            p_order_number: isEditMode ? null : `ORD-${Date.now()}`,
+            p_order_number: isEditMode ? null : (() => {
+                const d = new Date();
+                const yy = String(d.getFullYear()).slice(2);
+                const mm = String(d.getMonth() + 1).padStart(2, '0');
+                const dd = String(d.getDate()).padStart(2, '0');
+                const rand = Math.random().toString(36).slice(2, 6).toUpperCase();
+                return `ORD-${yy}${mm}${dd}-${rand}`;
+            })(),
             p_order_date: isEditMode ? null : new Date().toISOString(),
             p_customer_id: orderData.customer_id || null,
             p_customer_name: orderData.customer_name || '',
@@ -2720,60 +2731,48 @@ async function handleOrderSubmit(event) {
             console.log('✅ 장바구니 초기화 완료');
         }
         
-        // 주문관리 탭으로 강제 이동
-        console.log('🔄 주문관리 탭으로 강제 이동...');
-        
-        // 1. 모든 섹션 숨기기
-        const allSections = document.querySelectorAll('.section-content, [id$="-section"]');
-        allSections.forEach(section => {
-            section.style.display = 'none';
-            section.classList.remove('active');
-        });
-        
-        // 2. 주문관리 섹션 표시
-        const ordersSection = document.getElementById('orders-section');
-        if (ordersSection) {
-            ordersSection.style.display = 'block';
-            ordersSection.classList.add('active');
-            console.log('✅ 주문관리 섹션 강제 표시 완료');
-        } else {
-            console.warn('⚠️ 주문관리 섹션을 찾을 수 없습니다');
-        }
-        
-        // 3. 주문관리 탭 활성화
-        const ordersTab = document.getElementById('tab-orders');
-        if (ordersTab) {
-            // 다른 탭들 비활성화
-            const allTabs = document.querySelectorAll('[id^="tab-"]');
-            allTabs.forEach(tab => {
-                tab.classList.remove('active');
-            });
-            
-            // 주문관리 탭 활성화
-            ordersTab.classList.add('active');
-            console.log('✅ 주문관리 탭 강제 활성화 완료');
-        } else {
-            console.warn('⚠️ 주문관리 탭을 찾을 수 없습니다');
-        }
+        // 주문관리 탭으로 이동 (앱 정상 내비게이션 사용)
+        const navBtn = document.getElementById('nav-orders');
+        if (navBtn) navBtn.click();
         
         // 주문 목록 새로고침 (지연 실행)
+        // 신규 주문의 기본 상태는 '입금대기(work_deposit)'이므로 해당 탭으로 전환
+        const savedOrderStatus = orderData.order_status || '입금대기';
+        const statusToTabId = {
+            '입금대기': 'status-work_deposit',
+            '주문접수': 'status-주문접수',
+            '고객안내': 'status-고객안내',
+            '입금확인': 'status-입금확인',
+            '상품준비': 'status-work_todo',
+            '배송준비': 'status-work_todo',
+            '배송중': 'status-배송중',
+            '배송완료': 'status-work_done',
+        };
+        const targetTabId = isEditMode ? null : (statusToTabId[savedOrderStatus] || 'status-work_deposit');
         setTimeout(async () => {
             console.log('🔄 주문 목록 새로고침 시작...');
             if (window.orderDataManager) {
                 try {
+                    // 저장된 주문의 상태에 맞는 탭으로 전환
+                    if (targetTabId) {
+                        document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
+                        const targetTab = document.getElementById(targetTabId);
+                        if (targetTab) targetTab.classList.add('active');
+                    }
+
                     console.log('📋 주문 데이터 다시 로드 중...');
                     await window.orderDataManager.loadOrders();
-                    
+
                     console.log('🎨 주문 테이블 다시 렌더링 중...');
-                    window.orderDataManager.renderOrdersTable();
-                    
+                    const renderStatus = targetTabId ? targetTabId.replace('status-', '') : null;
+                    window.orderDataManager.renderOrdersTable(renderStatus);
+
                     console.log('📊 필터 카운트 업데이트 중...');
                     window.orderDataManager.updateFilterCounts();
-                    
+
                     console.log('✅ 주문 목록 새로고침 완료');
                 } catch (refreshError) {
                     console.error('❌ 주문 목록 새로고침 실패:', refreshError);
-                    // 새로고침 실패해도 주문 등록은 성공했으므로 경고만 표시
                     console.warn('⚠️ 주문은 등록되었지만 목록 새로고침에 실패했습니다. 페이지를 새로고침해주세요.');
                 }
             } else {

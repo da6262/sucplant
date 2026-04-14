@@ -1,174 +1,338 @@
-// 대시보드형 새 주문 폼 — 1440px 기준 2분할, 전체 스크롤 없음
-// 좌: 고객/채널/상태/메모 | 우: 퀵상품/장바구니/금액요약
+// 새 주문 폼 — 엑셀 양식 스타일 (좌: 고객/주문 정보 | 우: 상품/장바구니)
 window.generateOrderFormHTMLMinimal = function () {
     return `
-        <div id="order-form-minimal-wrap" class="order-form-dashboard"
-             style="max-height: calc(98vh - 100px); min-height: 320px; min-width: 0; flex: 1; display: grid;">
+        <div id="order-form-minimal-wrap" class="xf-wrap">
             <input type="hidden" id="order-customer-id" name="customer_id">
+            <span id="order-channel-summary" class="hidden"></span>
+            <span id="order-status-summary" class="hidden"></span>
+            <span id="order-memo-summary" class="hidden"></span>
 
-            <!-- 좌측: 고객 검색 / 고객 정보 / 채널·상태·메모 (접힘) -->
-            <div class="order-dashboard-left flex flex-col gap-1.5 min-h-0 overflow-y-auto">
-                <div class="bg-white rounded-lg border border-gray-200 p-2 flex-shrink-0">
-                    <label class="block text-xs font-medium text-gray-600 mb-0.5">고객 검색</label>
-                    <div class="relative">
-                        <input type="text" id="order-customer-search"
-                               class="w-full px-2 py-1.5 text-sm border border-gray-200 rounded focus:ring-2 focus:ring-green-500 focus:border-green-500"
-                               placeholder="이름 또는 연락처 뒷자리"
-                               oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();" autocomplete="off">
-                        <div id="customer-search-results" class="absolute w-full mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-36 overflow-y-auto z-40 text-sm"></div>
-                    </div>
-                    <div id="new-customer-inline-section" class="mt-2 p-2 rounded-lg bg-green-50/80 border border-green-100">
-                        <div class="text-xs font-medium text-green-800 mb-1">신규 고객 정보 입력</div>
-                        <p class="text-[11px] text-gray-600 mb-1">이름·연락처를 입력하면 저장 시 고객이 자동 등록됩니다.</p>
-                        <div class="grid grid-cols-2 gap-1">
-                            <input type="text" id="order-customer-name" class="px-2 py-1 text-sm border rounded bg-white" placeholder="고객명" required
-                                   oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
-                            <input type="tel" id="order-customer-phone" class="px-2 py-1 text-sm border rounded bg-white" placeholder="연락처" required
-                                   oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
-                        </div>
-                        <input type="text" id="order-customer-address" class="w-full mt-0.5 px-2 py-1 text-sm border rounded bg-white" placeholder="주소" required>
-                        <input type="text" id="order-customer-address-detail" class="w-full mt-0.5 px-2 py-1 text-sm border rounded bg-white" placeholder="상세주소">
-                    </div>
-                </div>
-
-                <div class="bg-white rounded-lg border border-gray-200 flex-shrink-0">
-                    <details class="group" id="order-channel-details">
-                        <summary class="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer list-none select-none hover:bg-gray-50 rounded-t-lg [&::-webkit-details-marker]:hidden">
-                            <span class="text-xs text-gray-600">주문 채널</span>
-                            <span id="order-channel-summary" class="font-medium text-gray-800 text-sm">유튜브</span>
-                            <i class="fas fa-chevron-down text-gray-400 text-xs group-open:rotate-180 transition-transform"></i>
-                        </summary>
-                        <div class="px-2 pb-1.5 pt-0">
-                            <select id="order-channel" class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                    onchange="document.getElementById('order-channel-summary').textContent=this.value">
-                                <option value="유튜브">유튜브</option>
-                            </select>
-                        </div>
-                    </details>
-                    <details class="group border-t border-gray-100">
-                        <summary class="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer list-none select-none hover:bg-gray-50 [&::-webkit-details-marker]:hidden">
-                            <span class="text-xs text-gray-600">주문 상태</span>
-                            <span id="order-status-summary" class="font-medium text-gray-800 text-sm">입금대기</span>
-                            <i class="fas fa-chevron-down text-gray-400 text-xs group-open:rotate-180 transition-transform"></i>
-                        </summary>
-                        <div class="px-2 pb-1.5 pt-0">
-                            <select id="order-status" class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500"
-                                    onchange="document.getElementById('order-status-summary').textContent=this.value">
-                                <option value="입금대기" selected>입금대기</option>
-                                <option value="주문접수">주문접수</option>
-                                <option value="고객안내">고객안내</option>
-                                <option value="입금확인">입금확인</option>
-                                <option value="상품준비">상품준비</option>
-                                <option value="배송준비">배송준비</option>
-                                <option value="배송중">배송중</option>
-                                <option value="배송완료">배송완료</option>
-                                <option value="주문취소">주문취소</option>
-                                <option value="환불완료">환불완료</option>
-                            </select>
-                        </div>
-                    </details>
-                    <details class="group border-t border-gray-100">
-                        <summary class="flex items-center justify-between px-2 py-1.5 text-sm cursor-pointer list-none select-none hover:bg-gray-50 rounded-b-lg [&::-webkit-details-marker]:hidden">
-                            <span class="text-xs text-gray-600">배송 메모</span>
-                            <span id="order-memo-summary" class="text-gray-500 truncate max-w-[120px] text-xs">메모 없음</span>
-                            <i class="fas fa-chevron-down text-gray-400 text-xs group-open:rotate-180 transition-transform flex-shrink-0"></i>
-                        </summary>
-                        <div class="px-2 pb-1.5 pt-0">
-                            <textarea id="order-memo" rows="1" class="w-full px-2 py-1 text-sm border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 resize-none overflow-y-auto max-h-20"
-                                      placeholder="배송 관련 메모"
-                                      oninput="var s=document.getElementById('order-memo-summary'); s.textContent=this.value.trim()||'메모 없음'; s.classList.toggle('text-gray-500',!this.value.trim());"></textarea>
-                        </div>
-                    </details>
-                </div>
+            <!-- ── 좌측: 고객/주문 정보 ── -->
+            <div class="xf-col">
+                <table class="xf-tbl">
+                    <colgroup>
+                        <col style="width:68px">
+                        <col>
+                        <col style="width:56px">
+                        <col>
+                    </colgroup>
+                    <tbody>
+                        <tr>
+                            <th>고객 검색</th>
+                            <td colspan="3" style="position:relative">
+                                <input type="text" id="order-customer-search" class="xf-inp"
+                                       placeholder="이름 또는 연락처 뒷자리"
+                                       oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
+                                       autocomplete="off">
+                                <div id="customer-search-results"
+                                     class="hidden"
+                                     style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:150px;overflow-y:auto;z-index:50;font-size:13px"></div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>고객명 *</th>
+                            <td>
+                                <input type="text" id="order-customer-name" class="xf-inp"
+                                       placeholder="고객명" required
+                                       oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
+                            </td>
+                            <th>연락처 *</th>
+                            <td>
+                                <input type="tel" id="order-customer-phone" class="xf-inp"
+                                       placeholder="연락처" required
+                                       oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>주소 *</th>
+                            <td colspan="3">
+                                <input type="text" id="order-customer-address" class="xf-inp"
+                                       placeholder="주소" required>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>상세주소</th>
+                            <td colspan="3">
+                                <input type="text" id="order-customer-address-detail" class="xf-inp"
+                                       placeholder="상세주소 (선택)">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>채널</th>
+                            <td>
+                                <select id="order-channel" class="xf-inp"
+                                        onchange="document.getElementById('order-channel-summary').textContent=this.value">
+                                    <option value="유튜브">유튜브</option>
+                                </select>
+                            </td>
+                            <th>상태</th>
+                            <td>
+                                <select id="order-status" class="xf-inp"
+                                        onchange="document.getElementById('order-status-summary').textContent=this.value">
+                                    <option value="입금대기" selected>입금대기</option>
+                                    <option value="주문접수">주문접수</option>
+                                    <option value="고객안내">고객안내</option>
+                                    <option value="입금확인">입금확인</option>
+                                    <option value="상품준비">상품준비</option>
+                                    <option value="배송준비">배송준비</option>
+                                    <option value="배송중">배송중</option>
+                                    <option value="배송완료">배송완료</option>
+                                    <option value="주문취소">주문취소</option>
+                                    <option value="환불완료">환불완료</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <th>배송메모</th>
+                            <td colspan="3">
+                                <textarea id="order-memo" class="xf-inp" rows="3" style="resize:vertical;min-height:48px"
+                                          placeholder="배송 관련 메모 (선택)"
+                                          oninput="document.getElementById('order-memo-summary').textContent=this.value.trim()||''"></textarea>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
 
-            <!-- 우측: 퀵상품 / 상품검색 / 장바구니 / 금액요약 / 저장 -->
-            <div class="order-dashboard-right flex flex-col gap-1.5 min-h-0 min-w-0">
-                <div class="bg-white rounded-lg border border-gray-200 p-2 flex-shrink-0">
-                    <div class="flex items-center justify-between mb-1">
-                        <span class="text-xs font-medium text-gray-600">퀵 상품</span>
-                    </div>
-                    <div id="quick-product-buttons" class="grid grid-cols-3 gap-1.5">
-                        <div class="col-span-3 text-center text-gray-400 text-xs py-3">로딩 중...</div>
-                    </div>
-                    <div class="border-t border-gray-100 mt-1 pt-1">
-                        <div class="relative">
-                            <input type="text" id="product-search"
-                                   class="w-full px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-green-500"
-                                   placeholder="상품 검색 후 클릭하여 추가"
-                                   oninput="searchProducts(this.value)" autocomplete="off">
-                            <div id="product-search-results" class="absolute z-20 w-full mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-36 overflow-y-auto text-sm"></div>
-                        </div>
-                    </div>
-                </div>
+            <!-- ── 우측: 상품 추가 + 장바구니 ── -->
+            <div class="xf-col">
 
-                <div class="bg-white rounded-lg border border-gray-200 flex flex-col flex-1 min-h-0 overflow-hidden">
-                    <div class="px-2 py-1 border-b border-gray-100 flex-shrink-0">
-                        <span class="text-xs font-medium text-gray-600">장바구니</span>
-                    </div>
-                    <div class="flex-1 min-h-0 overflow-y-auto border-b border-gray-100">
-                        <table class="w-full text-xs cart-table">
-                            <thead class="bg-gray-50 sticky top-0">
-                                <tr>
-                                    <th class="px-1.5 py-1 text-left text-xs font-medium text-gray-600">상품명</th>
-                                    <th class="px-1.5 py-1 text-left text-xs font-medium text-gray-600 w-16">단가</th>
-                                    <th class="px-1.5 py-1 text-center text-xs font-medium text-gray-600 w-28">수량</th>
-                                    <th class="px-1.5 py-1 text-right text-xs font-medium text-gray-600 w-20">소계</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cart-items-body">
-                                <tr><td colspan="4" class="text-center text-gray-500 py-4 text-xs">장바구니가 비어있습니다</td></tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="p-2 flex-shrink-0 space-y-0.5 border-t border-gray-100 bg-gray-50/50">
-                        <div class="flex justify-between items-center text-sm">
-                            <span class="text-xs text-gray-600">상품합계</span>
-                            <span id="product-total-amount" class="font-medium tabular-nums">0원</span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <label class="text-xs text-gray-600" for="shipping-fee-input">배송비</label>
-                            <span class="flex items-center gap-1"><input type="number" id="shipping-fee-input" value="0" min="0" step="1" class="w-20 px-2 py-1 border rounded text-right text-sm tabular-nums" oninput="window._shippingFeeUserEdited=true; if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()"><span class="text-gray-500 text-xs">원</span></span>
-                        </div>
-                        <div class="flex justify-between items-center text-sm">
-                            <label class="text-xs text-gray-600" for="discount-amount">할인</label>
-                            <span class="flex items-center gap-1"><input type="number" id="discount-amount" value="0" min="0" step="1" class="w-20 px-2 py-1 border rounded text-right text-sm tabular-nums" oninput="if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()"><span class="text-gray-500 text-xs">원</span></span>
-                        </div>
-                        <div class="flex justify-between items-center pt-1 border-t border-gray-200">
-                            <span class="text-xs font-semibold text-gray-800">총금액</span>
-                            <span id="final-total-amount" class="text-sm font-bold text-green-600 tabular-nums">0원</span>
-                        </div>
-                    </div>
-                </div>
+                <!-- 퀵 상품 + 검색 -->
+                <table class="xf-tbl" style="margin-bottom:5px">
+                    <tbody>
+                        <tr>
+                            <th style="width:60px;vertical-align:top;padding-top:6px">상품 추가</th>
+                            <td>
+                                <div id="quick-product-buttons"
+                                     style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:4px;max-height:60px;overflow:hidden">
+                                    <div style="grid-column:1/-1;text-align:center;color:#999;font-size:11px;padding:6px">로딩 중...</div>
+                                </div>
+                                <div style="position:relative">
+                                    <input type="text" id="product-search" class="xf-inp"
+                                           placeholder="상품명 검색 후 클릭하여 추가"
+                                           oninput="searchProducts(this.value)" autocomplete="off"
+                                           onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}">
+                                    <div id="product-search-results"
+                                         class="hidden"
+                                         style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:140px;overflow-y:auto;z-index:20;font-size:13px"></div>
+                                </div>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
 
+                <!-- 장바구니 -->
+                <table class="xf-tbl xf-cart">
+                    <thead>
+                        <tr>
+                            <th style="text-align:left">상품명</th>
+                            <th style="width:60px;text-align:right">단가</th>
+                            <th style="width:82px;text-align:center">수량</th>
+                            <th style="width:68px;text-align:right">소계</th>
+                            <th style="width:20px"></th>
+                        </tr>
+                    </thead>
+                    <tbody id="cart-items-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center;color:#aaa;padding:14px 0;font-size:12px">
+                                장바구니가 비어있습니다
+                            </td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr>
+                            <td colspan="3" class="xf-ft-label">상품합계</td>
+                            <td class="xf-ft-val" id="product-total-amount">0원</td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="xf-ft-label">배송비</td>
+                            <td class="xf-ft-val">
+                                <input type="number" id="shipping-fee-input" value="0" min="0" step="1" class="xf-num"
+                                       oninput="window._shippingFeeUserEdited=true; if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()">원
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr>
+                            <td colspan="3" class="xf-ft-label">할인</td>
+                            <td class="xf-ft-val">
+                                <input type="number" id="discount-amount" value="0" min="0" step="1" class="xf-num"
+                                       oninput="if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()">원
+                            </td>
+                            <td></td>
+                        </tr>
+                        <tr class="xf-total-row">
+                            <td colspan="3" style="text-align:right;font-weight:700;font-size:13px;padding:5px 6px">총금액</td>
+                            <td colspan="2" style="text-align:right;font-weight:700;font-size:15px;color:#16a34a;padding:5px 6px"
+                                id="final-total-amount">0원</td>
+                        </tr>
+                    </tfoot>
+                </table>
+
+                <!-- 저장 버튼 -->
                 <button type="submit" form="order-form" id="order-submit-btn" disabled
-                        class="flex-shrink-0 w-full min-h-[36px] py-2 bg-green-500 hover:bg-green-600 text-white text-sm font-bold rounded-lg shadow active:scale-[0.98] transition-all disabled:opacity-60 disabled:cursor-not-allowed">
-                    <i class="fas fa-check mr-2"></i>주문 저장
+                        class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">
+                    ✓ 주문 저장
                 </button>
             </div>
         </div>
+
         <style>
-            .order-form-dashboard {
+            .xf-wrap {
                 display: grid;
-                grid-template-columns: 1fr 1fr;
-                gap: 1rem;
-                overflow: hidden;
-                padding: 0.5rem;
-                font-size: 14px;
-            }
-            @media (max-width: 1439px) {
-                .order-form-dashboard { grid-template-columns: 1fr; max-height: calc(98vh - 100px); }
-            }
-            .order-dashboard-left { padding-right: 0.25rem; }
-            .order-dashboard-right { padding-left: 0.25rem; }
-            #quick-product-buttons button,
-            #quick-product-buttons a[role="button"] {
-                min-height: 32px;
-                min-width: 32px;
+                grid-template-columns: 5fr 6fr;
+                gap: 10px;
+                padding: 12px;
                 font-size: 13px;
-                padding: 0.35rem 0.5rem;
+                font-family: "Malgun Gothic", -apple-system, sans-serif;
+                background: #f9fafb;
+                box-sizing: border-box;
+                min-height: calc(100vh - 50px);
             }
-            #order-form-minimal-wrap .quantity-input { font-size: 15px; }
+            @media (max-width: 700px) {
+                .xf-wrap { grid-template-columns: 1fr; min-height: auto; }
+            }
+            .xf-col {
+                display: flex;
+                flex-direction: column;
+                gap: 0;
+            }
+            /* ── 테이블 기본 ── */
+            .xf-tbl {
+                width: 100%;
+                border-collapse: collapse;
+                font-size: 13px;
+            }
+            .xf-tbl th, .xf-tbl td {
+                border: 1px solid #b0b0b0;
+                padding: 4px 6px;
+                vertical-align: middle;
+            }
+            .xf-tbl > tbody > tr > th {
+                background: #efefef;
+                font-weight: 600;
+                color: #333;
+                white-space: nowrap;
+                text-align: left;
+            }
+            .xf-tbl > tbody > tr > td {
+                background: #fff;
+            }
+            /* ── 장바구니 ── */
+            .xf-cart thead th {
+                background: #e4e4e4;
+                text-align: center;
+                font-size: 12px;
+                padding: 4px 5px;
+                color: #444;
+            }
+            .xf-cart tbody {
+                display: block;
+                max-height: 220px;
+                overflow-y: auto;
+                width: 100%;
+            }
+            .xf-cart thead tr,
+            .xf-cart tbody tr,
+            .xf-cart tfoot tr {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+            .xf-cart thead,
+            .xf-cart tfoot {
+                display: table;
+                width: 100%;
+                table-layout: fixed;
+            }
+            .xf-cart tbody td {
+                font-size: 12px;
+                padding: 3px 5px;
+                background: #fff;
+            }
+            .xf-cart tfoot td {
+                background: #fafafa;
+                border-top: 1px solid #b0b0b0;
+            }
+            .xf-total-row { background: #f5f5f5 !important; }
+            .xf-ft-label {
+                text-align: right;
+                font-size: 12px;
+                color: #555;
+                padding: 4px 6px;
+            }
+            .xf-ft-val {
+                text-align: right;
+                font-size: 12px;
+                padding: 4px 6px;
+                white-space: nowrap;
+            }
+            /* ── 입력 공통 ── */
+            .xf-inp {
+                width: 100%;
+                border: none;
+                outline: none;
+                background: transparent;
+                font-size: 13px;
+                padding: 1px 2px;
+                box-sizing: border-box;
+                color: #111;
+                font-family: inherit;
+            }
+            .xf-inp:focus { background: #fffde7; }
+            select.xf-inp { cursor: pointer; }
+            textarea.xf-inp { display: block; }
+            .xf-num {
+                width: 68px;
+                border: none;
+                outline: none;
+                background: transparent;
+                font-size: 12px;
+                text-align: right;
+                padding: 1px 2px;
+                font-family: inherit;
+            }
+            .xf-num:focus { background: #fffde7; }
+            /* ── 퀵 버튼 ── */
+            #quick-product-buttons button {
+                font-size: 11px;
+                padding: 3px 5px;
+                border: 1px solid #c8c8c8;
+                background: #f8f8f8;
+                cursor: pointer;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                text-align: left;
+            }
+            #quick-product-buttons button:hover {
+                background: #e8f5e9;
+                border-color: #4caf50;
+            }
+            /* ── 저장 버튼 ── */
+            .xf-save-btn {
+                width: 100%;
+                margin-top: 6px;
+                padding: 9px 0;
+                background: #16a34a;
+                color: #fff;
+                font-size: 14px;
+                font-weight: 700;
+                border: none;
+                cursor: pointer;
+                letter-spacing: .03em;
+                font-family: inherit;
+            }
+            .xf-save-btn:hover:not(:disabled) { background: #15803d; }
+            .xf-save-btn:active:not(:disabled) { background: #166534; }
+            /* ── 수량 입력 ── */
+            #order-form-minimal-wrap .quantity-input {
+                width: 40px;
+                text-align: center;
+                font-size: 12px;
+                border: 1px solid #ccc;
+                padding: 1px 2px;
+            }
         </style>
     `;
 };

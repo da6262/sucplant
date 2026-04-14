@@ -144,87 +144,62 @@ function attachDashboardEventListeners() {
             console.log('✅ 새로고침 버튼 이벤트 리스너 연결 완료');
         }
         
-        // 빠른 업무 처리 버튼들
+        // 탭 이동 헬퍼 (mobile-nav-* 또는 nav-* 클릭)
+        function goToTab(name) {
+            const btn = document.getElementById('mobile-nav-' + name) || document.getElementById('nav-' + name);
+            if (btn) btn.click();
+        }
+
+        // 빠른 업무 버튼들
         const quickNewOrderBtn = document.getElementById('quick-new-order');
         if (quickNewOrderBtn) {
             quickNewOrderBtn.addEventListener('click', function() {
-                console.log('➕ 새 주문 등록 버튼 클릭');
-                // 주문관리 탭으로 이동
-                const ordersTab = document.getElementById('tab-orders');
-                if (ordersTab) {
-                    ordersTab.click();
-                }
+                goToTab('orders');
+                setTimeout(() => { if (window.openOrderModal) window.openOrderModal(); }, 400);
             });
         }
-        
+
         const quickPickingListBtn = document.getElementById('quick-picking-list');
         if (quickPickingListBtn) {
             quickPickingListBtn.addEventListener('click', function() {
-                console.log('📋 피킹 리스트 버튼 클릭');
-                // 주문관리 탭으로 이동
-                const ordersTab = document.getElementById('tab-orders');
-                if (ordersTab) {
-                    ordersTab.click();
-                }
+                goToTab('orders');
             });
         }
-        
+
         const quickPackagingLabelsBtn = document.getElementById('quick-packaging-labels');
         if (quickPackagingLabelsBtn) {
             quickPackagingLabelsBtn.addEventListener('click', function() {
-                console.log('🏷️ 포장 라벨 버튼 클릭');
-                // 주문관리 탭으로 이동
-                const ordersTab = document.getElementById('tab-orders');
-                if (ordersTab) {
-                    ordersTab.click();
-                }
+                goToTab('orders');
             });
         }
-        
+
         const quickNewCustomerBtn = document.getElementById('quick-new-customer');
         if (quickNewCustomerBtn) {
             quickNewCustomerBtn.addEventListener('click', function() {
-                console.log('👤 새 고객 등록 버튼 클릭');
-                // 고객관리 탭으로 이동
-                const customersTab = document.getElementById('tab-customers');
-                if (customersTab) {
-                    customersTab.click();
-                }
+                goToTab('customers');
+                setTimeout(() => { if (window.openCustomerModal) window.openCustomerModal(); }, 400);
             });
         }
-        
+
         const quickStockUpdateBtn = document.getElementById('quick-stock-update');
         if (quickStockUpdateBtn) {
             quickStockUpdateBtn.addEventListener('click', function() {
-                console.log('📦 재고 업데이트 버튼 클릭');
-                // 상품관리 탭으로 이동
-                const productsTab = document.getElementById('tab-products');
-                if (productsTab) {
-                    productsTab.click();
-                }
+                goToTab('products');
             });
         }
-        
+
         const quickAddWaitlistBtn = document.getElementById('quick-add-waitlist');
         if (quickAddWaitlistBtn) {
             quickAddWaitlistBtn.addEventListener('click', function() {
-                console.log('⏰ 대기자 등록 버튼 클릭');
-                // 대기자관리 탭으로 이동
-                const waitlistTab = document.getElementById('tab-waitlist');
-                if (waitlistTab) {
-                    waitlistTab.click();
-                }
+                goToTab('waitlist');
+                setTimeout(() => { if (window.orderSystem && window.orderSystem.openWaitlistModal) window.orderSystem.openWaitlistModal(); }, 400);
             });
         }
-        
+
         const quickExcelExportBtn = document.getElementById('quick-excel-export');
         if (quickExcelExportBtn) {
             quickExcelExportBtn.addEventListener('click', function() {
-                console.log('📊 엑셀 내보내기 버튼 클릭');
-                // 엑셀 내보내기 기능 실행
-                if (window.exportToExcel) {
-                    window.exportToExcel();
-                }
+                if (window.exportToExcel) window.exportToExcel();
             });
         }
         

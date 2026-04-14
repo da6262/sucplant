@@ -41,7 +41,7 @@ async function loadOrderManagementComponent() {
         
         // 컴포넌트 로드
         console.log('🌐 컴포넌트 파일 요청 중...');
-        const response = await fetch('components/order-management/order-management.html');
+        const response = await fetch('components/order-management/order-management.html', { cache: 'no-store' });
         console.log('📡 응답 상태:', response.status, response.ok);
         
         if (!response.ok) {
@@ -735,10 +735,24 @@ function attachOrderEventListeners() {
         const bulkTrackingImportBtn = document.getElementById('bulk-tracking-import-btn');
         if (bulkTrackingImportBtn) {
             bulkTrackingImportBtn.addEventListener('click', function() {
-                console.log('📦 송장번호 일괄입력 버튼 클릭');
-                // 송장번호 일괄입력 로직
+                toggleTrackingPanel();
             });
         }
+
+        // 패널 닫기 버튼
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#tracking-panel-close')) {
+                const panel = document.getElementById('tracking-import-panel');
+                if (panel) panel.classList.add('hidden');
+            }
+        });
+
+        // 전체 저장 버튼
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#tracking-save-all-btn')) {
+                saveAllTrackingNumbers();
+            }
+        });
         
         const generatePickingListBtn = document.getElementById('generate-picking-list-btn');
         if (generatePickingListBtn) {
@@ -958,7 +972,7 @@ async function loadOrderModal() {
         
         // 주문 모달 컴포넌트 동적 로드
         console.log('🌐 주문 모달 HTML 파일 요청 중...');
-        const response = await fetch('components/order-management/order-modal.html');
+        const response = await fetch('components/order-management/order-modal.html', { cache: 'no-store' });
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
@@ -2695,6 +2709,252 @@ window.testProductNameLookup = async function() {
         return null;
     }
 };
+
+// =============================================
+// 송장번호 일괄입력 인라인 패널
+// =============================================
+
+const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '쿠팡로켓', '편의점택배', '기타'];
+
+async function toggleTrackingPanel() {
+    const panel = document.getElementById('tracking-import-panel');
+    if (!panel) return;
+
+    if (!panel.classList.contains('hidden')) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+    await loadTrackingPanelOrders();
+}
+
+async function loadTrackingPanelOrders() {
+    const tbody = document.getElementById('tracking-input-rows');
+    if (!tbody) return;
+
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
+
+    try {
+        if (!window.supabaseClient) throw new Error('Supabase 미연결');
+
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('id, order_number, customer_name, order_status, tracking_number')
+            .in('order_status', ['배송준비', '상품준비'])
+            .order('order_date', { ascending: false });
+
+        if (error) throw error;
+
+        // 주문별 상품 요약 조회
+        const ids = (orders || []).map(o => o.id);
+        let itemsMap = {};
+        if (ids.length > 0) {
+            const { data: items } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('order_id, product_name, quantity')
+                .in('order_id', ids);
+            (items || []).forEach(item => {
+                if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+                itemsMap[item.order_id].push(`${item.product_name} ${item.quantity}개`);
+            });
+        }
+
+        if (!orders || orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
+            return;
+        }
+
+        const companyOptions = SHIPPING_COMPANIES.map(c => `<option value="${c}">${c}</option>`).join('');
+
+        tbody.innerHTML = orders.map(order => {
+            const summary = (itemsMap[order.id] || []).join(', ') || '-';
+            const existingCompany = order.shipping_company || '';
+            const existingTracking = order.tracking_number || '';
+            return `
+            <tr class="hover:bg-amber-50" data-order-id="${order.id}">
+                <td class="px-3 py-2 font-mono text-gray-600 whitespace-nowrap">${order.order_number || '-'}</td>
+                <td class="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">${order.customer_name || '-'}</td>
+                <td class="px-3 py-2 text-gray-500 max-w-[180px] truncate" title="${summary}">${summary}</td>
+                <td class="px-3 py-2">
+                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400"
+                        placeholder="송장번호 입력" value="${existingTracking}"
+                        onkeydown="if(event.key==='Enter'){saveOneTrackingNumber('${order.id}', this.closest('tr'))}">
+                </td>
+                <td class="px-3 py-2 text-center">
+                    <button onclick="saveOneTrackingNumber('${order.id}', this.closest('tr'))"
+                        class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
+                        저장
+                    </button>
+                </td>
+            </tr>`;
+        }).join('');
+
+    } catch (e) {
+        console.error('송장번호 패널 로드 실패:', e);
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">로드 실패: ${e.message}</td></tr>`;
+    }
+}
+
+async function saveOneTrackingNumber(orderId, rowEl) {
+    const tr = rowEl.closest ? rowEl.closest('tr') : rowEl;
+    const trackingInput = tr.querySelector('.tracking-number-input');
+    const companySelect = tr.querySelector('.tracking-company-select');
+    const trackingNumber = trackingInput?.value.trim();
+    const shippingCompany = companySelect?.value;
+
+    if (!trackingNumber) { alert('송장번호를 입력해주세요.'); return; }
+    if (!window.supabaseClient) { alert('Supabase 미연결'); return; }
+
+    try {
+        const { error } = await window.supabaseClient
+            .from('farm_orders')
+            .update({ tracking_number: trackingNumber, order_status: '배송중' })
+            .eq('id', orderId);
+
+        if (error) throw error;
+
+        // 성공 표시
+        tr.style.background = '#d1fae5';
+        setTimeout(() => { tr.style.background = ''; }, 1500);
+
+        // 주문 테이블도 새로고침
+        if (typeof window.renderOrdersTable === 'function') window.renderOrdersTable();
+        else if (typeof window.loadOrders === 'function') window.loadOrders();
+
+    } catch (e) {
+        alert('저장 실패: ' + e.message);
+    }
+}
+
+async function saveAllTrackingNumbers() {
+    const rows = document.querySelectorAll('#tracking-input-rows tr[data-order-id]');
+    if (!rows.length) return;
+
+    let saved = 0, skipped = 0;
+    for (const tr of rows) {
+        const orderId = tr.dataset.orderId;
+        const trackingInput = tr.querySelector('.tracking-number-input');
+        const companySelect = tr.querySelector('.tracking-company-select');
+        const trackingNumber = trackingInput?.value.trim();
+        const shippingCompany = companySelect?.value;
+
+        if (!trackingNumber) { skipped++; continue; }
+
+        try {
+            await window.supabaseClient.from('farm_orders')
+                .update({ tracking_number: trackingNumber, order_status: '배송중' })
+                .eq('id', orderId);
+            tr.style.background = '#d1fae5';
+            saved++;
+        } catch (e) {
+            console.error(`주문 ${orderId} 저장 실패:`, e);
+        }
+    }
+
+    alert(`저장 완료: ${saved}건 / 건너뜀: ${skipped}건`);
+    if (saved > 0) {
+        if (typeof window.renderOrdersTable === 'function') window.renderOrdersTable();
+        else if (typeof window.loadOrders === 'function') window.loadOrders();
+    }
+}
+
+window.toggleTrackingPanel = toggleTrackingPanel;
+window.saveOneTrackingNumber = saveOneTrackingNumber;
+window.saveAllTrackingNumbers = saveAllTrackingNumbers;
+
+// ──────────────────────────────────────────────
+// 날짜 필터 함수
+// ──────────────────────────────────────────────
+
+function _updateDateFilterBtnState(activeId) {
+    document.querySelectorAll('.order-date-quick-btn').forEach(btn => {
+        btn.classList.remove('bg-gray-700', 'text-white', 'border-gray-700',
+                             'bg-emerald-600', 'border-emerald-600');
+        btn.classList.add('text-gray-600', 'border-gray-200');
+        btn.style.backgroundColor = '';
+    });
+    const active = document.getElementById(activeId);
+    if (active) {
+        active.classList.remove('text-gray-600', 'border-gray-200');
+        if (activeId === 'date-btn-custom') {
+            active.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600');
+        } else {
+            active.classList.add('bg-gray-700', 'text-white', 'border-gray-700');
+        }
+    }
+}
+
+function _applyDateAndRender(from, to, label) {
+    const dm = window.orderDataManager;
+    if (!dm) return;
+    dm._dateFrom = from;
+    dm._dateTo = to;
+    dm.renderOrdersTable();
+
+    const labelEl = document.getElementById('order-date-label');
+    if (labelEl) {
+        if (label) {
+            labelEl.textContent = label;
+            labelEl.classList.remove('hidden');
+        } else {
+            labelEl.classList.add('hidden');
+        }
+    }
+}
+
+function setOrderDateFilter(range) {
+    const now = new Date();
+    let from = null, to = null, label = '';
+
+    if (range === 'today') {
+        from = new Date(now); from.setHours(0, 0, 0, 0);
+        to   = new Date(now); to.setHours(23, 59, 59, 999);
+        label = '오늘';
+    } else if (range === 'week') {
+        from = new Date(now); from.setDate(from.getDate() - 7); from.setHours(0, 0, 0, 0);
+        to   = new Date(now); to.setHours(23, 59, 59, 999);
+        label = '최근 1주일';
+    } else if (range === 'month') {
+        from = new Date(now); from.setMonth(from.getMonth() - 1); from.setHours(0, 0, 0, 0);
+        to   = new Date(now); to.setHours(23, 59, 59, 999);
+        label = '최근 한달';
+    }
+    // range === 'all': from/to = null (필터 없음)
+
+    _applyDateAndRender(from, to, label);
+    _updateDateFilterBtnState(`date-btn-${range}`);
+
+    // 기간설정 패널 닫기 (all/quick 버튼 클릭 시)
+    document.getElementById('order-date-picker-wrap')?.classList.add('hidden');
+}
+
+function toggleOrderDatePicker() {
+    document.getElementById('order-date-picker-wrap')?.classList.toggle('hidden');
+}
+
+function applyOrderDateRange() {
+    const fromVal = document.getElementById('order-date-from')?.value;
+    const toVal   = document.getElementById('order-date-to')?.value;
+    if (!fromVal || !toVal) {
+        alert('시작일과 종료일을 모두 선택하세요.');
+        return;
+    }
+    if (fromVal > toVal) {
+        alert('시작일이 종료일보다 늦을 수 없습니다.');
+        return;
+    }
+    const from = new Date(fromVal); from.setHours(0, 0, 0, 0);
+    const to   = new Date(toVal);   to.setHours(23, 59, 59, 999);
+    const label = `${fromVal} ~ ${toVal}`;
+
+    _applyDateAndRender(from, to, label);
+    _updateDateFilterBtnState('date-btn-custom');
+}
+
+window.setOrderDateFilter   = setOrderDateFilter;
+window.toggleOrderDatePicker = toggleOrderDatePicker;
+window.applyOrderDateRange  = applyOrderDateRange;
 
 // 전역 함수로 등록
 window.loadOrderManagementComponent = loadOrderManagementComponent;
