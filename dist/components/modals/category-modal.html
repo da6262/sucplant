@@ -1,0 +1,71 @@
+<!-- 카테고리 관리 모달 -->
+<div id="category-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-container modal-container-wide">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title"><i class="fas fa-tags mr-2 text-blue-600"></i>카테고리 관리</span>
+            <button id="close-category-modal" class="modal-close-btn" title="닫기">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 바디 -->
+        <div class="modal-body">
+            <!-- 새 카테고리 추가 -->
+            <div class="mb-6">
+                <p class="modal-section-title">새 카테고리 추가</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">카테고리명</label>
+                        <input type="text" id="new-category-name" placeholder="예: 대형종"
+                               class="input-ui">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">색상</label>
+                        <select id="new-category-color" class="input-ui">
+                            <option value="purple">보라색</option>
+                            <option value="green">초록색</option>
+                            <option value="blue">파란색</option>
+                            <option value="red">빨간색</option>
+                            <option value="yellow">노란색</option>
+                            <option value="indigo">남색</option>
+                            <option value="pink">핑크색</option>
+                            <option value="gray">회색</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
+                        <input type="text" id="new-category-description" placeholder="카테고리에 대한 간단한 설명"
+                               class="input-ui">
+                    </div>
+                </div>
+                <button id="add-category-btn" class="btn-primary mt-3">
+                    <i class="fas fa-plus"></i>카테고리 추가
+                </button>
+            </div>
+
+            <!-- 기존 카테고리 목록 -->
+            <div>
+                <p class="modal-section-title">기존 카테고리</p>
+                <div id="categories-list" class="space-y-2">
+                    <!-- 카테고리 목록이 여기에 표시됩니다 -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <span></span>
+            <div class="flex gap-2">
+                <button id="category-modal-cancel" class="btn-secondary">
+                    <i class="fas fa-times"></i>취소
+                </button>
+                <button id="category-modal-save" class="btn-primary">
+                    <i class="fas fa-check"></i>저장 완료
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>

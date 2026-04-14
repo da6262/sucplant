@@ -1,0 +1,121 @@
+<!-- 대기자 등록/수정 모달 -->
+<div id="waitlist-modal" class="modal-overlay" style="display:none;">
+    <div class="modal-container modal-container-wide">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span id="waitlist-modal-title" class="modal-title">새 대기자 등록</span>
+            <button id="close-waitlist-modal" class="modal-close-btn" title="닫기">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 바디 -->
+        <div class="modal-body">
+            <form id="waitlist-form">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <!-- 고객명 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            고객명 <span class="text-red-500">*</span>
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="waitlist-customer-name"
+                                   placeholder="고객명을 입력하세요 (자동완성 지원)" required
+                                   class="input-ui" autocomplete="off">
+                            <div id="waitlist-customer-suggestions"
+                                 class="absolute top-full left-0 right-0 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-48 overflow-y-auto hidden">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 연락처 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            연락처 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="tel" id="waitlist-customer-phone"
+                               placeholder="010-1234-5678" required
+                               class="input-ui">
+                        <div class="text-xs text-gray-400 mt-1">고객명 입력 시 자동으로 채워집니다</div>
+                    </div>
+
+                    <!-- 원하는 상품 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            원하는 상품 <span class="text-red-500">*</span>
+                        </label>
+                        <input type="text" id="waitlist-form-product"
+                               placeholder="예: White Platter 대형" required
+                               class="input-ui">
+                    </div>
+
+                    <!-- 카테고리 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">카테고리</label>
+                        <select id="waitlist-form-category" class="input-ui">
+                            <option value="">카테고리 선택</option>
+                        </select>
+                    </div>
+
+                    <!-- 예상 판매가 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">예상 판매가</label>
+                        <div class="relative">
+                            <input type="number" id="waitlist-form-price"
+                                   placeholder="0" min="0" step="1000"
+                                   class="input-ui pr-7">
+                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">원</span>
+                        </div>
+                    </div>
+
+                    <!-- 우선순위 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">우선순위</label>
+                        <select id="waitlist-form-priority" class="input-ui">
+                            <option value="3">보통</option>
+                            <option value="5">높음</option>
+                            <option value="4">중요</option>
+                            <option value="2">낮음</option>
+                            <option value="1">대기</option>
+                        </select>
+                    </div>
+
+                    <!-- 메모 -->
+                    <div class="md:col-span-2">
+                        <label class="block text-sm font-medium text-gray-700 mb-1">메모</label>
+                        <textarea id="waitlist-form-memo" rows="3"
+                                  placeholder="고객 요구사항, 특이사항 등을 기록하세요"
+                                  class="input-ui resize-none"></textarea>
+                    </div>
+                </div>
+
+                <!-- 도움말 -->
+                <div class="mt-4 bg-orange-50 border border-orange-100 rounded-lg p-3">
+                    <p class="text-xs font-semibold text-orange-700 mb-1.5">
+                        <i class="fas fa-lightbulb mr-1"></i>대기자 관리 팁
+                    </p>
+                    <ul class="text-xs text-orange-600 space-y-0.5">
+                        <li>• <strong>우선순위</strong>: 높음 > 중요 > 보통 > 낮음 > 대기 순으로 연락</li>
+                        <li>• <strong>상품 입고시</strong>: 해당 상품 대기자들에게 일괄 연락 가능</li>
+                        <li>• <strong>주문 전환</strong>: 연락 후 주문하시면 자동으로 상태 변경</li>
+                    </ul>
+                </div>
+            </form>
+        </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <span></span>
+            <div class="flex gap-2">
+                <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="btn-secondary">
+                    <i class="fas fa-times"></i>취소
+                </button>
+                <button type="button" onclick="waitlistUI.saveWaitlist()" class="btn-primary">
+                    <i class="fas fa-save"></i>저장
+                </button>
+            </div>
+        </div>
+
+    </div>
+</div>
