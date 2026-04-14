@@ -1053,21 +1053,34 @@ async function generatePickingList() {
 async function getReadyForShippingOrders() {
     try {
         console.log('🔍 상품준비 & 배송준비 상태 주문 조회 중...');
-        
-        if (window.orderDataManager && window.orderDataManager.getAllOrders) {
-            const allOrders = window.orderDataManager.getAllOrders();
-            const readyOrders = allOrders.filter(order => {
-                const status = order.order_status || order.status;
-                return status === '상품준비' || status === '배송준비';
-            });
-            console.log('📦 피킹 대상 주문 필터링 완료:', readyOrders.length);
-            console.log('   - 상품준비:', readyOrders.filter(o => (o.order_status || o.status) === '상품준비').length + '건');
-            console.log('   - 배송준비:', readyOrders.filter(o => (o.order_status || o.status) === '배송준비').length + '건');
-            return readyOrders;
-        } else {
+
+        if (!window.orderDataManager) {
             console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
             return [];
         }
+
+        // farm_order_rows(RPC 결과)에서 해당 상태 행 추출
+        const rows = window.orderDataManager.farm_order_rows || [];
+        const readyRows = rows.filter(r => {
+            const st = r.order_status || r.status || '';
+            return st === '상품준비' || st === '배송준비';
+        });
+        console.log('📦 피킹 대상 요약 행:', readyRows.length + '건');
+        console.log('   - 상품준비:', readyRows.filter(r => r.order_status === '상품준비').length + '건');
+        console.log('   - 배송준비:', readyRows.filter(r => r.order_status === '배송준비').length + '건');
+
+        if (readyRows.length === 0) return [];
+
+        // 각 주문의 items 포함 전체 데이터를 Supabase에서 조회
+        const fullOrders = await Promise.all(
+            readyRows.map(r => {
+                const id = r.order_id || r.id;
+                return window.orderDataManager.fetchOrderByIdFromSupabase(id);
+            })
+        );
+        const validOrders = fullOrders.filter(Boolean);
+        console.log('✅ 피킹 대상 전체 주문 로드 완료:', validOrders.length + '건');
+        return validOrders;
     } catch (error) {
         console.error('❌ 피킹 대상 주문 조회 실패:', error);
         return [];
