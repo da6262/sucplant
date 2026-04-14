@@ -596,6 +596,28 @@ body {
 .btn-secondary:hover { background: #F9FAFB; border-color: #9CA3AF; }
 .btn-secondary i, .btn-secondary .fas { font-size: 11px; }
 
+.btn-danger {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: #DC2626; color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-danger:hover { background: #B91C1C; }
+.btn-danger i, .btn-danger .fas { font-size: 11px; }
+
+/* 아이콘 전용 소형 버튼 (테이블 행 수정/삭제) */
+.btn-icon {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 6px;
+    background: transparent; border: none; cursor: pointer;
+    transition: background 0.15s; font-size: 12px;
+}
+.btn-icon-edit  { color: #2563EB; }
+.btn-icon-edit:hover  { background: #EFF6FF; }
+.btn-icon-delete { color: #DC2626; }
+.btn-icon-delete:hover { background: #FEF2F2; }
+
 /* app-btn → btn-primary/secondary 동일 스타일로 통일 완료 (위 정의 참고) */
 
 /* Badge */
@@ -616,14 +638,25 @@ body {
     border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
 }
 
-/* Input */
+/* Input — 모든 input/select 공통 */
 .input-ui {
-    width: 100%; padding: 5px 8px; border: 1px solid #D1D5DB; border-radius: 6px;
+    width: 100%; height: 30px; padding: 0 8px; border: 1px solid #D1D5DB; border-radius: 6px;
     font-size: 12px; color: #111827; outline: none; background: #fff;
     transition: border-color 0.15s; box-sizing: border-box;
+    appearance: none; -webkit-appearance: none;
 }
+select.input-ui { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236B7280' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 8px center; padding-right: 26px; }
+textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height: 60px; }
 .input-ui:focus { border-color: #16A34A; box-shadow: 0 0 0 2px rgba(22,163,74,0.12); }
 .input-ui:read-only { background: #F9FAFB; color: #6B7280; cursor: not-allowed; }
+
+/* Table 표준 — 행 패딩 8px, 숫자 우정렬 */
+.tbl-ui { width: 100%; border-collapse: collapse; font-size: 12px; }
+.tbl-ui th { padding: 8px 12px; text-align: left; font-size: 11px; font-weight: 600; color: #6B7280; background: #F9FAFB; border-bottom: 1px solid #E5E7EB; white-space: nowrap; }
+.tbl-ui td { padding: 8px 12px; color: #111827; border-bottom: 1px solid #F3F4F6; vertical-align: middle; }
+.tbl-ui tr:hover td { background: #F9FAFB; }
+.tbl-ui .num { text-align: right; font-variant-numeric: tabular-nums; }
+.tbl-ui .th-num { text-align: right; }
 
 /* Page header */
 .page-header {
