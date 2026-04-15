@@ -91,11 +91,10 @@ import {
 } from './features/settings/settingsData.js';
 
 // 환경설정 UI 모듈 import
-import { 
+import {
     showSettingsTab,
     loadGeneralSettings,
     loadShippingSettings,
-    loadNotificationSettings,
     loadCustomerGrades,
     loadSalesChannels,
     loadOrderStatuses,
