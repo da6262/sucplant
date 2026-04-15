@@ -406,10 +406,10 @@ class ProductManagementComponent {
             </td>
             <td class="td-muted">${product.product_code || '-'}</td>
             <td class="td-primary">
-                <div class="product-name-link cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
+                <div class="product-name-link" data-product-id="${product.id}">${product.name}</div>
                 ${product.description ? `<div class="td-muted truncate" style="max-width:160px">${product.description}</div>` : ''}
             </td>
-            <td><span class="badge badge-blue">${product.category || '미분류'}</span></td>
+            <td><span class="badge badge-info">${product.category || '미분류'}</span></td>
             <td class="td-secondary">${product.size || '-'}</td>
             <td class="td-amount">${this.formatCurrency(product.price)}</td>
             <td class="td-num"><span class="${stockColor}">${product.stock || 0}개</span></td>
