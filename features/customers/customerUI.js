@@ -904,7 +904,6 @@ async function showCustomerDetailInPanel(customer) {
         const addressFull = [customer.address, customer.address_detail].filter(Boolean).join(' ') || '-';
         const phoneForTel = (customer.phone || '').replace(/[^0-9]/g, '');
         const telHref = phoneForTel ? `tel:${phoneForTel}` : '#';
-        const smsHref = phoneForTel ? `sms:${phoneForTel}` : '#';
         
         // 우측 패널: 프로필 + 지표 + 액션 + 주문이력 + 메모
         detailContent.innerHTML = `
@@ -946,9 +945,9 @@ async function showCustomerDetailInPanel(customer) {
 
                 <!-- 액션 버튼 -->
                 <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
-                    <a href="${smsHref}" class="btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;" title="문자 발송">
+                    <button type="button" onclick="if(window.openCustomerSMSModal)window.openCustomerSMSModal('${escapeHtml(customer.phone||'')}','${escapeHtml(customer.name||'')}');else alert('SMS 모듈 로드 필요');" class="btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:4px;" title="문자 발송">
                         <i class="fas fa-sms"></i><span style="font-size:11px;">문자</span>
-                    </a>
+                    </button>
                     <a href="${telHref}" class="btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;" title="전화 연결">
                         <i class="fas fa-phone"></i><span style="font-size:11px;">전화</span>
                     </a>
