@@ -139,39 +139,22 @@ async function loadShippingManagementComponent() {
                 </div>
 
                 <!-- 상태 필터 탭 + 검색 -->
-                <div class="shrink-0 py-2 border-b border-gray-100 bg-white">
-                    <div class="flex items-center gap-2 flex-wrap">
-                        <nav class="app-pill-bar flex-1">
-                            <button id="shipping-status-all" class="shipping-tab-btn py-1.5 px-2.5 text-xs font-semibold text-gray-800 bg-gray-100 rounded-md transition-all duration-200 active">
-                                <i class="fas fa-list mr-1"></i>전체
-                            </button>
-                            <button id="shipping-status-배송준비" class="shipping-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-blue-100 hover:text-blue-800 rounded-md transition-all duration-200">
-                                <i class="fas fa-box mr-1"></i>배송준비
-                            </button>
-                            <button id="shipping-status-배송중" class="shipping-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-amber-100 hover:text-amber-800 rounded-md transition-all duration-200">
-                                <i class="fas fa-shipping-fast mr-1"></i>배송중
-                            </button>
-                            <button id="shipping-status-배송완료" class="shipping-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-emerald-100 hover:text-emerald-800 rounded-md transition-all duration-200">
-                                <i class="fas fa-check-circle mr-1"></i>배송완료
-                            </button>
-                            <button id="shipping-status-배송지연" class="shipping-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-red-100 hover:text-red-800 rounded-md transition-all duration-200">
-                                <i class="fas fa-exclamation-circle mr-1"></i>배송지연
-                            </button>
-                        </nav>
-                        <div class="flex items-center gap-2 shrink-0">
-                            <input type="text" id="shipping-search"
-                                   placeholder="주문번호, 고객명 검색..."
-                                   class="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none w-44">
-                            <input type="date" id="shipping-date-filter"
-                                   class="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:ring-1 focus:ring-emerald-400 focus:border-emerald-400 outline-none">
-                        </div>
-                    </div>
+                <div class="filter-bar">
+                    <nav class="app-pill-bar flex-1">
+                        <button id="shipping-status-all" class="shipping-tab-btn status-tab-btn active"><i class="fas fa-list mr-1"></i>전체</button>
+                        <button id="shipping-status-배송준비" class="shipping-tab-btn status-tab-btn"><i class="fas fa-box mr-1"></i>배송준비</button>
+                        <button id="shipping-status-배송중" class="shipping-tab-btn status-tab-btn"><i class="fas fa-shipping-fast mr-1"></i>배송중</button>
+                        <button id="shipping-status-배송완료" class="shipping-tab-btn status-tab-btn"><i class="fas fa-check-circle mr-1"></i>배송완료</button>
+                        <button id="shipping-status-배송지연" class="shipping-tab-btn status-tab-btn"><i class="fas fa-exclamation-circle mr-1"></i>배송지연</button>
+                    </nav>
+                    <input type="text" id="shipping-search" placeholder="주문번호, 고객명 검색..." class="input-ui" style="max-width:180px;">
+                    <input type="date" id="shipping-date-filter" class="input-ui" style="max-width:140px;">
                 </div>
 
                 <!-- 배송 목록 테이블 -->
                 <div class="flex-1 overflow-auto">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-100">
+                        <table class="table-ui min-w-full">
                             <thead style="background:#f1f5f9;">
                                 <tr>
                                     <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">주문번호</th>
@@ -278,32 +261,22 @@ async function loadBasicShippingData() {
         console.log('📊 총 배송 데이터:', shippingOrders.length + '개');
 
         if (shippingOrders.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                        <div class="flex flex-col items-center space-y-2">
-                            <i class="fas fa-truck text-gray-400 text-2xl"></i>
-                            <p class="text-sm">배송 데이터가 없습니다</p>
-                            <p class="text-xs text-gray-400">배송 등록 버튼을 클릭하여 배송을 등록해보세요</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = window.renderEmptyRow(7, '배송 데이터가 없습니다');
             return;
         }
 
         tbody.innerHTML = shippingOrders.map(order => `
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-2 text-xs font-medium text-gray-900">${order.order_number || order.id}</td>
-                <td class="px-4 py-2 text-xs text-gray-900">${order.customer_name || '고객명'}</td>
-                <td class="px-4 py-2 text-xs text-gray-500 max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
-                <td class="px-4 py-2">
-                    <span class="px-2 py-0.5 rounded-full text-xs font-medium ${getStatusColor(order.order_status || order.status)}">
+                <td class="px-4 td-primary font-medium">${order.order_number || order.id}</td>
+                <td class="px-4 td-primary">${order.customer_name || '고객명'}</td>
+                <td class="px-4 td-secondary max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
+                <td class="px-4">
+                    <span class="badge ${getStatusColor(order.order_status || order.status)}">
                         ${order.order_status || order.status || '상태 없음'}
                     </span>
                 </td>
-                <td class="px-4 py-2 text-xs text-gray-500">${formatDate(order.order_date)}</td>
-                <td class="px-4 py-2 text-xs text-gray-500">${order.tracking_number || '—'}</td>
+                <td class="px-4 td-secondary">${formatDate(order.order_date)}</td>
+                <td class="px-4 td-secondary">${order.tracking_number || '—'}</td>
                 <td class="px-4 py-2">
                     <div class="flex items-center gap-2">
                         ${order.tracking_number ? `

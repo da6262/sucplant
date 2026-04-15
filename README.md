@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.25-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.28-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -145,6 +145,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.28 | 데이터 행 py-* 완전 제거 — 주문(orderData.js) 전 td `py-1.5` 제거, 배송 테이블 `table-ui` 클래스 추가, 배송 필터바 → `filter-bar` + `status-tab-btn` + `input-ui` 표준 클래스 통일 |
 | v3.2.27 | 고객관리 재방문 시 등급관리·고객등록 버튼 먹통 수정 — 재방문 시 이벤트 리스너 재연결 누락 수정, 중복 리스너 누적 방지 |
 | v3.2.25 | 빈 행 렌더링 표준화 — `renderEmptyRow()` 전 탭 통일 (고객·상품·배송·주문폼), `utils/ui.js` 채택 현황 문서화 |
 | v3.2.24 | README 배지 버전 동기화 |

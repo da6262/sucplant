@@ -947,33 +947,33 @@ class OrderDataManager {
                 <tr class="${rowBg} transition-colors border-b border-gray-100 cursor-pointer py-0"
                     onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
                         <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1"
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 py-1.5 text-center td-num ${(ddayWarn || isOverdue) ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
-                    <td class="px-2 py-1.5 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
-                    <td class="px-2 py-1.5 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
-                    <td class="px-2 py-1.5 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
-                    <td class="px-2 py-1.5 td-amount text-right text-numeric">${totalAmount > 0 ? '₩' + totalAmount.toLocaleString() : nullDash}</td>
-                    <td class="px-2 py-1.5 text-center align-middle relative" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
+                    <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
+                    <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
+                    <td class="px-2 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
+                    <td class="px-2 td-amount text-right text-numeric">${totalAmount > 0 ? '₩' + totalAmount.toLocaleString() : nullDash}</td>
+                    <td class="px-2 text-center align-middle relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
                         <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
-                                <button class="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
+                                <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>
                             `).join('')}
                         </div>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
                         <div class="btn-group">
                             <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
                             <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>
@@ -1392,77 +1392,67 @@ class OrderDataManager {
     }
     
     // 주문 취소/환불 시 상품 재고 복원
+    // Fix #5/#6: farm_order_items를 DB에서 직접 조회 (this.farm_orders.items에 의존하지 않음)
     async restoreProductStock(orderId) {
         try {
             console.log('🔄 상품 재고 복원 시작:', orderId);
-            
+
             if (!window.supabaseClient) {
                 console.error('❌ Supabase 클라이언트를 찾을 수 없습니다');
                 return;
             }
-            
-            // 주문 정보 조회
-            const order = this.farm_orders.find(o => o.id === orderId);
-            if (!order) {
-                console.error('❌ 주문을 찾을 수 없습니다:', orderId);
+
+            // farm_order_items에서 직접 조회 (메모리의 farm_orders.items에 의존하지 않음)
+            const { data: orderItems, error: itemsError } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('product_id, product_name, quantity')
+                .eq('order_id', orderId);
+
+            if (itemsError) {
+                console.error('❌ 주문 아이템 조회 실패:', itemsError);
                 return;
             }
-            
-            // 주문 아이템 정보 확인
-            const orderItems = order.items ?? [];
-            if (!Array.isArray(orderItems) || orderItems.length === 0) {
-                console.warn('⚠️ 주문 아이템이 없습니다:', orderId);
+            if (!orderItems || orderItems.length === 0) {
+                console.warn('⚠️ 복원할 주문 아이템이 없습니다:', orderId);
                 return;
             }
-            
+
             console.log(`📦 재고 복원할 상품 수: ${orderItems.length}개`);
-            
-            // 각 상품의 재고 복원
+
             for (const item of orderItems) {
                 try {
-                    const productName = item.product_name || item.name;
                     const quantity = parseInt(item.quantity) || 0;
-                    
-                    if (!productName || quantity <= 0) {
-                        console.warn('⚠️ 유효하지 않은 상품 정보:', item);
-                        continue;
-                    }
-                    
-                    // 상품 정보 조회
-                    const { data: product, error: productError } = await window.supabaseClient
+                    if (!item.product_id || quantity <= 0) continue;
+
+                    const { data: product } = await window.supabaseClient
                         .from('farm_products')
                         .select('id, name, stock')
-                        .eq('name', productName)
-                        .single();
-                    
-                    if (productError || !product) {
-                        console.warn(`⚠️ 상품을 찾을 수 없습니다: ${productName}`);
+                        .eq('id', item.product_id)
+                        .maybeSingle();
+
+                    if (!product) {
+                        console.warn(`⚠️ 상품을 찾을 수 없습니다 (id: ${item.product_id}, 이름: ${item.product_name})`);
                         continue;
                     }
-                    
-                    // 재고 복원
+
                     const newStock = (product.stock || 0) + quantity;
                     const { error: updateError } = await window.supabaseClient
                         .from('farm_products')
-                        .update({ 
-                            stock: newStock,
-                            updated_at: new Date().toISOString()
-                        })
+                        .update({ stock: newStock, updated_at: new Date().toISOString() })
                         .eq('id', product.id);
-                    
+
                     if (updateError) {
-                        console.error(`❌ 상품 재고 복원 실패: ${productName}`, updateError);
+                        console.error(`❌ 재고 복원 실패: ${product.name}`, updateError);
                     } else {
-                        console.log(`✅ 상품 재고 복원 완료: ${productName} (+${quantity}개) → ${newStock}개`);
+                        console.log(`✅ 재고 복원: ${product.name} (+${quantity}개) → ${newStock}개`);
                     }
-                    
                 } catch (itemError) {
-                    console.error(`❌ 상품 재고 복원 중 오류:`, itemError);
+                    console.error('❌ 아이템 재고 복원 오류:', itemError);
                 }
             }
-            
+
             console.log('✅ 상품 재고 복원 완료');
-            
+
         } catch (error) {
             console.error('❌ 상품 재고 복원 실패:', error);
         }
