@@ -417,9 +417,9 @@ class CustomerDataManager {
             }
             
             const searchTerm = query.toLowerCase().trim();
-            const filteredCustomers = this.farm_customers.filter(customer => 
+            const filteredCustomers = this.farm_customers.filter(customer =>
                 customer.name.toLowerCase().includes(searchTerm) ||
-                customer.phone.includes(searchTerm) ||
+                (customer.phone || '').replace(/\D/g, '').includes(searchTerm.replace(/\D/g, '')) ||
                 (customer.email && customer.email.toLowerCase().includes(searchTerm)) ||
                 (customer.address && customer.address.toLowerCase().includes(searchTerm))
             );

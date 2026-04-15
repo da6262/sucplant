@@ -165,7 +165,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             .filter(c => gradeFilter === 'all' || c.grade === gradeFilter)
             .filter(c => !term ||
                 (c.name || '').toLowerCase().includes(term) ||
-                (c.phone || '').replace(/[-\s]/g, '').includes(term.replace(/[-\s]/g, ''))
+                (c.phone || '').replace(/\D/g, '').includes(term.replace(/\D/g, ''))
             );
         
         console.log(`🎯 필터링된 고객 수: ${customers.length}`);
