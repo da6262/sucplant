@@ -1000,17 +1000,16 @@ class ProductManagementComponent {
         const modal = document.getElementById('product-modal');
         if (!modal) return;
 
-        // 닫힘 애니메이션
+        // 즉시 숨김 (style + class 이중 처리)
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+
+        // 애니메이션 초기 상태 복원 (다음 열기를 위해)
         const modalContent = document.getElementById('product-modal-content');
         if (modalContent) {
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
         }
-
-        setTimeout(() => {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-        }, 150);
     }
     
     /**
@@ -1951,15 +1950,14 @@ window.openProductModal = (productId = null) => {
 };
 
 window.closeProductModal = () => {
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
+    // 컴포넌트 메서드도 추가 호출 (폼 초기화 등)
     if (window.productManagementComponent) {
         window.productManagementComponent.closeProductModal();
-    } else {
-        // 폴백: 기본 닫기 기능
-        const modal = document.getElementById('product-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-        }
     }
 };
 

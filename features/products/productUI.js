@@ -2065,13 +2065,10 @@ window.openProductModal = function(productId = null) {
 };
 
 window.closeProductModal = function() {
-    console.log('🔄 window.closeProductModal 호출됨');
-    console.log('🔍 productUI 존재 여부:', typeof productUI);
-    
-    if (productUI && productUI.closeProductModal) {
-        productUI.closeProductModal();
-    } else {
-        console.error('❌ productUI 또는 closeProductModal 함수가 없습니다');
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
     }
 };
 
