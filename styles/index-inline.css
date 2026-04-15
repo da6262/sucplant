@@ -1247,24 +1247,25 @@ table tbody td [class*="shrink-0"] {
 }
 
 /* =====================================================
-   [Spec ⑧] CRM Detail Panel — 고객 상세 플로팅 패널
+   [Spec ⑧] CRM Detail Panel — 고객 상세 인라인 패널
    ===================================================== */
 .crm-panel {
-    position: fixed; top: 80px; right: 20px;
-    width: 380px; height: calc(100vh - 110px);
-    display: flex; flex-direction: column;
-    background: var(--bg-white); border-radius: var(--radius-xl);
-    box-shadow: var(--shadow-lg);
-    border: 1px solid var(--border); z-index: 200; overflow: hidden;
+    width: 380px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-white);
+    border-left: 1px solid var(--border);
+    overflow: hidden;
 }
 /* .hidden이 flex display를 이기도록 명시적 오버라이드 */
 .crm-panel.hidden { display: none !important; }
 .crm-panel-header {
-    padding: 8px 12px; border-bottom: 1px solid var(--border);
+    padding: 10px 14px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
-    flex-shrink: 0;
+    flex-shrink: 0; background: var(--bg-subtle);
 }
 .crm-panel-title  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
-.crm-panel-close  { color: var(--text-muted); font-size: 16px; background: none; border: none; cursor: pointer; line-height: 1; }
-.crm-panel-close:hover { color: var(--text-body); }
-.crm-panel-body   { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }
+.crm-panel-close  { color: var(--text-muted); font-size: 16px; background: none; border: none; cursor: pointer; line-height: 1; padding: 2px 4px; border-radius: 4px; }
+.crm-panel-close:hover { color: var(--text-body); background: var(--border); }
+.crm-panel-body   { flex: 1; overflow-y: auto; padding: 14px; min-height: 0; }

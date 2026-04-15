@@ -65,6 +65,46 @@ async function loadSMSSettings() {
     try {
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
+        const smsConfig   = settings?.smsConfig    || {};
+
+        // API 인증정보 필드 채우기
+        const keyEl    = document.getElementById('sms-api-key');
+        const secretEl = document.getElementById('sms-api-secret');
+        const fromEl   = document.getElementById('sms-from-number');
+        if (keyEl)    keyEl.value    = smsConfig.apiKey    || '';
+        if (secretEl) secretEl.value = smsConfig.apiSecret || '';
+        if (fromEl)   fromEl.value   = smsConfig.from      || '';
+
+        // 인증정보 저장 버튼 이벤트 연결
+        const saveConfigBtn = document.getElementById('save-sms-config-btn');
+        if (saveConfigBtn && !saveConfigBtn._bound) {
+            saveConfigBtn._bound = true;
+            saveConfigBtn.addEventListener('click', async () => {
+                try {
+                    const apiKey    = (document.getElementById('sms-api-key')?.value    || '').trim();
+                    const apiSecret = (document.getElementById('sms-api-secret')?.value || '').trim();
+                    const from      = (document.getElementById('sms-from-number')?.value || '').replace(/[^0-9]/g, '');
+
+                    if (!apiKey || !apiSecret || !from) {
+                        alert('API Key, API Secret, 발신번호를 모두 입력해주세요.');
+                        return;
+                    }
+
+                    if (window.settingsDataManager) {
+                        await window.settingsDataManager.updateSetting('smsConfig', 'apiKey',    apiKey);
+                        await window.settingsDataManager.updateSetting('smsConfig', 'apiSecret', apiSecret);
+                        await window.settingsDataManager.updateSetting('smsConfig', 'from',      from);
+                        if (window.showToast) window.showToast('✅ SMS 인증정보가 저장되었습니다.', 2500);
+                        else alert('SMS 인증정보가 저장되었습니다.');
+                    } else {
+                        alert('설정 저장에 실패했습니다.');
+                    }
+                } catch (e) {
+                    console.error('SMS 인증정보 저장 실패:', e);
+                    alert('저장 실패: ' + e.message);
+                }
+            });
+        }
 
         const container = document.getElementById('sms-templates-list');
         if (!container) return;

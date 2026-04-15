@@ -875,22 +875,27 @@ window.showCustomerDetail = async function(customerId) {
 async function showCustomerDetailInPanel(customer) {
     try {
         console.log('📋 고객 상세 정보 패널 업데이트:', customer.name);
-        
-        // 고객 상세 정보 컨테이너 찾기 (없으면 동적 생성, 숨겨져 있으면 다시 표시)
-        let detailContent = document.getElementById('customer-detail-content');
-        let panel = document.getElementById('_dyn_detail_panel');
-        if (!detailContent || !panel) {
-            if (!panel) {
-                panel = document.createElement('div');
-                panel.id = '_dyn_detail_panel';
-                panel.className = 'crm-panel';
-                panel.innerHTML = '<div class="crm-panel-header"><span class="crm-panel-title">고객 상세</span><button class="crm-panel-close" onclick="document.getElementById(\'_dyn_detail_panel\').classList.add(\'hidden\')">✕</button></div><div id="customer-detail-content" class="crm-panel-body"></div>';
-                document.body.appendChild(panel);
-            }
-            detailContent = document.getElementById('customer-detail-content');
+
+        // HTML에 정의된 인라인 패널 사용 (동적 생성 X)
+        const panel = document.getElementById('customer-detail-panel');
+        const detailContent = document.getElementById('customer-detail-content');
+        if (!panel || !detailContent) {
+            console.error('❌ 고객 상세 패널 요소를 찾을 수 없습니다.');
+            return;
         }
-        // 패널이 숨겨져 있으면 다시 표시
-        if (panel) panel.classList.remove('hidden');
+        // 패널이 숨겨져 있으면 표시 + 닫기 버튼 이벤트 등록
+        if (panel.classList.contains('hidden')) {
+            panel.classList.remove('hidden');
+            const closeBtn = document.getElementById('close-crm-panel');
+            if (closeBtn) {
+                closeBtn.onclick = () => {
+                    panel.classList.add('hidden');
+                    document.querySelectorAll('.customer-list-card').forEach(el => {
+                        el.classList.remove('ring-2', 'ring-emerald-500');
+                    });
+                };
+            }
+        }
 
         console.log('✅ 고객 상세 정보 컨테이너 찾음:', detailContent);
         
@@ -901,59 +906,83 @@ async function showCustomerDetailInPanel(customer) {
         const telHref = phoneForTel ? `tel:${phoneForTel}` : '#';
         const smsHref = phoneForTel ? `sms:${phoneForTel}` : '#';
         
-        // 우측 패널 3단: 1) 프로필·핵심 지표  2) 주문 이력 테이블  3) 전문 메모  + 플로팅 액션
+        // 우측 패널: 프로필 + 지표 + 액션 + 주문이력 + 메모
         detailContent.innerHTML = `
-            <div class="relative space-y-4">
-                <!-- 플로팅 액션: 문자 발송, 전화 연결, 주문 추가 (에메랄드) -->
-                <div class="flex flex-wrap gap-2 justify-end sticky top-0 z-10 bg-white/95 py-1 -mt-1">
-                    <a href="${smsHref}" class="btn-primary" title="문자 발송"><i class="fas fa-sms"></i> 문자 발송</a>
-                    <a href="${telHref}" class="btn-primary" title="전화 연결"><i class="fas fa-phone"></i> 전화 연결</a>
-                    <button type="button" data-action="order-add" data-customer-id="${customer.id}" class="btn-primary" title="주문 추가"><i class="fas fa-cart-plus"></i> 주문 추가</button>
-                </div>
-                <!-- 1단: 프로필 및 핵심 지표 -->
-                <div class="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
-                    <div class="flex flex-wrap gap-4 items-start">
-                        <div class="min-w-0 flex-1">
-                            <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(customer.name || '-')}</h3>
-                            <p class="text-sm text-gray-600 mt-0.5"><i class="fas fa-phone-alt text-gray-400 mr-1"></i>${escapeHtml(customer.phone || '-')}</p>
-                            <p class="text-sm text-gray-600 break-words"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>${escapeHtml(addressFull)}</p>
-                            <p class="text-xs text-gray-500 mt-1">등급 <span class="px-1.5 py-0.5 text-xs font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span> · 등록일 ${formatDate(customer.registration_date)}</p>
-                        </div>
-                        <div class="flex gap-6 shrink-0">
-                            <div class="text-center">
-                                <div class="text-xl font-bold text-emerald-700" id="customer-total-purchase">—</div>
-                                <div class="text-xs text-gray-500">총 구매액</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xl font-bold text-gray-800" id="customer-order-count">—</div>
-                                <div class="text-xs text-gray-500">주문 횟수</div>
-                            </div>
-                            <div class="text-center">
-                                <div class="text-xl font-bold text-amber-600" id="customer-loyalty-score">—</div>
-                                <div class="text-xs text-gray-500">단골 점수</div>
+            <div class="space-y-3">
+
+                <!-- 프로필 카드 -->
+                <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:8px;padding:14px;">
+                    <div style="display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:10px;">
+                        <div style="min-width:0;">
+                            <div style="font-size:15px;font-weight:700;color:#111827;margin-bottom:3px;">${escapeHtml(customer.name || '-')}</div>
+                            <div style="font-size:12px;color:#6B7280;margin-bottom:2px;"><i class="fas fa-phone-alt" style="width:14px;color:#9CA3AF;"></i> ${escapeHtml(customer.phone || '-')}</div>
+                            <div style="font-size:12px;color:#6B7280;word-break:break-word;"><i class="fas fa-map-marker-alt" style="width:14px;color:#9CA3AF;"></i> ${escapeHtml(addressFull)}</div>
+                            <div style="margin-top:6px;display:flex;align-items:center;gap:6px;">
+                                <span class="px-1.5 py-0.5 text-xs font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
+                                <span style="font-size:11px;color:#9CA3AF;">등록 ${formatDate(customer.registration_date)}</span>
                             </div>
                         </div>
+                        <div style="display:flex;gap:4px;flex-shrink:0;">
+                            <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                            <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                        </div>
                     </div>
-                    <div class="mt-3 flex gap-2">
-                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                        <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                    <!-- 핵심 지표 3개 -->
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:6px;padding:8px;text-align:center;">
+                            <div style="font-size:14px;font-weight:700;color:#059669;" id="customer-total-purchase">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:2px;">총 구매액</div>
+                        </div>
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:6px;padding:8px;text-align:center;">
+                            <div style="font-size:14px;font-weight:700;color:#374151;" id="customer-order-count">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:2px;">주문 횟수</div>
+                        </div>
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:6px;padding:8px;text-align:center;">
+                            <div style="font-size:14px;font-weight:700;color:#D97706;" id="customer-loyalty-score">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:2px;">단골 점수</div>
+                        </div>
                     </div>
                 </div>
-                <!-- 2단: 통합 주문 이력 [주문일 | 상품명 | 금액 | 상태] -->
-                <div class="rounded-lg border border-gray-200 overflow-hidden">
-                    <h4 class="text-sm font-semibold text-gray-800 px-3 py-2 border-b border-gray-200 bg-gray-50">주문 이력</h4>
-                    <div class="overflow-auto max-h-48 bg-white">
-                        <div id="customer-orders-list" class="text-xs text-gray-500 w-full p-2">불러오는 중...</div>
+
+                <!-- 액션 버튼 -->
+                <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;">
+                    <a href="${smsHref}" class="btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;" title="문자 발송">
+                        <i class="fas fa-sms"></i><span style="font-size:11px;">문자</span>
+                    </a>
+                    <a href="${telHref}" class="btn-secondary" style="display:flex;align-items:center;justify-content:center;gap:4px;text-decoration:none;" title="전화 연결">
+                        <i class="fas fa-phone"></i><span style="font-size:11px;">전화</span>
+                    </a>
+                    <button type="button" data-action="order-add" data-customer-id="${customer.id}" class="btn-primary" style="display:flex;align-items:center;justify-content:center;gap:4px;" title="주문 추가">
+                        <i class="fas fa-cart-plus"></i><span style="font-size:11px;">주문</span>
+                    </button>
+                </div>
+
+                <!-- 주문 이력 -->
+                <div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
+                    <div style="padding:8px 12px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
+                        <i class="fas fa-receipt" style="color:#9CA3AF;margin-right:5px;"></i>주문 이력
+                    </div>
+                    <div style="overflow-y:auto;max-height:200px;background:white;">
+                        <div id="customer-orders-list" style="font-size:12px;color:#9CA3AF;padding:10px;">불러오는 중...</div>
                     </div>
                 </div>
-                <!-- 3단: 전문 메모(상담 기록) -->
-                <div class="rounded-lg border border-gray-200 overflow-hidden">
-                    <h4 class="text-sm font-semibold text-gray-800 px-3 py-2 border-b border-gray-200 bg-gray-50">상담 기록</h4>
-                    <div class="p-2 bg-white">
-                        <textarea id="customer-detail-memo" class="w-full min-h-[100px] p-2 border border-gray-200 rounded text-sm resize-y focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
-                        <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}" class="mt-2 btn-primary">메모 저장</button>
+
+                <!-- 상담 기록 -->
+                <div style="border:1px solid #E5E7EB;border-radius:8px;overflow:hidden;">
+                    <div style="padding:8px 12px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
+                        <i class="fas fa-sticky-note" style="color:#9CA3AF;margin-right:5px;"></i>상담 기록
+                    </div>
+                    <div style="padding:10px;background:white;">
+                        <textarea id="customer-detail-memo"
+                            style="width:100%;min-height:80px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:12px;resize:vertical;box-sizing:border-box;"
+                            placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
+                        <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}"
+                            class="btn-primary" style="margin-top:6px;width:100%;">
+                            <i class="fas fa-save"></i> 메모 저장
+                        </button>
                     </div>
                 </div>
+
             </div>
         `;
         
@@ -1925,45 +1954,16 @@ function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
     }
 }
 
-// 전화번호 포맷팅 함수
-function formatPhoneNumber(input) {
-    try {
-        console.log('📞 전화번호 포맷팅 시작:', input.value);
-        
-        // 숫자만 추출
-        let value = input.value.replace(/[^0-9]/g, '');
-        console.log('🔢 숫자만 추출:', value);
-        
-        // 길이 제한 (11자리)
-        if (value.length > 11) {
-            value = value.substring(0, 11);
-        }
-        
-        // 포맷팅 적용
-        let formatted = '';
-        if (value.length >= 1) {
-            formatted = value.substring(0, 3);
-        }
-        if (value.length >= 4) {
-            formatted += '-' + value.substring(3, 7);
-        }
-        if (value.length >= 8) {
-            formatted += '-' + value.substring(7, 11);
-        }
-        
-        console.log('📱 포맷팅 결과:', formatted);
-        
-        // 입력 필드에 포맷팅된 값 설정
-        input.value = formatted;
-        
-    } catch (error) {
-        console.error('❌ 전화번호 포맷팅 실패:', error);
-    }
-}
-
 // 고객명 중복 검사 함수를 전역으로 등록
 window.checkCustomerNameDuplicate = checkCustomerNameDuplicate;
-window.formatPhoneNumber = formatPhoneNumber;
+// formatPhoneNumber: utils/formatters.js의 window.fmt.phone / window.formatPhone 사용
+window.formatPhoneNumber = function(input) {
+    if (!input) return;
+    const formatted = (window.fmt && window.fmt.phone)
+        ? window.fmt.phone(input.value)
+        : (window.formatPhone ? window.formatPhone(input.value) : input.value);
+    input.value = formatted;
+};
 
 // 키보드 네비게이션 처리
 function handleCustomerNameKeydown(event) {
