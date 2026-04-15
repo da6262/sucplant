@@ -1947,22 +1947,9 @@ window.closeProductModal = () => {
     } else {
         // 폴백: 기본 닫기 기능
         const modal = document.getElementById('product-modal');
-        const modalContent = document.getElementById('product-modal-content');
-        
-        if (modal && modalContent) {
-            // 애니메이션 효과
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            // 애니메이션 완료 후 모달 숨기기
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-                
-                // 애니메이션 클래스 초기화
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 300);
+        if (modal) {
+            modal.classList.add('hidden');
+            modal.style.display = 'none';
         }
     }
 };
