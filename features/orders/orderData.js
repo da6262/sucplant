@@ -59,6 +59,9 @@ class OrderDataManager {
         // 날짜 필터
         this._dateFrom = null;  // Date 객체 또는 null
         this._dateTo = null;    // Date 객체 또는 null
+
+        // 채널 필터
+        this._channelFilter = '';  // '' = 전체
         
         // Master-Detail 패턴을 위한 선택된 고객 정보
         this.selectedCustomerId = null;
@@ -450,6 +453,13 @@ class OrderDataManager {
                     if (this._dateTo && d > this._dateTo) return false;
                     return true;
                 });
+            }
+
+            // 채널 필터 적용
+            if (this._channelFilter) {
+                filtered = filtered.filter(r =>
+                    (r.order_channel || '') === this._channelFilter
+                );
             }
 
             return filtered;
@@ -1666,6 +1676,38 @@ class OrderDataManager {
         }
     }
     
+    // 채널 필터 설정 및 테이블 갱신
+    setChannelFilter(channel) {
+        this._channelFilter = channel || '';
+        const status = this.getCurrentFilterStatus();
+        this.renderOrdersTable(status);
+    }
+
+    // 채널 필터 셀렉트 초기화 (farm_channels DB에서 옵션 로드)
+    async initChannelFilterSelect() {
+        const sel = document.getElementById('order-channel-filter');
+        if (!sel) return;
+        try {
+            let channels = [];
+            if (window.salesChannelsDataManager) {
+                await window.salesChannelsDataManager.loadChannels();
+                channels = window.salesChannelsDataManager.getActiveChannels();
+            } else if (window.supabaseClient) {
+                const { data } = await window.supabaseClient
+                    .from('farm_channels')
+                    .select('name, is_active')
+                    .eq('is_active', true)
+                    .order('sort_order', { ascending: true });
+                channels = data || [];
+            }
+            const current = sel.value;
+            sel.innerHTML = '<option value="">전체</option>' +
+                channels.map(c => `<option value="${c.name}"${c.name === current ? ' selected' : ''}>${c.name}</option>`).join('');
+        } catch (e) {
+            console.warn('⚠️ 채널 필터 초기화 실패:', e);
+        }
+    }
+
     // 현재 필터 상태 가져오기 (활성화된 status-tab-btn 기준)
     getCurrentFilterStatus() {
         const active = document.querySelector('.status-tab-btn.active');
@@ -1957,6 +1999,9 @@ const orderDataManager = new OrderDataManager();
 window.orderDataManager = orderDataManager;
 /** 대시보드 등에서 get_order_rows 기반 카운트 사용 (단일 소스) */
 window.computeCountsFromOrderRows = computeCountsFromOrderRows;
+
+// 채널 필터 전역 함수
+window.setOrderChannelFilter = (channel) => orderDataManager.setChannelFilter(channel);
 
 // 전역 함수들 등록
 window.toggleOrderStatusEdit = (orderId, currentStatus) => {

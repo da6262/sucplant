@@ -207,12 +207,17 @@ async function initializeOrderManagement() {
             console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
         }
         
+        // 채널 필터 셀렉트 초기화 (farm_channels DB 연동)
+        if (window.orderDataManager?.initChannelFilterSelect) {
+            window.orderDataManager.initChannelFilterSelect();
+        }
+
         // 주문관리 이벤트 리스너 연결
         attachOrderEventListeners();
-        
+
         // 주문 상세 모달 로드
         await loadOrderDetailModal();
-        
+
         console.log('✅ 주문관리 초기화 완료');
         
     } catch (initError) {
