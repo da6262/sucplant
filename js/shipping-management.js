@@ -298,15 +298,19 @@ async function loadBasicShippingData() {
     }
 }
 
-// 상태별 색상 반환
+// 상태별 배지 변형 반환 — 통제실 badge 클래스 사용 (raw Tailwind 제거)
 function getStatusColor(status) {
-    const colors = {
-        '배송준비': 'bg-orange-100 text-orange-800',
-        '배송중': 'bg-blue-100 text-blue-800',
-        '배송완료': 'bg-green-100 text-green-800',
-        '배송지연': 'bg-red-100 text-red-800'
+    const MAP = {
+        '배송준비': 'badge-orange',
+        '배송중':   'badge-info',
+        '배송완료': 'badge-success',
+        '배송지연': 'badge-danger',
     };
-    return colors[status] || 'bg-gray-100 text-gray-800';
+    return MAP[status] || 'badge-neutral';
+}
+// 배지 HTML 반환 헬퍼
+function getStatusBadgeHtml(status) {
+    return `<span class="badge ${getStatusColor(status)}">${status || '-'}</span>`;
 }
 
 // 날짜 포맷팅: utils/formatters.js의 window.formatDate 사용

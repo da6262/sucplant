@@ -15,8 +15,14 @@ import {
     nullDash, emptyDash
 } from './utils/formatters.js';
 
-// ── 공통 UI 렌더러 ────────────────────────────────────────────
-import { renderPageHeader, renderFilterBar, renderEmptyRow } from './utils/ui.js';
+// ── 공통 UI 렌더러 (표준 폼 렌더러 v3.4) ─────────────────────
+import {
+    renderPageHeader, renderFilterBar, renderEmptyRow,
+    renderModal, renderField, renderFormSection, renderFormGrid, renderFormActions,
+    renderBadge, renderOrderStatusBadge, renderGradeBadge,
+    renderBtnIcon, renderBtnGroup, renderEditDeleteBtns,
+    renderConfirmDialog, renderInfoRow, renderSectionTitle
+} from './utils/ui.js';
 
 // 전역 노출 — components/* 및 레거시 코드에서 window.fmt.date() 형태로 사용
 window.fmt = {

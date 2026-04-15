@@ -906,25 +906,51 @@ select.form-control {
 
 /* app-btn → btn-primary/secondary 동일 스타일로 통일 완료 (위 정의 참고) */
 
-/* ── 안전망: 미처리 하드코딩 그린 차단 ─────────────────────────────────
-   소스 교체가 완료된 파일: settings.css · dashboard.js · productUI.js ·
-   customerUI.js · orderForm.js · orderFormMinimalLayout.js · orderSMS.js ·
-   shippingManager.js · 모달 HTML 3종
-   아래 규칙은 혹시 누락된 Tailwind 클래스가 있을 경우를 위한 최종 안전망.
+/* ── 최종 안전망: 반란군 Tailwind 색상 클래스 오버라이드 ─────────────
+   raw Tailwind 클래스를 쓴 파일은 CSS 변수 기반 색상으로 강제 전환됨.
+   소스 교체가 완료될수록 이 규칙들의 역할이 줄어든다.
 ────────────────────────────────────────────────────────────────────── */
+
+/* 그린/에메랄드 — 브랜드 컬러 통일 */
 .bg-green-600, .bg-green-500,
 .bg-emerald-600, .bg-emerald-500 { background-color: var(--primary) !important; }
 .hover\:bg-green-700:hover,
 .hover\:bg-green-600:hover,
 .hover\:bg-emerald-700:hover,
 .hover\:bg-emerald-600:hover    { background-color: var(--primary-hover) !important; }
-/* 테두리색 통일 */
 .border-green-600, .border-emerald-600 { border-color: var(--primary) !important; }
-/* 포커스 링 통일 */
 .focus\:ring-green-500:focus,
 .focus\:ring-emerald-500:focus  { --tw-ring-color: var(--primary) !important; }
 .focus\:border-green-500:focus,
 .focus\:border-emerald-500:focus { border-color: var(--primary) !important; }
+
+/* 텍스트 색상 — CSS 변수 계층으로 매핑 */
+.text-gray-900, .text-slate-900 { color: var(--text-heading); }
+.text-gray-800, .text-slate-800 { color: var(--text-primary); }
+.text-gray-700, .text-slate-700 { color: var(--text-body); }
+.text-gray-600, .text-slate-600,
+.text-gray-500, .text-slate-500 { color: var(--text-secondary); }
+.text-gray-400, .text-slate-400 { color: var(--text-muted); }
+.text-blue-600, .text-blue-500  { color: var(--info); }
+.text-red-600,  .text-red-500   { color: var(--danger); }
+.text-green-700,.text-green-600 { color: var(--primary); }
+.text-yellow-700,.text-yellow-600 { color: var(--warn); }
+
+/* 배경색 — 시맨틱 서피스로 매핑 */
+.bg-gray-50, .bg-slate-50   { background-color: var(--bg-light); }
+.bg-gray-100,.bg-slate-100  { background-color: var(--bg-page); }
+.bg-white                   { background-color: var(--bg-white); }
+.bg-blue-50                 { background-color: var(--info-bg); }
+.bg-red-50                  { background-color: var(--danger-bg); }
+.bg-yellow-50               { background-color: var(--warn-bg); }
+.bg-green-50                { background-color: #F0FDF4; }
+
+/* 폰트 크기 — 통제실 표준 */
+.text-xs   { font-size: 11px; }
+.text-sm   { font-size: 12px; }
+.text-base { font-size: 13px; }
+.text-lg   { font-size: 15px; }
+.text-xl   { font-size: 18px; }
 
 /* =====================
    Badge — 표준 알약 배지 (8대 스펙)
@@ -1245,6 +1271,75 @@ table tbody td [class*="shrink-0"] {
     font-variant-numeric: tabular-nums;
     letter-spacing: -0.01em;
 }
+
+/* =====================================================
+   [Spec ⑨] Semantic Text Utilities — 반란군 text-gray-* 대체
+   모든 파일은 raw Tailwind color 클래스 대신 이 클래스를 사용
+   ===================================================== */
+.txt-heading   { color: var(--text-heading); }
+.txt-primary   { color: var(--text-primary); }
+.txt-body      { color: var(--text-body); }
+.txt-secondary { color: var(--text-secondary); }
+.txt-muted     { color: var(--text-muted); }
+.txt-link      { color: var(--text-link); }
+.txt-danger    { color: var(--danger); }
+.txt-warn      { color: var(--warn); }
+.txt-success   { color: var(--primary); }
+.txt-info      { color: var(--info); }
+.txt-amount    { color: var(--text-amount); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+/* Font-size — 반란군 text-xs/text-sm 대체 */
+.txt-2xs  { font-size: 10px; }
+.txt-xs   { font-size: 11px; }
+.txt-sm   { font-size: 12px; }
+.txt-base { font-size: 13px; }
+.txt-md   { font-size: 14px; }
+.txt-lg   { font-size: 15px; }
+.txt-xl   { font-size: 18px; }
+
+/* Font-weight */
+.fw-normal  { font-weight: 400; }
+.fw-medium  { font-weight: 500; }
+.fw-semi    { font-weight: 600; }
+.fw-bold    { font-weight: 700; }
+
+/* Surface backgrounds — 반란군 bg-gray-*/bg-white 대체 */
+.bg-card    { background-color: var(--bg-white); }
+.bg-section { background-color: var(--bg-light); }
+.bg-page    { background-color: var(--bg-page); }
+.bg-danger  { background-color: var(--danger-bg); }
+.bg-info    { background-color: var(--info-bg); }
+.bg-warn    { background-color: var(--warn-bg); }
+.bg-success { background-color: #F0FDF4; }
+
+/* Border */
+.border-std    { border: 1px solid var(--border); }
+.border-bottom { border-bottom: 1px solid var(--border); }
+.border-top    { border-top: 1px solid var(--border); }
+
+/* Flex layout shortcuts */
+.flex-center   { display: flex; align-items: center; }
+.flex-between  { display: flex; align-items: center; justify-content: space-between; }
+.flex-end      { display: flex; align-items: center; justify-content: flex-end; }
+.flex-col      { display: flex; flex-direction: column; }
+.flex-gap-1    { gap: 4px; }
+.flex-gap-2    { gap: 8px; }
+.flex-gap-3    { gap: 12px; }
+.flex-gap-4    { gap: 16px; }
+
+/* Padding — 반란군 px-*/py-*/p-* 대체 */
+.p-xs   { padding: 4px 8px; }
+.p-sm   { padding: 8px 12px; }
+.p-md   { padding: 12px 16px; }
+.p-lg   { padding: 16px 24px; }
+.p-xl   { padding: 24px; }
+
+/* Radius */
+.r-sm   { border-radius: var(--radius-sm); }
+.r-md   { border-radius: var(--radius-md); }
+.r-lg   { border-radius: var(--radius-lg); }
+.r-xl   { border-radius: var(--radius-xl); }
+.r-full { border-radius: var(--radius-full); }
 
 /* =====================================================
    [Spec ⑧] CRM Detail — 고객 상세 팝업 내부 레이아웃
