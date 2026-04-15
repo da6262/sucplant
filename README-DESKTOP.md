@@ -78,11 +78,12 @@ npm start
 ### **메인 기능**
 | 기능 | 단축키 | 설명 |
 |------|--------|------|
-| **주문관리** | `Ctrl+1` | 주문 등록, 수정, 상태 변경 |
+| **주문관리** | `Ctrl+1` | 주문 등록, 수정, 상태 변경 · 송장 일괄입력 · 로젠 Excel |
 | **고객관리** | `Ctrl+2` | 고객 정보, 등급 관리 |
 | **상품관리** | `Ctrl+3` | White Platter 재고 관리 |
 | **대기자관리** | `Ctrl+4` | 희귀종 대기자 목록 |
-| **배송관리** | `Ctrl+5` | 피킹&포장 리스트 |
+
+> ℹ️ 배송관리 메뉴는 v1.1.0에서 제거되었습니다. 송장 일괄입력·로젠 Excel 기능은 **주문관리** 탭에서 이용하세요.
 
 ### **데이터 관리**
 | 기능 | 단축키 | 설명 |
@@ -213,6 +214,18 @@ npm start
 - 🔧 버그 리포트: GitHub Issues
 - 💡 기능 제안: GitHub Discussions
 - 📖 매뉴얼: 앱 내 F1 도움말
+
+## 🔄 **변경이력**
+
+### v1.1.0 (2026-04-15)
+- **배송관리 메뉴 제거**: 주문관리에 통합 (송장 일괄입력 + 로젠 Excel 유지)
+- **대기자관리 버그 수정**:
+  - `emergencyWaitlistRecovery()` 호출 오류 수정 (`orderDataManager` → `waitlistDataManager`)
+  - `addWaitlist` / `updateWaitlist` / `deleteWaitlist` async-await 누락 수정 (Promise 미처리로 실패해도 성공 표시되던 문제)
+  - `updateWaitlist` / `deleteWaitlist` / `updateWaitlistStatus` 를 Supabase 직접 호출로 교체 (전체 삭제→재삽입 방식 제거)
+  - Supabase 연결 확인 조건 `window.supabase` → `window.supabaseClient` 로 통일
+  - 중복 `saveWaitlist()` 메서드(구버전) 제거
+- **UI 통일**: 상품관리·배송관리·환경설정 디자인 시스템 `app-*` 클래스로 통일
 
 ## 📄 **라이선스**
 
