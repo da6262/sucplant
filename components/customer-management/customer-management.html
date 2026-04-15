@@ -79,21 +79,19 @@
         </div>
     </footer>
 
-</div>
-
-<!-- 고객 상세 팝업 모달 -->
-<div id="customer-detail-panel" class="modal-overlay hidden" style="z-index:450;">
-    <div class="modal-container" style="max-width:860px;width:92vw;max-height:88vh;display:flex;flex-direction:column;">
-        <div class="modal-header">
-            <span id="crm-modal-title" class="modal-title">고객 상세</span>
-            <button id="close-crm-panel" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
+    <!-- 고객 상세 팝업 모달 (position:fixed → 뷰포트 중앙, #customers-section 안에 있어야 DOM 보존됨) -->
+    <div id="customer-detail-panel" class="modal-overlay hidden" style="z-index:450;">
+        <div class="modal-container" style="max-width:860px;width:92vw;max-height:88vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
+                <span id="crm-modal-title" class="modal-title">고객 상세</span>
+                <button id="close-crm-panel" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="customer-detail-content" class="modal-body" style="overflow-y:auto;flex:1;min-height:0;"></div>
         </div>
-        <div id="customer-detail-content" class="modal-body" style="overflow-y:auto;flex:1;min-height:0;"></div>
     </div>
-</div>
 
-<!-- 고객등급 관리 모달 -->
-<div id="customer-grades-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
+    <!-- 고객등급 관리 모달 -->
+    <div id="customer-grades-modal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden">
     <div class="flex items-center justify-center min-h-screen p-4">
         <div class="bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
             <div class="flex items-center justify-between p-4 border-b border-gray-200">
@@ -122,4 +120,5 @@
             </div>
         </div>
     </div>
-</div>
+
+</div><!-- /#customers-section -->
