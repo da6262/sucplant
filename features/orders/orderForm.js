@@ -104,6 +104,18 @@ function generateOrderFormHTML() {
                                            placeholder="상세주소 (동/호수, 건물명 등)">
                                 </div>
                             </div>
+                            <!-- 추가 배송지 섹션 -->
+                            <div class="mt-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs text-gray-500">배송지 1 (기본)</span>
+                                    <button type="button" onclick="addExtraShipping()"
+                                            class="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                        <i class="fas fa-plus-circle"></i> 배송지 추가
+                                        <span id="extra-shipping-badge" class="hidden"></span>
+                                    </button>
+                                </div>
+                                <div id="extra-shipping-list"></div>
+                            </div>
                             <div id="order-phone-duplicate-message" class="text-sm text-red-600 hidden"></div>
                         </div>
                     </div>
@@ -2708,14 +2720,65 @@ async function handleOrderSubmit(event) {
             }
         }
         
+        // ── 추가 배송지: 같은 상품으로 주문 자동 분리 생성 ──
+        let extraCreatedCount = 0;
+        if (!isEditMode) {
+            const extraShippings = collectExtraShippingAddresses();
+            for (const extra of extraShippings) {
+                try {
+                    const extraNum = (() => {
+                        const d = new Date();
+                        const yy = String(d.getFullYear()).slice(2);
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `ORD-${yy}${mm}${dd}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+                    })();
+                    const extraRpc = await window.supabaseClient.rpc('upsert_order_with_items', {
+                        p_order_id: null,
+                        p_order_number: extraNum,
+                        p_order_date: new Date().toISOString(),
+                        p_customer_id: orderData.customer_id || null,
+                        p_customer_name: extra.customer_name || orderData.customer_name,
+                        p_customer_phone: extra.customer_phone || orderData.customer_phone,
+                        p_customer_address: extra.customer_address || '',
+                        p_customer_address_detail: extra.customer_address_detail || null,
+                        p_order_status: orderData.order_status || '주문접수',
+                        p_order_channel: orderData.order_channel || '',
+                        p_memo: extra.memo || orderData.memo || '',
+                        p_shipping_fee: toIntegerWon(orderData.shipping_fee),
+                        p_discount_amount: toIntegerWon(orderData.discount_amount),
+                        p_items: itemsPayload
+                    });
+                    if (extraRpc.error) {
+                        console.error('❌ 추가 배송지 주문 생성 실패:', extraRpc.error);
+                        continue;
+                    }
+                    extraCreatedCount++;
+                    // 추가 배송지 분 재고도 차감
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        await window.supabaseClient.from('farm_products').update({ stock: Math.max(0, (p.stock ?? 0) - item.quantity) }).eq('id', item.product_id);
+                    }
+                } catch (extraErr) {
+                    console.error('❌ 추가 배송지 처리 오류:', extraErr);
+                }
+            }
+        }
+
         // 성공 메시지 표시
-        alert(`주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다!`);
-        
+        if (extraCreatedCount > 0) {
+            alert(`주문이 등록되었습니다!\n추가 배송지 ${extraCreatedCount}건 포함 → 총 ${1 + extraCreatedCount}건 생성`);
+        } else {
+            alert(`주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다!`);
+        }
+
         // 주문 모달 닫기
         if (window.closeOrderModal) {
             window.closeOrderModal();
         }
-        
+
         // 주문 폼 초기화
         console.log('🔄 주문 폼 초기화...');
         const orderForm = document.getElementById('order-form');
@@ -2723,7 +2786,10 @@ async function handleOrderSubmit(event) {
             orderForm.reset();
             console.log('✅ 주문 폼 초기화 완료');
         }
-        
+
+        // 추가 배송지 초기화
+        if (window.resetExtraShipping) resetExtraShipping();
+
         // 장바구니 초기화
         const cartItems = document.getElementById('cart-items-body');
         if (cartItems) {
@@ -2996,6 +3062,102 @@ window.validateForm = validateForm;
 window.initOrderFormSubmit = initOrderFormSubmit;
 window.updateShippingFeeDisplay = updateShippingFeeDisplay;
 window.initOrderChannelFromSettings = initOrderChannelFromSettings;
+
+// ─────────────────────────────────────────────
+// 다중 배송지 (추가 배송지) 관리
+// 배송지 추가 버튼 → 별도 주문 자동 생성
+// ─────────────────────────────────────────────
+window._extraShippingCount = 0;
+
+function addExtraShipping() {
+    window._extraShippingCount = (window._extraShippingCount || 0) + 1;
+    const idx = window._extraShippingCount;
+    const container = document.getElementById('extra-shipping-list');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.id = `extra-shipping-row-${idx}`;
+    row.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg';
+    row.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-blue-700"><i class="fas fa-map-marker-alt mr-1"></i>추가 배송지</span>
+            <button type="button" onclick="removeExtraShipping(${idx})"
+                    class="text-xs text-red-400 hover:text-red-600"><i class="fas fa-times"></i> 삭제</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" id="es-name-${idx}" placeholder="수령인명 *"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <input type="tel" id="es-phone-${idx}" placeholder="연락처"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <input type="text" id="es-detail-${idx}" placeholder="상세주소"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+        </div>
+        <textarea id="es-memo-${idx}" rows="2" placeholder="배송 메모 (선택)"
+                  class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+    `;
+    container.appendChild(row);
+    _updateExtraShippingBadge();
+    document.getElementById(`es-name-${idx}`)?.focus();
+}
+
+function removeExtraShipping(idx) {
+    document.getElementById(`extra-shipping-row-${idx}`)?.remove();
+    _updateExtraShippingBadge();
+}
+
+function _updateExtraShippingBadge() {
+    const list = document.getElementById('extra-shipping-list');
+    const count = list ? list.children.length : 0;
+    const badge = document.getElementById('extra-shipping-badge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = `+${count}개`;
+        badge.className = 'text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1';
+    } else {
+        badge.textContent = '';
+        badge.className = 'hidden';
+    }
+}
+
+function collectExtraShippingAddresses() {
+    const list = document.getElementById('extra-shipping-list');
+    if (!list || list.children.length === 0) return [];
+    const result = [];
+    for (const row of list.querySelectorAll('[id^="extra-shipping-row-"]')) {
+        const idx = row.id.replace('extra-shipping-row-', '');
+        const name    = document.getElementById(`es-name-${idx}`)?.value?.trim() || '';
+        const phone   = document.getElementById(`es-phone-${idx}`)?.value?.trim() || '';
+        const address = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
+        const detail  = document.getElementById(`es-detail-${idx}`)?.value?.trim() || '';
+        const memo    = document.getElementById(`es-memo-${idx}`)?.value?.trim() || '';
+        if (!name && !address) continue;
+        result.push({
+            customer_name: name,
+            customer_phone: phone,
+            customer_address: address + (detail ? ' ' + detail : ''),
+            customer_address_detail: detail || null,
+            memo
+        });
+    }
+    return result;
+}
+
+function resetExtraShipping() {
+    const list = document.getElementById('extra-shipping-list');
+    if (list) list.innerHTML = '';
+    window._extraShippingCount = 0;
+    _updateExtraShippingBadge();
+}
+
+window.addExtraShipping    = addExtraShipping;
+window.removeExtraShipping = removeExtraShipping;
+window.resetExtraShipping  = resetExtraShipping;
+
+// ─────────────────────────────────────────────
 
 /** 주문 저장 정합성 검증: DB의 total_amount vs Σ(subtotal)+shipping_fee-discount. 콘솔에서 validateOrderTotalAmount(orderId) 호출 가능 */
 window.validateOrderTotalAmount = async function (orderId) {
