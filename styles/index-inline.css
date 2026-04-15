@@ -766,8 +766,8 @@ body {
    ===================== */
 .btn-icon {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 30px; height: 30px; border-radius: 6px;
-    border: none; cursor: pointer; font-size: 12px;
+    width: 26px; height: 26px; border-radius: 5px;
+    border: none; cursor: pointer; font-size: 11px;
     transition: background 0.15s, transform 0.15s;
 }
 /* 버튼 그룹 컨테이너 — 8px 간격 */
@@ -775,6 +775,8 @@ body {
 /* Spec ⑤ 호버 scale 1.1 애니메이션 */
 .btn-icon:hover { transform: scale(1.1); }
 /* Spec ④ 항상 연한 배경 표시 (클릭 영역 명확화) */
+.btn-icon-primary { color: var(--primary); background: #d1fae5; }
+.btn-icon-primary:hover { background: #a7f3d0; }
 .btn-icon-edit   { color: var(--info); background: var(--info-soft); }
 .btn-icon-edit:hover   { background: var(--info-bg); }
 /* Spec ⑥ 삭제 버튼 — 항상 Danger 빨강 */

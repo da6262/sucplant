@@ -211,17 +211,18 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
             const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
             const tr = document.createElement('tr');
-            tr.className = 'hover:bg-gray-50 cursor-pointer';
+            tr.className = 'customer-row';
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = formatPhone(customer.phone);
             const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
-                <td class="px-3 py-2 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
-                <td class="px-3 py-2 td-secondary">${phoneDisplay || nullDash}</td>
-                <td class="px-3 py-2 td-muted">${lastOrderDate || nullDash}</td>
-                <td class="px-3 py-2 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
+                <td class="px-3 td-secondary">${phoneDisplay || nullDash}</td>
+                <td class="px-3 td-muted">${lastOrderDate || nullDash}</td>
+                <td class="px-3 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="px-3 text-center">
                     <div class="btn-group">
+                        <button onclick="window.addOrderForCustomer && window.addOrderForCustomer('${customer.id}', '${escapeHtml(customer.name)}', '${escapeHtml(customer.phone || '')}')" class="btn-icon btn-icon-primary" title="주문 추가"><i class="fas fa-cart-plus"></i></button>
                         <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
                         <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                     </div>
@@ -515,6 +516,21 @@ function fillCustomerForm(customer) {
 window.renderCustomersTable = renderCustomersTable;
 window.checkPhoneDuplicate = checkPhoneDuplicate;
 window.fillCustomerForm = fillCustomerForm;
+
+// 고객에서 바로 주문 추가 (전역)
+window.addOrderForCustomer = function(customerId, customerName, customerPhone) {
+    if (typeof window.openOrderModal === 'function') {
+        window.openOrderModal(null, { customerId, customerName, customerPhone });
+    } else if (typeof window.switchTab === 'function') {
+        window.switchTab('orders');
+        // 탭 전환 후 주문 모달 열기
+        setTimeout(() => {
+            if (typeof window.openOrderModal === 'function') {
+                window.openOrderModal(null, { customerId, customerName, customerPhone });
+            }
+        }, 400);
+    }
+};
 
 // 고객 삭제 함수 (전역)
 window.deleteCustomer = async function(customerId) {
