@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.71-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.74-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.74 | fix: 고객 상세 팝업 DOM 누락 수정 — 컴포넌트 로드 시 `replaceWith(inner)`가 모달을 버리는 문제 수정, `customer-detail-panel`·`customer-grades-modal`을 `#customers-section` 안으로 이동 |
+| v3.2.72 | 일반설정 사업자번호·전화번호 인쇄 문서 및 배송 라벨 반영 |
 | v3.2.70 | 고객 상세 중앙 팝업 모달 전환 — 고객 클릭 시 860px 중앙 팝업(modal-overlay)으로 표시, 좌(프로필·지표·액션)/우(주문이력·메모) 2컬럼 레이아웃, 바깥 클릭·X 닫기, 스플릿뷰 방식 제거 |
 | v3.2.69 | 주문 상세 모달 수정 버튼 클릭 시 상세 모달 미닫힘 수정 — 수정 폼 열기 전 상세 모달 hidden 처리 |
 | v3.2.68 | 새 주문 버튼 재방문 먹통 근본 원인 제거 — cleanupOrderEventListeners를 플래그 리셋만 하도록 단순화(cloneNode 제거), initializeOrderManagement 중복 cleanup 제거, loadOrderDetailModal 중복 방지 guard 추가 |

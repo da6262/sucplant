@@ -309,8 +309,10 @@ function getStatusColor(status) {
     return colors[status] || 'bg-gray-100 text-gray-800';
 }
 
-// 날짜 포맷팅
+// 날짜 포맷팅: utils/formatters.js의 window.formatDate 사용
+// (로컬 구현 제거 — window.formatDate가 없을 때 폴백)
 function formatDate(dateString) {
+    if (window.formatDate) return window.formatDate(dateString);
     if (!dateString) return '날짜 없음';
     return new Date(dateString).toLocaleDateString('ko-KR');
 }

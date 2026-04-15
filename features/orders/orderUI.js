@@ -1075,8 +1075,11 @@ window.checkOrderPhoneDuplicate = function(phone) {
 };
 
 window.formatPhoneNumber = function(input) {
-    console.log('📞 전화번호 포맷팅:', input.value);
-    // 전화번호 포맷팅 로직 구현 필요
+    if (!input) return;
+    const formatted = (window.fmt && window.fmt.phone)
+        ? window.fmt.phone(input.value)
+        : (window.formatPhone ? window.formatPhone(input.value) : input.value);
+    input.value = formatted;
 };
 
 // 누락된 함수들 추가

@@ -178,7 +178,7 @@ class FarmDatabase {
     async createProduct(productData) {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('products')
+            .from('farm_products')
             .insert([productData])
             .select();
         
@@ -189,7 +189,7 @@ class FarmDatabase {
     async getProducts() {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('products')
+            .from('farm_products')
             .select('*')
             .order('name');
         
@@ -200,7 +200,7 @@ class FarmDatabase {
     async getProductById(id) {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('products')
+            .from('farm_products')
             .select('*')
             .eq('id', id)
             .single();
@@ -212,7 +212,7 @@ class FarmDatabase {
     async updateProduct(id, productData) {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('products')
+            .from('farm_products')
             .update({ ...productData, updated_at: new Date().toISOString() })
             .eq('id', id)
             .select();
@@ -224,7 +224,7 @@ class FarmDatabase {
     async deleteProduct(id) {
         const client = this.ensureConnection();
         const { error } = await client
-            .from('products')
+            .from('farm_products')
             .delete()
             .eq('id', id);
         
@@ -236,7 +236,7 @@ class FarmDatabase {
     async createWaitlistEntry(waitlistData) {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('waitlist')
+            .from('farm_waitlist')
             .insert([waitlistData])
             .select();
         
@@ -247,7 +247,7 @@ class FarmDatabase {
     async getWaitlist() {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('waitlist')
+            .from('farm_waitlist')
             .select('*')
             .order('priority', { ascending: false })
             .order('register_date', { ascending: true });
@@ -259,7 +259,7 @@ class FarmDatabase {
     async updateWaitlistEntry(id, waitlistData) {
         const client = this.ensureConnection();
         const { data, error } = await client
-            .from('waitlist')
+            .from('farm_waitlist')
             .update({ ...waitlistData, updated_at: new Date().toISOString() })
             .eq('id', id)
             .select();
@@ -271,7 +271,7 @@ class FarmDatabase {
     async deleteWaitlistEntry(id) {
         const client = this.ensureConnection();
         const { error } = await client
-            .from('waitlist')
+            .from('farm_waitlist')
             .delete()
             .eq('id', id);
         
