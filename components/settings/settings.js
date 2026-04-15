@@ -238,6 +238,12 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
         window.settingsDataManager.settings.shipping.expressShippingFee = get('express-shipping-fee') ? num('express-shipping-fee') : (window.settingsDataManager.settings.shipping.expressShippingFee ?? 5000);
+        // 배송 방법 목록
+        const methodsInput = get('shipping-methods-input');
+        if (methodsInput && methodsInput.value.trim()) {
+            window.settingsDataManager.settings.shipping.shippingMethods =
+                methodsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        }
         await window.settingsDataManager.saveSettings();
         if (!window.SHIPPING_SETTINGS) window.SHIPPING_SETTINGS = {};
         window.SHIPPING_SETTINGS.defaultShippingFee = window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000;

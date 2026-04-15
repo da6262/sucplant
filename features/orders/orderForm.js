@@ -275,7 +275,7 @@ function generateOrderFormHTML() {
                                             onchange="updateShippingMethod()">
                                         <option value="택배">택배</option>
                                         <option value="직접배송">직접배송</option>
-                                        <option value="방문수령">방문수령 (배송비 무료)</option>
+                                        <option value="픽업">픽업 (배송비 무료)</option>
                                     </select>
                                 </div>
                                 <div>
@@ -1038,6 +1038,26 @@ let SHIPPING_SETTINGS = {
     freeShippingThreshold: 50000
 };
 
+/** 환경설정 shippingMethods 배열로 #shipping-method 드롭다운 동적 생성 */
+async function loadShippingMethodsFromSettings() {
+    const select = document.getElementById('shipping-method');
+    if (!select) return;
+    try {
+        const settings = window.settingsDataManager?.getAllSettings();
+        const methods = settings?.shipping?.shippingMethods;
+        if (!Array.isArray(methods) || methods.length === 0) return;
+        // 현재 선택값 보존
+        const current = select.value;
+        select.innerHTML = methods.map(m => {
+            const isFree = m.includes('방문') || m.includes('픽업') || m.includes('수령');
+            return `<option value="${m}"${m === current ? ' selected' : ''}>${m}${isFree ? ' (배송비 무료)' : ''}</option>`;
+        }).join('');
+        console.log('✅ 배송 방법 드롭다운 환경설정 연동 완료:', methods);
+    } catch (e) {
+        console.warn('⚠️ 배송 방법 드롭다운 로드 실패, 기본값 유지:', e);
+    }
+}
+
 // 배송 방법 변경 처리
 function updateShippingMethod() {
     console.log('🚚 배송 방법 변경됨');
@@ -1048,14 +1068,14 @@ function updateShippingMethod() {
     // 배송비 자동 재계산
     updateOrderTotalDisplay();
     
-    // 주소 필드 처리
+    // 주소 필드 처리 (방문수령·픽업 등 직접 수령 방식이면 주소 선택사항)
     const addressField = document.getElementById('order-customer-address');
-    if (shippingMethod === '방문수령') {
-        // 방문수령일 경우 주소 입력 비활성화 (선택사항)
+    const isPickup = shippingMethod && (shippingMethod.includes('방문') || shippingMethod.includes('픽업') || shippingMethod.includes('수령'));
+    if (isPickup) {
         if (addressField) {
-            addressField.placeholder = '방문수령 (주소 입력 선택사항)';
+            addressField.placeholder = `${shippingMethod} (주소 입력 선택사항)`;
         }
-        console.log('✅ 방문수령 선택 - 배송비 0원');
+        console.log(`✅ ${shippingMethod} 선택 - 배송비 0원`);
     } else {
         // 택배/직접배송일 경우 주소 필수
         if (addressField) {
@@ -1082,13 +1102,15 @@ async function initShippingFeeFromSettings() {
         
         try {
             const settings = await window.settingsDataManager.loadSettings();
-            
+
             if (settings && settings.shipping) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee || 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold || 50000;
                 window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
                 console.log('✅ 환경설정에서 배송비 설정 로드 완료:', SHIPPING_SETTINGS);
             }
+            // 배송 방법 드롭다운도 환경설정에서 동적 로드
+            await loadShippingMethodsFromSettings();
             // 제안값 주입: 사용자가 한 번이라도 수정했으면 덮어쓰지 않음
             if (!window._shippingFeeUserEdited) {
                 const defaultFee = (settings && settings.shipping && settings.shipping.defaultShippingFee) || SHIPPING_SETTINGS.defaultShippingFee || 3000;
@@ -1884,6 +1906,7 @@ window.generateOrderFormHTML = generateOrderFormHTML;
 window.initOrderForm = initOrderForm;
 window.initOrderChannelOptions = initOrderChannelOptions;
 window.initShippingFeeFromSettings = initShippingFeeFromSettings;
+window.loadShippingMethodsFromSettings = loadShippingMethodsFromSettings;
 window.updateShippingFeeDisplay = updateShippingFeeDisplay;
 window.updateShippingMethod = updateShippingMethod;
 window.initCustomerSearch = initCustomerSearch;

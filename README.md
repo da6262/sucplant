@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.50-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.65-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -89,7 +89,7 @@ sucplant/
 
 ---
 
-## 디자인 시스템 (v3.2.3)
+## 디자인 시스템 (v3.2.54+)
 
 모든 색상·여백·폰트 크기는 CSS 변수 하나로 제어됩니다.
 
@@ -113,6 +113,9 @@ sucplant/
 | 필터 바 | `.filter-bar` `.input-ui` `.btn-search` |
 | 상태 탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
 | 헤더 | `.page-header` `.action-group` |
+| **모달** | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header` `.modal-body` `.modal-footer` `.modal-title` `.modal-close-btn` |
+| **폼 그리드** | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` |
+| **폼 입력** | `.form-input-group.with-unit` `.form-input-unit` `.form-section` `.form-section-inner` `.form-actions` |
 
 ---
 
@@ -145,6 +148,14 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.65 | 환경설정 배송 전체 연결 — ①`shippingMethods` 목록 편집 UI 추가(환경설정 배송 탭), ②주문 등록 배송방법 드롭다운 `settings.shipping.shippingMethods` 동적 로드, ③픽업·방문·수령 포함 방법은 자동 배송비 0원 처리, ④배송방법 목록이 기본값(택배·직접배송·픽업)으로 통일 |
+| v3.2.63 | 고객관리 CRM 패널 스플릿 뷰 전환 — `position:fixed` 플로팅 오버레이 → 좌(목록)/우(상세) flex 인라인 스플릿 레이아웃, 고객 클릭 시 패널이 옆에 열리며 목록 너비 자동 축소, 지표 카드 3분할(총구매액·주문횟수·단골점수), 액션버튼 역할별 분리(문자/전화=secondary, 주문추가=primary) |
+| v3.2.60 | 환경설정 SMS 인증정보 저장 연결 — `save-sms-config-btn` 이벤트 연결, API Key/Secret/발신번호 저장·불러오기 |
+| v3.2.59 | 고객 수정 모달 주문이력 탭 복원 — 수정 모달 열 때 주문 내역 탭이 사라지던 문제 수정 |
+| v3.2.58 | 상품 등록 모달 애니메이션 복구 — `panelSlideIn` 키프레임 flexbox 기준으로 재작성(`translateY` 방식) |
+| v3.2.57 | orderData.js export 복원 — 브랜치 머지 중 삭제된 `renderOrdersTable` 및 모듈 내보내기 복구 |
+| v3.2.56 | 폼 디자인 시스템 누락 모달 적용 — 대기자 등록(`waitlist-modal.html`)·상품 등록(`product-modal.html`)에 `form-grid` 12컬럼 레이아웃 적용, 사이즈 미지정 시 `modal-md/lg` 클래스 부여 |
+| v3.2.53 | 고객관리 미납/대기 체크박스 필터 구현 — 필터 바에 미납·대기자 체크박스 추가, 미납(unpaid_amount > 0) 및 waitlist 보유 고객 즉시 필터링 |
 | v3.2.52 | 주문관리 재방문 시 새 주문·탭·체크박스 버튼 먹통 수정 — addEventListener+플래그 방식 → onclick/onchange 할당으로 교체 |
 | v3.2.51 | nav 처리할주문 뱃지 + 진입 기본탭 전체 + 신규주문 기본상태 주문접수 — nav-orders 옆 빨간 숫자 뱃지(99+ 상한), 진입 기본값 work_todo→all, 주문 등록 기본 상태 입금대기→주문접수 |
 | v3.2.40 | 주문관리 상태 표시 정리 — 미사용 복합 필터(work_deposit·work_ship_today·work_done) 제거, 상태 배지 색상 단일 소스화(dashboard.js·customerUI.js → orderData.js `getStatusColor()` 위임), '취소'→'주문취소' 상태명 정규화 |

@@ -254,7 +254,14 @@ export function loadShippingSettings() {
         
         if (defaultShippingFeeInput) defaultShippingFeeInput.value = settings.shipping.defaultShippingFee || 3000;
         if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
-        
+
+        // 배송 방법 목록
+        const methodsInput = document.getElementById('shipping-methods-input');
+        if (methodsInput) {
+            const methods = settings.shipping.shippingMethods;
+            methodsInput.value = Array.isArray(methods) ? methods.join(', ') : '택배, 직접배송, 픽업';
+        }
+
         console.log('✅ 배송 설정 로드 완료');
     } catch (error) {
         console.error('❌ 배송 설정 로드 실패:', error);
