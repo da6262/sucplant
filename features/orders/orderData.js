@@ -2189,9 +2189,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-
 // 모듈 내보내기
-// renderOrdersTable 함수를 별도로 export
 export function renderOrdersTable(status = 'all') {
     return orderDataManager.renderOrdersTable(status);
 }
