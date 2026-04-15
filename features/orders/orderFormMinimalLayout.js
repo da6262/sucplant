@@ -56,6 +56,17 @@ window.generateOrderFormHTMLMinimal = function () {
                                        placeholder="상세주소 (선택)">
                             </td>
                         </tr>
+                        <tr id="extra-shipping-header-row">
+                            <th style="vertical-align:top;padding-top:6px">추가배송지</th>
+                            <td colspan="3">
+                                <div id="extra-shipping-list" style="display:flex;flex-direction:column;gap:6px"></div>
+                                <button type="button" onclick="addExtraShipping()"
+                                        style="margin-top:4px;font-size:11px;color:#2563eb;background:none;border:1px dashed #93c5fd;border-radius:4px;padding:3px 10px;cursor:pointer">
+                                    + 배송지 추가
+                                    <span id="extra-shipping-badge" style="display:none;background:#dbeafe;color:#1d4ed8;border-radius:9px;padding:1px 7px;margin-left:4px;font-size:10px"></span>
+                                </button>
+                            </td>
+                        </tr>
                         <tr>
                             <th>채널</th>
                             <td>
