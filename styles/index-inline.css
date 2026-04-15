@@ -984,7 +984,8 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 .table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-border-color); transition: background 0.1s; }
 .table-ui tbody tr:nth-child(even) { background: var(--tbl-zebra-bg); }
 .table-ui tbody tr:hover { background: var(--tbl-hover-bg); }
-.table-ui tbody td { padding: var(--tbl-cell-py) 8px; font-size: var(--tbl-font-size); color: var(--text-body); vertical-align: middle; }
+/* spec 12: py-*/px-*/text-* Tailwind 클래스(spec 10)를 이겨 CSS 변수가 최우선 제어 */
+.table-ui tbody td { padding: var(--tbl-cell-py) 8px; font-size: var(--tbl-font-size); vertical-align: middle; }
 
 /* Order list compact — 주문/대기자 공용 compact 테이블 */
 .order-list-compact tbody tr { border-bottom: 1px solid var(--tbl-border-color); }
@@ -1084,14 +1085,9 @@ table thead th {
     padding: 6px 8px; white-space: nowrap; vertical-align: middle;
 }
 
-/* ── tbody td 전역 통합: --tbl-cell-py 하나로 전체 제어 ── */
-table tbody td {
-    padding: var(--tbl-cell-py) 8px;
-    font-size: var(--tbl-font-size);
-    vertical-align: middle;
-    color: var(--text-body);
-    border-bottom: 1px solid var(--tbl-border-color);
-}
+/* ── 전역 fallback (spec 3): table-ui 미지정 테이블 최소값
+   padding/font-size는 Tailwind(spec 10)에 밀리므로 생략 → .table-ui 클래스로 해결 ── */
+table tbody td { vertical-align: middle; border-bottom: 1px solid var(--tbl-border-color); }
 table tbody tr:hover td { background: var(--tbl-hover-bg); }
 
 /* ── 테이블 내 이미지/썸네일 크기 통합 제어 ── */

@@ -270,17 +270,17 @@ export class WaitlistUI {
         row.className = 'hover:bg-gray-50 transition-colors';
         const nd = '<span class="td-null">—</span>';
         row.innerHTML = `
-            <td class="px-2.5 py-1.5 td-muted text-center">${index + 1}</td>
-            <td class="px-2.5 py-1.5 td-primary td-link">${item.customer_name || nd}</td>
-            <td class="px-2.5 py-1.5 td-secondary">${formatPhone(item.customer_phone)}</td>
-            <td class="px-2.5 py-1.5 td-primary">${item.product_name || nd}</td>
-            <td class="px-2.5 py-1.5 td-secondary">${item.product_category || nd}</td>
-            <td class="px-2.5 py-1.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
-            <td class="px-2.5 py-1.5 text-center">
+            <td class="px-2.5 td-muted text-center">${index + 1}</td>
+            <td class="px-2.5 td-primary td-link">${item.customer_name || nd}</td>
+            <td class="px-2.5 td-secondary">${formatPhone(item.customer_phone)}</td>
+            <td class="px-2.5 td-primary">${item.product_name || nd}</td>
+            <td class="px-2.5 td-secondary">${item.product_category || nd}</td>
+            <td class="px-2.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
+            <td class="px-2.5 text-center">
                 <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
             </td>
-            <td class="px-2.5 py-1.5 td-muted">${formatDate(item.register_date) || nd}</td>
-            <td class="px-2.5 py-1.5 text-center">
+            <td class="px-2.5 td-muted">${formatDate(item.register_date) || nd}</td>
+            <td class="px-2.5 text-center">
                 <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
                             class="btn-icon btn-icon-edit"

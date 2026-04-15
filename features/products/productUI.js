@@ -33,8 +33,8 @@ const PRODUCT_TABLE_COLUMNS = [
 const COMMON_STYLES = {
     table: {
         row: 'hover:bg-gray-50',
-        cell: 'px-2.5 py-1.5 text-xs text-gray-900',
-        cellCenter: 'px-2.5 py-1.5 text-center text-xs'
+        cell: 'px-2.5 text-gray-900',
+        cellCenter: 'px-2.5 text-center'
     },
     button: {
         edit: 'p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded cursor-pointer border-none bg-transparent',
