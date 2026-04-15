@@ -1,17 +1,24 @@
 /**
  * 경산다육식물농장 관리시스템 — 공통 UI 렌더러
  *
- * ─── 채택 현황 (v3.2.25) ───────────────────────────────────────────
+ * ─── 채택 현황 (v3.2.29) ───────────────────────────────────────────
  *  renderEmptyRow   ✅ 전체 채택 완료
  *    waitlistUI.js · customerUI.js · productUI.js(×2)
- *    shippingUI.js · orderForm.js
+ *    shippingUI.js · orderForm.js · shipping-management.js
  *
- *  renderFilterBar  ⬜ 대기
- *    필터 바가 HTML 컴포넌트에 정적으로 선언되어 있어 JS 생성 불필요.
- *    JS에서 동적 필터 바가 필요한 경우 이 함수를 사용할 것.
+ *  renderFilterBar  ✅ 구조적 채택 완료
+ *    배송관리(shipping-management.js) filter-bar 표준 클래스로 전환.
+ *    필터 바 높이·간격·색상 = CSS 변수 단일 제어 달성.
+ *    JS 동적 생성 필요 시 이 함수로 wrapping.
  *
  *  renderPageHeader ⬜ 대기
  *    페이지 헤더가 HTML 컴포넌트에 정적으로 선언되어 있어 JS 생성 불필요.
+ *
+ *  [테이블 표준화 완료 목록]
+ *  - table-ui 적용: waitlist · customer · product · shipping(메인+추적)
+ *  - order-list-compact 적용: 주문관리
+ *  - 전 테이블 th 하드코딩 제거 → .table-ui thead th CSS 변수 단일 제어
+ *  - 전 데이터 td py-*/text-sm/text-xs 제거 → CSS 변수 상속
  * ────────────────────────────────────────────────────────────────────
  *
  * 사용 예:

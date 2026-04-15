@@ -30,37 +30,29 @@ export class ShippingUI {
             
             tbody.innerHTML = orders.map(order => `
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4 py-3">
-                        <input type="checkbox" class="shipping-order-checkbox rounded text-blue-600 focus:ring-blue-500" 
+                    <td class="px-4">
+                        <input type="checkbox" class="shipping-order-checkbox rounded text-blue-600 focus:ring-blue-500"
                                data-order-id="${order.id}">
                     </td>
-                    <td class="px-4 py-3 text-sm font-medium text-gray-900">${order.order_number}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">${this.formatDate(order.created_at)}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">${order.customer_name}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500">${order.customer_phone}</td>
-                    <td class="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">${order.shipping_address}</td>
-                    <td class="px-4 py-3 text-sm text-gray-900">${order.product_name}</td>
-                    <td class="px-4 py-3 text-sm">
-                        ${order.tracking_number ? 
-                            `<span class="text-green-600 font-mono">${order.tracking_number}</span>` : 
-                            '<span class="text-gray-400">미등록</span>'
+                    <td class="px-4 td-primary font-medium">${order.order_number}</td>
+                    <td class="px-4 td-secondary">${this.formatDate(order.created_at)}</td>
+                    <td class="px-4 td-primary">${order.customer_name}</td>
+                    <td class="px-4 td-secondary">${order.customer_phone}</td>
+                    <td class="px-4 td-secondary max-w-xs truncate">${order.shipping_address}</td>
+                    <td class="px-4 td-primary">${order.product_name}</td>
+                    <td class="px-4">
+                        ${order.tracking_number ?
+                            `<span class="td-primary font-mono">${order.tracking_number}</span>` :
+                            '<span class="td-null">미등록</span>'
                         }
                     </td>
-                    <td class="px-4 py-3 text-sm">
-                        <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusColor(order.status)}">
-                            ${order.status}
-                        </span>
+                    <td class="px-4">
+                        <span class="badge ${this.getStatusColor(order.status)}">${order.status}</span>
                     </td>
-                    <td class="px-4 py-3 text-sm">
-                        <div class="flex space-x-2">
-                            <button onclick="shippingUI.editTrackingNumber('${order.id}')" 
-                                    class="text-blue-600 hover:text-blue-800 text-xs">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="shippingUI.viewOrderDetails('${order.id}')" 
-                                    class="text-green-600 hover:text-green-800 text-xs">
-                                <i class="fas fa-eye"></i>
-                            </button>
+                    <td class="px-4">
+                        <div class="btn-group">
+                            <button onclick="shippingUI.editTrackingNumber('${order.id}')" class="btn-icon btn-icon-edit" title="송장번호 수정"><i class="fas fa-edit"></i></button>
+                            <button onclick="shippingUI.viewOrderDetails('${order.id}')" class="btn-icon btn-icon-primary" title="상세보기"><i class="fas fa-eye"></i></button>
                         </div>
                     </td>
                 </tr>

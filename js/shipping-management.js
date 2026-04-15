@@ -119,19 +119,19 @@ async function loadShippingManagementComponent() {
                             </div>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-xs">
-                                <thead style="background:#f1f5f9;">
+                            <table class="table-ui w-full">
+                                <thead>
                                     <tr>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200">주문번호</th>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200">고객명</th>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200">상품</th>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200">금액</th>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200" style="min-width:180px">송장번호 입력</th>
-                                        <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200">저장</th>
+                                        <th class="text-left">주문번호</th>
+                                        <th class="text-left">고객명</th>
+                                        <th class="text-left">상품</th>
+                                        <th class="text-right">금액</th>
+                                        <th class="text-left" style="min-width:180px">송장번호 입력</th>
+                                        <th class="text-center">저장</th>
                                     </tr>
                                 </thead>
-                                <tbody id="shipping-tracking-rows" class="divide-y divide-gray-100">
-                                    <tr><td colspan="6" class="px-2 py-3 text-center text-amber-600">불러오는 중...</td></tr>
+                                <tbody id="shipping-tracking-rows">
+                                    <tr><td colspan="6" class="text-center td-muted">불러오는 중...</td></tr>
                                 </tbody>
                             </table>
                         </div>
@@ -155,23 +155,22 @@ async function loadShippingManagementComponent() {
                 <div class="flex-1 overflow-auto">
                     <div class="overflow-x-auto">
                         <table class="table-ui min-w-full">
-                            <thead style="background:#f1f5f9;">
+                            <thead>
                                 <tr>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">주문번호</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">고객명</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">배송지</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">배송 상태</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">배송일</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">송장번호</th>
-                                    <th class="px-2.5 py-2 text-left text-[11px] font-semibold text-gray-700 border-b border-gray-200 whitespace-nowrap">관리</th>
+                                    <th class="text-left">주문번호</th>
+                                    <th class="text-left">고객명</th>
+                                    <th class="text-left">배송지</th>
+                                    <th class="text-left">배송 상태</th>
+                                    <th class="text-left">배송일</th>
+                                    <th class="text-left">송장번호</th>
+                                    <th class="text-center">관리</th>
                                 </tr>
                             </thead>
-                            <tbody id="shipping-table-body" class="bg-white divide-y divide-gray-100">
+                            <tbody id="shipping-table-body">
                                 <tr>
-                                    <td colspan="7" class="px-4 py-8 text-center text-gray-400">
+                                    <td colspan="7" class="text-center td-muted">
                                         <i class="fas fa-truck text-2xl mb-2 block"></i>
-                                        <p class="text-sm">배송 데이터가 없습니다</p>
-                                    </td>
+                                        배송 데이터가 없습니다</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -15,6 +15,8 @@ function computeCountsFromOrderRows(rows) {
         countBy[st] = (countBy[st] || 0) + 1;
     });
     const total = rows.length;
+    // Fix #10: work_todo(상품준비+배송준비)와 work_ship_today(배송준비+배송중)는
+    // '배송준비' 상태에서 의도적으로 중복됨 — 배송준비 = 포장완료+출고대기로 두 탭 모두에 표시
     return [
         { status_key: 'all', count: total },
         { status_key: 'work_todo', count: (countBy['상품준비'] || 0) + (countBy['배송준비'] || 0) },
@@ -23,6 +25,20 @@ function computeCountsFromOrderRows(rows) {
         { status_key: 'work_done', count: countBy['배송완료'] || 0 },
         ...Object.entries(countBy).map(([k, v]) => ({ status_key: k, count: v }))
     ];
+}
+
+/**
+ * 주문 상태(st)가 filterStatus 탭에 속하는지 판단.
+ * Fix #8: _loadOrdersFallback / filterOrdersByStatus 공유 헬퍼 — 상태 필터 중복 정의 방지.
+ * work_todo와 work_ship_today는 '배송준비'에서 의도적으로 중복됨.
+ */
+function matchOrderStatusFilter(st, filterStatus) {
+    if (!filterStatus || filterStatus === 'all') return true;
+    if (filterStatus === 'work_todo') return st === '상품준비' || st === '배송준비';
+    if (filterStatus === 'work_deposit') return st === '입금대기';
+    if (filterStatus === 'work_ship_today') return st === '배송준비' || st === '배송중';
+    if (filterStatus === 'work_done') return st === '배송완료';
+    return st === filterStatus;
 }
 
 class OrderDataManager {
@@ -283,14 +299,8 @@ class OrderDataManager {
         const kstToday = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         kstToday.setHours(0, 0, 0, 0);
         const statusNorm = (s) => (s && String(s).trim()) || '주문접수';
-        const matchFilter = (st) => {
-            if (!filterStatus || filterStatus === 'all') return true;
-            if (filterStatus === 'work_todo') return st === '상품준비' || st === '배송준비';
-            if (filterStatus === 'work_deposit') return st === '입금대기';
-            if (filterStatus === 'work_ship_today') return st === '배송준비' || st === '배송중';
-            if (filterStatus === 'work_done') return st === '배송완료';
-            return st === filterStatus;
-        };
+        // Fix #8: 공유 헬퍼 matchOrderStatusFilter 사용 — 중복 정의 제거
+        const matchFilter = (st) => matchOrderStatusFilter(st, filterStatus);
         const rows = [];
         for (const o of orders) {
             const st = statusNorm(o.order_status);
@@ -318,7 +328,8 @@ class OrderDataManager {
             // payment_status: 서버에서 계산한 값이 없으므로 클라이언트에서 계산 (RPC 사용 권장)
             const paymentStatus = st === '입금대기' ? null : '입금확인';
             // delivery_status: 서버에서 계산한 값이 없으므로 클라이언트에서 계산 (RPC 사용 권장)
-            // 참고: RPC get_order_rows는 '미등록' 또는 '배송완료'만 반환하지만, 폴백에서는 tracking_number도 고려
+            // Fix #2/#7: RPC get_order_rows는 '미등록'/'배송완료'만 반환하지만, 폴백에서는
+            // tracking_number까지 고려한 '송장입력' 상태를 계산 후 fallbackRow에 덮어씀
             const deliveryStatus = st === '배송완료' ? '배송완료' : (o.tracking_number && String(o.tracking_number).trim() ? '송장입력' : '미등록');
             // 폴백 전용 변환 함수 사용
             const fallbackRow = this.toOrderRowSpecFromFallback({
@@ -334,8 +345,9 @@ class OrderDataManager {
                 items_subtotal: itemsSubtotal,
                 items: agg.list.map(it => ({ product_name: it.product_name, quantity: it.quantity, total: it.quantity * (itemsSubtotal / (agg.list.reduce((s, i) => s + i.quantity, 0) || 1)) }))
             });
-            // 폴백에서 계산한 summary로 덮어쓰기
+            // 폴백에서 계산한 summary / deliveryStatus로 덮어쓰기
             fallbackRow.order_items_summary = summary;
+            fallbackRow.delivery_status = deliveryStatus; // Fix #2/#7: tracking_number 고려한 정확한 값
             rows.push(fallbackRow);
         }
         return rows.slice(pOffset || 0, (pOffset || 0) + (pLimit || 500));
@@ -414,14 +426,10 @@ class OrderDataManager {
         try {
             const rows = Array.isArray(this.farm_order_rows) ? this.farm_order_rows : [];
             const norm = (s) => (s != null && String(s).trim() !== '') ? String(s).trim() : '주문접수';
-
+            // Fix #8: 공유 헬퍼 matchOrderStatusFilter 사용 — _loadOrdersFallback과 동일 로직 유지
             let filtered;
             if (!status || status === 'all') filtered = rows;
-            else if (status === 'work_todo') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '상품준비' || st === '배송준비'; });
-            else if (status === 'work_deposit') filtered = rows.filter((r) => norm(r.order_status) === '입금대기');
-            else if (status === 'work_ship_today') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '배송준비' || st === '배송중'; });
-            else if (status === 'work_done') filtered = rows.filter((r) => norm(r.order_status) === '배송완료');
-            else filtered = rows.filter((r) => norm(r.order_status) === status);
+            else filtered = rows.filter((r) => matchOrderStatusFilter(norm(r.order_status), status));
 
             // 날짜 필터 적용
             if (this._dateFrom || this._dateTo) {
@@ -944,7 +952,7 @@ class OrderDataManager {
             const nullDash = '<span class="td-null">—</span>';
             const rowBg = isSelected ? 'bg-indigo-50' : (isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50');
             return `
-                <tr class="${rowBg} transition-colors border-b border-gray-100 cursor-pointer py-0"
+                <tr class="${rowBg} transition-colors cursor-pointer"
                     onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
                     <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
@@ -1022,9 +1030,21 @@ class OrderDataManager {
     toOrderRowSpecFromFallback(order) {
         const orderStatus = order.status || order.order_status || '주문접수';
         const createdAt = order.order_date || order.created_at || order.createdAt;
-        const dday = this.getOrderDDay(order);
         const phone = String(order.customer_phone || '');
         const phoneLast4 = phone.replace(/\D/g, '').slice(-4);
+
+        // Fix #15: d_day를 숫자로 반환 (renderOrderRow에서 'D+'+d_day 로 조합)
+        // 배송완료/주문취소 또는 날짜 없으면 null, 아니면 주문일~오늘(KST) 일수
+        let dDayNum = null;
+        if (orderStatus !== '배송완료' && orderStatus !== '주문취소' && createdAt) {
+            try {
+                const kstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+                kstNow.setHours(0, 0, 0, 0);
+                const createdDate = new Date(createdAt);
+                createdDate.setHours(0, 0, 0, 0);
+                dDayNum = Math.floor((kstNow - createdDate) / 86400000);
+            } catch (e) { dDayNum = null; }
+        }
 
         // 클라이언트 계산 (폴백 전용)
         const payment_status = orderStatus === '입금대기' ? null : '입금확인';
@@ -1036,7 +1056,7 @@ class OrderDataManager {
         return {
             order_id: order.id,
             order_created_at: createdAt ? new Date(createdAt).toISOString() : null,
-            d_day: dday.text,
+            d_day: dDayNum,
             customer_name: (order.customer_name || '').trim() || '고객명 없음',
             customer_phone_last4: phoneLast4,
             order_items_summary: this.getOrderProductSummary(order),
@@ -1982,8 +2002,9 @@ var ORDER_ROW_PAYMENT_STATUS_ALLOWED = ['입금확인'];
 
 /**
  * ORDER_ROW_DATA_SPEC 검증. Enum 범위 밖 값이 있으면 로그/에러로 즉시 검출.
+ * Fix #14: 개발 모드에서만 등록 — window._DEBUG_ORDER_ROWS = true 설정 필요
  */
-window.validateOrderRowSpec = function () {
+if (window._DEBUG_ORDER_ROWS) window.validateOrderRowSpec = function () {
     if (!window.orderDataManager) {
         console.warn('orderDataManager 없음');
         return { ok: false };
@@ -2132,8 +2153,9 @@ window.verifyOrderCountsMatch = function () {
 /**
  * 검증용: 상위 n건 샘플만 d_day / order_items_summary / items_subtotal 중심으로 콘솔 출력.
  * get_order_rows 규칙대로 나오는지 확인. 예: logOrderRowSpecSamples(3)
+ * Fix #14: 개발 모드에서만 등록 — window._DEBUG_ORDER_ROWS = true 설정 필요
  */
-window.logOrderRowSpecSamples = function (n) {
+if (window._DEBUG_ORDER_ROWS) window.logOrderRowSpecSamples = function (n) {
     if (!window.orderDataManager) {
         console.warn('orderDataManager 없음');
         return [];
