@@ -950,7 +950,7 @@ class OrderDataManager {
             const isSelected = this.selectedOrders.has(rowId);
 
             const nullDash = '<span class="td-null">—</span>';
-            const rowBg = isSelected ? 'bg-indigo-50' : (isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50');
+            const rowBg = isSelected ? 'row-selected' : (isOverdue ? 'row-overdue' : '');
             return `
                 <tr class="${rowBg} transition-colors cursor-pointer"
                     onclick="openOrderDetailModal('${rowId}')"

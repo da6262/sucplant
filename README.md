@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.30-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.32-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -145,6 +145,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.32 | 주문관리 지브라 패턴 적용 — `.order-list-compact tbody tr:nth-child(even)` CSS 규칙 추가, 과부하·선택 행 시맨틱 클래스(`row-overdue`/`row-selected`) 도입으로 Tailwind bg-* 명시도 충돌 해결, `text-xs` 데드코드 tbody에서 제거 |
+| v3.2.31 | 상품관리 버그 3종 수정 — ①새 상품 등록 후 모달 안 닫히는 버그(product-modal-content ID 누락) ②재방문 시 상품 목록 미갱신 ③이벤트 리스너 setTimeout 경쟁 조건 제거 |
 | v3.2.30 | 주문관리 로직 15개 결함 수정 — ①toOrderRowSpecFromFallback d_day 문자열→숫자 수정(Fix#15) ②폴백 deliveryStatus 미사용 변수 → fallbackRow 덮어쓰기(Fix#2/#7) ③상태 필터 헬퍼 matchOrderStatusFilter 공유 함수 추출(Fix#8) ④work_todo/work_ship_today 중복 의도 주석(Fix#10) ⑤검증 함수 _DEBUG_ORDER_ROWS 플래그 가드(Fix#14) ⑥customer_address_base↔DB address 컬럼 매핑 주석(Fix#3) ⑦sendOrderSMSFromModal updateOrderStatus 미등록 경고(Fix#11) ⑧order_items JSONB 레거시 주석·SMS 쿼리 중복/채널 TODO(Fix#1/#12/#13) ⑨주문수정 재고 복원→차감 통합(Fix#4) ⑩restoreProductStock DB 직접 조회로 변경(Fix#5/#6) ⑪고객 INSERT youtube/live_order_count 컬럼 제거·grade BRONZE(Fix#9) |
 | v3.2.29 | 인라인 클래스 완전 박멸 — shippingUI `py-3/text-sm` 제거·`td-primary/td-secondary/badge/btn-group` 교체, orderData.js tr `py-0/border-b` 무효 속성 제거, 배송 테이블 th 하드코딩 → `.table-ui thead th` CSS 변수 단일 제어, `utils/ui.js` 채택 현황 v3.2.29로 최신화 |
 | v3.2.28 | 데이터 행 py-* 완전 제거 — 주문(orderData.js) 전 td `py-1.5` 제거, 배송 테이블 `table-ui` 클래스 추가, 배송 필터바 → `filter-bar` + `status-tab-btn` + `input-ui` 표준 클래스 통일 |

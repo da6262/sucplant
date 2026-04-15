@@ -990,6 +990,14 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 /* Order list compact — 주문/대기자 공용 compact 테이블 */
 .order-list-compact tbody tr { border-bottom: 1px solid var(--tbl-border-color); }
 .order-list-compact tbody tr:hover { background: var(--tbl-hover-bg); }
+.order-list-compact tbody tr:nth-child(even) { background: var(--tbl-zebra-bg); }
+/* 시맨틱 행 상태 — 지브라보다 뒤에 선언해 소스 순서로 우선 적용 (동일 명시도 22) */
+.order-list-compact tbody tr.row-overdue,
+.order-list-compact tbody tr.row-overdue:nth-child(even)  { background: var(--danger-bg); }
+.order-list-compact tbody tr.row-overdue:hover            { background: #FEE2E2; }
+.order-list-compact tbody tr.row-selected,
+.order-list-compact tbody tr.row-selected:nth-child(even) { background: var(--info-bg); }
+.order-list-compact tbody tr.row-selected:hover           { background: #DBEAFE; }
 .order-list-compact tbody td {
     padding: var(--tbl-cell-py) 8px;
     font-size: var(--tbl-font-size);
