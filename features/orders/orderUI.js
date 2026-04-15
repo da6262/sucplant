@@ -276,28 +276,6 @@ export async function loadOrderData(orderId) {
             order = await window.orderDataManager.fetchOrderByIdFromSupabase(orderId);
         }
         if (order) {
-                console.log('📋 찾은 주문 데이터:', order);
-                console.log('🔍 주문 데이터 구조 분석:');
-                console.log('  - order.items:', order.items);
-                console.log('  - order.items 타입:', typeof order.items);
-                console.log('  - order.items 길이:', order.items ? order.items.length : 'undefined');
-                console.log('  - order.order_items:', order.order_items);
-                console.log('  - order.order_items 타입:', typeof order.order_items);
-                console.log('  - order.order_date:', order.order_date);
-                console.log('  - order.customer_name:', order.customer_name);
-                
-                // order_items가 문자열인 경우 파싱 시도
-                if (order.order_items && typeof order.order_items === 'string') {
-                    try {
-                        const parsedItems = JSON.parse(order.order_items);
-                        console.log('  - 파싱된 order_items:', parsedItems);
-                        console.log('  - 파싱된 order_items 타입:', typeof parsedItems);
-                        console.log('  - 파싱된 order_items 길이:', parsedItems ? parsedItems.length : 'undefined');
-                    } catch (e) {
-                        console.log('  - order_items JSON 파싱 실패:', e.message);
-                    }
-                }
-                
                 // fillOrderForm 함수 호출 (폼 필드 및 장바구니 아이템 로드 포함)
             await fillOrderForm(order);
             console.log('✅ 주문 데이터 로드 완료');

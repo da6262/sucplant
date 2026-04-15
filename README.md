@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.1-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.2-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.2 | refactor: 주문관리 DB 구조 분석 및 레거시 코드 정리 — ①JSONB/정규화 테이블 이중 관리 현황 파악: 쓰기는 이미 `farm_order_items` 단일 SSOT 사용 중, 읽기도 `fetchOrderByIdFromSupabase`에서 `farm_order_items` JOIN으로 정상 처리 ②`orderUI.js` `loadOrderData()`에서 레거시 `order.order_items` JSONB 파싱 디버그 블록 제거 (JSONB 컬럼은 마이그레이션 완료 후 미사용 상태) ③비활성 기능 현황 확인: 로젠택배 내보내기·포장라벨(hidden), 임시저장·미리보기(stub 함수) ④중복 함수 현황 확인: `orderSearch.js`의 고객/상품 검색이 `orderForm.js`에 더 완성된 버전으로 중복 존재 |
 | v3.3.1 | 리듬이의주각오 — 고객 삭제 시 FK 제약 처리 방식 변경: 주문 차단 대신 관련 주문의 `customer_id`를 `null`로 초기화 후 고객 삭제 진행 |
 | v3.3.0 | refactor: 상품관리 7대 문제 전면 개선 — ①[고] `farm_products.category_id UUID FK` 컬럼 추가 + 기존 데이터 마이그레이션 + 인덱스, `addProduct`/`updateProduct` 동기화 ②[고] Supabase 클라이언트 대기 폴링(0.5s×20회) → `supabase-ready` CustomEvent 기반 교체 ③[중] `_productDataManagerInitializing`/`_categoryDataManagerInitializing` 플래그로 이중 초기화 방지 ④[중] Supabase Realtime `postgres_changes` 구독으로 다중 탭 실시간 동기화 ⑤[중] 상품코드 DB RPC `get_next_product_code()` 적용으로 race condition 해결 ⑥[저] `window.ProductMgmt`/`window.CategoryMgmt` 네임스페이스 추가 ⑦[저] 카테고리 변경 시 `farm_products` SW 캐시도 함께 무효화 |
 | v3.2.95 | fix: 주소검색 팝업 → embed 오버레이 전환 — `daum.Postcode().open()` 팝업 방식에서 `.embed()` 인페이지 오버레이 방식으로 변경, `q` 초기 쿼리가 새 창(about:blank)에 전달되지 않던 문제 해결. 주소 입력 후 엔터 시 오버레이가 해당 텍스트로 자동 검색, 배경 클릭·✕ 버튼으로 닫기. 주문 메인 주소·추가 배송지 모두 적용 |
