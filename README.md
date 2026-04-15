@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.74-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.79-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,9 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.79 | 대기자 등록 시 고객관리 자동 추가 — 새 대기자 등록 시 동일 전화번호 고객이 없으면 `farm_customers`에 자동 삽입, 중복 방지 로직 포함 |
+| v3.2.77 | 대기자 등록 모달 디자인 시스템 적용 — `modal-overlay/container/header/body/footer` 표준 구조, `form-grid` 12컬럼(고객명·연락처·희망상품명·카테고리·희망가격+원·우선순위·메모), `form-control` 42px 통일, `btn-secondary/primary` 버튼, 바깥 클릭 닫기 |
+| v3.2.75 | fix: main.js 삭제된 `loadNotificationSettings` import 제거 |
 | v3.2.74 | fix: 고객 상세 팝업 DOM 누락 수정 — 컴포넌트 로드 시 `replaceWith(inner)`가 모달을 버리는 문제 수정, `customer-detail-panel`·`customer-grades-modal`을 `#customers-section` 안으로 이동 |
 | v3.2.72 | 일반설정 사업자번호·전화번호 인쇄 문서 및 배송 라벨 반영 |
 | v3.2.70 | 고객 상세 중앙 팝업 모달 전환 — 고객 클릭 시 860px 중앙 팝업(modal-overlay)으로 표시, 좌(프로필·지표·액션)/우(주문이력·메모) 2컬럼 레이아웃, 바깥 클릭·X 닫기, 스플릿뷰 방식 제거 |
