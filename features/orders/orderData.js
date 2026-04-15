@@ -30,14 +30,12 @@ function computeCountsFromOrderRows(rows) {
 /**
  * 주문 상태(st)가 filterStatus 탭에 속하는지 판단.
  * Fix #8: _loadOrdersFallback / filterOrdersByStatus 공유 헬퍼 — 상태 필터 중복 정의 방지.
- * work_todo와 work_ship_today는 '배송준비'에서 의도적으로 중복됨.
+ * 복합 필터: work_todo(상품준비+배송준비)만 탭으로 제공.
+ * work_deposit / work_ship_today / work_done 은 미사용이므로 제거.
  */
 function matchOrderStatusFilter(st, filterStatus) {
     if (!filterStatus || filterStatus === 'all') return true;
     if (filterStatus === 'work_todo') return st === '상품준비' || st === '배송준비';
-    if (filterStatus === 'work_deposit') return st === '입금대기';
-    if (filterStatus === 'work_ship_today') return st === '배송준비' || st === '배송중';
-    if (filterStatus === 'work_done') return st === '배송완료';
     return st === filterStatus;
 }
 
@@ -371,7 +369,7 @@ class OrderDataManager {
         if (!Array.isArray(countRows)) return;
         const map = {};
         countRows.forEach((row) => { map[row.status_key] = Number(row.count) || 0; });
-        const statusKeys = ['all', 'work_todo', 'work_deposit', 'work_ship_today', 'work_done', '주문접수', '고객안내', '입금대기', '입금확인', '상품준비', '배송준비', '배송중', '배송완료', '주문취소', '환불완료'];
+        const statusKeys = ['all', 'work_todo', '주문접수', '고객안내', '입금대기', '입금확인', '상품준비', '배송준비', '배송중', '배송완료', '주문취소', '환불완료'];
         statusKeys.forEach((key) => {
             const el = document.getElementById(`count-${key}`);
             if (el) el.textContent = map[key] != null ? map[key] : 0;

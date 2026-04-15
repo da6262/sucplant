@@ -402,24 +402,16 @@ class DashboardComponent {
             return;
         }
 
-        // 표준 .badge 시스템 사용 — 하드코딩 Tailwind 색상 제거
-        const statusColors = {
-            '주문접수': 'badge-info',
-            '입금대기': 'badge-warning',
-            '입금확인': 'badge-success',
-            '상품준비': 'badge-warning',
-            '배송준비': 'badge-purple',
-            '배송중':   'badge-purple',
-            '배송완료': 'badge-success',
-            '주문취소': 'badge-danger'
-        };
+        // 상태 배지 색상 — orderData.js의 getStatusColor() 단일 소스 사용
+        const getStatusBadge = (s) =>
+            window.orderDataManager?.getStatusColor?.(s) || 'badge-neutral';
 
         recentOrders.forEach(order => {
             const orderItem = document.createElement('div');
             orderItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
             const orderLabel = order.order_id ? String(order.order_id).slice(0, 8) + '…' : '주문';
             const status = order.order_status || '주문접수';
-            const statusClass = statusColors[status] || 'bg-gray-100 text-gray-800';
+            const statusClass = getStatusBadge(status);
             orderItem.innerHTML = `
                 <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">${orderLabel}</div>

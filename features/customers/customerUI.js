@@ -601,7 +601,9 @@ function showDeleteWithOrdersModal(orders) {
         const fmt = (d) => d ? d.slice(0, 10) : '-';
         const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
         const statusBadge = (s) => {
-            const cls = { '입금대기': 'badge-warning', '배송완료': 'badge-info', '배송중': 'badge-purple', '취소': 'badge-danger' }[s] || 'badge-neutral';
+            // 상태 배지 색상 — orderData.js getStatusColor() 단일 소스 사용 ('취소' → '주문취소' 정규화 포함)
+            const _normalizedStatus = s === '취소' ? '주문취소' : s;
+            const cls = window.orderDataManager?.getStatusColor?.(_normalizedStatus) || 'badge-neutral';
             return `<span class="badge ${cls}">${s || '-'}</span>`;
         };
 
