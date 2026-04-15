@@ -529,18 +529,26 @@ window.deleteCustomer = async function(customerId) {
     if (checkError) { alert('삭제 확인 중 오류: ' + checkError.message); return; }
 
     if (orders && orders.length > 0) {
-        // 주문 목록 모달 표시
-        const proceed = await showDeleteWithOrdersModal(orders);
-        if (!proceed) return;
+        // 주문 목록 모달 표시 → { selectedIds, deleteCustomer } 반환
+        const result = await showDeleteWithOrdersModal(orders);
+        if (!result) return;
 
-        // 주문 먼저 삭제
-        const orderIds = orders.map(o => o.id);
-        const { error: delOrderErr } = await window.supabaseClient
-            .from('farm_orders')
-            .delete()
-            .in('id', orderIds);
-        if (delOrderErr) { alert('주문 삭제 중 오류: ' + delOrderErr.message); return; }
-        console.log(`✅ 주문 ${orders.length}건 삭제 완료`);
+        // 선택된 주문 삭제
+        if (result.selectedIds.length > 0) {
+            const { error: delOrderErr } = await window.supabaseClient
+                .from('farm_orders')
+                .delete()
+                .in('id', result.selectedIds);
+            if (delOrderErr) { alert('주문 삭제 중 오류: ' + delOrderErr.message); return; }
+            console.log(`✅ 주문 ${result.selectedIds.length}건 삭제 완료`);
+        }
+
+        // 고객도 삭제하지 않는 경우 (선택 주문만 삭제)
+        if (!result.deleteCustomer) {
+            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            if (window.showToast) window.showToast(`✅ 주문 ${result.selectedIds.length}건이 삭제되었습니다.`, 3000);
+            return;
+        }
     } else {
         if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) return;
     }
@@ -560,75 +568,93 @@ window.deleteCustomer = async function(customerId) {
     }
 };
 
-// 주문 목록 보여주는 삭제 확인 모달
+// 주문 목록 + 체크박스 선택 삭제 모달
+// resolve(null) = 취소
+// resolve({ selectedIds, deleteCustomer }) = 확인
 function showDeleteWithOrdersModal(orders) {
     return new Promise((resolve) => {
-        // 기존 모달 제거
         document.getElementById('delete-with-orders-modal')?.remove();
 
-        const formatDate = (d) => d ? (d.slice(0, 10)) : '-';
-        const formatAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
-        const statusColor = (s) => {
-            const map = { '입금대기': 'text-yellow-600', '배송완료': 'text-blue-600', '배송중': 'text-indigo-600', '취소': 'text-red-500' };
-            return map[s] || 'text-gray-600';
-        };
+        const fmt = (d) => d ? d.slice(0, 10) : '-';
+        const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
+        const statusColor = (s) => ({ '입금대기': '#D97706', '배송완료': '#2563EB', '배송중': '#4F46E5', '취소': '#DC2626' }[s] || '#6B7280');
 
-        const rows = orders.map(o => `
-            <tr class="border-b border-gray-100 text-sm">
-                <td class="py-1.5 px-2 text-gray-500">${formatDate(o.created_at || o.order_date)}</td>
-                <td class="py-1.5 px-2 text-gray-700">${o.order_number || '-'}</td>
-                <td class="py-1.5 px-2 text-right font-medium">${formatAmt(o.total_amount)}</td>
-                <td class="py-1.5 px-2 text-center ${statusColor(o.order_status)}">${o.order_status || '-'}</td>
+        const rows = orders.map((o, i) => `
+            <tr class="border-b border-gray-100 hover:bg-gray-50 text-sm" data-id="${o.id}">
+                <td class="py-2 px-2">
+                    <input type="checkbox" class="order-chk rounded border-gray-300 text-red-500 focus:ring-red-400" data-idx="${i}" checked>
+                </td>
+                <td class="py-2 px-2 text-gray-500 text-xs">${fmt(o.created_at || o.order_date)}</td>
+                <td class="py-2 px-2 text-gray-700 text-xs">${o.order_number || '-'}</td>
+                <td class="py-2 px-2 text-right font-medium text-xs">${fmtAmt(o.total_amount)}</td>
+                <td class="py-2 px-2 text-center text-xs font-medium" style="color:${statusColor(o.order_status)}">${o.order_status || '-'}</td>
             </tr>`).join('');
 
         const modal = document.createElement('div');
         modal.id = 'delete-with-orders-modal';
         modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4';
         modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
                 <div class="p-4 border-b border-gray-200 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
                         <i class="fas fa-trash text-red-500 text-sm"></i>
                     </div>
                     <div>
                         <div class="font-semibold text-gray-900">고객 삭제</div>
-                        <div class="text-xs text-gray-500">이 고객에게 주문 ${orders.length}건이 있습니다</div>
+                        <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
                     </div>
                 </div>
                 <div class="p-4">
-                    <div class="max-h-52 overflow-y-auto rounded-lg border border-gray-200">
+                    <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
                         <table class="w-full">
-                            <thead class="bg-gray-50 text-xs text-gray-500">
+                            <thead class="bg-gray-50 sticky top-0 text-xs text-gray-500">
                                 <tr>
-                                    <th class="py-1.5 px-2 text-left">날짜</th>
-                                    <th class="py-1.5 px-2 text-left">주문번호</th>
-                                    <th class="py-1.5 px-2 text-right">금액</th>
-                                    <th class="py-1.5 px-2 text-center">상태</th>
+                                    <th class="py-2 px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
+                                    <th class="py-2 px-2 text-left">날짜</th>
+                                    <th class="py-2 px-2 text-left">주문번호</th>
+                                    <th class="py-2 px-2 text-right">금액</th>
+                                    <th class="py-2 px-2 text-center">상태</th>
                                 </tr>
                             </thead>
-                            <tbody>${rows}</tbody>
+                            <tbody id="order-del-tbody">${rows}</tbody>
                         </table>
                     </div>
-                    <p class="mt-3 text-xs text-red-500">⚠️ 위 주문을 모두 삭제한 후 고객도 삭제됩니다. 복구할 수 없습니다.</p>
+                    <p class="mt-2.5 text-xs text-red-500">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
                 </div>
                 <div class="flex gap-2 p-4 border-t border-gray-200">
-                    <button id="cancel-delete-orders" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">취소</button>
-                    <button id="confirm-delete-orders" class="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">주문 + 고객 모두 삭제</button>
+                    <button id="btn-cancel-del" class="flex-1 py-2 px-3 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">취소</button>
+                    <button id="btn-del-orders-only" class="flex-1 py-2 px-3 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50">선택 주문만 삭제</button>
+                    <button id="btn-del-all" class="flex-1 py-2 px-3 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">주문 + 고객 삭제</button>
                 </div>
             </div>`;
 
         document.body.appendChild(modal);
 
-        document.getElementById('confirm-delete-orders').addEventListener('click', () => {
-            modal.remove();
-            resolve(true);
+        // 전체 선택 체크박스
+        const chkAll = modal.querySelector('#chk-all');
+        const getChecked = () => Array.from(modal.querySelectorAll('.order-chk:checked')).map(c => orders[+c.dataset.idx].id);
+        chkAll.addEventListener('change', () => {
+            modal.querySelectorAll('.order-chk').forEach(c => c.checked = chkAll.checked);
         });
-        document.getElementById('cancel-delete-orders').addEventListener('click', () => {
+        modal.querySelectorAll('.order-chk').forEach(c => c.addEventListener('change', () => {
+            chkAll.checked = modal.querySelectorAll('.order-chk').length === modal.querySelectorAll('.order-chk:checked').length;
+        }));
+
+        modal.querySelector('#btn-cancel-del').addEventListener('click', () => { modal.remove(); resolve(null); });
+        modal.addEventListener('click', (e) => { if (e.target === modal) { modal.remove(); resolve(null); } });
+
+        modal.querySelector('#btn-del-orders-only').addEventListener('click', () => {
+            const selectedIds = getChecked();
+            if (!selectedIds.length) { alert('삭제할 주문을 선택하세요.'); return; }
             modal.remove();
-            resolve(false);
+            resolve({ selectedIds, deleteCustomer: false });
         });
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) { modal.remove(); resolve(false); }
+
+        modal.querySelector('#btn-del-all').addEventListener('click', () => {
+            const selectedIds = getChecked();
+            if (!selectedIds.length) { alert('삭제할 주문을 선택하세요.'); return; }
+            modal.remove();
+            resolve({ selectedIds, deleteCustomer: true });
         });
     });
 }
