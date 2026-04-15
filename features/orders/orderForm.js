@@ -3090,11 +3090,17 @@ function addExtraShipping() {
             <input type="tel" id="es-phone-${idx}" placeholder="연락처"
                    class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
         </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
+        <div class="flex gap-2 mb-2">
             <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
-                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
-            <input type="text" id="es-detail-${idx}" placeholder="상세주소"
-                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <button type="button" onclick="openExtraShippingAddressSearch(${idx})"
+                    class="px-2 py-1.5 bg-gray-100 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+                <i class="fas fa-search mr-1"></i>주소검색
+            </button>
+        </div>
+        <div class="mb-2">
+            <input type="text" id="es-detail-${idx}" placeholder="상세주소 (동/호수 등)"
+                   class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
         </div>
         <textarea id="es-memo-${idx}" rows="2" placeholder="배송 메모 (선택)"
                   class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
@@ -3153,9 +3159,41 @@ function resetExtraShipping() {
     _updateExtraShippingBadge();
 }
 
+// 추가 배송지용 Daum 주소 검색
+async function openExtraShippingAddressSearch(idx) {
+    try {
+        // Daum 우편번호 서비스 로드 (없으면 동적 로드)
+        if (typeof daum === 'undefined' || !daum.Postcode) {
+            await new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+                s.onload = resolve;
+                s.onerror = () => reject(new Error('주소 검색 서비스 로드 실패'));
+                document.head.appendChild(s);
+            });
+        }
+        new daum.Postcode({
+            oncomplete: function(data) {
+                const addr = data.roadAddress || data.jibunAddress || '';
+                const addrField = document.getElementById(`es-address-${idx}`);
+                const detailField = document.getElementById(`es-detail-${idx}`);
+                if (addrField) {
+                    addrField.value = addr;
+                    addrField.dispatchEvent(new Event('input', { bubbles: true }));
+                }
+                if (detailField) detailField.focus();
+            }
+        }).open();
+    } catch (e) {
+        console.error('주소 검색 오류:', e);
+        alert('주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.');
+    }
+}
+
 window.addExtraShipping    = addExtraShipping;
 window.removeExtraShipping = removeExtraShipping;
 window.resetExtraShipping  = resetExtraShipping;
+window.openExtraShippingAddressSearch = openExtraShippingAddressSearch;
 
 // ─────────────────────────────────────────────
 
