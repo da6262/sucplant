@@ -38,6 +38,7 @@ class ProductManagementComponent {
             const ProductUIClass = await loadProductUIModule();
             if (ProductUIClass) {
                 this.productUI = new ProductUIClass();
+                window.productUI = this.productUI; // 전역 참조 등록
                 console.log('✅ ProductUI 인스턴스 생성 완료');
             } else {
                 console.warn('⚠️ ProductUI 클래스를 로드할 수 없습니다');
@@ -57,13 +58,8 @@ class ProductManagementComponent {
         }
         
         this.setupPagination();
-        
-        // DOM이 완전히 로드된 후 이벤트 리스너 설정
-        setTimeout(() => {
-            this.setupEventListeners();
-            console.log('✅ 이벤트 리스너 설정 완료');
-        }, 100);
-        
+        this.setupEventListeners();
+
         this.isInitialized = true;
         console.log('✅ ProductManagement 컴포넌트 초기화 완료');
     }
@@ -110,13 +106,14 @@ class ProductManagementComponent {
                 productTable.parentNode.replaceChild(newTable, productTable);
             }
             
-            // 상품 모달 정리
+            // 상품 모달은 document.body에 위치하므로 cloneNode 대신 클래스/스타일만 초기화
+            // (cloneNode를 쓰면 addEventListener 기반 리스너가 전부 날아가 저장 버튼 먹통 발생)
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                const newModal = productModal.cloneNode(true);
-                productModal.parentNode.replaceChild(newModal, productModal);
+                productModal.style.display = 'none';
+                productModal.classList.add('hidden');
             }
-            
+
             // 전역 이벤트 리스너 정리
             if (window.productEventListeners) {
                 window.productEventListeners.forEach(listener => {
@@ -225,11 +222,52 @@ class ProductManagementComponent {
             });
         }
 
+        // 페이지당 표시 개수 선택
+        const itemsPerPageSel = document.getElementById('product-items-per-page');
+        if (itemsPerPageSel) {
+            itemsPerPageSel.value = String(this.itemsPerPage === 0 ? 0 : this.itemsPerPage);
+            itemsPerPageSel.addEventListener('change', () => {
+                this.itemsPerPage = parseInt(itemsPerPageSel.value) || 0;
+                this.currentPage = 1;
+                this.updatePagination();
+                this.renderProducts();
+            });
+        }
+
+        // 필터 초기화 버튼
+        const filterResetBtn = document.getElementById('product-filter-reset-btn');
+        if (filterResetBtn) {
+            filterResetBtn.addEventListener('click', () => {
+                if (searchInput) searchInput.value = '';
+                if (categoryFilter) categoryFilter.value = '';
+                if (stockFilter) stockFilter.value = '';
+                if (priceFilter) priceFilter.value = '';
+                this.applyFilters();
+            });
+        }
+
         // 전체 선택 체크박스
         const selectAllCheckbox = document.getElementById('select-all-products');
         if (selectAllCheckbox) {
             selectAllCheckbox.addEventListener('change', (e) => {
                 this.toggleSelectAll(e.target.checked);
+            });
+        }
+
+        // 일괄 삭제 버튼
+        const bulkDeleteBtn = document.getElementById('product-bulk-delete-btn');
+        if (bulkDeleteBtn) {
+            bulkDeleteBtn.addEventListener('click', () => this.bulkDeleteProducts());
+        }
+
+        // 일괄 선택 해제 버튼
+        const bulkClearBtn = document.getElementById('product-bulk-clear-btn');
+        if (bulkClearBtn) {
+            bulkClearBtn.addEventListener('click', () => {
+                this.toggleSelectAll(false);
+                const cb = document.getElementById('select-all-products');
+                if (cb) cb.checked = false;
+                this.updateBulkBar();
             });
         }
 
@@ -279,7 +317,8 @@ class ProductManagementComponent {
             this.filteredProducts = [...this.products];
             this.updatePagination();
             this.renderProducts();
-            
+            this.updateCategoryFilter();
+
             console.log(`✅ 상품 데이터 로드 완료: ${this.products.length}개`);
             
         } catch (error) {
@@ -305,9 +344,10 @@ class ProductManagementComponent {
             return;
         }
 
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage;
-        const endIndex = startIndex + this.itemsPerPage;
-        const pageProducts = this.filteredProducts.slice(startIndex, endIndex);
+        // itemsPerPage === 0 이면 전체 표시
+        const pageProducts = this.itemsPerPage === 0
+            ? this.filteredProducts
+            : this.filteredProducts.slice((this.currentPage - 1) * this.itemsPerPage, this.currentPage * this.itemsPerPage);
         
         console.log(`📄 현재 페이지: ${this.currentPage}, 표시할 상품: ${pageProducts.length}개`);
 
@@ -316,7 +356,7 @@ class ProductManagementComponent {
         if (pageProducts.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="8" class="px-4 text-center text-gray-500">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
                             <p class="text-sm font-medium text-gray-600">등록된 상품이 없습니다</p>
@@ -341,6 +381,7 @@ class ProductManagementComponent {
 
         console.log(`✅ 총 ${pageProducts.length}개 상품 행 렌더링 완료`);
         this.updatePaginationInfo();
+        this.updateFooterStats();
     }
 
     /**
@@ -355,60 +396,29 @@ class ProductManagementComponent {
         const stockStatus = this.getStockStatus(product.stock);
         const stockColor = this.getStockColor(stockStatus);
 
+        const badgeClass = stockStatus === 'out-of-stock' ? 'badge badge-red'
+                         : stockStatus === 'low-stock'   ? 'badge badge-yellow'
+                         : 'badge badge-green';
+
         row.innerHTML = `
-            <td class="px-4 py-3 whitespace-nowrap">
-                <input type="checkbox" class="product-checkbox rounded border-gray-300 text-orange-600 focus:ring-orange-500" data-product-id="${product.id}">
+            <td class="text-center">
+                <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
             </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="flex items-center">
-                    <div class="flex-shrink-0 h-10 w-10">
-                        ${product.image_url ? 
-                            `<img class="h-10 w-10 rounded-lg object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">` :
-                            `<div class="h-10 w-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center">
-                                <i class="fas fa-image text-gray-400 text-sm"></i>
-                            </div>`
-                        }
-                    </div>
-                    <div class="ml-3">
-                        <div class="text-sm font-medium text-gray-900">${product.name}</div>
-                        <div class="text-xs text-gray-500">${product.description || '설명 없음'}</div>
-                    </div>
-                </div>
+            <td class="td-muted">${product.product_code || '-'}</td>
+            <td class="td-primary">
+                <div class="product-name-link" data-product-id="${product.id}">${product.name}</div>
+                ${product.description ? `<div class="td-muted truncate" style="max-width:160px">${product.description}</div>` : ''}
             </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full bg-blue-50 text-blue-700 border border-blue-200">
-                    ${product.category || '미분류'}
-                </span>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="text-sm font-semibold text-gray-900">${this.formatCurrency(product.price)}</div>
-                ${product.cost ? `<div class="text-xs text-gray-500">원가: ${this.formatCurrency(product.cost)}</div>` : ''}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="flex items-center">
-                    <span class="text-sm font-medium ${stockColor}">${product.stock || 0}</span>
-                    <span class="text-xs text-gray-500 ml-1">개</span>
-                </div>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <span class="inline-flex px-2 py-1 text-xs font-medium rounded-full ${stockColor.replace('text-', 'bg-').replace('text-', 'text-')}">
-                    ${this.getStockStatusText(stockStatus)}
-                </span>
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap text-sm text-gray-500">
-                ${this.formatDate(product.created_at)}
-            </td>
-            <td class="px-4 py-3 whitespace-nowrap">
-                <div class="flex space-x-1">
-                    <button class="edit-product-btn text-blue-600 hover:text-blue-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="수정">
-                        <i class="fas fa-edit text-xs"></i>
-                    </button>
-                    <button class="duplicate-product-btn text-green-600 hover:text-green-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="복제">
-                        <i class="fas fa-copy text-xs"></i>
-                    </button>
-                    <button class="delete-product-btn text-red-600 hover:text-red-800 p-1 rounded transition-colors" data-product-id="${product.id}" title="삭제">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
+            <td><span class="badge badge-info">${product.category || '미분류'}</span></td>
+            <td class="td-secondary">${product.size || '-'}</td>
+            <td class="td-amount">${this.formatCurrency(product.price)}</td>
+            <td class="td-num"><span class="${stockColor}">${product.stock || 0}개</span></td>
+            <td class="td-secondary">${product.shipping_option || '-'}</td>
+            <td class="text-center">
+                <div class="btn-group">
+                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정"><i class="fas fa-pen"></i></button>
+                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제"><i class="fas fa-copy"></i></button>
+                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
         `;
@@ -423,6 +433,14 @@ class ProductManagementComponent {
      * 행 이벤트 리스너 추가
      */
     addRowEventListeners(row, product) {
+        // 상품명 클릭 → 상세 패널
+        const nameLink = row.querySelector('.product-name-link');
+        if (nameLink) {
+            nameLink.addEventListener('click', () => {
+                this.openProductDetailPanel(product);
+            });
+        }
+
         // 편집 버튼
         const editBtn = row.querySelector('.edit-product-btn');
         if (editBtn) {
@@ -452,6 +470,7 @@ class ProductManagementComponent {
         if (checkbox) {
             checkbox.addEventListener('change', () => {
                 this.updateSelectAllState();
+                this.updateBulkBar();
             });
         }
     }
@@ -577,7 +596,9 @@ class ProductManagementComponent {
      * 페이지네이션 업데이트
      */
     updatePagination() {
-        this.totalPages = Math.ceil(this.filteredProducts.length / this.itemsPerPage);
+        this.totalPages = this.itemsPerPage === 0
+            ? 1
+            : Math.ceil(this.filteredProducts.length / this.itemsPerPage);
         this.renderPaginationNumbers();
     }
 
@@ -586,19 +607,26 @@ class ProductManagementComponent {
      */
     renderPaginationNumbers() {
         const container = document.getElementById('products-pagination-numbers');
+        const prevBtn   = document.getElementById('products-pagination-prev');
+        const nextBtn   = document.getElementById('products-pagination-next');
         if (!container) return;
 
+        // 전체 보기 또는 1페이지뿐이면 페이지 버튼 숨김
+        const hide = this.itemsPerPage === 0 || this.totalPages <= 1;
         container.innerHTML = '';
+        if (prevBtn) prevBtn.style.display = hide ? 'none' : '';
+        if (nextBtn) nextBtn.style.display = hide ? 'none' : '';
+        if (hide) return;
 
         const startPage = Math.max(1, this.currentPage - 2);
-        const endPage = Math.min(this.totalPages, this.currentPage + 2);
+        const endPage   = Math.min(this.totalPages, this.currentPage + 2);
 
         for (let i = startPage; i <= endPage; i++) {
             const pageBtn = document.createElement('button');
-            pageBtn.className = `relative inline-flex items-center px-3 py-2 text-sm font-medium transition-colors duration-150 ${
-                i === this.currentPage 
-                    ? 'z-10 bg-orange-500 text-white shadow-sm' 
-                    : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+            pageBtn.className = `px-2 py-1 text-xs border rounded transition-colors ${
+                i === this.currentPage
+                    ? 'status-tab-btn active'
+                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`;
             pageBtn.textContent = i;
             pageBtn.addEventListener('click', () => {
@@ -615,12 +643,74 @@ class ProductManagementComponent {
     updatePaginationInfo() {
         const infoElement = document.getElementById('products-pagination-info');
         if (!infoElement) return;
-
-        const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
-        const endIndex = Math.min(this.currentPage * this.itemsPerPage, this.filteredProducts.length);
         const total = this.filteredProducts.length;
+        if (total === 0) { infoElement.textContent = ''; return; }
+        if (this.itemsPerPage === 0) {
+            infoElement.textContent = `전체 ${total}개`;
+            return;
+        }
+        const startIndex = (this.currentPage - 1) * this.itemsPerPage + 1;
+        const endIndex   = Math.min(this.currentPage * this.itemsPerPage, total);
+        infoElement.textContent = `${startIndex}-${endIndex} / ${total}개`;
+    }
 
-        infoElement.textContent = `${startIndex}-${endIndex} / 총 ${total}개`;
+    /**
+     * 카테고리 필터 드롭다운 갱신
+     */
+    updateCategoryFilter() {
+        const sel = document.getElementById('product-category-filter');
+        if (!sel) return;
+        const current = sel.value;
+
+        // 상품에 쓰인 카테고리 + DB 카테고리 전부 합산
+        const fromProducts = this.products.map(p => p.category).filter(Boolean);
+        const fromDB = (window.categoryDataManager?.getAllCategories() || []).map(c => c.name);
+        const cats = [...new Set([...fromProducts, ...fromDB])].sort();
+
+        sel.innerHTML = '<option value="">전체 카테고리</option>' +
+            cats.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
+    }
+
+    /**
+     * 하단 푸터 통계 업데이트
+     */
+    updateFooterStats() {
+        const total = this.filteredProducts.length;
+        const low   = this.filteredProducts.filter(p => { const s = this.getStockStatus(p.stock); return s === 'low-stock'; }).length;
+        const out   = this.filteredProducts.filter(p => { const s = this.getStockStatus(p.stock); return s === 'out-of-stock'; }).length;
+        const elTotal = document.getElementById('product-status-total');
+        const elLow   = document.getElementById('product-status-low');
+        const elOut   = document.getElementById('product-status-out');
+        if (elTotal) elTotal.textContent = total;
+        if (elLow)   elLow.textContent   = low;
+        if (elOut)   elOut.textContent   = out;
+    }
+
+    /**
+     * 일괄처리 바 상태 업데이트
+     */
+    updateBulkBar() {
+        const checked = document.querySelectorAll('.product-checkbox:checked').length;
+        const bar     = document.getElementById('product-bulk-bar');
+        const countEl = document.getElementById('product-bulk-count');
+        if (bar)     bar.classList.toggle('hidden', checked === 0);
+        if (countEl) countEl.textContent = checked;
+    }
+
+    /**
+     * 선택 상품 일괄 삭제
+     */
+    async bulkDeleteProducts() {
+        const checked = [...document.querySelectorAll('.product-checkbox:checked')];
+        if (checked.length === 0) return;
+        if (!confirm(`선택한 ${checked.length}개 상품을 삭제하시겠습니까?`)) return;
+        for (const cb of checked) {
+            const id = cb.dataset.productId;
+            try {
+                if (window.productDataManager) await window.productDataManager.deleteProduct(id);
+            } catch (e) { console.error('삭제 실패:', id, e); }
+        }
+        await this.loadProducts();
     }
 
     /**
@@ -654,41 +744,11 @@ class ProductManagementComponent {
         try {
             console.log('📝 상품 등록 모달 열기:', productId);
             
-            // 모달이 이미 로드되어 있는지 확인
-            let modal = document.getElementById('product-modal');
+            // 모달은 product-management.html에 인라인으로 포함됨
+            const modal = document.getElementById('product-modal');
             if (!modal) {
-                console.log('📦 상품 모달 동적 로드 중...');
-                if (window.loadProductModal) {
-                    const modalLoaded = await window.loadProductModal();
-                    if (modalLoaded) {
-                        modal = document.getElementById('product-modal');
-                        console.log('✅ 상품 모달 로드 완료');
-                    } else {
-                        console.error('❌ 상품 모달 로드 실패');
-                        return;
-                    }
-                } else {
-                    console.error('❌ loadProductModal 함수를 찾을 수 없습니다');
-                    return;
-                }
-            }
-            
-            // 모달 로드 후 폼 요소 존재 여부 확인
-            if (modal) {
-                const requiredFormElements = [
-                    'product-form-name',
-                    'product-form-category',
-                    'product-form-price',
-                    'product-form-stock'
-                ];
-                
-                const missingElements = requiredFormElements.filter(id => !document.getElementById(id));
-                if (missingElements.length > 0) {
-                    console.error('❌ 모달 로드 후 필수 폼 요소를 찾을 수 없습니다:', missingElements);
-                    console.log('🔍 DOM에서 product-form 요소들 검색:', document.querySelectorAll('[id*="product-form"]'));
-                    alert('상품 등록 폼이 완전히 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
-                    return;
-                }
+                console.error('❌ product-modal을 찾을 수 없습니다');
+                return;
             }
             
             if (modal) {
@@ -775,6 +835,121 @@ class ProductManagementComponent {
     async editProduct(product) {
         console.log('✏️ 상품 편집:', product.name);
         await this.openProductModal(product.id);
+    }
+
+    /**
+     * 상품 상세 패널 열기 (읽기 전용)
+     */
+    openProductDetailPanel(product) {
+        const old = document.getElementById('product-detail-panel');
+        if (old) old.remove();
+
+        const shippingMap = {
+            'always_free': '무료배송', 'normal': '일반배송',
+            'included': '배송비포함', 'direct': '직접배송',
+            '일반배송': '일반배송', '당일배송': '당일배송',
+            '직접배송': '직접배송', '픽업': '픽업'
+        };
+        const statusMap = { 'active': '판매중', 'inactive': '판매중지', 'soldout': '품절' };
+
+        const fmt   = v => (v != null && v !== '') ? v : '-';
+        const fmtP  = v => v ? Number(v).toLocaleString() + '원' : '-';
+        const fmtD  = v => v ? new Date(v).toLocaleDateString('ko-KR') : '-';
+
+        const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
+        const status   = statusMap[product.status] || product.status || '-';
+        const statusColor = product.status === 'active'   ? 'text-green-600 bg-green-50'
+                          : product.status === 'soldout'  ? 'text-red-500 bg-red-50'
+                          : 'text-gray-500 bg-gray-100';
+
+        const profitMargin = product.profit_margin
+            ? product.profit_margin + '%'
+            : (product.price && product.cost
+                ? Math.round((1 - product.cost / product.price) * 100) + '%'
+                : '-');
+
+        const imageHtml = product.image_url
+            ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
+            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+
+        const panel = document.createElement('div');
+        panel.id = 'product-detail-panel';
+        panel.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40';
+        panel.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col" style="max-height:90vh;">
+                <!-- 헤더 -->
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
+                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
+                    <div class="flex items-center gap-2">
+                        <button id="pd-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
+                            <i class="fas fa-edit mr-1"></i>수정
+                        </button>
+                        <button id="pd-close-btn" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- 본문 -->
+                <div class="overflow-y-auto px-5 py-4 space-y-4">
+                    ${imageHtml}
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
+                            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
+                        </div>
+                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
+                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
+                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
+                            <p class="font-semibold text-green-700 text-base">${fmtP(product.price)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
+                            <p class="font-medium text-gray-800">${fmtP(product.cost)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
+                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
+                            <p class="font-medium text-gray-800">${profitMargin}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
+                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
+                            <p class="font-medium text-gray-800">${shipping}</p>
+                        </div>
+                    </div>
+                    ${product.description ? `
+                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
+                    </div>` : ''}
+                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
+                        <span>등록일 ${fmtD(product.created_at)}</span>
+                        <span>수정일 ${fmtD(product.updated_at)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        panel.querySelector('#pd-close-btn').addEventListener('click', () => panel.remove());
+        panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+        panel.querySelector('#pd-edit-btn').addEventListener('click', () => {
+            panel.remove();
+            this.editProduct(product);
+        });
     }
 
     /**
@@ -895,22 +1070,17 @@ class ProductManagementComponent {
      */
     closeProductModal() {
         const modal = document.getElementById('product-modal');
+        if (!modal) return;
+
+        // 즉시 숨김 (style + class 이중 처리)
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+
+        // 애니메이션 초기 상태 복원 (다음 열기를 위해)
         const modalContent = document.getElementById('product-modal-content');
-        
-        if (modal && modalContent) {
-            // 애니메이션 효과
+        if (modalContent) {
             modalContent.classList.remove('scale-100', 'opacity-100');
             modalContent.classList.add('scale-95', 'opacity-0');
-            
-            // 애니메이션 완료 후 모달 숨기기
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-                
-                // 애니메이션 클래스 초기화
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 300);
         }
     }
     
@@ -945,16 +1115,15 @@ class ProductManagementComponent {
     setupModalSaveButton() {
         const saveBtn = document.getElementById('save-product-btn');
         if (saveBtn) {
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            saveBtn.removeEventListener('click', this.handleSaveProduct);
-            
+            // cloneNode로 버튼을 교체해 기존 리스너를 완전히 제거
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
             // 새로운 이벤트 리스너 추가
             this.handleSaveProduct = async () => {
-                console.log('💾 상품 저장 버튼 클릭됨');
                 await this.saveProduct();
             };
-            
-            saveBtn.addEventListener('click', this.handleSaveProduct);
+            newSaveBtn.addEventListener('click', this.handleSaveProduct);
             console.log('✅ 모달 저장 버튼 이벤트 리스너 등록 완료');
         }
     }
@@ -1117,455 +1286,340 @@ class ProductManagementComponent {
         }
     }
 
-    /**
-     * 일괄 등록 모달 열기
-     */
+    /** 일괄 등록 모달 열기 */
     openImportModal() {
-        console.log('📤 상품 일괄 등록 모달 열기');
-        
         const modal = document.getElementById('product-import-modal');
-        if (modal) {
-            modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            
-            // 모달 초기화
-            this.resetImportModal();
-            
-            // 이벤트 리스너 설정
-            this.setupImportModalEvents();
-            
-            console.log('✅ 상품 일괄등록 모달 열기 완료');
-        } else {
-            console.error('❌ 상품 일괄등록 모달을 찾을 수 없습니다');
+        if (!modal) return;
+        modal.classList.remove('hidden');
+        modal.style.display = 'flex';
+        this._resetImport();
+        // 전역 함수 등록 (HTML onclick에서 호출)
+        window._closeProductImport  = () => this.closeImportModal();
+        window._switchImportTab     = (t) => this._switchTab(t);
+        window._onPasteInput        = () => this._onPasteInput();
+        // 이벤트 (한 번만 등록하도록 플래그)
+        if (!modal._importEventsReady) {
+            modal._importEventsReady = true;
+            this._bindImportEvents();
         }
+        // 붙여넣기 textarea 포커스
+        setTimeout(() => document.getElementById('product-paste-textarea')?.focus(), 100);
     }
 
-    /**
-     * 일괄등록 모달 초기화
-     */
-    resetImportModal() {
-        // 직접 입력 방식으로 초기화
-        document.getElementById('product-upload-method-manual').classList.add('active');
-        document.getElementById('product-upload-method-excel').classList.remove('active');
-        document.getElementById('product-manual-input-section').classList.remove('hidden');
-        document.getElementById('product-excel-upload-section').classList.add('hidden');
-        
-        // 입력 필드 초기화
-        document.getElementById('product-import-text').value = '';
-        document.getElementById('product-excel-input').value = '';
-        
-        // 미리보기 및 진행상황 숨김
-        document.getElementById('product-import-preview').classList.add('hidden');
-        document.getElementById('product-import-progress').classList.add('hidden');
-        
-        // 시작 버튼 비활성화
-        document.getElementById('product-import-start').disabled = true;
-        document.getElementById('product-import-info').textContent = '상품 정보를 입력하거나 파일을 업로드해주세요.';
-    }
-
-    /**
-     * 일괄등록 모달 이벤트 리스너 설정
-     */
-    setupImportModalEvents() {
-        // 업로드 방식 전환
-        document.getElementById('product-upload-method-manual').addEventListener('click', () => {
-            this.switchUploadMethod('manual');
-        });
-        
-        document.getElementById('product-upload-method-excel').addEventListener('click', () => {
-            this.switchUploadMethod('excel');
-        });
-        
-        // 직접 입력 텍스트 변경
-        document.getElementById('product-import-text').addEventListener('input', () => {
-            this.handleManualInput();
-        });
-        
-        // 엑셀 파일 업로드
-        document.getElementById('product-excel-input').addEventListener('change', (e) => {
-            this.handleExcelFileUpload(e);
-        });
-        
-        // 시작 버튼
-        document.getElementById('product-import-start').addEventListener('click', () => {
-            this.startProductImport();
-        });
-        
-        // 취소 버튼
-        document.getElementById('product-import-cancel').addEventListener('click', () => {
-            this.closeImportModal();
-        });
-        
-        // 닫기 버튼
-        document.getElementById('close-product-import-modal').addEventListener('click', () => {
-            this.closeImportModal();
-        });
-    }
-
-    /**
-     * 업로드 방식 전환
-     */
-    switchUploadMethod(method) {
-        const manualBtn = document.getElementById('product-upload-method-manual');
-        const excelBtn = document.getElementById('product-upload-method-excel');
-        const manualSection = document.getElementById('product-manual-input-section');
-        const excelSection = document.getElementById('product-excel-upload-section');
-        
-        if (method === 'manual') {
-            manualBtn.classList.add('active');
-            excelBtn.classList.remove('active');
-            manualSection.classList.remove('hidden');
-            excelSection.classList.add('hidden');
-        } else {
-            excelBtn.classList.add('active');
-            manualBtn.classList.remove('active');
-            excelSection.classList.remove('hidden');
-            manualSection.classList.add('hidden');
-        }
-        
-        // 시작 버튼 상태 업데이트
-        this.updateImportButtonState();
-    }
-
-    /**
-     * 직접 입력 처리
-     */
-    handleManualInput() {
-        const text = document.getElementById('product-import-text').value.trim();
-        if (text) {
-            this.parseManualInput(text);
-        } else {
-            this.hidePreview();
-        }
-        this.updateImportButtonState();
-    }
-
-    /**
-     * 직접 입력 데이터 파싱
-     */
-    parseManualInput(text) {
-        try {
-            const lines = text.split('\n').filter(line => line.trim());
-            const products = [];
-            
-            lines.forEach((line, index) => {
-                const parts = line.split(',').map(part => part.trim());
-                if (parts.length >= 4) { // 최소 상품명, 카테고리, 판매가, 매입가
-                    products.push({
-                        name: parts[0] || '',
-                        category: parts[1] || '',
-                        price: parseFloat(parts[2]) || 0,
-                        cost: parseFloat(parts[3]) || 0,
-                        stock: parseInt(parts[4]) || 0,
-                        size: parts[5] || '',
-                        shipping_option: parts[6] || '일반배송',
-                        description: parts[7] || '',
-                        row: index + 1
-                    });
-                }
-            });
-            
-            // 전역 변수에 데이터 저장
-            window.productImportData = products;
-            
-            if (products.length > 0) {
-                this.showPreview(products);
-            } else {
-                this.hidePreview();
-            }
-        } catch (error) {
-            console.error('❌ 직접 입력 파싱 실패:', error);
-            window.productImportData = null;
-            this.hidePreview();
-        }
-    }
-
-    /**
-     * 엑셀 파일 업로드 처리
-     */
-    handleExcelFileUpload(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        
-        // 파일 정보 표시
-        this.showFileInfo(file);
-        
-        // 파일 읽기
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            try {
-                this.parseExcelData(e.target.result, file.name);
-            } catch (error) {
-                console.error('❌ 엑셀 파일 파싱 실패:', error);
-                alert('파일을 읽을 수 없습니다. 파일 형식을 확인해주세요.');
-            }
-        };
-        
-        if (file.name.endsWith('.csv')) {
-            reader.readAsText(file);
-        } else {
-            reader.readAsArrayBuffer(file);
-        }
-    }
-
-    /**
-     * 파일 정보 표시
-     */
-    showFileInfo(file) {
-        document.getElementById('product-upload-area-content').classList.add('hidden');
-        document.getElementById('product-upload-file-info').classList.remove('hidden');
-        document.getElementById('product-upload-file-name').textContent = file.name;
-        document.getElementById('product-upload-file-size').textContent = this.formatFileSize(file.size);
-    }
-
-    /**
-     * 파일 크기 포맷팅
-     */
-    formatFileSize(bytes) {
-        if (bytes === 0) return '0 Bytes';
-        const k = 1024;
-        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-        const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
-    }
-
-    /**
-     * 엑셀 데이터 파싱
-     */
-    parseExcelData(data, fileName) {
-        try {
-            let products = [];
-            
-            if (fileName.endsWith('.csv')) {
-                // CSV 파싱
-                const lines = data.split('\n').filter(line => line.trim());
-                lines.forEach((line, index) => {
-                    if (index === 0) return; // 헤더 스킵
-                    const parts = line.split(',').map(part => part.trim());
-                    if (parts.length >= 4) {
-                        products.push({
-                            name: parts[0] || '',
-                            category: parts[1] || '',
-                            price: parseFloat(parts[2]) || 0,
-                            cost: parseFloat(parts[3]) || 0,
-                            stock: parseInt(parts[4]) || 0,
-                            size: parts[5] || '',
-                            shipping_option: parts[6] || '일반배송',
-                            description: parts[7] || '',
-                            row: index + 1
-                        });
-                    }
-                });
-            } else {
-                // Excel 파일은 간단한 텍스트 파싱 (실제로는 XLSX 라이브러리 필요)
-                console.log('Excel 파일 파싱은 CSV로 변환 후 사용하세요.');
-                alert('Excel 파일은 CSV 형식으로 저장 후 업로드해주세요.');
-                return;
-            }
-            
-            if (products.length > 0) {
-                this.showPreview(products);
-            } else {
-                this.hidePreview();
-            }
-        } catch (error) {
-            console.error('❌ 엑셀 데이터 파싱 실패:', error);
-            this.hidePreview();
-        }
-    }
-
-    /**
-     * 미리보기 표시
-     */
-    showPreview(products) {
-        const previewContent = document.getElementById('product-preview-content');
-        const previewSection = document.getElementById('product-import-preview');
-        
-        let html = `
-            <div class="text-sm text-gray-600 mb-3">
-                총 <strong>${products.length}</strong>개의 상품이 등록됩니다.
-            </div>
-            <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-100">
-                        <tr>
-                            <th class="px-2 py-1 text-left">상품명</th>
-                            <th class="px-2 py-1 text-left">카테고리</th>
-                            <th class="px-2 py-1 text-right">판매가</th>
-                            <th class="px-2 py-1 text-right">매입가</th>
-                            <th class="px-2 py-1 text-right">재고</th>
-                            <th class="px-2 py-1 text-left">사이즈</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-        `;
-        
-        products.slice(0, 10).forEach(product => {
-            html += `
-                <tr class="border-b border-gray-200">
-                    <td class="px-2 py-1">${product.name}</td>
-                    <td class="px-2 py-1">${product.category}</td>
-                    <td class="px-2 py-1 text-right">${product.price.toLocaleString()}</td>
-                    <td class="px-2 py-1 text-right">${product.cost.toLocaleString()}</td>
-                    <td class="px-2 py-1 text-right">${product.stock}</td>
-                    <td class="px-2 py-1">${product.size}</td>
-                </tr>
-            `;
-        });
-        
-        if (products.length > 10) {
-            html += `
-                <tr>
-                    <td colspan="6" class="px-2 py-1 text-center text-gray-500">
-                        ... 외 ${products.length - 10}개 상품
-                    </td>
-                </tr>
-            `;
-        }
-        
-        html += `
-                    </tbody>
-                </table>
-            </div>
-        `;
-        
-        previewContent.innerHTML = html;
-        previewSection.classList.remove('hidden');
-        
-        // 전역 변수에 저장
-        window.productImportData = products;
-    }
-
-    /**
-     * 미리보기 숨김
-     */
-    hidePreview() {
-        document.getElementById('product-import-preview').classList.add('hidden');
+    /** 모달 상태 초기화 */
+    _resetImport() {
+        // 붙여넣기 탭 활성화
+        this._switchTab('manual');
+        // textarea 비우기
+        const ta = document.getElementById('product-paste-textarea');
+        if (ta) ta.value = '';
+        // 미리보기 숨기기
+        document.getElementById('paste-preview-section')?.classList.add('hidden');
+        // 파일 탭 초기화
+        const fi = document.getElementById('product-excel-input');
+        if (fi) fi.value = '';
+        document.getElementById('product-upload-area-content')?.classList.remove('hidden');
+        document.getElementById('product-upload-file-info')?.classList.add('hidden');
+        document.getElementById('product-import-preview')?.classList.add('hidden');
+        // 진행바 숨기기
+        document.getElementById('product-import-progress')?.classList.add('hidden');
         window.productImportData = null;
+        this._refreshImportCount();
     }
 
-    /**
-     * 시작 버튼 상태 업데이트
-     */
-    updateImportButtonState() {
-        const startBtn = document.getElementById('product-import-start');
-        const hasData = window.productImportData && window.productImportData.length > 0;
-        startBtn.disabled = !hasData;
-        
-        if (hasData) {
-            document.getElementById('product-import-info').textContent = `${window.productImportData.length}개의 상품이 등록됩니다.`;
-        } else {
-            document.getElementById('product-import-info').textContent = '상품 정보를 입력하거나 파일을 업로드해주세요.';
-        }
+    /** 탭 전환 */
+    _switchTab(tab) {
+        const manualBtn = document.getElementById('product-upload-method-manual');
+        const fileBtn   = document.getElementById('product-upload-method-excel');
+        const manualSec = document.getElementById('product-manual-input-section');
+        const fileSec   = document.getElementById('product-excel-upload-section');
+        const isManual  = tab === 'manual';
+        manualBtn?.classList.toggle('border-green-500', isManual);
+        manualBtn?.classList.toggle('text-green-600',   isManual);
+        manualBtn?.classList.toggle('border-transparent', !isManual);
+        manualBtn?.classList.toggle('text-gray-400',    !isManual);
+        fileBtn?.classList.toggle('border-green-500',   !isManual);
+        fileBtn?.classList.toggle('text-green-600',     !isManual);
+        fileBtn?.classList.toggle('border-transparent',  isManual);
+        fileBtn?.classList.toggle('text-gray-400',       isManual);
+        manualSec?.classList.toggle('hidden', !isManual);
+        fileSec?.classList.toggle('hidden',    isManual);
+        this._refreshImportCount();
     }
 
-    /**
-     * 상품 일괄등록 시작
-     */
-    async startProductImport() {
-        if (!window.productImportData || window.productImportData.length === 0) {
-            alert('등록할 상품 데이터가 없습니다.');
+    /** 붙여넣기 textarea 입력 처리 */
+    _onPasteInput() {
+        const ta = document.getElementById('product-paste-textarea');
+        const text = ta?.value?.trim() || '';
+        if (!text) {
+            window.productImportData = null;
+            document.getElementById('paste-preview-section')?.classList.add('hidden');
+            this._refreshImportCount();
             return;
         }
-        
-        const products = window.productImportData;
-        const total = products.length;
-        let successCount = 0;
-        let failCount = 0;
-        
-        // 진행상황 표시
-        this.showProgress();
-        
-        // productDataManager를 통한 일괄 저장
-        for (let i = 0; i < products.length; i++) {
-            try {
-                const product = products[i];
-                
-                // 필수 필드 검증
-                if (!product.name || !product.category) {
-                    console.warn(`⚠️ ${i + 1}번째 상품 필수 필드 누락:`, product);
-                    failCount++;
-                    continue;
-                }
-                
-                // Supabase를 통한 상품 저장
-                if (window.productDataManager) {
-                    await window.productDataManager.addProduct(product);
-                    successCount++;
-                    console.log(`✅ 상품 등록 성공: ${product.name}`);
-                } else {
-                    console.error('❌ productDataManager를 찾을 수 없습니다');
-                    failCount++;
-                }
-                
-                // 진행상황 업데이트
-                this.updateProgress(i + 1, total);
-                
-                // UI 업데이트를 위한 잠시 대기
-                await new Promise(resolve => setTimeout(resolve, 100));
-                
-            } catch (error) {
-                console.error(`❌ ${i + 1}번째 상품 등록 실패:`, error);
-                failCount++;
-            }
+        // 탭 구분(엑셀) 또는 쉼표 구분 자동 감지
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        const useTab = lines[0]?.includes('\t');
+        const products = [];
+        for (const line of lines) {
+            const cols = useTab ? line.split('\t') : line.split(',');
+            const name     = String(cols[0] || '').trim();
+            const category = String(cols[1] || '').trim();
+            // 헤더행 자동 감지 (숫자가 아닌 첫 줄 건너뜀)
+            if (!name || name === '상품명') continue;
+            if (!category || category === '카테고리') continue;
+            products.push({
+                name,
+                category,
+                price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
+                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
+                stock:           parseInt(cols[4]) || 0,
+                size:            String(cols[5] || '').trim(),
+                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
+                description:     String(cols[7] || '').trim(),
+            });
         }
-        
-        // 완료 처리
-        this.hideProgress();
+        window.productImportData = products;
+        this._showPastePreview(products);
+        this._refreshImportCount();
+    }
+
+    /** 붙여넣기 결과 미리보기 */
+    _showPastePreview(products) {
+        const section  = document.getElementById('paste-preview-section');
+        const countEl  = document.getElementById('paste-preview-count');
+        const thead    = document.getElementById('paste-preview-thead');
+        const tbody    = document.getElementById('paste-preview-tbody');
+        if (!section || !thead || !tbody) return;
+        if (products.length === 0) {
+            section.classList.add('hidden');
+            return;
+        }
+        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션','설명'];
+        const keys = ['name','category','price','cost','stock','size','shipping_option','description'];
+        if (countEl) countEl.textContent = `${products.length}개 상품 인식됨`;
+        thead.innerHTML = cols.map(c =>
+            `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
+        ).join('');
+        tbody.innerHTML = products.slice(0, 30).map((p, i) =>
+            `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">` +
+            keys.map(k => {
+                const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
+                return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
+            }).join('') +
+            '</tr>'
+        ).join('') + (products.length > 30
+            ? `<tr><td colspan="8" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
+            : '');
+        section.classList.remove('hidden');
+    }
+
+    /** 카운트 및 버튼 상태 갱신 */
+    _refreshImportCount() {
+        const count   = (window.productImportData || []).length;
+        const countEl = document.getElementById('import-row-count');
+        if (countEl) {
+            countEl.textContent  = count > 0 ? `${count}개 등록 예정` : '0개';
+            countEl.className    = count > 0 ? 'text-sm font-semibold text-green-600' : 'text-sm text-gray-400';
+        }
+        const btn = document.getElementById('product-import-start');
+        if (btn) btn.disabled = count === 0;
+    }
+
+    /** 이벤트 바인딩 (최초 1회) */
+    _bindImportEvents() {
+        // ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && document.getElementById('product-import-modal')?.style.display !== 'none') {
+                this.closeImportModal();
+            }
+        });
+
+        // 붙여넣기 textarea
+        document.getElementById('product-paste-textarea')?.addEventListener('input', () => this._onPasteInput());
+
+        // 등록 시작
+        document.getElementById('product-import-start')?.addEventListener('click', () => this.startProductImport());
+
+        // 파일 업로드 탭 이벤트
+        const dropZone  = document.getElementById('product-drop-zone');
+        const fileInput = document.getElementById('product-excel-input');
+        dropZone?.addEventListener('click', (e) => {
+            if (!e.target.closest('#product-remove-file-btn')) fileInput?.click();
+        });
+        fileInput?.addEventListener('change', (e) => {
+            if (e.target.files[0]) this._handleFileUpload(e.target.files[0]);
+        });
+        dropZone?.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('border-green-400','bg-green-50'); });
+        dropZone?.addEventListener('dragleave', ()  => { dropZone.classList.remove('border-green-400','bg-green-50'); });
+        dropZone?.addEventListener('drop',      (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-green-400','bg-green-50');
+            const f = e.dataTransfer.files[0];
+            if (f) this._handleFileUpload(f);
+        });
+        document.getElementById('product-remove-file-btn')?.addEventListener('click', (e) => {
+            e.stopPropagation();
+            if (fileInput) fileInput.value = '';
+            document.getElementById('product-upload-area-content')?.classList.remove('hidden');
+            document.getElementById('product-upload-file-info')?.classList.add('hidden');
+            document.getElementById('product-import-preview')?.classList.add('hidden');
+            window.productImportData = null;
+            this._refreshImportCount();
+        });
+        document.getElementById('download-product-template-btn')?.addEventListener('click', () => this._downloadTemplate());
+    }
+
+    /** CSV 양식 다운로드 */
+    _downloadTemplate() {
+        const bom = '\uFEFF';
+        const header = '상품명,카테고리,판매가,매입가,재고,사이즈,배송옵션,설명';
+        const rows = [
+            'White Platter 대,다육식물,15000,8000,20,대,일반배송,예쁜 화이트 플래터',
+            '에케베리아 소,다육식물,5000,2000,50,소,일반배송,소형 에케베리아',
+            '세덤 혼합,다육식물,3000,1500,100,,일반배송,',
+        ];
+        const blob = new Blob([bom + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = '상품_일괄등록_양식.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+    }
+
+    /** 파일 업로드 처리 */
+    _handleFileUpload(file) {
+        document.getElementById('product-upload-area-content')?.classList.add('hidden');
+        document.getElementById('product-upload-file-info')?.classList.remove('hidden');
+        const nameEl = document.getElementById('product-upload-file-name');
+        const sizeEl = document.getElementById('product-upload-file-size');
+        if (nameEl) nameEl.textContent = file.name;
+        if (sizeEl) sizeEl.textContent = this._fmtSize(file.size);
+
+        const reader = new FileReader();
+        if (file.name.toLowerCase().endsWith('.csv')) {
+            reader.onload = (e) => this._parseCsvText(e.target.result);
+            reader.readAsText(file, 'UTF-8');
+        } else if (/\.xlsx?$/i.test(file.name)) {
+            reader.onload = (e) => {
+                if (typeof XLSX !== 'undefined') {
+                    try {
+                        const wb   = XLSX.read(e.target.result, { type: 'array' });
+                        const rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+                        this._parseRowArrays(rows);
+                    } catch (err) { alert('Excel 파일 읽기 실패: ' + err.message); }
+                } else {
+                    alert('Excel(.xlsx) 지원을 위한 라이브러리가 없습니다.\nCSV로 저장 후 업로드해주세요.');
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        } else {
+            alert('지원 형식: .csv, .xlsx, .xls');
+        }
+    }
+
+    _parseCsvText(text) {
+        const lines = text.split(/\r?\n/).filter(l => l.trim());
+        this._parseRowArrays(lines.map(l => l.split(',')));
+    }
+
+    _parseRowArrays(rows) {
+        const products = [];
+        for (const cols of rows) {
+            const name     = String(cols[0] || '').trim();
+            const category = String(cols[1] || '').trim();
+            if (!name || name === '상품명') continue;
+            if (!category || category === '카테고리') continue;
+            products.push({
+                name, category,
+                price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
+                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
+                stock:           parseInt(cols[4]) || 0,
+                size:            String(cols[5] || '').trim(),
+                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
+                description:     String(cols[7] || '').trim(),
+            });
+        }
+        window.productImportData = products;
+        this._showFilePreview(products);
+        this._refreshImportCount();
+    }
+
+    _showFilePreview(products) {
+        const section  = document.getElementById('product-import-preview');
+        const content  = document.getElementById('product-preview-content');
+        const countEl  = document.getElementById('product-preview-count');
+        if (!section || !content) return;
+        if (countEl) countEl.textContent = `총 ${products.length}개`;
+        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션'];
+        const keys = ['name','category','price','cost','stock','size','shipping_option'];
+        let html = `<table class="table-ui"><thead><tr>` +
+            cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
+            `</tr></thead><tbody>` +
+            products.slice(0, 20).map(p =>
+                `<tr>` +
+                keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
+                `</tr>`
+            ).join('') +
+            (products.length > 20 ? `<tr><td colspan="7" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
+            `</tbody></table>`;
+        content.innerHTML = html;
+        section.classList.remove('hidden');
+    }
+
+    _fmtSize(b) {
+        if (!b) return '0 B';
+        const k = 1024, s = ['B','KB','MB'];
+        const i = Math.floor(Math.log(b) / Math.log(k));
+        return (b / Math.pow(k, i)).toFixed(1) + ' ' + s[i];
+    }
+
+    /** 일괄 등록 실행 */
+    async startProductImport() {
+        const products = window.productImportData || [];
+        if (products.length === 0) {
+            alert('등록할 상품이 없습니다.\n상품명과 카테고리를 입력(또는 붙여넣기)하세요.');
+            return;
+        }
+        const total = products.length;
+        let ok = 0, fail = 0;
+        const progress = document.getElementById('product-import-progress');
+        progress?.classList.remove('hidden');
+        for (let i = 0; i < total; i++) {
+            try {
+                if (window.productDataManager) { await window.productDataManager.addProduct(products[i]); ok++; }
+                else fail++;
+            } catch { fail++; }
+            this.updateProgress(i + 1, total);
+            await new Promise(r => setTimeout(r, 60));
+        }
+        progress?.classList.add('hidden');
         this.closeImportModal();
-        
-        // 결과 알림
-        if (successCount > 0) {
-            alert(`🎉 상품 일괄등록 완료!\n\n성공: ${successCount}개\n실패: ${failCount}개`);
-            
-            // 상품 목록 새로고침
+        if (ok > 0) {
+            alert(`일괄등록 완료!\n성공 ${ok}개${fail ? ' / 실패 ' + fail + '개' : ''}`);
             await this.loadProducts();
         } else {
-            alert(`❌ 상품 등록 실패\n\n실패: ${failCount}개`);
+            alert(`등록에 실패했습니다 (${fail}개 오류)`);
         }
     }
 
-    /**
-     * 진행상황 표시
-     */
-    showProgress() {
-        document.getElementById('product-import-progress').classList.remove('hidden');
-    }
-
-    /**
-     * 진행상황 업데이트
-     */
     updateProgress(current, total) {
-        const progressBar = document.getElementById('product-progress-bar');
-        const progressText = document.getElementById('product-progress-text');
-        
-        const percentage = (current / total) * 100;
-        progressBar.style.width = `${percentage}%`;
-        progressText.textContent = `${current} / ${total}`;
+        const bar  = document.getElementById('product-progress-bar');
+        const text = document.getElementById('product-progress-text');
+        if (bar)  bar.style.width  = `${Math.round(current / total * 100)}%`;
+        if (text) text.textContent = `${current} / ${total}`;
     }
 
-    /**
-     * 진행상황 숨김
-     */
-    hideProgress() {
-        document.getElementById('product-import-progress').classList.add('hidden');
-    }
-
-    /**
-     * 일괄등록 모달 닫기
-     */
+    /** 모달 닫기 */
     closeImportModal() {
         const modal = document.getElementById('product-import-modal');
-        if (modal) {
-            modal.classList.add('hidden');
-            modal.style.display = 'none';
-        }
-        
-        // 데이터 초기화
+        if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
         window.productImportData = null;
-        this.hidePreview();
-        this.hideProgress();
     }
+
+    // 하위 호환 alias
+    setupImportModalEvents() {}
+    resetImportModal()       { this._resetImport(); }
 
     /**
      * 상품 데이터 내보내기
@@ -1590,19 +1644,16 @@ class ProductManagementComponent {
      * 날짜 포맷팅
      */
     formatDate(dateString) {
-        if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
+        // 공통 포맷터 위임 (utils/formatters.js → window.formatDate)
+        return (window.fmt?.date ?? window.formatDate ?? ((v) => v ? v.slice(0,10) : '-'))(dateString);
     }
 
     /**
      * 통화 포맷팅
      */
     formatCurrency(amount) {
-        return new Intl.NumberFormat('ko-KR', {
-            style: 'currency',
-            currency: 'KRW'
-        }).format(amount);
+        // 공통 포맷터 위임 (utils/formatters.js → window.formatCurrency)
+        return (window.fmt?.currency ?? window.formatCurrency ?? ((v) => '₩' + Number(v).toLocaleString()))(amount);
     }
 
     /**
@@ -1970,28 +2021,14 @@ window.openProductModal = (productId = null) => {
 };
 
 window.closeProductModal = () => {
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
+    }
+    // 컴포넌트 메서드도 추가 호출 (폼 초기화 등)
     if (window.productManagementComponent) {
         window.productManagementComponent.closeProductModal();
-    } else {
-        // 폴백: 기본 닫기 기능
-        const modal = document.getElementById('product-modal');
-        const modalContent = document.getElementById('product-modal-content');
-        
-        if (modal && modalContent) {
-            // 애니메이션 효과
-            modalContent.classList.remove('scale-100', 'opacity-100');
-            modalContent.classList.add('scale-95', 'opacity-0');
-            
-            // 애니메이션 완료 후 모달 숨기기
-            setTimeout(() => {
-                modal.classList.add('hidden');
-                modal.style.display = 'none';
-                
-                // 애니메이션 클래스 초기화
-                modalContent.classList.remove('scale-95', 'opacity-0');
-                modalContent.classList.add('scale-100', 'opacity-100');
-            }, 300);
-        }
     }
 };
 
@@ -2036,28 +2073,15 @@ async function loadProductManagementComponent() {
     try {
         console.log('📋 상품 관리 컴포넌트 로드 시작...');
         
-        const productsContainer = document.getElementById('products-section');
+        let productsContainer = document.getElementById('products-section');
         if (!productsContainer) {
             console.error('❌ products-section 요소를 찾을 수 없습니다');
             return false;
         }
         
-        // 이미 로드되었는지 확인
-        if (productsContainer.innerHTML.trim() !== '' && 
-            !productsContainer.innerHTML.includes('여기에 로드됩니다')) {
-            console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
-            
-            // 컴포넌트 재초기화
-            if (window.ProductManagementComponent) {
-                const productManagementComponent = new window.ProductManagementComponent();
-                await productManagementComponent.init(productsContainer);
-                // 전역에 저장
-                window.productManagementComponent = productManagementComponent;
-                console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
-            }
-            return true;
-        }
-        
+        // 항상 HTML을 새로 로드 (재방문 시 flex context 깨짐 방지)
+        console.log('📋 상품 관리 HTML 로드 중...');
+
         // HTML 로드
         const response = await fetch('components/product-management/product-management.html');
         if (!response.ok) {
@@ -2067,7 +2091,15 @@ async function loadProductManagementComponent() {
         const html = await response.text();
         productsContainer.innerHTML = html;
         console.log('📦 HTML 로드 완료');
-        
+
+        // 고객관리와 동일한 패턴: inner div를 outer와 교체 (ID 중복·display 충돌 방지)
+        const inner = productsContainer.querySelector('#products-section');
+        if (inner) {
+            productsContainer.replaceWith(inner);
+            productsContainer = inner;
+            console.log('🔄 products-section outer → inner replaceWith 완료');
+        }
+
         // 컴포넌트 초기화
         if (window.ProductManagementComponent) {
             const productManagementComponent = new window.ProductManagementComponent();
@@ -2078,7 +2110,7 @@ async function loadProductManagementComponent() {
         } else {
             console.error('❌ ProductManagementComponent를 찾을 수 없습니다');
         }
-        
+
         return true;
         
     } catch (error) {

@@ -39,7 +39,7 @@ async function loadProductManagementComponent() {
         // 메인 콘텐츠에 HTML 삽입
         mainContentElement.innerHTML = htmlContent;
         console.log('✅ HTML 콘텐츠 삽입 완료');
-        
+
         // 동적 컴포넌트임을 표시
         const productSection = document.getElementById('products-section');
         if (productSection) {

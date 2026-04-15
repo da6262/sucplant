@@ -4,74 +4,61 @@
 // 고객관리 컴포넌트 동적 로드
 async function loadCustomerManagementComponent() {
     try {
-        console.log('🔄 고객관리 컴포넌트 로드 중...');
-        
-        // 기존 고객관리 섹션이 있으면 제거
-        const existingSection = document.getElementById('customers-section');
-        if (existingSection) {
-            console.log('🗑️ 기존 고객관리 섹션 제거');
-            existingSection.remove();
-        }
-        
-        // 다른 섹션들은 제거하지 않음 (화면 전환을 위해 유지)
-        console.log('📋 다른 섹션들은 화면 전환을 위해 유지');
-        
-        // 메인 콘텐츠 확인
         const mainContentElement = document.getElementById('mainContent');
-        console.log('🔍 메인 콘텐츠 요소:', mainContentElement);
-        
-        if (!mainContentElement) {
-            throw new Error('메인 콘텐츠 영역을 찾을 수 없습니다.');
+        if (!mainContentElement) throw new Error('메인 콘텐츠 영역을 찾을 수 없습니다.');
+
+        const existingSection = document.getElementById('customers-section');
+
+        // ── 재방문: 이미 내용이 있으면 데이터만 새로고침 + 이벤트 재연결 ──
+        if (existingSection && existingSection.dataset.loaded === 'true') {
+            console.log('⚡ 고객관리 이미 로드됨 — 데이터 갱신 + 이벤트 재연결');
+            if (typeof attachCustomerEventListeners === 'function') attachCustomerEventListeners();
+            if (typeof attachCustomerGradesEventListeners === 'function') attachCustomerGradesEventListeners();
+            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            if (window.customerDataManager) {
+                window.customerDataManager.loadCustomers().then(() => {
+                    if (window.renderCustomersTable) window.renderCustomersTable('all');
+                    if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
+                }).catch(() => {});
+            }
+            return true;
         }
-        
-        // 컴포넌트 로드 (캐시 방지로 항상 최신 레이아웃 적용)
-        console.log('🌐 컴포넌트 파일 요청 중...');
-        const response = await fetch('components/customer-management/customer-management.html?v=' + Date.now(), { cache: 'no-store' });
-        console.log('📡 응답 상태:', response.status, response.ok);
-        
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
+
+        // ── 최초 로드: HTML fetch + 초기화 ──
+        const response = await fetch('components/customer-management/customer-management.html', { cache: 'default' });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
         const html = await response.text();
-        console.log('📄 HTML 로드 완료, 길이:', html.length);
-        
-        // HTML을 직접 메인 콘텐츠에 삽입
-        mainContentElement.insertAdjacentHTML('beforeend', html);
-        console.log('📝 HTML 삽입 완료');
-        
-        // 삽입된 섹션을 활성화
-        const newSection = document.getElementById('customers-section');
-        if (newSection) {
-            // 동적 컴포넌트임을 표시
-            newSection.setAttribute('data-dynamic', 'true');
-            
-            // 모든 섹션 완전히 숨기기
-            document.querySelectorAll('.section-content').forEach(section => {
-                section.classList.remove('active');
-                section.style.display = 'none';
-            });
-            
-            // 고객관리 섹션만 활성화
-            newSection.classList.add('active');
-            newSection.style.display = 'block';
-            console.log('✅ 고객관리 컴포넌트 로드 완료');
-            
-            // 로드 완료 후 추가 초기화
-            setTimeout(async () => {
-                if (typeof window.initCustomerManagementSection === 'function') {
-                    await window.initCustomerManagementSection();
-                } else {
-                    await runCustomerManagementInit();
-                }
-            }, 100);
+
+        if (existingSection) {
+            // index.html의 빈 placeholder가 있으면 내용을 직접 교체 (ID 중복 방지)
+            existingSection.innerHTML = html;
+            // customer-management.html 자체가 outer div를 포함하는 경우 내부 섹션으로 교체
+            const inner = existingSection.querySelector('#customers-section');
+            if (inner) {
+                existingSection.replaceWith(inner);
+            }
         } else {
-            throw new Error('고객관리 섹션을 찾을 수 없습니다.');
+            mainContentElement.insertAdjacentHTML('beforeend', html);
         }
-        
+
+        const section = document.getElementById('customers-section');
+        if (!section) throw new Error('고객관리 섹션을 찾을 수 없습니다.');
+
+        section.setAttribute('data-dynamic', 'true');
+
+        if (typeof window.initCustomerManagementSection === 'function') {
+            await window.initCustomerManagementSection();
+        } else {
+            await runCustomerManagementInit();
+        }
+
+        section.dataset.loaded = 'true';
+        console.log('✅ 고객관리 컴포넌트 로드 완료');
+        return true;
+
     } catch (error) {
         console.error('❌ 고객관리 컴포넌트 로드 실패:', error);
-        console.error('❌ 오류 상세:', error.stack);
         alert('고객관리 화면을 로드할 수 없습니다: ' + error.message);
     }
 }
@@ -311,11 +298,18 @@ async function saveCustomer() {
 function attachCustomerGradesEventListeners() {
     console.log('🔄 고객등급관리 이벤트 리스너 연결 중...');
     
-    // 고객등급 관리 모달 열기
+    // 등급 관리 → 환경설정 탭으로 이동
     const manageGradesBtn = document.getElementById('manage-customer-grades-btn');
     if (manageGradesBtn) {
-        manageGradesBtn.addEventListener('click', openCustomerGradesModal);
-        console.log('✅ 고객등급 관리 버튼 이벤트 리스너 연결');
+        manageGradesBtn.onclick = async () => {
+            if (window.switchTab) {
+                await window.switchTab('settings');
+                if (window.showSettingsTab) {
+                    window.showSettingsTab('customers');
+                }
+            }
+        };
+        console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
     
     console.log('✅ 고객등급관리 이벤트 리스너 연결 완료');
@@ -889,7 +883,7 @@ function attachCustomerEventListeners() {
         // 새 고객 등록 버튼
         const addCustomerBtn = document.getElementById('add-customer-btn');
         if (addCustomerBtn) {
-            addCustomerBtn.addEventListener('click', async function() {
+            addCustomerBtn.onclick = async function() {
                 console.log('➕ 새 고객 등록 버튼 클릭');
                 
                 // 고객 모달이 없으면 동적으로 로드
@@ -922,16 +916,29 @@ function attachCustomerEventListeners() {
                     console.warn('⚠️ openCustomerModal 함수를 찾을 수 없습니다');
                     console.log('🔍 window 객체 확인:', Object.keys(window).filter(key => key.includes('Customer')));
                 }
-            });
+            };
             console.log('✅ 새 고객 등록 버튼 이벤트 리스너 연결 완료');
         }
         
         // 고객 검색
         const customerSearch = document.getElementById('customer-search');
         if (customerSearch) {
-            customerSearch.addEventListener('input', function(e) {
-                console.log('🔍 고객 검색:', e.target.value);
-                // 검색 로직은 customerUI.js에서 처리
+            let isComposing = false;
+            const doSearch = function() {
+                const searchTerm = customerSearch.value.trim();
+                const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+                const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+                if (window.renderCustomersTable) {
+                    window.renderCustomersTable(gradeFilter, searchTerm);
+                }
+            };
+            customerSearch.addEventListener('compositionstart', () => { isComposing = true; });
+            customerSearch.addEventListener('compositionend', () => {
+                isComposing = false;
+                doSearch();
+            });
+            customerSearch.addEventListener('input', function() {
+                if (!isComposing) doSearch();
             });
             console.log('✅ 고객 검색 이벤트 리스너 연결 완료');
         }
@@ -998,9 +1005,10 @@ function attachCustomerEventListeners() {
                     ? activeGradeButton.id.replace('customer-grade-', '')
                     : 'all';
                 
-                // 테이블 다시 렌더링
+                // 테이블 다시 렌더링 (검색어 유지)
+                const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(gradeFilter);
+                    window.renderCustomersTable(gradeFilter, searchTerm);
                 }
             });
             console.log('✅ 고객 정렬 이벤트 리스너 연결 완료');
@@ -1017,9 +1025,10 @@ function attachCustomerEventListeners() {
                 gradeTabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
                 
-                // 테이블 필터링
+                // 테이블 필터링 (검색어 유지)
+                const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(grade);
+                    window.renderCustomersTable(grade, searchTerm);
                 }
             });
         });
@@ -1048,6 +1057,12 @@ function attachCustomerEventListeners() {
                     allTab.classList.add('active');
                 }
                 
+                // 미납/대기 체크박스 초기화
+                const filterUnpaid   = document.getElementById('filter-unpaid');
+                const filterWaitlist = document.getElementById('filter-waitlist');
+                if (filterUnpaid)   filterUnpaid.checked   = false;
+                if (filterWaitlist) filterWaitlist.checked = false;
+
                 // 테이블 초기화
                 if (window.renderCustomersTable) {
                     window.renderCustomersTable('all');
@@ -1055,7 +1070,20 @@ function attachCustomerEventListeners() {
             });
             console.log('✅ 고객 검색 초기화 버튼 이벤트 리스너 연결 완료');
         }
-        
+
+        // 미납 / 대기 체크박스 필터
+        const filterUnpaidEl   = document.getElementById('filter-unpaid');
+        const filterWaitlistEl = document.getElementById('filter-waitlist');
+        const doCheckboxFilter = function() {
+            const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+            const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+            const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
+            if (window.renderCustomersTable) window.renderCustomersTable(gradeFilter, searchTerm);
+        };
+        if (filterUnpaidEl)   filterUnpaidEl.addEventListener('change',   doCheckboxFilter);
+        if (filterWaitlistEl) filterWaitlistEl.addEventListener('change', doCheckboxFilter);
+        console.log('✅ 미납/대기 체크박스 필터 이벤트 리스너 연결 완료');
+
         // 고객 모달 저장 버튼
         const saveCustomerBtn = document.querySelector('button[onclick="saveCustomer()"]');
         if (saveCustomerBtn) {
@@ -1072,8 +1100,20 @@ function attachCustomerEventListeners() {
             console.log('✅ 고객 저장 버튼 이벤트 리스너 연결 완료');
         }
         
+        // 페이지당 표시 수 선택
+        const customerPageSize = document.getElementById('customer-page-size');
+        if (customerPageSize) {
+            customerPageSize.addEventListener('change', function() {
+                const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+                const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+                const searchTerm = customerSearch ? customerSearch.value.trim() : '';
+                if (window.renderCustomersTable) window.renderCustomersTable(gradeFilter, searchTerm);
+            });
+            console.log('✅ 페이지 크기 선택 이벤트 리스너 연결 완료');
+        }
+
         console.log('✅ 고객관리 이벤트 리스너 연결 완료');
-        
+
     } catch (error) {
         console.error('❌ 고객관리 이벤트 리스너 연결 실패:', error);
     }
@@ -1516,6 +1556,80 @@ async function openAddressSearch() {
         alert('주소 검색 중 오류가 발생했습니다: ' + error.message);
     }
 }
+
+// 주소 입력 시 실시간 검색 (입력창에 직접 타이핑하면 Daum 검색 임베드)
+let _addressInputTimer = null;
+
+window.handleAddressInput = async function(value) {
+    const container = document.getElementById('address-embed-container');
+    if (!container) return;
+
+    // 2글자 미만이면 검색창 숨김
+    if (!value || value.trim().length < 2) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    // 이미 주소가 완성된 것처럼 보이면 (공백 포함 10자 이상이고 숫자 포함) 닫기
+    if (value.length >= 10 && /\d/.test(value) && value.includes(' ')) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    clearTimeout(_addressInputTimer);
+    _addressInputTimer = setTimeout(async () => {
+        try {
+            await loadDaumPostcodeService();
+        } catch (e) {
+            console.warn('Daum 우편번호 로드 실패:', e);
+            return;
+        }
+        if (typeof daum === 'undefined' || !daum.Postcode) return;
+
+        container.innerHTML = '';
+        container.classList.remove('hidden');
+
+        new daum.Postcode({
+            oncomplete: function(data) {
+                const addr = data.roadAddress || data.jibunAddress || '';
+                const addressField = document.getElementById('customer-form-address');
+                if (addressField) {
+                    addressField.value = addr;
+                    addressField.style.backgroundColor = '#f0f9ff';
+                    addressField.style.borderColor = '#3b82f6';
+                    setTimeout(() => {
+                        addressField.style.backgroundColor = '';
+                        addressField.style.borderColor = '';
+                    }, 2000);
+                }
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                const detailField = document.getElementById('customer-form-address-detail');
+                if (detailField) {
+                    setTimeout(() => {
+                        detailField.focus();
+                        detailField.placeholder = '동, 호수 등 상세주소 입력';
+                    }, 50);
+                }
+            },
+            width: '100%',
+            height: '100%',
+        }).embed(container, { q: value, autoClose: false });
+    }, 350);
+};
+
+// 주소 검색창 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('address-embed-container');
+    const addressField = document.getElementById('customer-form-address');
+    if (container && !container.classList.contains('hidden') &&
+        !container.contains(e.target) && e.target !== addressField) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+    }
+});
 
 // 전역 함수로 등록 (강제로 덮어쓰기)
 window.loadCustomerManagementComponent = loadCustomerManagementComponent;

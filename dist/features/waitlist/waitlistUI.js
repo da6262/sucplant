@@ -2,6 +2,7 @@
 // 경산다육식물농장 관리시스템 - 대기자 UI 관리
 
 import { waitlistDataManager } from './waitlistData.js';
+import { formatDate, formatPhone, formatCurrency } from '../../utils/formatters.js';
 
 /**
  * 대기자관리 UI 클래스
@@ -87,121 +88,6 @@ export class WaitlistUI {
     }
 
     /**
-     * 대기자 등록 폼 렌더링 (주문 등록 폼과 동일한 구조)
-     */
-    renderWaitlistForm() {
-        const form = document.getElementById('waitlist-form');
-        if (!form) return;
-
-        form.innerHTML = `
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 p-4">
-                <!-- 고객 정보 -->
-                <div class="space-y-4">
-                    <h4 class="text-sm font-semibold text-gray-700 border-b pb-2">고객 정보</h4>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">고객명 *</label>
-                        <input type="text" id="waitlist-customer-name" class="w-full p-2 border border-gray-300 rounded text-sm" required>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">연락처 *</label>
-                        <input type="tel" id="waitlist-phone" class="w-full p-2 border border-gray-300 rounded text-sm" required>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">주소</label>
-                        <input type="text" id="waitlist-address" class="w-full p-2 border border-gray-300 rounded text-sm">
-                    </div>
-                </div>
-
-                <!-- 대기 상품 정보 -->
-                <div class="space-y-4">
-                    <h4 class="text-sm font-semibold text-gray-700 border-b pb-2">대기 상품 정보</h4>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">상품명 *</label>
-                        <input type="text" id="waitlist-product-name" class="w-full p-2 border border-gray-300 rounded text-sm" required>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">수량</label>
-                        <input type="number" id="waitlist-quantity" class="w-full p-2 border border-gray-300 rounded text-sm" value="1" min="1">
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">대기 상태</label>
-                        <select id="waitlist-status" class="w-full p-2 border border-gray-300 rounded text-sm">
-                            <option value="대기중">대기중</option>
-                            <option value="입고완료">입고완료</option>
-                            <option value="연락완료">연락완료</option>
-                            <option value="취소">취소</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-xs text-gray-600 mb-1">메모</label>
-                        <textarea id="waitlist-memo" class="w-full p-2 border border-gray-300 rounded text-sm" rows="3"></textarea>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 버튼 영역 -->
-            <div class="flex justify-end gap-2 p-4 border-t bg-gray-50">
-                <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded text-sm">
-                    취소
-                </button>
-                <button type="button" onclick="waitlistUI.saveWaitlist()" class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded text-sm">
-                    <i class="fas fa-save mr-1"></i>저장
-                </button>
-            </div>
-        `;
-    }
-
-    /**
-     * 대기자 정보 저장
-     */
-    saveWaitlist() {
-        console.log('💾 대기자 정보 저장');
-        
-        const customerName = document.getElementById('waitlist-customer-name').value;
-        const phone = document.getElementById('waitlist-phone').value;
-        const address = document.getElementById('waitlist-address').value;
-        const productName = document.getElementById('waitlist-product-name').value;
-        const quantity = document.getElementById('waitlist-quantity').value;
-        const status = document.getElementById('waitlist-status').value;
-        const memo = document.getElementById('waitlist-memo').value;
-
-        if (!customerName || !phone || !productName) {
-            alert('필수 항목을 모두 입력해주세요.');
-            return;
-        }
-
-        const waitlistData = {
-            id: Date.now(),
-            customer_name: customerName,
-            phone: phone,
-            address: address,
-            product_name: productName,
-            quantity: parseInt(quantity),
-            status: status,
-            memo: memo,
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-        };
-
-        // 대기자 데이터 저장
-        if (window.waitlistDataManager) {
-            window.waitlistDataManager.addWaitlist(waitlistData);
-            console.log('✅ 대기자 정보 저장 완료');
-            this.closeWaitlistModal();
-            this.renderWaitlistTable();
-        } else {
-            console.error('❌ waitlistDataManager를 찾을 수 없습니다.');
-        }
-    }
-
-    /**
      * 대기자 목록 테이블 렌더링
      */
     renderWaitlistTable(waitlistData = null) {
@@ -226,33 +112,36 @@ export class WaitlistUI {
                 return;
             }
             
-            // 성능 최적화: DocumentFragment 사용
-            const fragment = document.createDocumentFragment();
-            
-            if (waitlist.length === 0) {
-                const emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = `
-                    <td colspan="8" class="text-center py-8 text-gray-500">
-                        <i class="fas fa-clock mr-2"></i>등록된 대기자가 없습니다.
-                    </td>
-                `;
-                fragment.appendChild(emptyRow);
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('waitlist-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+            const pagedWaitlist = pageSize === 0 ? waitlist : waitlist.slice(0, pageSize);
+
+            // 하단 카운트 업데이트
+            const totalEl = document.getElementById('waitlist-status-total');
+            const countEl = document.getElementById('waitlist-list-count');
+            if (totalEl) totalEl.textContent = String(waitlist.length);
+            if (countEl) countEl.textContent = pageSize === 0 || pagedWaitlist.length === waitlist.length
+                ? `${waitlist.length}명 표시`
+                : `${pagedWaitlist.length} / ${waitlist.length}명 표시`;
+
+            if (pagedWaitlist.length === 0) {
+                // 빈 상태 표시 — 공통 유틸 사용 (colspan=9: 번호·고객명·연락처·희망상품·카테고리·희망가격·상태·등록일·관리)
+                tbody.innerHTML = window.renderEmptyRow(9, '등록된 대기자가 없습니다.');
             } else {
-                // 대기자 목록 렌더링 (DocumentFragment로 배치 처리)
-                waitlist.forEach((item, index) => {
-                    const row = this.createWaitlistRow(item, index);
-                    fragment.appendChild(row);
+                // 성능 최적화: DocumentFragment로 일괄 DOM 추가
+                const fragment = document.createDocumentFragment();
+                pagedWaitlist.forEach((item, index) => {
+                    fragment.appendChild(this.createWaitlistRow(item, index));
                 });
+                tbody.innerHTML = '';
+                tbody.appendChild(fragment);
             }
-            
-            // 한 번에 DOM에 추가 (성능 최적화)
-            tbody.innerHTML = '';
-            tbody.appendChild(fragment);
-            
+
             // 통계 업데이트
             this.updateWaitlistStats();
-            
-            console.log(`✅ 대기자 목록 테이블 렌더링 완료: ${waitlist.length}개`);
+
+            console.log(`✅ 대기자 목록 테이블 렌더링 완료: ${pagedWaitlist.length}/${waitlist.length}개`);
         } catch (error) {
             console.error('❌ 대기자 목록 테이블 렌더링 실패:', error);
         }
@@ -264,35 +153,29 @@ export class WaitlistUI {
     createWaitlistRow(item, index) {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
+        const nd = '<span class="td-null">—</span>';
         row.innerHTML = `
-            <td class="px-2.5 py-2 text-xs text-gray-900">${index + 1}</td>
-            <td class="px-2.5 py-2 text-xs font-medium text-gray-900">${item.customer_name}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.customer_phone || '-'}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_name}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_category || '-'}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.expected_price ? item.expected_price.toLocaleString() + '원' : '-'}</td>
-            <td class="px-2.5 py-2 text-xs">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStatusBadgeClass(item.status)}">
-                    ${item.status}
-                </span>
+            <td class="px-2.5 td-muted text-center">${index + 1}</td>
+            <td class="px-2.5 td-primary td-link">${item.customer_name || nd}</td>
+            <td class="px-2.5 td-secondary">${formatPhone(item.customer_phone)}</td>
+            <td class="px-2.5 td-primary">${item.product_name || nd}</td>
+            <td class="px-2.5 td-secondary">${item.product_category || nd}</td>
+            <td class="px-2.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
+            <td class="px-2.5 text-center">
+                <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
             </td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.register_date ? new Date(item.register_date).toLocaleDateString('ko-KR') : '-'}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">
-                <div class="flex space-x-2">
+            <td class="px-2.5 td-muted">${formatDate(item.register_date) || nd}</td>
+            <td class="px-2.5 text-center">
+                <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
-                            class="text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded p-1 transition-colors"
+                            class="btn-icon btn-icon-edit"
                             title="수정">
-                        <i class="fas fa-edit text-xs"></i>
+                        <i class="fas fa-pen"></i>
                     </button>
                     <button onclick="waitlistUI.deleteWaitlist('${item.id}')"
-                            class="text-red-400 hover:text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
+                            class="btn-icon btn-icon-delete"
                             title="삭제">
-                        <i class="fas fa-trash text-xs"></i>
-                    </button>
-                    <button onclick="waitlistUI.updateStatus('${item.id}')" 
-                            class="text-green-600 hover:text-green-800 transition-colors" 
-                            title="상태변경">
-                        <i class="fas fa-sync"></i>
+                        <i class="fas fa-trash"></i>
                     </button>
                 </div>
             </td>
@@ -305,32 +188,34 @@ export class WaitlistUI {
      */
     getStatusBadgeClass(status) {
         const statusClasses = {
-            '대기중': 'bg-orange-100 text-orange-800',
-            '연락완료': 'bg-blue-100 text-blue-800',
-            '주문전환': 'bg-green-100 text-green-800',
-            '취소': 'bg-red-100 text-red-800'
+            '대기중':   'badge-warning',   // 노랑 — 대기 중
+            '연락완료': 'badge-info',       // 파랑 — 연락됨
+            '주문전환': 'badge-success',    // 초록 — 완료
+            '취소':     'badge-danger',     // 빨강 — 취소
         };
-        return statusClasses[status] || 'bg-gray-100 text-gray-800';
+        return statusClasses[status] || 'badge-neutral';
     }
 
     /**
-     * 대기자 통계 업데이트
+     * 대기자 통계 업데이트 — 탭 카운트 배지 업데이트
      */
     updateWaitlistStats() {
         try {
             const stats = waitlistDataManager.getWaitlistStats();
-            
-            // 통계 카드 업데이트
-            const totalElement = document.getElementById('waitlist-total-count');
-            const waitingElement = document.getElementById('waitlist-waiting-count');
-            const contactedElement = document.getElementById('waitlist-contacted-count');
-            const convertedElement = document.getElementById('waitlist-converted-count');
-            
-            if (totalElement) totalElement.textContent = stats.total;
-            if (waitingElement) waitingElement.textContent = stats.waiting;
-            if (contactedElement) contactedElement.textContent = stats.contacted;
-            if (convertedElement) convertedElement.textContent = stats.converted;
-            
+
+            // 탭 카운트 배지 업데이트
+            const countAll       = document.getElementById('waitlist-count-all');
+            const countWaiting   = document.getElementById('waitlist-count-대기중');
+            const countContacted = document.getElementById('waitlist-count-연락완료');
+            const countConverted = document.getElementById('waitlist-count-주문전환');
+            const countCancelled = document.getElementById('waitlist-count-취소');
+
+            if (countAll)       countAll.textContent       = stats.total;
+            if (countWaiting)   countWaiting.textContent   = stats.waiting;
+            if (countContacted) countContacted.textContent = stats.contacted;
+            if (countConverted) countConverted.textContent = stats.converted;
+            if (countCancelled) countCancelled.textContent = stats.cancelled;
+
             console.log('📊 대기자 통계 업데이트 완료:', stats);
         } catch (error) {
             console.error('❌ 대기자 통계 업데이트 실패:', error);
@@ -350,11 +235,13 @@ export class WaitlistUI {
             // 모달 생성
             const modal = document.createElement('div');
             modal.id = 'waitlist-modal';
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.className = 'modal-overlay';
             modal.innerHTML = this.createWaitlistModalHTML(waitlistId);
             
             document.body.appendChild(modal);
-            
+            // 바깥 클릭으로 닫기
+            modal.addEventListener('click', (e) => { if (e.target === modal) this.closeWaitlistModal(); });
+
             // 이벤트 리스너 등록
             this.setupWaitlistModalEvents(waitlistId);
             
@@ -372,86 +259,94 @@ export class WaitlistUI {
         const waitlist = isEdit ? waitlistDataManager.getWaitlistById(waitlistId) : null;
         
         return `
-            <div class="bg-white rounded-lg shadow-xl w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            <i class="fas fa-clock mr-2 text-orange-600"></i>
-                            ${isEdit ? '대기자 정보 수정' : '새 대기자 등록'}
-                        </h3>
-                        <button onclick="waitlistUI.closeWaitlistModal()" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
+            <div class="modal-container modal-md">
+                <div class="modal-header">
+                    <span class="modal-title">
+                        <i class="fas fa-clock" style="color:#EA580C;margin-right:6px;"></i>
+                        ${isEdit ? '대기자 정보 수정' : '새 대기자 등록'}
+                    </span>
+                    <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="p-6">
-                    <form id="waitlist-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">고객명 *</label>
-                                <div class="relative">
-                                    <input type="text" id="waitlist-customer-name" 
-                                           value="${waitlist?.customer_name || ''}"
-                                           placeholder="고객명을 입력하세요 (자동완성 지원)"
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" 
-                                           autocomplete="off"
-                                           required>
-                                    <div id="waitlist-customer-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg shadow-lg z-10 max-h-48 overflow-y-auto hidden">
-                                        <!-- 고객 자동완성 목록이 여기에 표시됩니다 -->
-                                    </div>
-                                </div>
+                <div class="modal-body">
+                    <form id="waitlist-form" class="form-grid">
+
+                        <!-- 고객명 (col-6) | 연락처 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">고객명 <span class="req">*</span></label>
+                            <div style="position:relative;">
+                                <input type="text" id="waitlist-customer-name"
+                                       value="${waitlist?.customer_name || ''}"
+                                       placeholder="고객명 입력 (자동완성 지원)"
+                                       class="form-control" autocomplete="off" required>
+                                <div id="waitlist-customer-suggestions"
+                                     class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-48 overflow-y-auto"
+                                     style="top:100%;left:0;"></div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
-                                <input type="tel" id="waitlist-customer-phone" 
-                                       value="${waitlist?.customer_phone || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">희망상품명 *</label>
-                                <input type="text" id="waitlist-product-name" 
-                                       value="${waitlist?.product_name || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" 
-                                       required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">상품카테고리</label>
-                                <input type="text" id="waitlist-product-category" 
-                                       value="${waitlist?.product_category || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">희망가격</label>
-                                <input type="number" id="waitlist-expected-price" 
+                        </div>
+                        <div class="form-col-6">
+                            <label class="form-label">연락처</label>
+                            <input type="tel" id="waitlist-customer-phone"
+                                   value="${waitlist?.customer_phone || ''}"
+                                   placeholder="010-0000-0000"
+                                   class="form-control">
+                            <p class="form-helper">고객명 입력 시 자동으로 채워집니다</p>
+                        </div>
+
+                        <!-- 희망상품명 (col-6) | 상품카테고리 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">희망상품명 <span class="req">*</span></label>
+                            <input type="text" id="waitlist-product-name"
+                                   value="${waitlist?.product_name || ''}"
+                                   placeholder="예: White Platter 대형"
+                                   class="form-control" required>
+                        </div>
+                        <div class="form-col-6">
+                            <label class="form-label">상품카테고리</label>
+                            <input type="text" id="waitlist-product-category"
+                                   value="${waitlist?.product_category || ''}"
+                                   placeholder="예: 다육식물"
+                                   class="form-control">
+                        </div>
+
+                        <!-- 희망가격 (col-6) | 우선순위 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">희망가격</label>
+                            <div class="form-input-group with-unit">
+                                <input type="number" id="waitlist-expected-price"
                                        value="${waitlist?.expected_price || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
-                                <select id="waitlist-priority" 
-                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                                    <option value="1" ${waitlist?.priority === 1 ? 'selected' : ''}>높음</option>
-                                    <option value="2" ${waitlist?.priority === 2 ? 'selected' : ''}>보통</option>
-                                    <option value="3" ${waitlist?.priority === 3 ? 'selected' : ''}>낮음</option>
-                                </select>
+                                       placeholder="0" min="0" step="1000"
+                                       class="form-control">
+                                <span class="form-input-unit">원</span>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">메모</label>
-                            <textarea id="waitlist-memo" rows="3" 
-                                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">${waitlist?.memo || ''}</textarea>
+                        <div class="form-col-6">
+                            <label class="form-label">우선순위</label>
+                            <select id="waitlist-priority" class="form-control">
+                                <option value="1" ${waitlist?.priority === 1 ? 'selected' : ''}>높음</option>
+                                <option value="2" ${(!waitlist || waitlist?.priority === 2) ? 'selected' : ''}>보통</option>
+                                <option value="3" ${waitlist?.priority === 3 ? 'selected' : ''}>낮음</option>
+                            </select>
                         </div>
-                        <div class="flex justify-end space-x-3 mt-6">
-                            <button type="button" onclick="waitlistUI.closeWaitlistModal()" 
-                                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                                취소
-                            </button>
-                            <button type="submit" 
-                                    class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors">
-                                ${isEdit ? '수정' : '등록'}
-                            </button>
+
+                        <!-- 메모 (col-12) -->
+                        <div class="form-col-12">
+                            <label class="form-label">메모</label>
+                            <textarea id="waitlist-memo" rows="3"
+                                      placeholder="고객 요구사항, 특이사항 등"
+                                      class="form-control" style="height:auto;">${waitlist?.memo || ''}</textarea>
                         </div>
+
                     </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="btn-secondary">
+                        <i class="fas fa-times"></i>취소
+                    </button>
+                    <button type="submit" form="waitlist-form" class="btn-primary">
+                        <i class="fas fa-save"></i>${isEdit ? '수정' : '등록'}
+                    </button>
                 </div>
             </div>
         `;
@@ -489,12 +384,12 @@ export class WaitlistUI {
     }
 
     /**
-     * 대기자 저장
+     * 대기자 저장 (async — addWaitlist/updateWaitlist 결과를 await)
      */
-    saveWaitlist(waitlistId = null) {
+    async saveWaitlist(waitlistId = null) {
         try {
             console.log('💾 대기자 저장:', waitlistId);
-            
+
             const formData = {
                 customer_name: document.getElementById('waitlist-customer-name').value.trim(),
                 customer_phone: document.getElementById('waitlist-customer-phone').value.trim(),
@@ -504,39 +399,37 @@ export class WaitlistUI {
                 priority: parseInt(document.getElementById('waitlist-priority').value) || 3,
                 memo: document.getElementById('waitlist-memo').value.trim()
             };
-            
+
             // 필수 필드 검증
             if (!formData.customer_name || !formData.product_name) {
                 alert('고객명과 희망상품명은 필수 입력 항목입니다.');
                 return;
             }
-            
+
+            // async 함수이므로 반드시 await — Promise를 직접 평가하지 않음
             let result;
             if (waitlistId) {
-                result = waitlistDataManager.updateWaitlist(waitlistId, formData);
+                result = await waitlistDataManager.updateWaitlist(waitlistId, formData);
             } else {
-                result = waitlistDataManager.addWaitlist(formData);
+                result = await waitlistDataManager.addWaitlist(formData);
             }
-            
-            if (result) {
-                this.closeWaitlistModal();
-                
-                // 저장 후 데이터 새로고침 및 테이블 렌더링
-                console.log('🔄 대기자 저장 후 테이블 새로고침');
-                setTimeout(() => {
-                    const allWaitlist = waitlistDataManager.getAllWaitlist();
-                    console.log('🔍 새로고침된 대기자 데이터:', allWaitlist.length, '개');
-                    this.renderWaitlistTable(allWaitlist);
-                }, 100);
-                
-                alert(waitlistId ? '대기자 정보가 수정되었습니다.' : '새 대기자가 등록되었습니다.');
-                console.log('✅ 대기자 저장 완료');
+
+            this.closeWaitlistModal();
+
+            // 저장 후 테이블 새로고침
+            this.renderWaitlistTable(waitlistDataManager.getAllWaitlist());
+            this.updateWaitlistStats();
+
+            const msg = waitlistId ? '대기자 정보가 수정되었습니다.' : '새 대기자가 등록되었습니다.';
+            if (window.Swal) {
+                window.Swal.fire({ icon: 'success', title: '저장 완료', text: msg, timer: 2000, showConfirmButton: false });
             } else {
-                alert('대기자 저장에 실패했습니다.');
+                alert(msg);
             }
+            console.log('✅ 대기자 저장 완료');
         } catch (error) {
             console.error('❌ 대기자 저장 실패:', error);
-            alert('대기자 저장 중 오류가 발생했습니다.');
+            alert('대기자 저장 중 오류가 발생했습니다: ' + error.message);
         }
     }
 
@@ -549,24 +442,27 @@ export class WaitlistUI {
     }
 
     /**
-     * 대기자 삭제
+     * 대기자 삭제 (async — Supabase 삭제 완료 후 UI 갱신)
      */
-    deleteWaitlist(waitlistId) {
+    async deleteWaitlist(waitlistId) {
         try {
             console.log('🗑️ 대기자 삭제:', waitlistId);
-            
-            if (confirm('정말로 이 대기자를 삭제하시겠습니까?')) {
-                const success = waitlistDataManager.deleteWaitlist(waitlistId);
-                if (success) {
-                    this.renderWaitlistTable();
-                    alert('대기자가 삭제되었습니다.');
-                } else {
-                    alert('대기자 삭제에 실패했습니다.');
-                }
+
+            if (!confirm('정말로 이 대기자를 삭제하시겠습니까?')) return;
+
+            await waitlistDataManager.deleteWaitlist(waitlistId);
+
+            this.renderWaitlistTable(waitlistDataManager.getAllWaitlist());
+            this.updateWaitlistStats();
+
+            if (window.Swal) {
+                window.Swal.fire({ icon: 'success', title: '삭제 완료', text: '대기자가 삭제되었습니다.', timer: 1500, showConfirmButton: false });
+            } else {
+                alert('대기자가 삭제되었습니다.');
             }
         } catch (error) {
             console.error('❌ 대기자 삭제 실패:', error);
-            alert('대기자 삭제 중 오류가 발생했습니다.');
+            alert('대기자 삭제 중 오류가 발생했습니다: ' + error.message);
         }
     }
 
@@ -637,24 +533,11 @@ export class WaitlistUI {
      */
     updateFilterTabs(activeStatus) {
         try {
-            document.querySelectorAll('.farm_waitlist-tab-btn').forEach(tab => {
-                tab.classList.remove('active', 'border-orange-600', 'text-orange-600',
-                                   'border-blue-600', 'text-blue-600',
-                                   'border-green-600', 'text-green-600',
-                                   'border-red-600', 'text-red-600');
-                
+            document.querySelectorAll('.waitlist-tab-btn').forEach(tab => {
+                tab.classList.remove('active');
                 const status = tab.id.replace('farm_waitlist-status-', '');
                 if (status === activeStatus) {
                     tab.classList.add('active');
-                    if (status === 'all' || status === '대기중') {
-                        tab.classList.add('border-orange-600', 'text-orange-600');
-                    } else if (status === '연락완료') {
-                        tab.classList.add('border-blue-600', 'text-blue-600');
-                    } else if (status === '주문전환') {
-                        tab.classList.add('border-green-600', 'text-green-600');
-                    } else if (status === '취소') {
-                        tab.classList.add('border-red-600', 'text-red-600');
-                    }
                 }
             });
         } catch (error) {

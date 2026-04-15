@@ -1,52 +1,53 @@
 <!-- 포장 라벨 모달 -->
-<div id="packaging-labels-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-5xl w-full max-h-screen overflow-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-tags mr-2 text-indigo-600"></i>포장 라벨 출력
-                    </h3>
-                    <button id="close-packaging-labels-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <div class="mb-4 p-4 bg-indigo-50 rounded-lg">
-                    <h4 class="font-semibold text-indigo-800 mb-2">🏷️ 라벨 설정</h4>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">라벨 크기</label>
-                            <select id="label-size" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                                <option value="small">소형 (5x3cm)</option>
-                                <option value="medium" selected>중형 (8x5cm)</option>
-                                <option value="large">대형 (10x7cm)</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">한 줄당 라벨 수</label>
-                            <select id="labels-per-row" class="w-full border border-gray-300 rounded-lg px-3 py-2">
-                                <option value="2">2개</option>
-                                <option value="3" selected>3개</option>
-                                <option value="4">4개</option>
-                            </select>
-                        </div>
+<div id="packaging-labels-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-xl">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-tags mr-2 text-indigo-600"></i>포장 라벨 출력
+            </span>
+            <button id="close-packaging-labels-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 본문 -->
+        <div class="modal-body">
+            <div class="mb-4 p-4 bg-indigo-50 rounded-lg">
+                <h4 class="font-semibold text-indigo-800 mb-2">🏷️ 라벨 설정</h4>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">라벨 크기</label>
+                        <select id="label-size" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="small">소형 (5x3cm)</option>
+                            <option value="medium" selected>중형 (8x5cm)</option>
+                            <option value="large">대형 (10x7cm)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">한 줄당 라벨 수</label>
+                        <select id="labels-per-row" class="w-full border border-gray-300 rounded-lg px-3 py-2">
+                            <option value="2">2개</option>
+                            <option value="3" selected>3개</option>
+                            <option value="4">4개</option>
+                        </select>
                     </div>
                 </div>
-                
-                <div id="packaging-labels-preview" class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-96">
-                    <!-- 라벨 미리보기가 여기에 표시됩니다 -->
-                </div>
-                
-                <div class="flex justify-end space-x-3">
-                    <button id="print-packaging-labels" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-print mr-2"></i>라벨 출력
-                    </button>
-                    <button id="close-packaging-labels-modal-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                        닫기
-                    </button>
-                </div>
+            </div>
+
+            <div id="packaging-labels-preview" class="p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-96">
+                <!-- 라벨 미리보기가 여기에 표시됩니다 -->
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="close-packaging-labels-modal-btn" class="btn-secondary">닫기</button>
+            <button id="print-packaging-labels" class="btn-primary">
+                <i class="fas fa-print mr-1"></i>라벨 출력
+            </button>
+        </div>
+
     </div>
 </div>

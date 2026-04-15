@@ -13,7 +13,7 @@ const DEFAULT_SMS_TEMPLATES = {
     },
     shippingStart: {
         name: '배송시작',
-        template: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}'
+        template: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}\n배송조회: https://trace.cjlogistics.com/web/detail.jsp?slipno={trackingNumber}'
     },
     shippingComplete: {
         name: '배송완료',
@@ -22,6 +22,10 @@ const DEFAULT_SMS_TEMPLATES = {
     waitlistNotify: {
         name: '대기품목안내',
         template: '[경산다육식물농장] {customerName}님, 대기하신 상품이 입고되었습니다.\n상품명: {productName}\n수량: {quantity}개\n주문 가능합니다.'
+    },
+    outOfStock: {
+        name: '품절안내',
+        template: '[경산다육식물농장] {customerName}님, 죄송합니다.\n주문하신 상품이 품절되어 배송이 어렵습니다.\n주문번호: {orderNumber}\n빠른 시일 내 재입고 예정이오니 양해 부탁드립니다.\n문의: 010-9745-6245'
     }
 };
 
@@ -53,6 +57,10 @@ function getSMSTemplates() {
                 waitlistNotify: {
                     name: '대기품목안내',
                     template: smsTemplates.waitlistNotify || DEFAULT_SMS_TEMPLATES.waitlistNotify.template
+                },
+                outOfStock: {
+                    name: '품절안내',
+                    template: smsTemplates.outOfStock || DEFAULT_SMS_TEMPLATES.outOfStock.template
                 }
             };
         }
@@ -66,6 +74,11 @@ function getSMSTemplates() {
 }
 
 // SMS 발송 함수
+// Fix #1: farm_orders.order_items JSONB 컬럼은 레거시 — 품목 SSOT는 farm_order_items 테이블.
+// SMS 발송 시에도 getOrderById()에서 farm_order_items를 직접 조회해 data.items에 설정함.
+// Fix #12: TODO — sendOrderSMS에서 getOrderById()를 호출하지만 orderData.js에서도 동일 조회가 발생할 수 있음.
+//          향후 SMS 발송 시 이미 로드된 order 객체를 직접 전달받는 오버로드 추가 검토.
+// Fix #13: TODO — templateType별 채널(네이버/라이브) 특화 처리 필요 시 formatSMSTemplate에 channel 파라미터 추가 검토.
 async function sendOrderSMS(orderId, templateType, customMessage = null) {
     try {
         console.log('📱 SMS 발송 시작:', { orderId, templateType, customMessage });
@@ -174,44 +187,31 @@ function formatSMSTemplate(template, order) {
     return formattedTemplate;
 }
 
-// SMS 발송 (실제 API 호출)
+// SMS 발송 (실제 API 호출) — sendSolapiSMS 직접 사용
 async function sendSMS(phoneNumber, message, templateType = 'custom') {
     try {
         console.log('📱 SMS API 호출:', { phoneNumber, message, templateType });
-        
-        let result;
-        
-        // SOLAPI 또는 다른 SMS 서비스 연동
-        if (window.solapi) {
-            result = await window.solapi.send({
-                to: phoneNumber,
-                from: '01012345678', // 발신번호
-                text: message
-            });
-            
-            console.log('✅ SOLAPI SMS 발송 성공:', result);
-        } else {
-            // 개발 환경에서는 콘솔에만 출력
-            console.log('📱 SMS 발송 (개발 모드):', { phoneNumber, message });
-            result = { success: true, messageId: 'dev_' + Date.now() };
-        }
-        
+
+        const result = await sendSolapiSMS(phoneNumber, message);
+
+        console.log('✅ SMS 발송 성공:', result);
+
         // SMS 발송 이력 저장
         if (window.saveSMSHistory) {
             window.saveSMSHistory({
-                customerName: '고객', // 실제로는 주문 정보에서 가져와야 함
+                customerName: '고객',
                 phone: phoneNumber,
                 message: message,
                 type: templateType,
-                success: result.success !== false
+                success: true
             });
         }
-        
+
         return result;
-        
+
     } catch (error) {
         console.error('❌ SMS API 호출 실패:', error);
-        
+
         // 실패한 SMS도 이력에 저장
         if (window.saveSMSHistory) {
             window.saveSMSHistory({
@@ -222,7 +222,7 @@ async function sendSMS(phoneNumber, message, templateType = 'custom') {
                 success: false
             });
         }
-        
+
         throw error;
     }
 }
@@ -300,6 +300,7 @@ function showSMSTemplateModal(orderId) {
                                         <option value="paymentConfirm">입금확인</option>
                                         <option value="shippingStart">배송시작</option>
                                         <option value="shippingComplete">배송완료</option>
+                                        <option value="outOfStock">품절안내</option>
                                     </select>
                                 </div>
                                 
@@ -364,20 +365,36 @@ async function sendOrderSMSFromModal(orderId) {
     try {
         const templateSelect = document.getElementById('sms-template-select');
         const messageTextarea = document.getElementById('sms-message');
-        
+
         const templateType = templateSelect.value;
         const customMessage = messageTextarea.value.trim();
-        
+
         if (!customMessage) {
             alert('메시지를 입력해주세요.');
             return;
         }
-        
+
         await sendOrderSMS(orderId, templateType, customMessage);
-        
-        alert('SMS가 발송되었습니다.');
         closeSMSTemplateModal();
-        
+
+        // 주문확인 문자 발송 완료 → 자동으로 입금대기 상태로 전환
+        if (templateType === 'orderConfirm') {
+            if (window.updateOrderStatus) {
+                await window.updateOrderStatus(orderId, '입금대기');
+                console.log('✅ 주문확인 문자 발송 완료 → 입금대기 상태로 자동 전환');
+            } else {
+                // Fix #11: orderData.js 미로드 또는 전역 등록 누락 시 경고
+                console.warn('⚠️ window.updateOrderStatus 미등록 — 입금대기 자동 전환 불가. orderData.js 로드 확인 필요.');
+            }
+            alert('SMS가 발송되었습니다.\n주문 상태가 [입금대기]로 변경되었습니다.');
+            // 주문 목록 새로고침
+            if (window.orderDataManager?.renderOrdersTable) {
+                window.orderDataManager.renderOrdersTable();
+            }
+        } else {
+            alert('SMS가 발송되었습니다.');
+        }
+
     } catch (error) {
         console.error('❌ SMS 발송 실패:', error);
         alert('SMS 발송에 실패했습니다: ' + error.message);
@@ -419,4 +436,161 @@ window.showSMSTemplateModal = showSMSTemplateModal;
 window.closeSMSTemplateModal = closeSMSTemplateModal;
 window.sendOrderSMSFromModal = sendOrderSMSFromModal;
 window.sendWaitlistSMS = sendWaitlistSMS;
+
+// =============================================
+// Solapi API 직접 연동 (고객 문자 발송)
+// =============================================
+
+// 기본 하드코딩 값 (환경설정 → SMS → API 인증정보에서 덮어씀)
+const SOLAPI_CONFIG_DEFAULT = {
+    apiKey: 'NCSMOXRMGQAODZLK',
+    apiSecret: '3KYQNOP16SZPKTBXFKPMB9UKTFRWI066',
+    from: '01097456245'
+};
+
+// 런타임에 환경설정 값 우선 사용
+function getSolapiConfig() {
+    try {
+        const saved = window.settingsDataManager?.getAllSettings()?.smsConfig || {};
+        return {
+            apiKey:    saved.apiKey    || SOLAPI_CONFIG_DEFAULT.apiKey,
+            apiSecret: saved.apiSecret || SOLAPI_CONFIG_DEFAULT.apiSecret,
+            from:      saved.from      || SOLAPI_CONFIG_DEFAULT.from
+        };
+    } catch (e) {
+        return SOLAPI_CONFIG_DEFAULT;
+    }
+}
+
+// Web Crypto API로 HMAC-SHA256 서명 생성
+async function _createSolapiSignature(date, salt, apiSecret) {
+    const enc = new TextEncoder();
+    const key = await crypto.subtle.importKey(
+        'raw', enc.encode(apiSecret),
+        { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
+    );
+    const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${date}${salt}`));
+    return Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+function _randomHex(bytes) {
+    const arr = new Uint8Array(bytes);
+    crypto.getRandomValues(arr);
+    return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// Solapi SMS 발송 (저수준)
+async function sendSolapiSMS(phoneNumber, message) {
+    const normalizedPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
+    if (!normalizedPhone) throw new Error('전화번호가 없습니다.');
+
+    const cfg = getSolapiConfig();
+    const date = new Date().toISOString();
+    const salt = _randomHex(16);
+    const signature = await _createSolapiSignature(date, salt, cfg.apiSecret);
+    const authHeader = `HMAC-SHA256 apiKey=${cfg.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+
+    const response = await fetch('https://api.solapi.com/messages/v4/send', {
+        method: 'POST',
+        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ message: { to: normalizedPhone, from: cfg.from, text: message } })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`솔라피 오류 ${response.status}: ${err}`);
+    }
+    return await response.json();
+}
+
+// 고객 문자 발송 모달
+function openCustomerSMSModal(phone, customerName) {
+    const existing = document.getElementById('customer-sms-modal');
+    if (existing) existing.remove();
+
+    const displayPhone = (phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+
+    const modal = document.createElement('div');
+    modal.id = 'customer-sms-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '600';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-sms text-emerald-500 mr-2"></i>문자 발송</span>
+                <button id="customer-sms-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="modal-body space-y-2">
+                <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded px-3 py-2">
+                    <i class="fas fa-user text-gray-400"></i>
+                    <span class="font-medium">${escapeHtmlBasic(customerName || '')}</span>
+                    <span class="text-gray-400">·</span>
+                    <span>${escapeHtmlBasic(displayPhone)}</span>
+                </div>
+                <div>
+                    <textarea id="customer-sms-message" rows="5"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
+                        placeholder="[경산다육식물농장] 안녕하세요, ${escapeHtmlBasic(customerName || '고객')}님..."></textarea>
+                    <div class="text-right text-xs text-gray-400 mt-0.5"><span id="customer-sms-count">0</span>자</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="customer-sms-cancel" class="btn-secondary">취소</button>
+                <button id="customer-sms-send" class="btn-primary">
+                    <i class="fas fa-paper-plane mr-1"></i>발송
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const msgArea = modal.querySelector('#customer-sms-message');
+    const countEl = modal.querySelector('#customer-sms-count');
+    const sendBtn = modal.querySelector('#customer-sms-send');
+    const close = () => modal.remove();
+
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    modal.querySelector('#customer-sms-close').addEventListener('click', close);
+    modal.querySelector('#customer-sms-cancel').addEventListener('click', close);
+    msgArea.addEventListener('input', () => { countEl.textContent = msgArea.value.length; });
+    msgArea.focus();
+
+    sendBtn.addEventListener('click', async () => {
+        const message = msgArea.value.trim();
+        if (!message) { alert('메시지를 입력해주세요.'); return; }
+
+        sendBtn.disabled = true;
+        sendBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>발송중...';
+
+        try {
+            await sendSolapiSMS(phone, message);
+            modal.remove();
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 right-4 z-[700] px-4 py-2.5 text-sm rounded-lg shadow-lg flex items-center gap-2 btn-primary';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> SMS 발송 완료';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        } catch (err) {
+            console.error('SMS 발송 실패:', err);
+            alert('SMS 발송 실패: ' + err.message);
+            sendBtn.disabled = false;
+            sendBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>발송';
+        }
+    });
+}
+
+function escapeHtmlBasic(str) {
+    return String(str || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+// 고객 ID로 문자 발송 (테이블 행에서 사용)
+function openCustomerSMSById(customerId) {
+    const data = window._customerSMSMap?.[customerId];
+    if (!data) { alert('고객 정보를 찾을 수 없습니다.'); return; }
+    openCustomerSMSModal(data.phone, data.name);
+}
+
+window.sendSolapiSMS = sendSolapiSMS;
+window.openCustomerSMSModal = openCustomerSMSModal;
+window.openCustomerSMSById = openCustomerSMSById;
 

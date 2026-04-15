@@ -21,11 +21,20 @@ window.addEventListener('load', function() {
     }, 200);
 });
 
-// 스크립트 로드 완료 후 즉시 이벤트 리스너 설정
+// 스크립트 로드 완료 후 즉시 이벤트 리스너 설정 + 초기 데이터 로드
 console.log('🔄 환경설정 스크립트 로드 완료, 이벤트 리스너 설정...');
-setTimeout(() => {
+setTimeout(async () => {
     setupSettingsTabListeners();
     setupSettingsButtonListeners();
+    // 첫 진입 시 Supabase에서 최신 설정을 받아온 뒤 폼에 표시
+    try {
+        if (window.settingsDataManager) {
+            await window.settingsDataManager.loadSettings();
+        }
+    } catch(e) { /* 오프라인 등 실패 시 캐시 사용 */ }
+    if (window.loadGeneralSettings) {
+        window.loadGeneralSettings();
+    }
 }, 500);
 
 // 추가적인 이벤트 리스너 설정 (더 강력한 방법)
@@ -63,7 +72,7 @@ setTimeout(() => {
 function setupSettingsTabListeners() {
     try {
         // 탭 버튼들에 클릭 이벤트 추가
-        const tabButtons = document.querySelectorAll('.settings-tab');
+        const tabButtons = document.querySelectorAll('[id^="settings-tab-"]');
         console.log('🔍 찾은 탭 버튼 개수:', tabButtons.length);
         
         tabButtons.forEach((button, index) => {
@@ -176,13 +185,42 @@ function setupSettingsButtonListeners() {
 function handleSettingsDelegatedClick(e) {
     const target = e.target.id ? e.target : e.target.closest('[id]');
     if (!target) return;
-    if (target.id === 'save-shipping-settings') {
+    if (target.id === 'save-general-settings') {
+        e.preventDefault();
+        saveGeneralSettings();
+    } else if (target.id === 'cancel-general-settings') {
+        e.preventDefault();
+        if (window.loadGeneralSettings) window.loadGeneralSettings();
+    } else if (target.id === 'save-shipping-settings') {
         e.preventDefault();
         saveShippingSettings();
     } else if (target.id === 'cancel-shipping-settings') {
         e.preventDefault();
         if (window.loadShippingSettings) window.loadShippingSettings();
         else alert('변경사항이 취소되었습니다.');
+    }
+}
+
+async function saveGeneralSettings() {
+    try {
+        if (!window.settingsDataManager) {
+            alert('설정 저장에 실패했습니다.');
+            return;
+        }
+        const get = (id) => document.getElementById(id);
+        const val = (id) => (get(id)?.value ?? '').trim();
+        const m = window.settingsDataManager;
+        m.settings = m.settings || {};
+        m.settings.farm = m.settings.farm || {};
+        m.settings.farm.name = val('farm-name') || m.settings.farm.name || '';
+        m.settings.farm.owner = val('farm-owner') || m.settings.farm.owner || '';
+        m.settings.farm.phone = val('farm-phone');
+        m.settings.farm.address = val('farm-address');
+        await m.saveSettings();
+        alert('일반 설정이 저장되었습니다.');
+    } catch (err) {
+        console.error('❌ 일반 설정 저장 실패:', err);
+        alert('일반 설정 저장에 실패했습니다: ' + (err.message || err));
     }
 }
 
@@ -200,6 +238,12 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
         window.settingsDataManager.settings.shipping.expressShippingFee = get('express-shipping-fee') ? num('express-shipping-fee') : (window.settingsDataManager.settings.shipping.expressShippingFee ?? 5000);
+        // 배송 방법 목록
+        const methodsInput = get('shipping-methods-input');
+        if (methodsInput && methodsInput.value.trim()) {
+            window.settingsDataManager.settings.shipping.shippingMethods =
+                methodsInput.value.split(',').map(s => s.trim()).filter(Boolean);
+        }
         await window.settingsDataManager.saveSettings();
         if (!window.SHIPPING_SETTINGS) window.SHIPPING_SETTINGS = {};
         window.SHIPPING_SETTINGS.defaultShippingFee = window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000;
@@ -227,14 +271,25 @@ function syncFormToSettings() {
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('express-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.expressShippingFee = num('express-shipping-fee'); }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
-    const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify');
-    if (smsOrder || smsPay || smsStart || smsComplete || smsWait) {
+    const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
+    if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {
         m.settings.smsTemplates = m.settings.smsTemplates || {};
         if (smsOrder) m.settings.smsTemplates.orderConfirm = smsOrder.value || '';
         if (smsPay) m.settings.smsTemplates.paymentConfirm = smsPay.value || '';
         if (smsStart) m.settings.smsTemplates.shippingStart = smsStart.value || '';
         if (smsComplete) m.settings.smsTemplates.shippingComplete = smsComplete.value || '';
         if (smsWait) m.settings.smsTemplates.waitlistNotify = smsWait.value || '';
+        if (smsOos) m.settings.smsTemplates.outOfStock = smsOos.value || '';
+    }
+    // API 인증정보
+    const smsApiKey = val('sms-api-key');
+    const smsApiSecret = get('sms-api-secret') ? get('sms-api-secret').value.trim() : '';
+    const smsFromNumber = val('sms-from-number');
+    if (smsApiKey || smsApiSecret || smsFromNumber) {
+        m.settings.smsConfig = m.settings.smsConfig || {};
+        if (smsApiKey) m.settings.smsConfig.apiKey = smsApiKey;
+        if (smsApiSecret) m.settings.smsConfig.apiSecret = smsApiSecret;
+        if (smsFromNumber) m.settings.smsConfig.from = smsFromNumber;
     }
 }
 
@@ -303,9 +358,8 @@ if (!window.showSettingsTab) {
             });
             
             // 모든 탭 버튼 비활성화
-            document.querySelectorAll('.settings-tab').forEach(tab => {
-                tab.classList.remove('border-blue-500', 'text-blue-600');
-                tab.classList.add('border-transparent', 'text-gray-500');
+            document.querySelectorAll('[id^="settings-tab-"]').forEach(tab => {
+                tab.classList.remove('active');
             });
             
             // 선택된 탭 표시
@@ -318,14 +372,40 @@ if (!window.showSettingsTab) {
                 
                 // 탭 버튼 활성화
                 if (targetTabButton) {
-                    targetTabButton.classList.remove('border-transparent', 'text-gray-500');
-                    targetTabButton.classList.add('border-blue-500', 'text-blue-600');
+                    targetTabButton.classList.add('active');
                 }
                 
-                // SMS 설정 탭인 경우 특별 처리
-                if (tabName === 'sms') {
-                    loadSMSSettings();
-                }
+                // 탭별 데이터 로드 (설정 캐시가 비어있으면 DB에서 먼저 읽음)
+                const ensureSettings = async () => {
+                    const s = window.settingsDataManager?.getAllSettings();
+                    const isEmpty = !s || (!s.farm?.name && !s.shipping?.defaultShippingFee);
+                    if (isEmpty && window.settingsDataManager) {
+                        await window.settingsDataManager.loadSettings();
+                    }
+                };
+                (async () => {
+                    await ensureSettings();
+                    switch (tabName) {
+                        case 'general':
+                            if (window.loadGeneralSettings) window.loadGeneralSettings();
+                            break;
+                        case 'shipping':
+                            if (window.loadShippingSettings) window.loadShippingSettings();
+                            break;
+                        case 'channels':
+                            if (window.loadSalesChannels) window.loadSalesChannels();
+                            break;
+                        case 'orders':
+                            if (window.loadOrderStatuses) window.loadOrderStatuses();
+                            break;
+                        case 'customers':
+                            if (window.loadCustomerGrades) window.loadCustomerGrades();
+                            break;
+                        case 'sms':
+                            loadSMSSettings();
+                            break;
+                    }
+                })();
             } else {
                 console.warn('⚠️ 환경설정 탭을 찾을 수 없습니다:', tabName);
             }
@@ -335,99 +415,66 @@ if (!window.showSettingsTab) {
     };
 }
 
-// SMS 설정 로드 함수
+// SMS 설정 로드 — 템플릿 리스트 방식 (settingsUI.js와 동일)
 async function loadSMSSettings() {
     try {
-        console.log('📱 SMS 설정 로드 시작');
-        
-        // 설정 데이터 매니저에서 SMS 설정 가져오기
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
-        
-        // SMS 템플릿 필드들에 값 설정
-        const smsFields = {
-            'sms-order-confirm': smsSettings.orderConfirm || '',
-            'sms-payment-confirm': smsSettings.paymentConfirm || '',
-            'sms-shipping-start': smsSettings.shippingStart || '',
-            'sms-shipping-complete': smsSettings.shippingComplete || '',
-            'sms-waitlist-notify': smsSettings.waitlistNotify || ''
-        };
-        
-        // 각 필드에 값 설정
-        Object.entries(smsFields).forEach(([fieldId, value]) => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.value = value;
-            }
+        // API 인증정보 필드 채우기
+        const smsConfig = settings?.smsConfig || {};
+        const apiKeyEl = document.getElementById('sms-api-key');
+        const apiSecretEl = document.getElementById('sms-api-secret');
+        const fromEl = document.getElementById('sms-from-number');
+        if (apiKeyEl) apiKeyEl.value = smsConfig.apiKey || '';
+        if (apiSecretEl) apiSecretEl.value = smsConfig.apiSecret || '';
+        if (fromEl) fromEl.value = smsConfig.from || '';
+        // 인증정보 저장 버튼
+        const saveCfgBtn = document.getElementById('save-sms-config-btn');
+        if (saveCfgBtn && !saveCfgBtn._smsCfgBound) {
+            saveCfgBtn._smsCfgBound = true;
+            saveCfgBtn.addEventListener('click', async () => {
+                syncFormToSettings();
+                await window.settingsDataManager.saveSettings();
+                alert('API 인증정보가 저장되었습니다.');
+            });
+        }
+        const container = document.getElementById('sms-templates-list');
+        if (!container) return;
+        container.innerHTML = '';
+        const templates = [
+            { key: 'orderConfirm',    label: '주문확인',  fieldId: 'sms-order-confirm',    vars: '{customerName} {orderNumber} {orderDetails} {totalAmount} {shippingFee} {paymentInfo}' },
+            { key: 'paymentConfirm',  label: '입금확인',  fieldId: 'sms-payment-confirm',   vars: '{customerName} {orderNumber}' },
+            { key: 'shippingStart',   label: '배송시작',  fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
+            { key: 'shippingComplete',label: '배송완료',  fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
+            { key: 'waitlistNotify',  label: '대기품목',  fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+            { key: 'outOfStock',      label: '품절안내',  fieldId: 'sms-out-of-stock',      vars: '{customerName} {orderNumber}' },
+        ];
+        templates.forEach(tpl => {
+            const value = smsSettings[tpl.key] || '';
+            const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
+            const item = document.createElement('div');
+            item.id = `sms-item-${tpl.key}`;
+            item.className = 'border-b border-gray-100 last:border-0';
+            item.innerHTML = `
+                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
+                    <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${tpl.label}</span>
+                    <span class="sms-preview text-xs text-gray-400 flex-1 truncate">${preview}</span>
+                    <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
+                </div>
+                <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
+                    <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                    <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
+                    <div class="flex justify-end mt-1.5">
+                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
         });
-        
-        // SMS 설정 저장/취소 버튼 이벤트 리스너 추가
-        setupSMSSettingsEventListeners();
-        
-        console.log('✅ SMS 설정 로드 완료');
     } catch (error) {
         console.error('❌ SMS 설정 로드 실패:', error);
     }
 }
 
-// SMS 설정 이벤트 리스너 설정
-function setupSMSSettingsEventListeners() {
-    try {
-        // SMS 설정 저장 버튼
-        const saveBtn = document.getElementById('save-sms-settings');
-        if (saveBtn) {
-            saveBtn.onclick = saveSMSSettings;
-        }
-        
-        // SMS 설정 취소 버튼
-        const cancelBtn = document.getElementById('cancel-sms-settings');
-        if (cancelBtn) {
-            cancelBtn.onclick = () => {
-                loadSMSSettings(); // 원래 값으로 되돌리기
-            };
-        }
-        
-        console.log('✅ SMS 설정 이벤트 리스너 설정 완료');
-    } catch (error) {
-        console.error('❌ SMS 설정 이벤트 리스너 설정 실패:', error);
-    }
-}
-
-// SMS 설정 저장
-async function saveSMSSettings() {
-    try {
-        console.log('💾 SMS 설정 저장 시작');
-        
-        // SMS 템플릿 필드들에서 값 가져오기
-        const smsTemplates = {
-            orderConfirm: document.getElementById('sms-order-confirm')?.value || '',
-            paymentConfirm: document.getElementById('sms-payment-confirm')?.value || '',
-            shippingStart: document.getElementById('sms-shipping-start')?.value || '',
-            shippingComplete: document.getElementById('sms-shipping-complete')?.value || '',
-            waitlistNotify: document.getElementById('sms-waitlist-notify')?.value || ''
-        };
-        
-        // 설정 데이터 매니저를 통해 저장
-        if (window.settingsDataManager) {
-            await window.settingsDataManager.updateSetting('smsTemplates', 'orderConfirm', smsTemplates.orderConfirm);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'paymentConfirm', smsTemplates.paymentConfirm);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingStart', smsTemplates.shippingStart);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'shippingComplete', smsTemplates.shippingComplete);
-            await window.settingsDataManager.updateSetting('smsTemplates', 'waitlistNotify', smsTemplates.waitlistNotify);
-            
-            console.log('✅ SMS 설정 저장 완료');
-            alert('SMS 설정이 저장되었습니다.');
-        } else {
-            console.error('❌ 설정 데이터 매니저를 찾을 수 없습니다');
-            alert('설정 저장에 실패했습니다.');
-        }
-        
-    } catch (error) {
-        console.error('❌ SMS 설정 저장 실패:', error);
-        alert('SMS 설정 저장에 실패했습니다: ' + error.message);
-    }
-}
-
 // 전역 함수로 등록
 window.loadSMSSettings = loadSMSSettings;
-window.saveSMSSettings = saveSMSSettings;

@@ -1,53 +1,36 @@
 <!-- QR 라벨 미리보기 모달 -->
-<div id="qr-label-preview-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-6xl max-h-screen overflow-auto">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-qrcode mr-2 text-orange-600"></i>QR 라벨 미리보기
-                    </h3>
-                    <button id="close-qr-label-preview-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <div class="bg-orange-50 p-4 rounded-lg">
-                    <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-4">
-                            <div class="text-orange-800">
-                                <i class="fas fa-info-circle mr-2"></i>
-                                <span class="font-medium">라벨 정보</span>
-                            </div>
-                            <div class="text-sm text-orange-700">
-                                <span>크기: 1.3cm × 4cm</span>
-                                <span class="mx-2">|</span>
-                                <span>용지: A4</span>
-                                <span class="mx-2">|</span>
-                                <span id="total-labels">총 0개 라벨</span>
-                            </div>
-                        </div>
-                        <div class="flex space-x-3">
-                            <button id="print-qr-labels" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-print mr-2"></i>인쇄하기
-                            </button>
-                            <button id="close-qr-label-modal-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded-lg transition-colors">
-                                닫기
-                            </button>
-                        </div>
-                    </div>
-                </div>
+<div id="qr-label-preview-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-xl">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-qrcode mr-2 text-orange-600"></i>QR 라벨 미리보기
+            </span>
+            <div class="flex items-center gap-4 text-sm text-orange-700">
+                <span>크기: 1.3cm × 4cm</span>
+                <span>용지: A4</span>
+                <span id="total-labels">총 0개 라벨</span>
             </div>
-            
-            <!-- A4 미리보기 영역 -->
-            <div class="p-6 bg-gray-100">
-                <div id="qr-labels-container" class="bg-white mx-auto" style="width: 210mm; min-height: 297mm; padding: 10mm;">
-                    <!-- QR 라벨들이 여기에 동적으로 생성됩니다 -->
-                </div>
+            <button id="close-qr-label-preview-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- A4 미리보기 영역 -->
+        <div class="modal-body" style="background:#f3f4f6;">
+            <div id="qr-labels-container" class="bg-white mx-auto" style="width: 210mm; min-height: 297mm; padding: 10mm;">
+                <!-- QR 라벨들이 여기에 동적으로 생성됩니다 -->
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="close-qr-label-modal-btn" class="btn-secondary">닫기</button>
+            <button id="print-qr-labels" class="btn-primary">
+                <i class="fas fa-print mr-1"></i>인쇄하기
+            </button>
+        </div>
+
     </div>
 </div>
-
-
-

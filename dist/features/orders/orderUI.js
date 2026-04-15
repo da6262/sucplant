@@ -28,7 +28,7 @@ export async function openOrderModal(orderId = null, customerData = null) {
         }
         
         // 기존 모달이 열려있다면 닫기
-        if (modal.style.display === 'block') {
+        if (!modal.classList.contains('hidden')) {
             console.log('🔄 기존 모달이 열려있어서 닫습니다...');
             closeOrderModal();
             // 잠시 대기 후 다시 열기
@@ -37,12 +37,11 @@ export async function openOrderModal(orderId = null, customerData = null) {
             }, 100);
             return;
         }
-        
+
         const modalTitle = document.getElementById('modal-title');
-        
+
         // 주문 등록 팝업 표시
         modal.classList.remove('hidden');
-        modal.style.display = 'block';
 
         // ESC 키로 닫기
         document.removeEventListener('keydown', _orderModalEscHandler);
@@ -54,6 +53,8 @@ export async function openOrderModal(orderId = null, customerData = null) {
         // 주문 폼 HTML 생성 (먼저 폼을 생성해야 함)
         const _genForm = window.generateOrderFormHTMLMinimal || window.generateOrderFormHTML;
         if (_genForm) {
+            // 폼 열릴 때 Daum 주소 검색 스크립트 미리 로드 (팝업 차단 방지)
+            if (window._preloadDaumPostcode) window._preloadDaumPostcode();
             const orderForm = document.getElementById('order-form');
             if (orderForm) {
                 const formHTML = _genForm();
@@ -246,7 +247,6 @@ export function closeOrderModal() {
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
-            modal.style.display = 'none';
         }
 
         // ESC 리스너 제거
@@ -401,8 +401,8 @@ async function loadOrderItemsToCart(items) {
         if (!items || items.length === 0) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500 py-2">
-                        <p class="text-xs">장바구니가 비어있습니다</p>
+                    <td colspan="5" class="text-center text-gray-500">
+                        <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
             `;
@@ -518,15 +518,15 @@ function addItemToCartDirectly(item) {
         row.setAttribute('data-price', unitPrice);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
-            <td class="px-2 py-1 text-xs">${(item.product_name || '상품명 없음').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums">${unitPrice.toLocaleString()}</td>
-            <td class="px-2 py-1 text-center">
-                <input type="number" class="quantity-input w-12 text-xs text-center border rounded" 
+            <td class="px-2">${(item.product_name || '상품명 없음').replace(/</g, '&lt;')}</td>
+            <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
+            <td class="px-2 text-center">
+                <input type="number" class="quantity-input w-12 text-center border rounded"
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput&&window.normalizeQuantityInput(this); if(window.updateCartTotal) updateCartTotal()" onchange="if(window.updateCartTotal) updateCartTotal()">
             </td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
+            <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300" title="삭제">
                     <i class="fas fa-trash text-xs text-red-600"></i>
                 </button>
@@ -574,8 +574,8 @@ export function clearOrderForm() {
         if (cartItemsBody) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500 py-2">
-                        <p class="text-xs">장바구니가 비어있습니다</p>
+                    <td colspan="5" class="text-center text-gray-500">
+                        <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
             `;
@@ -1075,8 +1075,11 @@ window.checkOrderPhoneDuplicate = function(phone) {
 };
 
 window.formatPhoneNumber = function(input) {
-    console.log('📞 전화번호 포맷팅:', input.value);
-    // 전화번호 포맷팅 로직 구현 필요
+    if (!input) return;
+    const formatted = (window.fmt && window.fmt.phone)
+        ? window.fmt.phone(input.value)
+        : (window.formatPhone ? window.formatPhone(input.value) : input.value);
+    input.value = formatted;
 };
 
 // 누락된 함수들 추가
@@ -1210,49 +1213,4 @@ export function printOrder(orderId) {
     }
 }
 
-// 디버깅 함수들
-window.testProductInfo = async function(productId) {
-    console.log('🧪 상품 정보 조회 테스트:', productId);
-    const productInfo = await getProductInfo(productId);
-    console.log('📦 조회 결과:', productInfo);
-    return productInfo;
-};
-
-window.testOrderEdit = function(orderId) {
-    console.log('🧪 주문 수정 테스트:', orderId);
-    if (window.openOrderModal) {
-        window.openOrderModal(orderId);
-    } else {
-        console.error('❌ openOrderModal 함수를 찾을 수 없습니다');
-    }
-};
-
-window.testProductQuery = async function(productId) {
-    console.log('🧪 상품 조회 쿼리 테스트:', productId);
-    
-    if (!window.supabaseClient) {
-        console.error('❌ Supabase 클라이언트가 없습니다');
-        return null;
-    }
-    
-    try {
-        const { data: product, error } = await window.supabaseClient
-            .from('farm_products')
-            .select('id, name, price, description, category, stock, image_url')
-            .eq('id', productId)
-            .single();
-        
-        if (error) {
-            console.error('❌ 상품 조회 실패:', error);
-            return null;
-        }
-        
-        console.log('✅ 상품 조회 성공:', product);
-        return product;
-        
-    } catch (error) {
-        console.error('❌ 상품 조회 중 오류:', error);
-        return null;
-    }
-};
 

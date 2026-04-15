@@ -1,8 +1,21 @@
 // 주문 인쇄 관련 기능
 // features/orders/orderPrint.js
 
+// 환경설정에서 농장 정보 읽기
+function getFarmInfo() {
+    const farm = window.settingsDataManager?.settings?.farm || {};
+    return {
+        name:           farm.name           || '경산다육식물농장',
+        owner:          farm.owner          || '',
+        phone:          farm.phone          || '',
+        address:        farm.address        || '',
+        businessNumber: farm.businessNumber || '',
+    };
+}
+
 // 주문서 출력용 HTML 생성
 function generateOrderPrintHTML(order) {
+    const farm = getFarmInfo();
     // 주문 상품 목록 생성
     let productList = '';
     if (order.items && order.items.length > 0) {
@@ -182,7 +195,7 @@ function generateOrderPrintHTML(order) {
             <div class="invoice-container">
                 <!-- 헤더 -->
                 <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
+                    <div class="company-name">${farm.name}</div>
                     <div class="invoice-title">주문서 (ORDER INVOICE)</div>
                 </div>
                 
@@ -257,8 +270,9 @@ function generateOrderPrintHTML(order) {
                 
                 <!-- 푸터 -->
                 <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
+                    <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
+                    ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
+                    ${farm.businessNumber ? `<p>사업자등록번호: ${farm.businessNumber}</p>` : ''}
                     <p>이 주문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>
             </div>
@@ -267,771 +281,274 @@ function generateOrderPrintHTML(order) {
     `;
 }
 
-// 피킹 리스트 HTML 생성
-function generatePickingListHTML(pickingData) {
-    const { productSummary, customerSummary, totalOrders, totalItems, estimatedTime } = pickingData;
-    
-    // 상품별 피킹 목록 생성
-    const productList = productSummary.map((product, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${product.name}</td>
-            <td>${product.size || '기본'}</td>
-            <td>${product.totalQuantity}</td>
-            <td>${product.orders.length}</td>
-            <td>${product.totalAmount.toLocaleString()}원</td>
-        </tr>
-    `).join('');
-    
-    // 고객별 주문 목록을 통합 테이블로 생성
-    const allOrders = [];
-    customerSummary.forEach(customer => {
-        customer.orders.forEach(order => {
-            allOrders.push({
-                customerName: customer.name,
-                customerPhone: customer.phone,
-                customerAddress: customer.address,
-                orderNumber: order.order_number || order.id,
-                items: (order.items ?? []).map(item => {
-                    const productName = item.product_name || item.name || item.title || item.productName || item.product_title || item.item_name || item.goods_name || '상품명 없음';
-                    const quantity = item.quantity || item.qty || item.amount || 1;
-                    return `${productName} x${quantity}`;
-                }).join(', '),
-                totalAmount: order.total_amount || 0
-            });
-        });
-    });
-    
-    const customerList = allOrders.map((order, index) => `
-        <tr>
-            <td>${index + 1}</td>
-            <td>${order.customerName}</td>
-            <td>${order.customerPhone}</td>
-            <td>${order.customerAddress}</td>
-            <td>${order.orderNumber}</td>
-            <td>${order.items}</td>
-            <td>${order.totalAmount.toLocaleString()}원</td>
-        </tr>
-    `).join('');
-    
+// ─── 공통 CSS (상품별 미리보기 양식 기준) ───────────────────────────────────
+function _pickingCSS() {
     return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>피킹 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    font-family: 'Malgun Gothic', 'Segoe UI', Arial, sans-serif; 
-                    font-size: 14px; 
-                    line-height: 1.6; 
-                    color: #1f2937;
-                    background: white;
-                    margin: 0;
-                }
-                .picking-container {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 16px;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    border-bottom: 2px solid #000;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
-                }
-                .company-name {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #000;
-                    margin-bottom: 8px;
-                }
-                .picking-title {
-                    font-size: 18px;
-                    color: #333;
-                    font-weight: 600;
-                }
-                .summary-section {
-                    display: grid;
-                    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-                    gap: 16px;
-                    margin-bottom: 30px;
-                    padding: 16px;
-                    background: #f8f8f8;
-                    border: 1px solid #ddd;
-                }
-                .summary-item {
-                    text-align: center;
-                    padding: 16px;
-                    background: white;
-                    border-radius: 8px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                }
-                .summary-value {
-                    font-size: 24px;
-                    font-weight: 700;
-                    color: #1e40af;
-                    margin-bottom: 4px;
-                }
-                .summary-label {
-                    font-size: 14px;
-                    color: #6b7280;
-                    font-weight: 500;
-                }
-                .section-title {
-                    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-                    color: white;
-                    padding: 16px 20px;
-                    margin: 24px 0 16px 0;
-                    font-weight: 600;
-                    border-radius: 8px;
-                    font-size: 16px;
-                    box-shadow: 0 4px 6px rgba(59, 130, 246, 0.3);
-                }
-                .product-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    margin-bottom: 32px;
-                    background: white;
-                    border-radius: 8px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                    table-layout: fixed;
-                }
-                .product-table th {
-                    background: linear-gradient(135deg, #3b82f6 0%, #1e40af 100%);
-                    color: white;
-                    padding: 16px 12px;
-                    text-align: center;
-                    font-weight: 600;
-                    font-size: 14px;
-                    white-space: nowrap;
-                }
-                .product-table th:nth-child(1) { width: 8%; }  /* 순번 */
-                .product-table th:nth-child(2) { width: 30%; } /* 상품명 */
-                .product-table th:nth-child(3) { width: 12%; } /* 사이즈 */
-                .product-table th:nth-child(4) { width: 15%; } /* 수량 */
-                .product-table th:nth-child(5) { width: 15%; } /* 주문수 */
-                .product-table th:nth-child(6) { width: 20%; } /* 금액 */
-                .product-table th:nth-child(7) { width: 15%; } /* 금액 (고객별 포장용) */
-                .product-table td {
-                    padding: 12px 8px;
-                    border: 1px solid #e5e7eb;
-                    text-align: center;
-                    font-size: 13px;
-                    vertical-align: middle;
-                    word-wrap: break-word;
-                }
-                .product-table td:first-child {
-                    text-align: center;
-                    font-weight: 600;
-                    background: #f8fafc;
-                }
-                .product-table td:nth-child(2) {
-                    text-align: left;
-                    font-weight: 500;
-                    padding-left: 12px;
-                }
-                .product-table td:last-child {
-                    text-align: right;
-                    font-weight: 600;
-                    color: #059669;
-                    padding-right: 12px;
-                }
-                .product-table tr:nth-child(even) {
-                    background: #f8fafc;
-                }
-                .product-table tr:hover {
-                    background: #e0f2fe;
-                }
-                .customer-card {
-                    margin-bottom: 24px;
-                    background: white;
-                    border: 1px solid #e5e7eb;
-                    border-radius: 12px;
-                    overflow: hidden;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
-                }
-                .customer-header {
-                    background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%);
-                    padding: 16px 20px;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-                .customer-info {
-                    padding: 12px 20px;
-                    background: #f8fafc;
-                    border-bottom: 1px solid #e5e7eb;
-                }
-                .customer-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    table-layout: fixed;
-                }
-                .customer-table th {
-                    background: #f1f5f9;
-                    color: #475569;
-                    padding: 12px 8px;
-                    text-align: center;
-                    font-weight: 600;
-                    font-size: 12px;
-                    border: 1px solid #e2e8f0;
-                    white-space: nowrap;
-                }
-                .customer-table th:nth-child(1) { width: 8%; }  /* 순번 */
-                .customer-table th:nth-child(2) { width: 15%; } /* 고객명 */
-                .customer-table th:nth-child(3) { width: 15%; } /* 전화번호 */
-                .customer-table th:nth-child(4) { width: 20%; } /* 주소 */
-                .customer-table th:nth-child(5) { width: 12%; } /* 주문번호 */
-                .customer-table th:nth-child(6) { width: 20%; } /* 상품목록 */
-                .customer-table th:nth-child(7) { width: 10%; } /* 금액 */
-                .customer-table td {
-                    padding: 10px 8px;
-                    border: 1px solid #e2e8f0;
-                    font-size: 12px;
-                    vertical-align: middle;
-                    word-wrap: break-word;
-                }
-                .customer-table td:first-child {
-                    text-align: center;
-                    font-weight: 600;
-                    background: #f8fafc;
-                }
-                .customer-table td:nth-child(2) {
-                    text-align: left;
-                    padding-left: 12px;
-                }
-                .customer-table td:last-child {
-                    text-align: right;
-                    font-weight: 600;
-                    color: #059669;
-                    padding-right: 12px;
-                }
-                .customer-table tr:nth-child(even) {
-                    background: #f8fafc;
-                }
-                .customer-table tr:hover {
-                    background: #e0f2fe;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    padding: 20px;
-                    border-top: 2px solid #e5e7eb;
-                    background: #f8fafc;
-                    border-radius: 8px;
-                }
-                .footer p {
-                    font-size: 12px;
-                    color: #6b7280;
-                    margin: 4px 0;
-                }
-                @media print {
-                    body { margin: 0; background: white; }
-                    .picking-container { padding: 16px; box-shadow: none; }
-                    .summary-section { break-inside: avoid; }
-                    .customer-card { break-inside: avoid; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="picking-container">
-                <!-- 헤더 -->
-                <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
-                    <div class="picking-title">피킹 리스트 (PICKING LIST)</div>
-                </div>
-                
-                <!-- 요약 정보 -->
-                <div class="summary-section">
-                    <div class="summary-item">
-                        <div class="summary-value">${totalOrders}</div>
-                        <div class="summary-label">총 주문 건수</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${totalItems}</div>
-                        <div class="summary-label">총 상품 수량</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${estimatedTime}</div>
-                        <div class="summary-label">예상 소요시간</div>
-                    </div>
-                </div>
-                
-                <!-- 상품별 피킹 목록 -->
-                <div class="section-title">상품별 피킹 목록</div>
-                <table class="product-table">
-                    <thead>
-                        <tr>
-                            <th>순번</th>
-                            <th>상품명</th>
-                            <th>사이즈</th>
-                            <th>총 수량</th>
-                            <th>주문 수</th>
-                            <th>총 금액</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${productList}
-                    </tbody>
-                </table>
-                
-                <!-- 고객별 주문 목록 -->
-                <div class="section-title">고객별 주문 목록</div>
-                <table class="product-table">
-                    <thead>
-                        <tr>
-                            <th>순번</th>
-                            <th>고객명</th>
-                            <th>전화번호</th>
-                            <th>주소</th>
-                            <th>주문번호</th>
-                            <th>상품 목록</th>
-                            <th>금액</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${customerList}
-                    </tbody>
-                </table>
-                
-                <!-- 푸터 -->
-                <div class="footer">
-                    <p>경산다육식물농장 피킹 리스트</p>
-                    <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
-                    <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
-                </div>
-            </div>
-        </body>
-        </html>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Malgun Gothic', Arial, sans-serif;
+            font-size: 12px;
+            line-height: 1.4;
+            color: #333;
+            background: white;
+        }
+        .invoice-container {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 12px;
+            background: white;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 2px solid #2c5aa0;
+            padding-bottom: 10px;
+            margin-bottom: 12px;
+        }
+        .company-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 2px;
+        }
+        .invoice-title {
+            font-size: 13px;
+            color: #666;
+            font-weight: normal;
+        }
+        .summary-section {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            padding: 10px 16px;
+            background: #f8f9fa;
+            border-radius: 6px;
+        }
+        .summary-item {
+            flex: 1;
+            text-align: center;
+        }
+        .summary-value {
+            font-size: 16px;
+            font-weight: bold;
+            color: #2c5aa0;
+            margin-bottom: 2px;
+        }
+        .summary-label {
+            font-size: 11px;
+            color: #666;
+        }
+        .section-title {
+            background: #f8f9fa;
+            padding: 6px 10px;
+            margin: 10px 0 0 0;
+            border-left: 4px solid #2c5aa0;
+            font-size: 12px;
+            color: #2c5aa0;
+            font-weight: bold;
+        }
+        .product-table {
+            width: 100%;
+            border-collapse: collapse;
+            border: 1px solid #ddd;
+            margin-bottom: 10px;
+        }
+        .product-table th {
+            background: #2c5aa0;
+            color: white;
+            padding: 8px 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        .product-table td {
+            padding: 7px 6px;
+            border: 1px solid #ddd;
+            text-align: center;
+            font-size: 11px;
+            vertical-align: middle;
+            word-break: break-all;
+        }
+        .product-table td:first-child { font-weight: bold; }
+        .product-table td.left { text-align: left; padding-left: 8px; }
+        .product-table td.right { text-align: right; font-weight: bold; padding-right: 8px; }
+        .product-table tr:nth-child(even) { background: #f8f9fa; }
+        .footer {
+            margin-top: 16px;
+            text-align: center;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+            font-size: 10px;
+            color: #666;
+        }
+        @media print {
+            body { margin: 0; }
+            .invoice-container { padding: 15px; }
+        }
     `;
+}
+
+// ─── 공통 헤더/요약/푸터 ────────────────────────────────────────────────────
+function _pickingHeader(farm, title) {
+    return `
+        <div class="header">
+            <div class="company-name">${farm.name}</div>
+            <div class="invoice-title">${title}</div>
+        </div>`;
+}
+function _pickingSummary(totalOrders, totalItems, estimatedTime) {
+    return `
+        <div class="summary-section">
+            <div class="summary-item">
+                <div class="summary-value">${totalOrders}</div>
+                <div class="summary-label">총 주문 건수</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${totalItems}</div>
+                <div class="summary-label">총 상품 수량</div>
+            </div>
+            <div class="summary-item">
+                <div class="summary-value">${estimatedTime}</div>
+                <div class="summary-label">예상 소요시간</div>
+            </div>
+        </div>`;
+}
+function _pickingFooter(farm) {
+    return `
+        <div class="footer">
+            <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
+            ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
+            ${farm.businessNumber ? `<p>사업자등록번호: ${farm.businessNumber}</p>` : ''}
+            <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
+            <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
+        </div>`;
+}
+
+// 피킹 리스트 HTML 생성 (전체: 상품별 + 고객별)
+function generatePickingListHTML(pickingData) {
+    const farm = getFarmInfo();
+    const { productSummary, customerSummary, totalOrders, totalItems, estimatedTime } = pickingData;
+
+    const productRows = productSummary.map((p, i) => `
+        <tr>
+            <td>${i + 1}</td>
+            <td class="left">${p.name}</td>
+            <td>${p.size || '기본'}</td>
+            <td>${p.totalQuantity}</td>
+            <td>${p.orders.length}</td>
+            <td class="right">${p.totalAmount.toLocaleString()}원</td>
+        </tr>`).join('');
+
+    const customerRows = customerSummary.flatMap((c, ci) =>
+        c.orders.map((order, oi) => {
+            const items = (order.items ?? []).map(item => {
+                const name = item.product_name || item.name || item.title || '상품명 없음';
+                return `${name} x${item.quantity || 1}`;
+            }).join(', ');
+            return `
+        <tr>
+            <td>${ci + 1}</td>
+            <td class="left">${c.name}</td>
+            <td>${c.phone || ''}</td>
+            <td class="left">${c.address || ''}</td>
+            <td>${order.order_number || ''}</td>
+            <td class="left">${items}</td>
+            <td class="right">${(order.total_amount || 0).toLocaleString()}원</td>
+        </tr>`;
+        })
+    ).join('');
+
+    return `<!DOCTYPE html><html><head>
+        <title>피킹 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
+        <meta charset="UTF-8">
+        <style>${_pickingCSS()}</style>
+        </head><body><div class="invoice-container">
+        ${_pickingHeader(farm, '피킹 리스트 (PICKING LIST)')}
+        ${_pickingSummary(totalOrders, totalItems, estimatedTime)}
+        <div class="section-title">상품별 피킹 목록</div>
+        <table class="product-table"><thead><tr>
+            <th>순번</th><th>상품명</th><th>사이즈</th><th>총 수량</th><th>주문 수</th><th>총 금액</th>
+        </tr></thead><tbody>${productRows}</tbody></table>
+        <div class="section-title">고객별 주문 목록</div>
+        <table class="product-table"><thead><tr>
+            <th>순번</th><th>고객명</th><th>전화번호</th><th>주소</th><th>주문번호</th><th>상품 목록</th><th>금액</th>
+        </tr></thead><tbody>${customerRows}</tbody></table>
+        ${_pickingFooter(farm)}
+        </div></body></html>`;
 }
 
 // 상품별 피킹만 HTML 생성
 function generatePickingOnlyHTML(pickingData) {
+    const farm = getFarmInfo();
     const { productSummary, totalOrders, totalItems, estimatedTime } = pickingData;
-    
-    const productList = productSummary.map((product, index) => `
+
+    const productRows = productSummary.map((p, i) => `
         <tr>
-            <td>${index + 1}</td>
-            <td>${product.name}</td>
-            <td>${product.size || '기본'}</td>
-            <td>${product.totalQuantity}</td>
-            <td>${product.orders.length}</td>
-            <td>${product.totalAmount.toLocaleString()}원</td>
-        </tr>
-    `).join('');
-    
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>상품별 피킹 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    font-family: 'Malgun Gothic', Arial, sans-serif; 
-                    font-size: 12px; 
-                    line-height: 1.4; 
-                    color: #333;
-                    background: white;
-                }
-                .invoice-container {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    border-bottom: 3px solid #2c5aa0;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
-                }
-                .company-name {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #2c5aa0;
-                    margin-bottom: 5px;
-                }
-                .invoice-title {
-                    font-size: 18px;
-                    color: #666;
-                    font-weight: normal;
-                }
-                .summary-section {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 30px;
-                    padding: 20px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
-                .summary-item {
-                    flex: 1;
-                    text-align: center;
-                    margin: 0 10px;
-                }
-                .summary-value {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: #2c5aa0;
-                    margin-bottom: 5px;
-                }
-                .summary-label {
-                    font-size: 12px;
-                    color: #666;
-                }
-                .section-title {
-                    background: #f8f9fa;
-                    padding: 8px 12px;
-                    margin-bottom: 0;
-                    border-left: 4px solid #2c5aa0;
-                    font-size: 14px;
-                    color: #2c5aa0;
-                    font-weight: bold;
-                }
-                .product-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    border: 1px solid #ddd;
-                }
-                .product-table th {
-                    background: #2c5aa0;
-                    color: white;
-                    padding: 12px 8px;
-                    text-align: center;
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-                .product-table td {
-                    padding: 10px 8px;
-                    border: 1px solid #ddd;
-                    text-align: center;
-                    font-size: 11px;
-                }
-                .product-table td:first-child {
-                    text-align: left;
-                }
-                .product-table td:last-child {
-                    text-align: right;
-                    font-weight: bold;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    padding-top: 20px;
-                    border-top: 2px solid #eee;
-                    font-size: 10px;
-                    color: #666;
-                }
-                @media print {
-                    body { margin: 0; }
-                    .invoice-container { padding: 15px; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="invoice-container">
-                <!-- 헤더 -->
-                <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
-                    <div class="invoice-title">상품별 피킹 리스트 (PRODUCT PICKING LIST)</div>
-                </div>
-                
-                <!-- 요약 정보 -->
-                <div class="summary-section">
-                    <div class="summary-item">
-                        <div class="summary-value">${totalOrders}</div>
-                        <div class="summary-label">총 주문 건수</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${totalItems}</div>
-                        <div class="summary-label">총 상품 수량</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${estimatedTime}</div>
-                        <div class="summary-label">예상 소요시간</div>
-                    </div>
-                </div>
-                
-                <!-- 상품별 피킹 목록 -->
-                <div class="section-title">상품별 피킹 목록</div>
-                <table class="product-table">
-                    <thead>
-                        <tr>
-                            <th>순번</th>
-                            <th>상품명</th>
-                            <th>사이즈</th>
-                            <th>총 수량</th>
-                            <th>주문 수</th>
-                            <th>총 금액</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${productList}
-                    </tbody>
-                </table>
-                
-                <!-- 푸터 -->
-                <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
-                    <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
-                    <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
+            <td>${i + 1}</td>
+            <td class="left">${p.name}</td>
+            <td>${p.size || '기본'}</td>
+            <td>${p.totalQuantity}</td>
+            <td>${p.orders.length}</td>
+            <td class="right">${p.totalAmount.toLocaleString()}원</td>
+        </tr>`).join('');
+
+    return `<!DOCTYPE html><html><head>
+        <title>상품별 피킹 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
+        <meta charset="UTF-8">
+        <style>${_pickingCSS()}</style>
+        </head><body><div class="invoice-container">
+        ${_pickingHeader(farm, '상품별 피킹 리스트 (PRODUCT PICKING LIST)')}
+        ${_pickingSummary(totalOrders, totalItems, estimatedTime)}
+        <div class="section-title">상품별 피킹 목록</div>
+        <table class="product-table"><thead><tr>
+            <th>순번</th><th>상품명</th><th>사이즈</th><th>총 수량</th><th>주문 수</th><th>총 금액</th>
+        </tr></thead><tbody>${productRows}</tbody></table>
+        ${_pickingFooter(farm)}
+        </div></body></html>`;
 }
 
 // 고객별 포장만 HTML 생성
 function generatePackagingOnlyHTML(pickingData) {
-    console.log('🔍 generatePackagingOnlyHTML 함수 호출됨:', pickingData);
+    const farm = getFarmInfo();
     const { customerSummary, totalOrders, totalItems, estimatedTime } = pickingData;
-    console.log('🔍 고객별 포장 데이터:', { customerSummary, totalOrders, totalItems, estimatedTime });
-    
-    // 고객별 피킹을 통합 테이블로 생성
-    const allPickingItems = [];
-    customerSummary.forEach((customer, customerIndex) => {
-        customer.orders.forEach((order, orderIndex) => {
-            (order.items ?? []).forEach((item, itemIndex) => {
-                const productName = item.product_name || item.name || item.title || item.productName || item.product_title || item.item_name || item.goods_name || '상품명 없음';
-                const quantity = item.quantity || item.qty || item.amount || 1;
-                const size = item.size || item.product_size || '기본';
+
+    let rowIndex = 0;
+    const pickingTableRows = customerSummary.flatMap(c =>
+        c.orders.flatMap(order =>
+            (order.items ?? []).map(item => {
+                rowIndex++;
+                const name  = item.product_name || item.name || item.title || '상품명 없음';
+                const size  = item.size || item.product_size || '기본';
+                const qty   = item.quantity || item.qty || 1;
                 const price = item.price || 0;
-                
-                allPickingItems.push({
-                    customerName: customer.name,
-                    customerPhone: customer.phone,
-                    customerAddress: customer.address,
-                    orderNumber: order.order_number || order.id,
-                    productName,
-                    size,
-                    quantity,
-                    price,
-                    customerIndex,
-                    orderIndex,
-                    itemIndex
-                });
-            });
-        });
-    });
+                return `
+        <tr>
+            <td>${rowIndex}</td>
+            <td class="left">${c.name}</td>
+            <td>${c.phone || ''}</td>
+            <td>${order.order_number || ''}</td>
+            <td class="left">${name}</td>
+            <td>${size}</td>
+            <td>${qty}</td>
+            <td style="text-align:center"><input type="checkbox" style="width:14px;height:14px"></td>
+            <td class="right">${price.toLocaleString()}원</td>
+        </tr>`;
+            })
+        )
+    ).join('');
     
-    const pickingTableRows = allPickingItems.map((item, index) => `
-        <tr class="picking-row">
-            <td class="text-center">${index + 1}</td>
-            <td class="font-medium">${item.customerName}</td>
-            <td class="text-sm">${item.customerPhone}</td>
-            <td class="text-sm">${item.orderNumber}</td>
-            <td class="font-medium">${item.productName}</td>
-            <td class="text-center">${item.size}</td>
-            <td class="text-center font-bold">${item.quantity}</td>
-            <td class="text-center">
-                <input type="checkbox" class="picking-checkbox" data-customer="${item.customerIndex}" data-order="${item.orderIndex}" data-item="${item.itemIndex}">
-            </td>
-            <td class="text-right">${item.price.toLocaleString()}원</td>
-        </tr>
-    `).join('');
-    
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>고객별 포장 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
-            <meta charset="UTF-8">
-            <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <style>
-                * { margin: 0; padding: 0; box-sizing: border-box; }
-                body { 
-                    font-family: 'Malgun Gothic', Arial, sans-serif; 
-                    font-size: 12px; 
-                    line-height: 1.4; 
-                    color: #333;
-                    background: white;
-                }
-                .invoice-container {
-                    max-width: 800px;
-                    margin: 0 auto;
-                    padding: 20px;
-                    background: white;
-                }
-                .header {
-                    text-align: center;
-                    border-bottom: 3px solid #2c5aa0;
-                    padding-bottom: 20px;
-                    margin-bottom: 30px;
-                }
-                .company-name {
-                    font-size: 24px;
-                    font-weight: bold;
-                    color: #2c5aa0;
-                    margin-bottom: 5px;
-                }
-                .invoice-title {
-                    font-size: 18px;
-                    color: #666;
-                    font-weight: normal;
-                }
-                .summary-section {
-                    display: flex;
-                    justify-content: space-between;
-                    margin-bottom: 30px;
-                    padding: 20px;
-                    background: #f8f9fa;
-                    border-radius: 8px;
-                }
-                .summary-item {
-                    flex: 1;
-                    text-align: center;
-                    margin: 0 10px;
-                }
-                .summary-value {
-                    font-size: 20px;
-                    font-weight: bold;
-                    color: #2c5aa0;
-                    margin-bottom: 5px;
-                }
-                .summary-label {
-                    font-size: 12px;
-                    color: #666;
-                }
-                .section-title {
-                    background: #f8f9fa;
-                    padding: 8px 12px;
-                    margin-bottom: 0;
-                    border-left: 4px solid #2c5aa0;
-                    font-size: 14px;
-                    color: #2c5aa0;
-                    font-weight: bold;
-                }
-                .picking-table {
-                    width: 100%;
-                    border-collapse: collapse;
-                    border: 1px solid #ddd;
-                }
-                .picking-table th {
-                    background: #2c5aa0;
-                    color: white;
-                    padding: 12px 8px;
-                    text-align: center;
-                    font-weight: bold;
-                    font-size: 11px;
-                }
-                .picking-table td {
-                    padding: 10px 8px;
-                    border: 1px solid #ddd;
-                    text-align: center;
-                    font-size: 11px;
-                }
-                .picking-table td:first-child {
-                    text-align: left;
-                }
-                .picking-table td:last-child {
-                    text-align: right;
-                    font-weight: bold;
-                }
-                .picking-checkbox {
-                    width: 16px;
-                    height: 16px;
-                }
-                .footer {
-                    margin-top: 40px;
-                    text-align: center;
-                    padding-top: 20px;
-                    border-top: 2px solid #eee;
-                    font-size: 10px;
-                    color: #666;
-                }
-                @media print {
-                    body { margin: 0; }
-                    .invoice-container { padding: 15px; }
-                }
-            </style>
-        </head>
-        <body>
-            <div class="invoice-container">
-                <!-- 헤더 -->
-                <div class="header">
-                    <div class="company-name">경산다육식물농장</div>
-                    <div class="invoice-title">고객별 포장 리스트 (CUSTOMER PACKAGING LIST)</div>
-                </div>
-                
-                <!-- 요약 정보 -->
-                <div class="summary-section">
-                    <div class="summary-item">
-                        <div class="summary-value">${totalOrders}</div>
-                        <div class="summary-label">총 주문 건수</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${totalItems}</div>
-                        <div class="summary-label">총 상품 수량</div>
-                    </div>
-                    <div class="summary-item">
-                        <div class="summary-value">${estimatedTime}</div>
-                        <div class="summary-label">예상 소요시간</div>
-                    </div>
-                </div>
-                
-                <!-- 고객별 피킹 목록 -->
-                <div class="section-title">고객별 피킹 목록</div>
-                <table class="picking-table">
-                    <thead>
-                        <tr>
-                            <th>순번</th>
-                            <th>고객명</th>
-                            <th>전화번호</th>
-                            <th>주문번호</th>
-                            <th>상품명</th>
-                            <th>사이즈</th>
-                            <th>수량</th>
-                            <th>체크</th>
-                            <th>단가</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${pickingTableRows}
-                    </tbody>
-                </table>
-                
-                <!-- 푸터 -->
-                <div class="footer">
-                    <p>경산다육식물농장 | 대표: 부대장</p>
-                    <p>주소: 경상북도 경산시 | 전화: 010-1234-5678</p>
-                    <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
-                    <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
-                </div>
-            </div>
-        </body>
-        </html>
-    `;
-    
-    console.log('✅ generatePackagingOnlyHTML 함수 완료');
-    
-    // 체크박스 기능을 위한 JavaScript 추가
-    const script = `
-        <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // 개별 상품 체크박스 이벤트
-            document.querySelectorAll('.picking-checkbox').forEach(checkbox => {
-                checkbox.addEventListener('change', function() {
-                    const customerIndex = this.dataset.customer;
-                    const orderIndex = this.dataset.order;
-                    const itemIndex = this.dataset.item;
-                    
-                    console.log('상품 체크:', {customerIndex, orderIndex, itemIndex, checked: this.checked});
-                });
-            });
-        });
-        </script>
-    `;
-    
-    return html.replace('</body>', script + '</body>');
+    return `<!DOCTYPE html><html><head>
+        <title>고객별 포장 리스트 - ${new Date().toLocaleDateString('ko-KR')}</title>
+        <meta charset="UTF-8">
+        <style>${_pickingCSS()}</style>
+        </head><body><div class="invoice-container">
+        ${_pickingHeader(farm, '고객별 포장 리스트 (CUSTOMER PACKAGING LIST)')}
+        ${_pickingSummary(totalOrders, totalItems, estimatedTime)}
+        <div class="section-title">고객별 피킹 목록</div>
+        <table class="product-table"><thead><tr>
+            <th>순번</th><th>고객명</th><th>전화번호</th><th>주문번호</th><th>상품명</th><th>사이즈</th><th>수량</th><th>체크</th><th>단가</th>
+        </tr></thead><tbody>${pickingTableRows}</tbody></table>
+        ${_pickingFooter(farm)}
+        </div></body></html>`;
 }
 
 // 전역 스코프에 함수 등록

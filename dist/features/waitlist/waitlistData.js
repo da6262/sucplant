@@ -19,9 +19,8 @@ export class WaitlistDataManager {
     async loadWaitlist() {
         try {
             console.log('📋 대기자 목록 로드 시작...');
-            
-            // Supabase에서만 로드 (성능 최적화: 불필요한 로그 제거)
-            if (!window.supabase || !window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.disabled) {
+
+            if (!window.supabaseClient) {
                 throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
             }
             
@@ -48,14 +47,13 @@ export class WaitlistDataManager {
     }
 
     /**
-     * 대기자 목록 저장 (Supabase 전용)
+     * 대기자 목록 저장 (Supabase 전용) — 내부 전용, 외부에서 직접 호출 비권장
      */
     async saveWaitlist() {
         try {
             console.log('💾 대기자 목록 저장 시작...');
-            
-            // Supabase에만 저장
-            if (!window.supabase || !window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.disabled) {
+
+            if (!window.supabaseClient) {
                 throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
             }
             
@@ -96,16 +94,16 @@ export class WaitlistDataManager {
 
     /**
      * 새 대기자 등록 (Supabase 전용)
+     * 등록 후 farm_customers에도 자동 upsert (전화번호 기준 중복 방지)
      */
     async addWaitlist(waitlistData) {
         try {
             console.log('➕ 새 대기자 등록:', waitlistData);
-            
-            // Supabase에 직접 삽입
-            if (!window.supabase || !window.SUPABASE_CONFIG || window.SUPABASE_CONFIG.disabled) {
+
+            if (!window.supabaseClient) {
                 throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
             }
-            
+
             const newWaitlist = {
                 customer_name: waitlistData.customer_name || '',
                 customer_phone: waitlistData.customer_phone || '',
@@ -119,20 +117,23 @@ export class WaitlistDataManager {
                 last_contact: null
                 // created_at, updated_at는 Supabase에서 자동 생성
             };
-            
+
             const { data, error } = await window.supabaseClient
                 .from('farm_waitlist')
                 .insert([newWaitlist])
                 .select();
-            
+
             if (error) {
                 throw new Error(`Supabase 삽입 실패: ${error.message}`);
             }
-            
+
             // 로컬 배열에도 추가
             this.farm_waitlist.push(data[0]);
-            
             console.log('✅ 새 대기자 등록 완료:', data[0]);
+
+            // 고객관리 자동 동기화 (전화번호 기준 중복 시 건너뜀)
+            await this._syncToCustomers(waitlistData.customer_name, waitlistData.customer_phone);
+
             return data[0];
         } catch (error) {
             console.error('❌ 새 대기자 등록 실패:', error);
@@ -141,56 +142,137 @@ export class WaitlistDataManager {
     }
 
     /**
-     * 대기자 정보 수정
+     * 대기자 → 고객관리 자동 동기화
+     * 전화번호(숫자만)가 같은 고객이 없을 때만 farm_customers에 신규 등록
      */
-    updateWaitlist(waitlistId, updateData) {
+    async _syncToCustomers(name, phone) {
         try {
-            console.log('✏️ 대기자 정보 수정:', waitlistId, updateData);
-            
-            const index = this.farm_waitlist.findIndex(item => item.id === waitlistId);
-            if (index === -1) {
-                console.error('❌ 대기자를 찾을 수 없습니다:', waitlistId);
-                return null;
+            if (!name || !phone) return;
+
+            const phoneNorm = String(phone).replace(/\D/g, '');
+            if (!phoneNorm) return;
+
+            // 전화번호 중복 확인
+            const { data: existing, error: checkErr } = await window.supabaseClient
+                .from('farm_customers')
+                .select('id, name')
+                .eq('phone_normalized', phoneNorm)
+                .limit(1);
+
+            if (checkErr) {
+                console.warn('⚠️ 고객 중복 확인 실패 (고객 등록 건너뜀):', checkErr.message);
+                return;
             }
-            
-            // 기존 데이터와 병합
-            this.farm_waitlist[index] = {
-                ...this.farm_waitlist[index],
-                ...updateData,
-                updated_at: new Date().toISOString()
+
+            if (existing && existing.length > 0) {
+                console.log(`ℹ️ 이미 고객관리에 있는 고객 (${existing[0].name}) — 대기자만 등록`);
+                return;
+            }
+
+            // 신규 고객으로 등록
+            const today = new Date().toISOString().split('T')[0];
+            const newCustomer = {
+                id: crypto.randomUUID(),
+                name: String(name).trim(),
+                phone: String(phone).trim(),
+                phone_normalized: phoneNorm,
+                address: '',
+                address_detail: '',
+                email: '',
+                grade: 'GENERAL',
+                registration_date: today,
+                memo: '대기자 등록으로 자동 추가',
+                youtube_order_count: 0,
+                live_order_count: 0,
+                created_at: new Date().toISOString()
             };
-            
-            this.saveWaitlist();
-            
-            console.log('✅ 대기자 정보 수정 완료:', this.farm_waitlist[index]);
-            return this.farm_waitlist[index];
-        } catch (error) {
-            console.error('❌ 대기자 정보 수정 실패:', error);
-            return null;
+
+            const { error: insertErr } = await window.supabaseClient
+                .from('farm_customers')
+                .insert([newCustomer]);
+
+            if (insertErr) {
+                console.warn('⚠️ 고객 자동 등록 실패 (대기자 등록은 완료됨):', insertErr.message);
+                return;
+            }
+
+            // customerDataManager 로컬 캐시에도 반영
+            if (window.customerDataManager) {
+                window.customerDataManager.farm_customers.push(newCustomer);
+            }
+
+            console.log('✅ 고객관리 자동 등록 완료:', newCustomer.name);
+        } catch (err) {
+            // 고객 동기화 실패는 대기자 등록 성공에 영향을 주지 않음
+            console.warn('⚠️ 고객 자동 동기화 중 오류 (무시됨):', err.message);
         }
     }
 
     /**
-     * 대기자 삭제
+     * 대기자 정보 수정 (Supabase 직접 update)
      */
-    deleteWaitlist(waitlistId) {
+    async updateWaitlist(waitlistId, updateData) {
+        try {
+            console.log('✏️ 대기자 정보 수정:', waitlistId, updateData);
+
+            if (!window.supabaseClient) {
+                throw new Error('Supabase가 연결되지 않았습니다.');
+            }
+
+            const payload = {
+                ...updateData,
+                updated_at: new Date().toISOString()
+            };
+
+            const { data, error } = await window.supabaseClient
+                .from('farm_waitlist')
+                .update(payload)
+                .eq('id', waitlistId)
+                .select();
+
+            if (error) throw new Error(`Supabase 수정 실패: ${error.message}`);
+
+            // 로컬 배열도 반영
+            const index = this.farm_waitlist.findIndex(item => item.id === waitlistId);
+            if (index !== -1) {
+                this.farm_waitlist[index] = { ...this.farm_waitlist[index], ...payload };
+            }
+
+            console.log('✅ 대기자 정보 수정 완료:', data[0]);
+            return data[0];
+        } catch (error) {
+            console.error('❌ 대기자 정보 수정 실패:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 대기자 삭제 (Supabase 직접 delete)
+     */
+    async deleteWaitlist(waitlistId) {
         try {
             console.log('🗑️ 대기자 삭제:', waitlistId);
-            
-            const index = this.farm_waitlist.findIndex(item => item.id === waitlistId);
-            if (index === -1) {
-                console.error('❌ 대기자를 찾을 수 없습니다:', waitlistId);
-                return false;
+
+            if (!window.supabaseClient) {
+                throw new Error('Supabase가 연결되지 않았습니다.');
             }
-            
-            const deletedItem = this.farm_waitlist.splice(index, 1)[0];
-            this.saveWaitlist();
-            
-            console.log('✅ 대기자 삭제 완료:', deletedItem);
+
+            const { error } = await window.supabaseClient
+                .from('farm_waitlist')
+                .delete()
+                .eq('id', waitlistId);
+
+            if (error) throw new Error(`Supabase 삭제 실패: ${error.message}`);
+
+            // 로컬 배열에서도 제거
+            const index = this.farm_waitlist.findIndex(item => item.id === waitlistId);
+            if (index !== -1) this.farm_waitlist.splice(index, 1);
+
+            console.log('✅ 대기자 삭제 완료:', waitlistId);
             return true;
         } catch (error) {
             console.error('❌ 대기자 삭제 실패:', error);
-            return false;
+            throw error;
         }
     }
 
@@ -290,31 +372,65 @@ export class WaitlistDataManager {
     }
 
     /**
-     * 대기자 상태 업데이트
+     * 대기자 상태 업데이트 (Supabase 직접 update)
      */
-    updateWaitlistStatus(waitlistId, newStatus) {
+    async updateWaitlistStatus(waitlistId, newStatus) {
         try {
             console.log('🔄 대기자 상태 업데이트:', waitlistId, newStatus);
-            
+
+            if (!window.supabaseClient) {
+                throw new Error('Supabase가 연결되지 않았습니다.');
+            }
+
+            const payload = {
+                status: newStatus,
+                updated_at: new Date().toISOString(),
+                ...(newStatus === '연락완료' ? { last_contact: new Date().toISOString() } : {})
+            };
+
+            const { error } = await window.supabaseClient
+                .from('farm_waitlist')
+                .update(payload)
+                .eq('id', waitlistId);
+
+            if (error) throw new Error(`Supabase 상태 수정 실패: ${error.message}`);
+
+            // 로컬 배열도 반영
             const index = this.farm_waitlist.findIndex(item => item.id === waitlistId);
-            if (index === -1) {
-                console.error('❌ 대기자를 찾을 수 없습니다:', waitlistId);
-                return false;
+            if (index !== -1) {
+                Object.assign(this.farm_waitlist[index], payload);
             }
-            
-            this.farm_waitlist[index].status = newStatus;
-            this.farm_waitlist[index].updated_at = new Date().toISOString();
-            
-            if (newStatus === '연락완료') {
-                this.farm_waitlist[index].last_contact = new Date().toISOString();
-            }
-            
-            this.saveWaitlist();
-            
-            console.log('✅ 대기자 상태 업데이트 완료:', this.farm_waitlist[index]);
+
+            console.log('✅ 대기자 상태 업데이트 완료:', waitlistId, newStatus);
             return true;
         } catch (error) {
             console.error('❌ 대기자 상태 업데이트 실패:', error);
+            throw error;
+        }
+    }
+
+    /**
+     * 긴급 데이터 복구 — Supabase에서 재로드 후 UI 갱신
+     */
+    async emergencyWaitlistRecovery() {
+        try {
+            console.log('🚨 대기자 데이터 긴급 복구 시작...');
+            await this.loadWaitlist();
+            if (window.waitlistUI) {
+                window.waitlistUI.renderWaitlistTable();
+                window.waitlistUI.updateWaitlistStats();
+            }
+            const msg = `대기자 데이터 복구 완료: ${this.farm_waitlist.length}건`;
+            console.log('✅', msg);
+            if (window.Swal) {
+                window.Swal.fire({ icon: 'success', title: '복구 완료', text: msg, timer: 2000, showConfirmButton: false });
+            } else {
+                alert(msg);
+            }
+            return true;
+        } catch (error) {
+            console.error('❌ 대기자 복구 실패:', error);
+            alert('데이터 복구 실패: ' + error.message);
             return false;
         }
     }

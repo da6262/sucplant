@@ -111,68 +111,10 @@ async function loadOrderManagementComponent() {
 }
 
 // 이벤트 리스너 정리 함수
+// orders-section은 loadOrderManagementComponent에서 innerHTML=''로 통째로 교체되므로
+// cloneNode/replaceChild 불필요. body에 달린 order-modal은 건드리지 않는다.
 function cleanupOrderEventListeners() {
-    try {
-        console.log('🧹 주문관리 이벤트 리스너 정리 중...');
-        
-        // 모든 주문관리 관련 이벤트 리스너를 강제로 제거
-        const orderElements = [
-            'add-order-btn',
-            'order-search',
-            'order-filter',
-            'order-sort',
-            'refresh-orders',
-            'export-orders',
-            'import-orders'
-        ];
-        
-        orderElements.forEach(elementId => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                // 기존 이벤트 리스너를 완전히 제거하기 위해 요소를 복제
-                const newElement = element.cloneNode(true);
-                element.parentNode.replaceChild(newElement, element);
-            }
-        });
-        
-        // 상태 탭 버튼들 정리
-        const statusTabs = document.querySelectorAll('.status-tab-btn');
-        statusTabs.forEach(tab => {
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
-        });
-        
-        // 주문 테이블 관련 이벤트 리스너 정리
-        const orderTable = document.getElementById('orders-table');
-        if (orderTable) {
-            const newTable = orderTable.cloneNode(true);
-            orderTable.parentNode.replaceChild(newTable, orderTable);
-        }
-        
-        // 주문 모달 관련 이벤트 리스너 정리
-        const orderModal = document.getElementById('order-modal');
-        if (orderModal) {
-            const newModal = orderModal.cloneNode(true);
-            orderModal.parentNode.replaceChild(newModal, orderModal);
-        }
-        
-        // 전역 이벤트 리스너 정리
-        if (window.orderEventListeners) {
-            window.orderEventListeners.forEach(listener => {
-                if (listener.element && listener.event && listener.handler) {
-                    listener.element.removeEventListener(listener.event, listener.handler);
-                }
-            });
-            window.orderEventListeners = [];
-        }
-        
-        // 이벤트 리스너 연결 플래그 리셋
-        window.orderEventListenersAttached = false;
-        
-        console.log('✅ 주문관리 이벤트 리스너 정리 완료');
-    } catch (error) {
-        console.error('❌ 이벤트 리스너 정리 실패:', error);
-    }
+    window.orderEventListenersAttached = false;
 }
 
 // DOM 완전 로딩 대기 및 초기화 함수
@@ -218,13 +160,29 @@ async function initializeOrderManagement() {
     try {
         console.log('🔄 주문관리 초기화 시작');
         
-        // 기존 이벤트 리스너 정리
-        cleanupOrderEventListeners();
-        
-        // 기본 진입 탭: 지금 처리할 주문(work_todo)
+        // 새 주문 저장 후 이동 시 pendingOrderStatus 플래그로 목표 탭 결정
+        // 그 외에는 기본 all(전체) 탭
+        const pendingStatus = window._pendingOrderStatus || null;
+        window._pendingOrderStatus = null; // 소비 후 초기화
+
+        const statusToTabId = {
+            '주문접수': 'status-주문접수',
+            '고객안내': 'status-고객안내',
+            '입금대기': 'status-입금대기',
+            '입금확인': 'status-입금확인',
+            '상품준비': 'status-work_todo',
+            '배송준비': 'status-work_todo',
+            '배송중':   'status-배송중',
+            '배송완료': 'status-배송완료',
+        };
+        const activeTabId = pendingStatus
+            ? (statusToTabId[pendingStatus] || `status-${pendingStatus}`)
+            : 'status-all';
+        const activeStatus = pendingStatus || 'all';
+
         document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
-        const defaultTab = document.getElementById('status-work_todo');
-        if (defaultTab) defaultTab.classList.add('active');
+        const activeTab = document.getElementById(activeTabId);
+        if (activeTab) activeTab.classList.add('active');
 
         // 주문 데이터 초기화
         if (window.orderDataManager) {
@@ -233,12 +191,11 @@ async function initializeOrderManagement() {
                 await window.orderDataManager.loadOrders();
             } catch (loadErr) {
                 console.error('❌ 주문 목록 로드 실패 (테이블은 빈 상태로 표시):', loadErr);
-                // 실패해도 farm_order_rows=[] 상태로 테이블은 그려서 "불러올 수 없습니다" 메시지 표시
                 window.orderDataManager._loadErrorMessage = loadErr && (loadErr.message || String(loadErr));
             }
-            // 주문 테이블 렌더링 (기본 work_todo) — 로드 실패 시에도 빈 테이블 + 에러 메시지 표시
+            // 저장 후 이동이면 해당 상태 탭으로, 아니면 work_todo
             if (window.orderDataManager.renderOrdersTable) {
-                window.orderDataManager.renderOrdersTable('work_todo');
+                window.orderDataManager.renderOrdersTable(activeStatus);
             }
             // 주문 상태별 카운트 업데이트
             if (window.orderDataManager.updateFilterCounts) {
@@ -250,12 +207,17 @@ async function initializeOrderManagement() {
             console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
         }
         
+        // 채널 필터 셀렉트 초기화 (farm_channels DB 연동)
+        if (window.orderDataManager?.initChannelFilterSelect) {
+            window.orderDataManager.initChannelFilterSelect();
+        }
+
         // 주문관리 이벤트 리스너 연결
         attachOrderEventListeners();
-        
+
         // 주문 상세 모달 로드
         await loadOrderDetailModal();
-        
+
         console.log('✅ 주문관리 초기화 완료');
         
     } catch (initError) {
@@ -265,17 +227,18 @@ async function initializeOrderManagement() {
     }
 }
 
-// 주문 상세 모달 로드
+// 주문 상세 모달 로드 (중복 방지: 이미 존재하면 재사용)
 async function loadOrderDetailModal() {
     try {
+        if (document.getElementById('order-detail-modal')) return; // 이미 있으면 스킵
         console.log('📦 주문 상세 모달 컴포넌트 로드 중...');
-        
+
         const response = await fetch('components/modals/order-detail-modal.html');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const modalHTML = await response.text();
-        
+
         // 모달을 body에 추가
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         console.log('✅ 주문 상세 모달 컴포넌트 로드 완료');
@@ -446,10 +409,10 @@ function displayOrderDetail(modal, order) {
                     
                     return `
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-900">${productName}</td>
-                            <td class="px-4 py-3 text-center text-sm text-gray-900">${quantity}개</td>
-                            <td class="px-4 py-3 text-right text-sm text-gray-900">${price.toLocaleString()}원</td>
-                            <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">${total.toLocaleString()}원</td>
+                            <td class="px-4 td-primary">${productName}</td>
+                            <td class="px-4 text-center td-primary">${quantity}개</td>
+                            <td class="px-4 text-right td-primary">${price.toLocaleString()}원</td>
+                            <td class="px-4 text-right font-medium td-primary">${total.toLocaleString()}원</td>
                         </tr>
                     `;
                 }).join('');
@@ -457,7 +420,7 @@ function displayOrderDetail(modal, order) {
                 console.warn('⚠️ 주문 상품 데이터가 없습니다');
                 orderItemsEl.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="4" class="px-4 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
                                 <p class="text-sm font-medium text-gray-600">주문 상품이 없습니다</p>
@@ -529,6 +492,10 @@ function attachOrderDetailEventListeners(modal, order) {
                 console.log('✏️ 주문 수정 버튼 클릭:', order.id);
                 
                 try {
+                    // 상세 모달 먼저 닫기
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+
                     // 주문 수정 모달 열기 (새창이 아닌 모달로)
                     if (window.openOrderModal) {
                         console.log('📝 주문 수정 모달 열기 시도...');
@@ -558,6 +525,10 @@ function attachOrderDetailEventListeners(modal, order) {
                 if (window.generateOrderPrintHTML) {
                     const printHTML = window.generateOrderPrintHTML(order);
                     const printWindow = window.open('', '_blank');
+                    if (!printWindow) {
+                        alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+                        return;
+                    }
                     printWindow.document.write(printHTML);
                     printWindow.document.close();
                     printWindow.focus();
@@ -589,139 +560,41 @@ window.initializeOrderManagement = initializeOrderManagement;
 function attachOrderEventListeners() {
     try {
         console.log('🔗 주문관리 이벤트 리스너 연결 시작...');
-        
-        // 이미 이벤트 리스너가 연결되었는지 확인
-        if (window.orderEventListenersAttached) {
-            console.log('⚠️ 주문관리 이벤트 리스너가 이미 연결되어 있습니다. 건너뜁니다.');
-            return;
-        }
-        
-        // 이벤트 리스너 추적 배열 초기화
-        if (!window.orderEventListeners) {
-            window.orderEventListeners = [];
-        }
-        
-        // 주문관리 섹션이 존재하는지 확인
-        const ordersSection = document.getElementById('orders-section');
-        if (!ordersSection) {
-            console.warn('⚠️ 주문관리 섹션을 찾을 수 없습니다. 이벤트 리스너 연결을 건너뜁니다.');
-            return;
-        }
-        
-        // 주문 데이터 매니저 초기화 확인
-        if (!window.orderDataManager) {
-            console.warn('⚠️ orderDataManager가 초기화되지 않았습니다.');
-            return;
-        }
-        
-        // 새 주문 등록 버튼
+
+        // 새 주문 등록 버튼 — onclick 할당(재방문 시에도 덮어쓰기로 중복 방지)
         const addOrderBtn = document.getElementById('add-order-btn');
-        console.log('🔍 새 주문 등록 버튼 찾기:', addOrderBtn);
-        
         if (addOrderBtn) {
-            console.log('✅ 새 주문 등록 버튼 발견, 이벤트 리스너 추가');
-            
-            const addOrderHandler = async function(event) {
-                console.log('➕ 새 주문 등록 버튼 클릭됨!');
-                
-                // 이벤트 전파 방지
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
+            addOrderBtn.onclick = async () => {
                 try {
-                    // 주문 모달이 없으면 동적으로 로드
-                    let modal = document.getElementById('order-modal');
-                    console.log('🔍 현재 모달 상태:', modal);
-                    
-                    if (!modal) {
-                        console.log('📦 주문 모달이 없습니다. 동적 로드 시작...');
-                        try {
-                            await loadOrderModal();
-                            modal = document.getElementById('order-modal');
-                            console.log('🔍 로드된 모달 요소:', modal);
-                            
-                            if (!modal) {
-                                console.error('❌ 주문 모달 로드 실패');
-                                alert('주문 등록 모달을 로드할 수 없습니다. 페이지를 새로고침해주세요.');
-                                return;
-                            }
-                        } catch (loadError) {
-                            console.error('❌ 주문 모달 로드 중 오류:', loadError);
-                            alert('주문 등록 모달을 로드하는 중 오류가 발생했습니다: ' + loadError.message);
-                            return;
-                        }
+                    if (!document.getElementById('order-modal')) {
+                        await loadOrderModal();
                     }
-                    
-                    // 주문 모달 열기
-                    console.log('🔍 openOrderModal 함수 확인:', window.openOrderModal);
-                    if (window.openOrderModal) {
-                        console.log('✅ openOrderModal 함수 호출');
-                        await window.openOrderModal();
-                    } else {
-                        console.warn('⚠️ openOrderModal 함수를 찾을 수 없습니다');
-                        alert('주문 모달을 열 수 없습니다. 페이지를 새로고침해주세요.');
-                    }
+                    if (window.openOrderModal) await window.openOrderModal();
                 } catch (error) {
-                    console.error('❌ 주문 등록 버튼 클릭 처리 중 오류:', error);
-                    alert('주문 등록 중 오류가 발생했습니다: ' + error.message);
+                    console.error('❌ 새 주문 등록 오류:', error);
                 }
             };
-            
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            addOrderBtn.removeEventListener('click', addOrderHandler);
-            
-            // 새 이벤트 리스너 추가
-            addOrderBtn.addEventListener('click', addOrderHandler);
-            console.log('✅ 새 주문 등록 버튼 이벤트 리스너 추가 완료');
-            
-            // 이벤트 리스너 추적
-            window.orderEventListeners.push({
-                element: addOrderBtn,
-                event: 'click',
-                handler: addOrderHandler
-            });
-            
-            console.log('✅ 새 주문 등록 버튼 이벤트 리스너 연결 완료');
         }
-        
-        // 주문 상태별 필터 탭
+
+        // 주문 상태별 필터 탭 — onclick 할당
         const statusTabs = document.querySelectorAll('.status-tab-btn');
         statusTabs.forEach(tab => {
-            const statusTabHandler = async function() {
+            tab.onclick = async function() {
                 const status = this.id.replace('status-', '');
-                console.log('🏷️ 주문 상태 필터:', status);
-                
-                // 활성 탭 표시
                 statusTabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                
                 if (window.orderDataManager) {
                     try {
                         await window.orderDataManager.loadOrders();
                         if (window.orderDataManager.renderOrdersTable) {
                             window.orderDataManager.renderOrdersTable(status);
-                            console.log('✅ 주문 테이블 필터링 완료:', status);
                         }
                     } catch (error) {
                         console.error('❌ 주문 테이블 필터링 실패:', error);
                     }
-                } else {
-                    console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
                 }
             };
-            
-            tab.addEventListener('click', statusTabHandler);
-            
-            // 이벤트 리스너 추적
-            window.orderEventListeners.push({
-                element: tab,
-                event: 'click',
-                handler: statusTabHandler
-            });
         });
-        console.log('✅ 주문 상태 필터 이벤트 리스너 연결 완료');
         
         // 일괄 처리 버튼들
         const bulkStatusChangeBtn = document.getElementById('bulk-status-change-btn');
@@ -753,14 +626,6 @@ function attachOrderEventListeners() {
                 saveAllTrackingNumbers();
             }
         });
-        
-        const generatePickingListBtn = document.getElementById('generate-picking-list-btn');
-        if (generatePickingListBtn) {
-            generatePickingListBtn.addEventListener('click', async function() {
-                console.log('📋 피킹 리스트 생성 버튼 클릭');
-                await generatePickingList();
-            });
-        }
         
         const generatePackagingLabelsBtn = document.getElementById('generate-packaging-labels-btn');
         if (generatePackagingLabelsBtn) {
@@ -855,23 +720,31 @@ function attachOrderEventListeners() {
             console.warn('⚠️ 배송비 설정 버튼을 찾을 수 없습니다');
         }
         
-        // 전체 선택 체크박스
+        // 전체 선택 체크박스 — onchange 할당
         const selectAllOrders = document.getElementById('select-all-orders');
         if (selectAllOrders) {
-            selectAllOrders.addEventListener('change', function() {
-                console.log('☑️ 전체 선택 체크박스 변경:', this.checked);
-                // 전체 선택 로직
+            selectAllOrders.onchange = function() {
                 const orderCheckboxes = document.querySelectorAll('input[type="checkbox"][data-order-id]');
-                orderCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-            });
+                orderCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+            };
         }
-        
-        // 이벤트 리스너 연결 완료 플래그 설정
-        window.orderEventListenersAttached = true;
+
+        // 페이지당 표시 수 선택 — onchange 할당
+        const orderPageSize = document.getElementById('order-page-size');
+        if (orderPageSize) {
+            orderPageSize.onchange = function() {
+                if (window.orderDataManager) window.orderDataManager.renderOrdersTable();
+            };
+        }
+
+        // 피킹 리스트 버튼 — onclick 할당
+        const generatePickingListBtn = document.getElementById('generate-picking-list-btn');
+        if (generatePickingListBtn) {
+            generatePickingListBtn.onclick = async () => { await generatePickingList(); };
+        }
+
         console.log('🔗 주문관리 이벤트 리스너 연결 완료');
-        
+
     } catch (error) {
         console.error('❌ 주문관리 이벤트 리스너 연결 실패:', error);
         // 오류가 발생해도 기본적인 기능은 유지
@@ -1053,21 +926,34 @@ async function generatePickingList() {
 async function getReadyForShippingOrders() {
     try {
         console.log('🔍 상품준비 & 배송준비 상태 주문 조회 중...');
-        
-        if (window.orderDataManager && window.orderDataManager.getAllOrders) {
-            const allOrders = window.orderDataManager.getAllOrders();
-            const readyOrders = allOrders.filter(order => {
-                const status = order.order_status || order.status;
-                return status === '상품준비' || status === '배송준비';
-            });
-            console.log('📦 피킹 대상 주문 필터링 완료:', readyOrders.length);
-            console.log('   - 상품준비:', readyOrders.filter(o => (o.order_status || o.status) === '상품준비').length + '건');
-            console.log('   - 배송준비:', readyOrders.filter(o => (o.order_status || o.status) === '배송준비').length + '건');
-            return readyOrders;
-        } else {
+
+        if (!window.orderDataManager) {
             console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
             return [];
         }
+
+        // farm_order_rows(RPC 결과)에서 해당 상태 행 추출
+        const rows = window.orderDataManager.farm_order_rows || [];
+        const readyRows = rows.filter(r => {
+            const st = r.order_status || r.status || '';
+            return st === '상품준비' || st === '배송준비';
+        });
+        console.log('📦 피킹 대상 요약 행:', readyRows.length + '건');
+        console.log('   - 상품준비:', readyRows.filter(r => r.order_status === '상품준비').length + '건');
+        console.log('   - 배송준비:', readyRows.filter(r => r.order_status === '배송준비').length + '건');
+
+        if (readyRows.length === 0) return [];
+
+        // 각 주문의 items 포함 전체 데이터를 Supabase에서 조회
+        const fullOrders = await Promise.all(
+            readyRows.map(r => {
+                const id = r.order_id || r.id;
+                return window.orderDataManager.fetchOrderByIdFromSupabase(id);
+            })
+        );
+        const validOrders = fullOrders.filter(Boolean);
+        console.log('✅ 피킹 대상 전체 주문 로드 완료:', validOrders.length + '건');
+        return validOrders;
     } catch (error) {
         console.error('❌ 피킹 대상 주문 조회 실패:', error);
         return [];
@@ -1308,16 +1194,16 @@ function displayPickingData(modal, pickingData) {
                 console.log(`🔍 상품 ${index}:`, product);
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold bg-gray-50">${index + 1}</td>
-                        <td class="border border-gray-300 px-2 py-1 font-medium text-left">${product.name || '상품명 없음'}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center">
-                            <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        <td class="border border-gray-300 px-2 text-center font-semibold bg-gray-50">${index + 1}</td>
+                        <td class="border border-gray-300 px-2 font-medium text-left td-primary">${product.name || '상품명 없음'}</td>
+                        <td class="border border-gray-300 px-2 text-center">
+                            <span class="badge badge-info">
                                 ${product.size || '기본'}
                             </span>
                         </td>
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold text-blue-600">${product.totalQuantity || 0}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center">${product.orders ? product.orders.length : 0}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-right font-semibold text-green-600">${(product.totalAmount || 0).toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${product.totalQuantity || 0}</td>
+                        <td class="border border-gray-300 px-2 text-center">${product.orders ? product.orders.length : 0}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${(product.totalAmount || 0).toLocaleString()}원</td>
                     </tr>
                 `;
             }).join('');
@@ -1338,11 +1224,11 @@ function displayPickingData(modal, pickingData) {
                 
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="border border-gray-300 px-2 py-1 font-medium text-left">${customer.name}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-left text-gray-600">${customer.phone}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold text-blue-600">${customer.orders.length}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-right font-semibold text-green-600">${customer.total_amount.toLocaleString()}원</td>
-                        <td class="border border-gray-300 px-2 py-1 text-left text-xs text-gray-500">${productList}</td>
+                        <td class="border border-gray-300 px-2 font-medium td-primary">${customer.name}</td>
+                        <td class="border border-gray-300 px-2 td-secondary">${customer.phone}</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${customer.orders.length}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${customer.total_amount.toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 td-muted">${productList}</td>
                     </tr>
                 `;
             }).join('');
@@ -1587,10 +1473,14 @@ function printPickingList(pickingData, type) {
         if (printHTML) {
             // 새 창에서 출력
             const printWindow = window.open('', '_blank');
+            if (!printWindow) {
+                alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+                return;
+            }
             printWindow.document.write(printHTML);
             printWindow.document.close();
             printWindow.focus();
-            
+
             // 인쇄 대화상자 열기
             setTimeout(() => {
                 printWindow.print();
@@ -1623,6 +1513,10 @@ function printPreviewContent() {
         
         // 새 창에서 인쇄
         const printWindow = window.open('', '_blank');
+        if (!printWindow) {
+            alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
+            return;
+        }
         printWindow.document.write(`
             <!DOCTYPE html>
             <html>
@@ -1631,8 +1525,8 @@ function printPreviewContent() {
                 <meta charset="UTF-8">
                 <style>
                     * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body { 
-                        font-family: 'Malgun Gothic', sans-serif; 
+                    body {
+                        font-family: 'Malgun Gothic', sans-serif;
                         padding: 20px;
                         background: white;
                     }
@@ -1648,7 +1542,7 @@ function printPreviewContent() {
         `);
         printWindow.document.close();
         printWindow.focus();
-        
+
         // 인쇄 대화상자 열기
         setTimeout(() => {
             printWindow.print();
@@ -1803,21 +1697,21 @@ function createShippingSettingsSection() {
 
                     <!-- 배송비 규칙 목록 -->
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="min-w-full table-ui">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">규칙명</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">적용 조건</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송비</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">우선순위</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                                    <th class="px-6 text-left">규칙명</th>
+                                    <th class="px-6 text-left">적용 조건</th>
+                                    <th class="px-6 text-left">배송비</th>
+                                    <th class="px-6 text-left">우선순위</th>
+                                    <th class="px-6 text-left">상태</th>
+                                    <th class="px-6 text-left">작업</th>
                                 </tr>
                             </thead>
-                            <tbody id="shipping-rules-table-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="shipping-rules-table-body">
                                 <!-- 배송비 규칙들이 여기에 동적으로 추가됩니다 -->
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="6" class="px-6 text-center text-gray-500">
                                         <div class="flex flex-col items-center space-y-2">
                                             <i class="fas fa-truck text-gray-400 text-2xl"></i>
                                             <p class="text-sm">등록된 배송비 규칙이 없습니다</p>
@@ -2266,7 +2160,7 @@ function updateShippingRulesTable(rules) {
     if (rules.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="5" class="px-6 text-center text-gray-500">
                     배송비 규칙이 없습니다.
                 </td>
             </tr>
@@ -2276,18 +2170,18 @@ function updateShippingRulesTable(rules) {
     
     tbody.innerHTML = rules.map(rule => `
         <tr>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${rule.name}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 whitespace-nowrap font-medium td-primary">${rule.name}</td>
+            <td class="px-6 whitespace-nowrap td-secondary">
                 ${rule.min_amount > 0 ? rule.min_amount.toLocaleString() + '원 이상' : '제한없음'}
                 ${rule.max_amount > 0 ? ' ~ ' + rule.max_amount.toLocaleString() + '원' : ''}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${rule.shipping_fee.toLocaleString()}원</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${rule.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            <td class="px-6 whitespace-nowrap td-primary">${rule.shipping_fee.toLocaleString()}원</td>
+            <td class="px-6 whitespace-nowrap">
+                <span class="badge ${rule.is_active ? 'badge-success' : 'badge-danger'}">
                     ${rule.is_active ? '활성' : '비활성'}
                 </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 whitespace-nowrap font-medium">
                 <button onclick="toggleShippingRule('${rule.id}', ${!rule.is_active})" class="text-indigo-600 hover:text-indigo-900 mr-2">
                     ${rule.is_active ? '비활성화' : '활성화'}
                 </button>
@@ -2608,18 +2502,18 @@ function addShippingRuleToTable(ruleData) {
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-50';
     row.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ruleData.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td class="px-6 whitespace-nowrap font-medium td-primary">${ruleData.name}</td>
+        <td class="px-6 whitespace-nowrap td-secondary">
             ${ruleData.region ? ruleData.region : '전체'} ${ruleData.minAmount ? ruleData.minAmount + '원 이상' : ''}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parseInt(ruleData.shippingFee).toLocaleString()}원</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ruleData.priority}</td>
-        <td class="px-6 py-4 whitespace-nowrap">
-            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${ruleData.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+        <td class="px-6 whitespace-nowrap td-secondary">${parseInt(ruleData.shippingFee).toLocaleString()}원</td>
+        <td class="px-6 whitespace-nowrap td-secondary">${ruleData.priority}</td>
+        <td class="px-6 whitespace-nowrap">
+            <span class="badge ${ruleData.status === 'active' ? 'badge-success' : 'badge-neutral'}">
                 ${ruleData.status === 'active' ? '활성' : '비활성'}
             </span>
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        <td class="px-6 whitespace-nowrap font-medium">
             <button onclick="editShippingRule(this)" class="text-indigo-600 hover:text-indigo-900 mr-3">수정</button>
             <button onclick="deleteShippingRule(this)" class="text-red-600 hover:text-red-900">삭제</button>
         </td>
@@ -2658,11 +2552,11 @@ function deleteShippingRule(button) {
         if (tbody && tbody.children.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    <td colspan="6" class="px-6 text-center text-gray-500">
                         <div class="flex flex-col items-center space-y-2">
                             <i class="fas fa-truck text-gray-400 text-2xl"></i>
-                            <p class="text-sm">등록된 배송비 규칙이 없습니다</p>
-                            <p class="text-xs text-gray-400">새 배송비 규칙을 추가해보세요</p>
+                            <p>등록된 배송비 규칙이 없습니다</p>
+                            <p class="td-muted">새 배송비 규칙을 추가해보세요</p>
                         </div>
                     </td>
                 </tr>
@@ -2733,7 +2627,7 @@ async function loadTrackingPanelOrders() {
     const tbody = document.getElementById('tracking-input-rows');
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
 
     try {
         if (!window.supabaseClient) throw new Error('Supabase 미연결');
@@ -2761,7 +2655,7 @@ async function loadTrackingPanelOrders() {
         }
 
         if (!orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
             return;
         }
 
@@ -2773,15 +2667,15 @@ async function loadTrackingPanelOrders() {
             const existingTracking = order.tracking_number || '';
             return `
             <tr class="hover:bg-amber-50" data-order-id="${order.id}">
-                <td class="px-3 py-2 font-mono text-gray-600 whitespace-nowrap">${order.order_number || '-'}</td>
-                <td class="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">${order.customer_name || '-'}</td>
-                <td class="px-3 py-2 text-gray-500 max-w-[180px] truncate" title="${summary}">${summary}</td>
-                <td class="px-3 py-2">
-                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400"
+                <td class="px-3 font-mono td-secondary whitespace-nowrap">${order.order_number || '-'}</td>
+                <td class="px-3 font-medium td-primary whitespace-nowrap">${order.customer_name || '-'}</td>
+                <td class="px-3 td-muted max-w-[180px] truncate" title="${summary}">${summary}</td>
+                <td class="px-3">
+                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400"
                         placeholder="송장번호 입력" value="${existingTracking}"
                         onkeydown="if(event.key==='Enter'){saveOneTrackingNumber('${order.id}', this.closest('tr'))}">
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <button onclick="saveOneTrackingNumber('${order.id}', this.closest('tr'))"
                         class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
                         저장
@@ -2792,7 +2686,7 @@ async function loadTrackingPanelOrders() {
 
     } catch (e) {
         console.error('송장번호 패널 로드 실패:', e);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">로드 실패: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400">로드 실패: ${e.message}</td></tr>`;
     }
 }
 

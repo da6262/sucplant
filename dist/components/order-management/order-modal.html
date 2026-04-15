@@ -1,5 +1,5 @@
-<!-- 주문 등록/수정 — 우측 사이드 패널 -->
-<div id="order-modal" class="hidden fixed inset-0 z-[500]">
+<!-- 주문 등록/수정 — 가운데 팝업 -->
+<div id="order-modal" class="modal-overlay hidden" style="z-index:500;">
     <style>
         #order-modal .order-management-only,
         #order-modal #shipping-settings-btn {
@@ -9,51 +9,32 @@
             position: absolute !important;
             left: -9999px !important;
         }
-
-        /* 가운데 팝업 */
         #order-modal-content {
             animation: panelSlideIn 0.22s ease-out;
         }
         @keyframes panelSlideIn {
-            from { transform: translate(-50%, -46%); opacity: 0.6; }
-            to   { transform: translate(-50%, -50%); opacity: 1; }
+            from { transform: translateY(6px); opacity: 0.6; }
+            to   { transform: translateY(0);   opacity: 1; }
         }
-
-        /* 스크롤바 */
         #order-panel-body::-webkit-scrollbar { width: 5px; }
-        #order-panel-body::-webkit-scrollbar-thumb { background: #ccc; border-radius: 3px; }
+        #order-panel-body::-webkit-scrollbar-thumb { background: #D1D5DB; border-radius: 3px; }
     </style>
 
-    <!-- 배경 오버레이 (반투명 — 뒤 내용 보임) -->
-    <div class="absolute inset-0 bg-black bg-opacity-25" onclick="window.closeOrderModal()"></div>
-
-    <!-- 우측 사이드 패널 -->
-    <div id="order-modal-content"
-         style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
-                width:720px;max-width:95vw;max-height:90vh;
-                background:#fff;border-radius:10px;border:1px solid #d1d5db;
-                display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,.18);overflow:hidden;">
+    <!-- 모달 컨테이너 -->
+    <div id="order-modal-content" class="modal-container modal-lg">
 
         <!-- 헤더 -->
-        <div style="display:flex;align-items:center;justify-content:space-between;
-                    padding:10px 16px;border-bottom:1px solid #e5e7eb;
-                    background:#f8fafc;flex-shrink:0;">
-            <div style="display:flex;align-items:center;gap:8px;">
-                <i class="fas fa-shopping-cart" style="color:#2563eb;font-size:15px"></i>
-                <span id="modal-title" style="font-size:15px;font-weight:700;color:#1e293b">새 주문 등록</span>
-            </div>
-            <button id="back-to-orders" onclick="window.closeOrderModal()"
-                    style="padding:4px 12px;font-size:13px;color:#64748b;border:1px solid #cbd5e1;
-                           background:#fff;cursor:pointer;border-radius:4px;">
-                ✕ 닫기
+        <div class="modal-header">
+            <span id="modal-title" class="modal-title">새 주문 등록</span>
+            <button id="back-to-orders" onclick="window.closeOrderModal()" class="modal-close-btn">
+                <i class="fas fa-times"></i>
             </button>
         </div>
 
-        <!-- 폼 본문 (스크롤 가능) -->
+        <!-- 폼 본문 -->
         <div id="order-panel-body" style="flex:1;overflow-y:auto;background:#f9fafb;">
             <form id="order-form"
                   onkeydown="if(event.key==='Enter'&&event.target.tagName!=='TEXTAREA'&&event.target.id!=='order-submit-btn'){event.preventDefault();}">
-                <!-- 주문 폼 내용이 여기에 들어갑니다 -->
             </form>
         </div>
     </div>

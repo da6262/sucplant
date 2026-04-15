@@ -12,8 +12,8 @@ export function showSettingsTab(tabName) {
         });
         
         // 모든 탭 버튼 비활성화
-        document.querySelectorAll('.settings-tab').forEach(tab => {
-            tab.classList.remove('border-blue-500', 'text-blue-600');
+        document.querySelectorAll('[id^="settings-tab-"]').forEach(tab => {
+            tab.classList.remove('active', 'border-blue-500', 'text-blue-600');
             tab.classList.add('border-transparent', 'text-gray-500');
         });
         
@@ -28,7 +28,7 @@ export function showSettingsTab(tabName) {
             // 탭 버튼 활성화
             if (targetTabButton) {
                 targetTabButton.classList.remove('border-transparent', 'text-gray-500');
-                targetTabButton.classList.add('border-blue-500', 'text-blue-600');
+                targetTabButton.classList.add('active');
             }
             
             // 탭별 데이터 로드
@@ -63,32 +63,84 @@ export function showSettingsTab(tabName) {
 // SMS 설정 로드
 async function loadSMSSettings() {
     try {
-        console.log('📱 SMS 설정 로드 시작');
-        
-        // 설정 데이터 매니저에서 SMS 설정 가져오기
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
-        
-        // SMS 템플릿 필드들에 값 설정
-        const smsFields = {
-            'sms-order-confirm': smsSettings.orderConfirm || '',
-            'sms-payment-confirm': smsSettings.paymentConfirm || '',
-            'sms-shipping-start': smsSettings.shippingStart || '',
-            'sms-shipping-complete': smsSettings.shippingComplete || '',
-            'sms-waitlist-notify': smsSettings.waitlistNotify || ''
-        };
-        
-        // 각 필드에 값 설정
-        Object.entries(smsFields).forEach(([fieldId, value]) => {
-            const field = document.getElementById(fieldId);
-            if (field) {
-                field.value = value;
-            }
+        const smsConfig   = settings?.smsConfig    || {};
+
+        // API 인증정보 필드 채우기
+        const keyEl    = document.getElementById('sms-api-key');
+        const secretEl = document.getElementById('sms-api-secret');
+        const fromEl   = document.getElementById('sms-from-number');
+        if (keyEl)    keyEl.value    = smsConfig.apiKey    || '';
+        if (secretEl) secretEl.value = smsConfig.apiSecret || '';
+        if (fromEl)   fromEl.value   = smsConfig.from      || '';
+
+        // 인증정보 저장 버튼 이벤트 연결
+        const saveConfigBtn = document.getElementById('save-sms-config-btn');
+        if (saveConfigBtn && !saveConfigBtn._bound) {
+            saveConfigBtn._bound = true;
+            saveConfigBtn.addEventListener('click', async () => {
+                try {
+                    const apiKey    = (document.getElementById('sms-api-key')?.value    || '').trim();
+                    const apiSecret = (document.getElementById('sms-api-secret')?.value || '').trim();
+                    const from      = (document.getElementById('sms-from-number')?.value || '').replace(/[^0-9]/g, '');
+
+                    if (!apiKey || !apiSecret || !from) {
+                        alert('API Key, API Secret, 발신번호를 모두 입력해주세요.');
+                        return;
+                    }
+
+                    if (window.settingsDataManager) {
+                        await window.settingsDataManager.updateSetting('smsConfig', 'apiKey',    apiKey);
+                        await window.settingsDataManager.updateSetting('smsConfig', 'apiSecret', apiSecret);
+                        await window.settingsDataManager.updateSetting('smsConfig', 'from',      from);
+                        if (window.showToast) window.showToast('✅ SMS 인증정보가 저장되었습니다.', 2500);
+                        else alert('SMS 인증정보가 저장되었습니다.');
+                    } else {
+                        alert('설정 저장에 실패했습니다.');
+                    }
+                } catch (e) {
+                    console.error('SMS 인증정보 저장 실패:', e);
+                    alert('저장 실패: ' + e.message);
+                }
+            });
+        }
+
+        const container = document.getElementById('sms-templates-list');
+        if (!container) return;
+        container.innerHTML = '';
+
+        const templates = [
+            { key: 'orderConfirm',    label: '주문확인',    fieldId: 'sms-order-confirm',    vars: '{customerName} {orderNumber} {orderDetails} {totalAmount} {shippingFee} {paymentInfo}' },
+            { key: 'paymentConfirm',  label: '입금확인',    fieldId: 'sms-payment-confirm',   vars: '{customerName} {orderNumber}' },
+            { key: 'shippingStart',   label: '배송시작',    fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
+            { key: 'shippingComplete',label: '배송완료',    fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
+            { key: 'waitlistNotify',  label: '대기품목',    fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+        ];
+
+        templates.forEach(tpl => {
+            const value = smsSettings[tpl.key] || '';
+            const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
+            const item = document.createElement('div');
+            item.id = `sms-item-${tpl.key}`;
+            item.className = 'border-b border-gray-100 last:border-0';
+            item.innerHTML = `
+                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
+                    <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${tpl.label}</span>
+                    <span class="sms-preview text-xs text-gray-400 flex-1 truncate">${preview}</span>
+                    <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
+                </div>
+                <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
+                    <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                    <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
+                    <div class="flex justify-end mt-1.5">
+                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
+                    </div>
+                </div>
+            `;
+            container.appendChild(item);
         });
-        
-        // SMS 설정 저장/취소 버튼 이벤트 리스너 추가
-        setupSMSSettingsEventListeners();
-        
+
         console.log('✅ SMS 설정 로드 완료');
     } catch (error) {
         console.error('❌ SMS 설정 로드 실패:', error);
@@ -202,35 +254,20 @@ export function loadShippingSettings() {
         
         if (defaultShippingFeeInput) defaultShippingFeeInput.value = settings.shipping.defaultShippingFee || 3000;
         if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
-        
+
+        // 배송 방법 목록
+        const methodsInput = document.getElementById('shipping-methods-input');
+        if (methodsInput) {
+            const methods = settings.shipping.shippingMethods;
+            methodsInput.value = Array.isArray(methods) ? methods.join(', ') : '택배, 직접배송, 픽업';
+        }
+
         console.log('✅ 배송 설정 로드 완료');
     } catch (error) {
         console.error('❌ 배송 설정 로드 실패:', error);
     }
 }
 
-// 알림 설정 로드
-export function loadNotificationSettings() {
-    try {
-        console.log('🔔 알림 설정 로드');
-        
-        const settings = window.settingsDataManager.getAllSettings();
-        
-        const emailNotificationsToggle = document.getElementById('email-notifications');
-        const smsNotificationsToggle = document.getElementById('sms-notifications');
-        const orderAlertsToggle = document.getElementById('order-alerts');
-        const lowStockAlertsToggle = document.getElementById('low-stock-alerts');
-        
-        if (emailNotificationsToggle) emailNotificationsToggle.checked = settings.notifications.emailNotifications || false;
-        if (smsNotificationsToggle) smsNotificationsToggle.checked = settings.notifications.smsNotifications || false;
-        if (orderAlertsToggle) orderAlertsToggle.checked = settings.notifications.orderAlerts || false;
-        if (lowStockAlertsToggle) lowStockAlertsToggle.checked = settings.notifications.lowStockAlerts || false;
-        
-        console.log('✅ 알림 설정 로드 완료');
-    } catch (error) {
-        console.error('❌ 알림 설정 로드 실패:', error);
-    }
-}
 
 // 고객 등급 관리
 export async function loadCustomerGrades() {
@@ -263,40 +300,23 @@ export async function loadCustomerGrades() {
         
         if (!settings.customerGrades || settings.customerGrades.length === 0) {
             console.warn('⚠️ 고객등급 데이터가 없습니다');
-            container.innerHTML = '<div class="text-gray-500 text-center py-4">고객등급이 없습니다.</div>';
+            container.innerHTML = '<div class="text-gray-500 text-center py-4 text-xs">고객등급이 없습니다.</div>';
             return;
         }
-        
+
+        const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         settings.customerGrades.forEach((grade, index) => {
-            console.log(`📋 등급 ${index}:`, grade);
-            const gradeElement = document.createElement('div');
-            gradeElement.className = 'flex items-center justify-between p-4 bg-white border border-gray-200 rounded-lg mb-3 shadow-sm hover:shadow-md transition-shadow';
-            gradeElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-10 h-10 rounded-full flex items-center justify-center mr-4" style="background-color: ${grade.color}">
-                        <i class="${grade.icon} text-white text-sm"></i>
-                    </div>
-                    <div>
-                        <div class="font-semibold text-gray-800">${grade.name}</div>
-                        <div class="text-sm text-gray-600">
-                            <span class="inline-block bg-gray-100 px-2 py-1 rounded text-xs mr-2">${grade.code}</span>
-                            최소 ${grade.minAmount.toLocaleString()}원
-                        </div>
-                        <div class="text-sm text-gray-500 mt-1">
-                            <i class="fas fa-percentage mr-1"></i>할인 ${grade.discount}%
-                        </div>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="editCustomerGrade(${index})" class="p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-colors" title="편집">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteCustomerGrade(${index})" class="p-2 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-lg transition-colors" title="삭제">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+            const row = document.createElement('div');
+            row.id = `grade-row-${index}`;
+            row.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
+            row.innerHTML = `
+                <span class="flex-1 text-xs font-medium text-gray-800">${_esc(grade.name)}</span>
+                <span class="text-xs text-gray-500 w-36 text-right">${(grade.minAmount||0).toLocaleString()}원 이상</span>
+                <span class="text-xs text-gray-500 w-10 text-right">${grade.discount||0}%</span>
+                <button onclick="startEditGrade(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteCustomerGrade(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
-            container.appendChild(gradeElement);
+            container.appendChild(row);
         });
         
         console.log('✅ 고객 등급 관리 로드 완료');
@@ -424,29 +444,18 @@ export async function loadSalesChannels() {
             console.log('✅ 판매 채널 관리 로드 완료 (0개)');
             return;
         }
+        const esc2 = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         channels.forEach((channel, index) => {
             const isActive = channel.is_active !== false;
             const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2';
+            channelElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             channelElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-3 h-3 rounded-full mr-3 ${isActive ? 'bg-green-500' : 'bg-gray-400'}"></div>
-                    <div>
-                        <div class="font-medium">${(channel.name || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                        <div class="text-sm text-gray-600">${(channel.description || channel.icon || '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</div>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="toggleSalesChannelByIndex(${index})" class="text-blue-600 hover:text-blue-800" title="${isActive ? '비활성화' : '활성화'}">
-                        <i class="fas fa-${isActive ? 'pause' : 'play'}"></i>
-                    </button>
-                    <button onclick="editSalesChannelByIndex(${index})" class="text-blue-600 hover:text-blue-800" title="편집">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteSalesChannelByIndex(${index})" class="text-red-600 hover:text-red-800" title="삭제">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <div class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></div>
+                <span class="text-xs font-medium text-gray-800 flex-1">${esc2(channel.name||'')}</span>
+                <span class="text-xs text-gray-400">${esc2(channel.description||'')}</span>
+                <button onclick="toggleSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                <button onclick="editSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="편집"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
             container.appendChild(channelElement);
         });
@@ -454,6 +463,35 @@ export async function loadSalesChannels() {
     } catch (error) {
         console.error('❌ 판매 채널 관리 로드 실패:', error);
         container.innerHTML = '<div class="text-red-500 text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
+    }
+
+    // 채널 추가 버튼 리스너 (1회만 등록)
+    const addChannelBtn = document.getElementById('add-channel-btn');
+    if (addChannelBtn && !addChannelBtn._channelBtnBound) {
+        addChannelBtn._channelBtnBound = true;
+        addChannelBtn.addEventListener('click', async function() {
+            const name = prompt('채널명을 입력하세요:');
+            if (!name || !name.trim()) return;
+            try {
+                if (!window.addSalesChannel) {
+                    alert('판매채널 모듈을 불러올 수 없습니다.');
+                    return;
+                }
+                await window.addSalesChannel({
+                    name: name.trim(),
+                    icon: 'store',
+                    color: 'green',
+                    description: '',
+                    sort_order: (window.salesChannelsDataManager?.channels?.length || 0),
+                    is_active: true
+                });
+                await loadSalesChannels();
+                console.log('✅ 판매채널 추가 완료:', name.trim());
+            } catch (error) {
+                console.error('❌ 판매채널 추가 실패:', error);
+                alert('채널 추가에 실패했습니다: ' + (error.message || error));
+            }
+        });
     }
 }
 
@@ -471,23 +509,13 @@ export function loadOrderStatuses() {
         
         settings.orderStatuses.forEach((status, index) => {
             const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg mb-2';
+            statusElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             statusElement.innerHTML = `
-                <div class="flex items-center">
-                    <div class="w-4 h-4 rounded-full mr-3" style="background-color: ${status.color}"></div>
-                    <div>
-                        <div class="font-medium">${status.label}</div>
-                        <div class="text-sm text-gray-600">${status.description}</div>
-                    </div>
-                </div>
-                <div class="flex space-x-2">
-                    <button onclick="editOrderStatus(${index})" class="text-blue-600 hover:text-blue-800">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button onclick="deleteOrderStatus(${index})" class="text-red-600 hover:text-red-800">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
+                <div class="w-2 h-2 rounded-full shrink-0" style="background-color:${status.color||'#6B7280'}"></div>
+                <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${status.label||''}</span>
+                <span class="text-xs text-gray-400 flex-1">${status.description||''}</span>
+                <button onclick="editOrderStatus(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteOrderStatus(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
             container.appendChild(statusElement);
         });
@@ -529,17 +557,6 @@ export function saveSettings() {
         
         window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
         window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
-        
-        // 알림 설정 저장
-        const emailNotifications = document.getElementById('email-notifications')?.checked || false;
-        const smsNotifications = document.getElementById('sms-notifications')?.checked || false;
-        const orderAlerts = document.getElementById('order-alerts')?.checked || false;
-        const lowStockAlerts = document.getElementById('low-stock-alerts')?.checked || false;
-        
-        window.settingsDataManager.updateSetting('notifications', 'emailNotifications', emailNotifications);
-        window.settingsDataManager.updateSetting('notifications', 'smsNotifications', smsNotifications);
-        window.settingsDataManager.updateSetting('notifications', 'orderAlerts', orderAlerts);
-        window.settingsDataManager.updateSetting('notifications', 'lowStockAlerts', lowStockAlerts);
         
         console.log('✅ 설정 저장 완료');
         return true;
@@ -872,7 +889,6 @@ function initSettingsEventListeners() {
 window.showSettingsTab = showSettingsTab;
 window.loadGeneralSettings = loadGeneralSettings;
 window.loadShippingSettings = loadShippingSettings;
-window.loadNotificationSettings = loadNotificationSettings;
 window.loadCustomerGrades = loadCustomerGrades;
 window.loadSalesChannels = loadSalesChannels;
 window.loadOrderStatuses = loadOrderStatuses;
@@ -959,27 +975,27 @@ window.editCustomerGrade = async function(index) {
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">등급명</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">등급명</label>
                             <input type="text" id="edit-grade-name" value="${currentGrade.name}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">최소 구매금액 (원)</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">최소 구매금액 (원)</label>
                             <input type="number" id="edit-grade-min-amount" value="${currentGrade.minAmount}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">할인율 (%)</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">할인율 (%)</label>
                             <input type="number" id="edit-grade-discount" value="${currentGrade.discount}" min="0" max="100"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">색상</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">색상</label>
                             <input type="color" id="edit-grade-color" value="${currentGrade.color}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">아이콘</label>
+                            <label class="block text-xs font-medium text-gray-700 mb-1">아이콘</label>
                             <select id="edit-grade-icon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="fas fa-circle" ${currentGrade.icon === 'fas fa-circle' ? 'selected' : ''}>원형</option>
                                 <option value="fas fa-hexagon" ${currentGrade.icon === 'fas fa-hexagon' ? 'selected' : ''}>육각형</option>
@@ -1008,6 +1024,31 @@ window.editCustomerGrade = async function(index) {
     } catch (error) {
         console.error('❌ 고객등급 편집 실패:', error);
         alert('등급 편집에 실패했습니다.');
+    }
+};
+
+// 인라인 저장
+window.saveInlineGrade = async function(index) {
+    try {
+        const name = document.getElementById(`grade-name-${index}`)?.value.trim();
+        const minAmount = parseInt(document.getElementById(`grade-minamount-${index}`)?.value) || 0;
+        const discount = parseInt(document.getElementById(`grade-discount-${index}`)?.value) || 0;
+
+        if (!name) { alert('등급명을 입력해주세요.'); return; }
+        if (discount < 0 || discount > 100) { alert('할인율은 0-100% 사이로 입력해주세요.'); return; }
+
+        const settings = window.settingsDataManager.getAllSettings();
+        const existing = settings.customerGrades[index];
+        await window.settingsDataManager.updateCustomerGrade(index, {
+            ...existing,
+            name,
+            minAmount,
+            discount
+        });
+        setTimeout(() => { loadCustomerGrades(); }, 100);
+    } catch (error) {
+        console.error('❌ 고객등급 저장 실패:', error);
+        alert('저장에 실패했습니다.');
     }
 };
 
@@ -1073,22 +1114,81 @@ window.saveEditGrade = async function(index) {
 
 window.deleteCustomerGrade = async function(index) {
     console.log('🔄 고객등급 삭제:', index);
-    
+
     try {
         if (confirm('정말로 이 등급을 삭제하시겠습니까?')) {
             // 고객등급 삭제
             await window.settingsDataManager.deleteCustomerGrade(index);
-            
+
             // 화면 새로고침
             setTimeout(() => {
                 loadCustomerGrades();
                 console.log('✅ 고객등급 삭제 후 화면 새로고침 완료');
             }, 100);
-            
+
             console.log('✅ 고객등급 삭제 완료');
         }
     } catch (error) {
         console.error('❌ 고객등급 삭제 실패:', error);
         alert('등급 삭제에 실패했습니다.');
+    }
+};
+
+// 고객등급 인라인 편집 시작
+window.startEditGrade = function(index) {
+    const row = document.getElementById(`grade-row-${index}`);
+    if (!row) return;
+    const settings = window.settingsDataManager.getAllSettings();
+    const g = settings.customerGrades[index];
+    if (!g) return;
+    const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    row.innerHTML = `
+        <input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui flex-1 text-xs" placeholder="등급명">
+        <input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui w-28 text-xs text-right" min="0">
+        <span class="text-xs text-gray-400 shrink-0">원 이상</span>
+        <input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui w-14 text-xs text-right" min="0" max="100">
+        <span class="text-xs text-gray-400 shrink-0">%</span>
+        <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs shrink-0">저장</button>
+        <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs shrink-0">취소</button>
+    `;
+    row.querySelector(`#grade-name-${index}`)?.focus();
+};
+
+// 고객등급 인라인 편집 취소
+window.cancelEditGrade = function(index) {
+    loadCustomerGrades();
+};
+
+// SMS 템플릿 펼침/접힘 토글
+window.toggleSmsTemplate = function(key) {
+    const detail = document.getElementById(`sms-detail-${key}`);
+    const chevron = document.getElementById(`sms-chevron-${key}`);
+    if (!detail) return;
+    const isHidden = detail.classList.contains('hidden');
+    detail.classList.toggle('hidden', !isHidden);
+    if (chevron) {
+        chevron.classList.toggle('fa-chevron-down', !isHidden);
+        chevron.classList.toggle('fa-chevron-up', isHidden);
+    }
+};
+
+// SMS 단일 템플릿 저장
+window.saveSingleSmsTemplate = async function(key, fieldId) {
+    try {
+        const value = document.getElementById(fieldId)?.value || '';
+        if (window.settingsDataManager) {
+            await window.settingsDataManager.updateSetting('smsTemplates', key, value);
+            const item = document.getElementById(`sms-item-${key}`);
+            if (item) {
+                const previewEl = item.querySelector('.sms-preview');
+                if (previewEl) {
+                    const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
+                    previewEl.textContent = preview;
+                }
+            }
+        }
+    } catch (error) {
+        console.error('❌ SMS 템플릿 저장 실패:', error);
+        alert('저장에 실패했습니다.');
     }
 };

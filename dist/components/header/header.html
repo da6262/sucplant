@@ -30,6 +30,7 @@
         <button id="nav-orders" class="nav-btn" type="button">
             <i class="fas fa-shopping-cart"></i>
             <span>주문관리</span>
+            <span id="nav-order-todo-badge" style="display:none; margin-left:auto; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ef4444; color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; line-height:1;"></span>
         </button>
         <button id="nav-products" class="nav-btn" type="button">
             <i class="fas fa-box"></i>
@@ -48,6 +49,14 @@
             <span>환경설정</span>
         </button>
     </nav>
+
+    <!-- 버전 배지 -->
+    <div class="px-4 pb-2 text-center">
+        <span id="app-version-badge"
+              style="font-size:10px; color:#475569; letter-spacing:0.04em;">
+            v<span id="app-version-number">—</span>
+        </span>
+    </div>
 
     <!-- 하단: 사용자 정보 + 액션 -->
     <div class="px-3 py-4" style="border-top: 1px solid rgba(255,255,255,0.07);">
@@ -114,10 +123,6 @@
         <button id="mobile-nav-products" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
             <i class="fas fa-box text-lg mb-0.5"></i>
             <span class="text-[10px]">상품</span>
-        </button>
-        <button id="mobile-nav-shipping" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
-            <i class="fas fa-truck text-lg mb-0.5"></i>
-            <span class="text-[10px]">배송</span>
         </button>
         <button id="mobile-nav-waitlist" type="button" class="mobile-nav-btn flex flex-col items-center justify-center py-1.5 px-1 min-w-0 flex-1 text-gray-500">
             <i class="fas fa-clock text-lg mb-0.5"></i>

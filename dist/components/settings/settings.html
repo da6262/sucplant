@@ -1,278 +1,200 @@
 <!-- 환경설정 컴포넌트 -->
-<div id="settings-content" class="app-section-frame flex flex-col h-[calc(100vh-3.5rem)] min-h-0">
+<div id="settings-content" class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0">
 
     <!-- 헤더 -->
-    <div class="app-section-header shrink-0">
-        <div class="app-section-heading">
-            <div class="app-section-icon">
-                <i class="fas fa-cog text-sm"></i>
-            </div>
-            <div>
-                <div class="app-section-title">환경설정</div>
-                <div class="app-section-subtitle">농장 기본값, 배송·채널·등급 등 시스템 설정을 관리하세요</div>
-            </div>
+    <div class="page-header">
+        <div>
+            <h2>환경설정</h2>
+            <p class="page-subtitle">농장 기본값, 배송·채널·등급 등 시스템 설정</p>
         </div>
-        <div class="app-toolbar">
-            <button id="reset-settings-btn" class="btn-secondary">
-                <i class="fas fa-undo"></i> 초기화
-            </button>
-            <button id="save-all-settings-btn" class="btn-primary">
-                <i class="fas fa-save"></i> 모든 설정 저장
-            </button>
+        <div class="action-group">
+            <button id="reset-settings-btn" class="btn-secondary"><i class="fas fa-undo"></i>초기화</button>
+            <button id="save-all-settings-btn" class="btn-primary"><i class="fas fa-save"></i>모든 설정 저장</button>
         </div>
     </div>
 
     <!-- 탭 네비게이션 -->
-    <div class="shrink-0 px-2 py-1.5 border-b border-gray-100 bg-white">
-        <div class="flex items-center gap-1 flex-nowrap overflow-x-auto" style="scrollbar-width:none;">
-            <button id="settings-tab-general" class="settings-tab-btn py-1.5 px-2.5 text-xs font-semibold rounded-md transition-all duration-150 active">
-                <i class="fas fa-cog"></i><span>일반 설정</span>
-            </button>
-            <button id="settings-tab-shipping" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-truck"></i><span>배송</span>
-            </button>
-            <button id="settings-tab-channels" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-store"></i><span>판매 채널</span>
-            </button>
-            <button id="settings-tab-orders" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-tasks"></i><span>주문 상태</span>
-            </button>
-            <button id="settings-tab-customers" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-crown"></i><span>고객등급</span>
-            </button>
-            <button id="settings-tab-sms" class="settings-tab-btn py-1.5 px-2.5 text-xs font-medium text-gray-600 hover:bg-gray-100 rounded-md transition-all duration-150">
-                <i class="fas fa-sms"></i><span>SMS</span>
-            </button>
+    <div class="shrink-0 px-3 py-1.5 border-b border-gray-100 bg-white">
+        <div class="flex items-center gap-0.5 flex-nowrap overflow-x-auto" style="scrollbar-width:none;">
+            <button id="settings-tab-general"   class="settings-tab-btn"><i class="fas fa-cog"></i><span>일반</span></button>
+            <button id="settings-tab-shipping"  class="settings-tab-btn"><i class="fas fa-truck"></i><span>배송</span></button>
+            <button id="settings-tab-channels"  class="settings-tab-btn"><i class="fas fa-store"></i><span>판매채널</span></button>
+            <button id="settings-tab-orders"    class="settings-tab-btn"><i class="fas fa-tasks"></i><span>주문상태</span></button>
+            <button id="settings-tab-customers" class="settings-tab-btn"><i class="fas fa-crown"></i><span>고객등급</span></button>
+            <button id="settings-tab-sms"       class="settings-tab-btn"><i class="fas fa-sms"></i><span>SMS</span></button>
         </div>
     </div>
 
     <!-- 콘텐츠 영역 -->
-    <div class="flex-1 overflow-auto p-3">
+    <div class="flex-1 overflow-auto">
 
         <!-- 일반 설정 -->
         <div id="settings-general-section" class="settings-content">
-            <div class="card-ui p-4">
-                <h3 class="text-sm font-semibold text-gray-800 mb-4">일반 설정</h3>
-                <div class="flex flex-col gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">농장명</label>
-                        <input type="text" id="farm-name" class="input-ui" placeholder="경산다육식물농장">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">대표자명</label>
-                        <input type="text" id="farm-owner" class="input-ui" placeholder="대표자명">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">연락처</label>
-                        <input type="tel" id="farm-phone" class="input-ui" placeholder="010-0000-0000">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">주소</label>
-                        <input type="text" id="farm-address" class="input-ui" placeholder="농장 주소">
-                    </div>
-                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                        <button id="cancel-general-settings" class="btn-secondary">
-                            <i class="fas fa-times"></i> 취소
-                        </button>
-                        <button id="save-general-settings" class="btn-primary">
-                            <i class="fas fa-save"></i> 저장
-                        </button>
-                    </div>
+            <div class="form-grid">
+
+                <!-- 농장명 (col-6) | 대표자명 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">농장명</label>
+                    <input type="text" id="farm-name" class="form-control" placeholder="경산다육식물농장">
                 </div>
+                <div class="form-col-6">
+                    <label class="form-label">대표자명</label>
+                    <input type="text" id="farm-owner" class="form-control" placeholder="대표자명">
+                </div>
+
+                <!-- 연락처 (col-6) | (빈 col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">연락처</label>
+                    <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000">
+                </div>
+                <div class="form-col-6"></div>
+
+                <!-- 주소 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">주소</label>
+                    <input type="text" id="farm-address" class="form-control" placeholder="농장 주소">
+                </div>
+
+                <!-- 버튼 영역 -->
+                <div class="form-actions">
+                    <button id="cancel-general-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
+                    <button id="save-general-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
+                </div>
+
             </div>
         </div>
 
         <!-- 배송 설정 -->
         <div id="settings-shipping-section" class="settings-content hidden">
-            <div class="card-ui p-4">
-                <h3 class="text-sm font-semibold text-gray-800 mb-4">배송 설정</h3>
-                <div class="flex flex-col gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">기본 배송비</label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" id="default-shipping-fee" class="input-ui flex-1" placeholder="3000">
-                            <span class="text-xs text-gray-500 shrink-0">원</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-2">무료배송 기준</label>
-                        <div class="flex flex-col gap-1.5 mb-2">
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="free-shipping-type" value="total-order" class="text-emerald-600 focus:ring-emerald-500" checked>
-                                <span class="text-xs text-gray-700">전체 주문금액 기준</span>
-                            </label>
-                            <label class="flex items-center gap-2 cursor-pointer">
-                                <input type="radio" name="free-shipping-type" value="single-item" class="text-emerald-600 focus:ring-emerald-500">
-                                <span class="text-xs text-gray-700">단일 상품금액 기준</span>
-                            </label>
-                        </div>
-                        <div class="flex items-center gap-2">
-                            <input type="number" id="free-shipping-threshold" class="input-ui flex-1" placeholder="50000">
-                            <span class="text-xs text-gray-500 shrink-0">원 이상</span>
-                        </div>
-                        <p class="text-xs text-gray-400 mt-1">
-                            <span id="free-shipping-description">전체 주문금액이 설정된 금액 이상일 때 무료배송</span>
-                        </p>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">당일배송 배송비</label>
-                        <div class="flex items-center gap-2">
-                            <input type="number" id="express-shipping-fee" class="input-ui flex-1" placeholder="5000">
-                            <span class="text-xs text-gray-500 shrink-0">원</span>
-                        </div>
-                    </div>
-                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                        <button id="cancel-shipping-settings" class="btn-secondary">
-                            <i class="fas fa-times"></i> 취소
-                        </button>
-                        <button type="button" id="save-shipping-settings" class="btn-primary" title="배송 설정 저장">
-                            <i class="fas fa-save"></i> 저장
-                        </button>
+            <div class="form-grid">
+
+                <!-- 기본 배송비 (col-6) | 당일배송 배송비 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">기본 배송비</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="default-shipping-fee" class="form-control" placeholder="3000">
+                        <span class="form-input-unit">원</span>
                     </div>
                 </div>
+                <div class="form-col-6">
+                    <label class="form-label">당일배송 배송비</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="express-shipping-fee" class="form-control" placeholder="5000">
+                        <span class="form-input-unit">원</span>
+                    </div>
+                </div>
+
+                <!-- 무료배송 기준 (form-section, col-12) -->
+                <div class="form-section">
+                    <div class="form-section-title">무료배송 기준</div>
+                    <div class="space-y-2">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="free-shipping-type" value="total-order"
+                                   class="text-emerald-600 focus:ring-emerald-500" checked>
+                            <span class="text-xs text-gray-700">전체 주문금액 기준</span>
+                        </label>
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="radio" name="free-shipping-type" value="single-item"
+                                   class="text-emerald-600 focus:ring-emerald-500">
+                            <span class="text-xs text-gray-700">단일 상품금액 기준</span>
+                        </label>
+                        <div class="form-input-group with-unit" style="max-width:240px;margin-top:6px;">
+                            <input type="number" id="free-shipping-threshold" class="form-control" placeholder="50000">
+                            <span class="form-input-unit">원 이상</span>
+                        </div>
+                        <p class="form-helper"><span id="free-shipping-description">전체 주문금액이 설정된 금액 이상일 때 무료배송</span></p>
+                    </div>
+                </div>
+
+                <!-- 배송 방법 목록 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">배송 방법 목록 <span class="form-helper" style="font-weight:400;">(쉼표로 구분, 주문 등록 드롭다운에 반영됨)</span></label>
+                    <input type="text" id="shipping-methods-input" class="form-control"
+                           placeholder="택배, 직접배송, 픽업">
+                    <p class="form-helper" style="margin-top:4px;">예: 택배, 직접배송, 픽업 &nbsp;·&nbsp; 픽업·방문·수령이 포함된 방법은 자동으로 배송비 무료 처리됩니다.</p>
+                </div>
+
+                <!-- 버튼 영역 -->
+                <div class="form-actions">
+                    <button id="cancel-shipping-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
+                    <button type="button" id="save-shipping-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
+                </div>
+
             </div>
         </div>
 
         <!-- 판매 채널 -->
         <div id="settings-channels-section" class="settings-content hidden">
-            <div class="card-ui p-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-gray-800">판매 채널 관리</h3>
-                    <button id="add-channel-btn" class="btn-primary">
-                        <i class="fas fa-plus"></i> 채널 추가
-                    </button>
-                </div>
-                <div id="channels-list" class="flex flex-col gap-2">
-                    <!-- 판매 채널 목록이 여기에 동적으로 로드됩니다 -->
-                </div>
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <span class="text-xs font-medium text-gray-600">판매 채널</span>
+                <button id="add-channel-btn" class="btn-primary"><i class="fas fa-plus"></i>채널 추가</button>
             </div>
+            <div id="channels-list" class="divide-y divide-gray-100"></div>
         </div>
 
         <!-- 주문 상태 -->
         <div id="settings-orders-section" class="settings-content hidden">
-            <div class="card-ui p-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-gray-800">주문 상태 관리</h3>
-                    <button id="add-order-status-btn" class="btn-primary">
-                        <i class="fas fa-plus"></i> 상태 추가
-                    </button>
-                </div>
-                <div id="order-statuses-list" class="flex flex-col gap-2">
-                    <!-- 주문 상태 목록이 여기에 동적으로 로드됩니다 -->
-                </div>
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <span class="text-xs font-medium text-gray-600">주문 상태</span>
+                <button id="add-order-status-btn" class="btn-primary"><i class="fas fa-plus"></i>상태 추가</button>
             </div>
+            <div id="order-statuses-list" class="divide-y divide-gray-100"></div>
         </div>
 
         <!-- 고객등급 -->
         <div id="settings-customers-section" class="settings-content hidden">
-            <div class="card-ui p-4">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-sm font-semibold text-gray-800">고객등급 관리</h3>
-                    <div class="flex gap-2">
-                        <button id="force-update-grades-btn" class="btn-secondary">
-                            <i class="fas fa-sync"></i> 5단계 업데이트
-                        </button>
-                        <button id="add-customer-grade-btn" class="btn-primary">
-                            <i class="fas fa-plus"></i> 등급 추가
-                        </button>
-                    </div>
-                </div>
-
-                <!-- 등급 적용 기간 설정 -->
-                <div class="border border-gray-100 rounded-lg p-3 mb-4 bg-gray-50">
-                    <div class="mb-3">
-                        <label class="block text-xs font-medium text-gray-600 mb-1">
-                            <i class="fas fa-calendar-alt mr-1"></i>등급 적용 기간
-                        </label>
-                        <select id="grade-period-select" class="input-ui">
-                            <option value="all">전체 기간 (누적)</option>
-                            <option value="1year">최근 1년</option>
-                            <option value="6months">최근 6개월</option>
-                            <option value="3months">최근 3개월</option>
-                        </select>
-                        <p class="text-xs text-gray-400 mt-1">고객 등급을 계산할 때 사용할 구매 이력 기간을 선택하세요.</p>
-                    </div>
-                    <div class="flex gap-2">
-                        <button id="save-grade-period-btn" class="btn-primary">
-                            <i class="fas fa-save"></i> 기간 설정 저장
-                        </button>
-                        <button id="recalculate-all-grades-btn" class="btn-secondary">
-                            <i class="fas fa-sync-alt"></i> 전체 등급 재계산
-                        </button>
-                    </div>
-                    <p class="text-xs text-amber-600 mt-2">
-                        💡 등급 적용 기간을 변경한 후 "전체 고객 등급 재계산" 버튼을 눌러 모든 고객의 등급을 새 기준으로 업데이트하세요.
-                    </p>
-                </div>
-
-                <div id="customer-grades-list" class="flex flex-col gap-2">
-                    <!-- 고객등급 목록이 여기에 동적으로 로드됩니다 -->
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
+                <span class="text-xs font-medium text-gray-600">고객등급</span>
+                <div class="flex gap-1.5">
+                    <button id="force-update-grades-btn" class="btn-secondary"><i class="fas fa-sync"></i>5단계 업데이트</button>
+                    <button id="add-customer-grade-btn" class="btn-primary"><i class="fas fa-plus"></i>등급 추가</button>
                 </div>
             </div>
+            <div class="flex items-center px-3 py-2 border-b border-gray-100">
+                <label class="text-xs text-gray-500 w-28 shrink-0"><i class="fas fa-calendar-alt mr-1"></i>등급 적용 기간</label>
+                <div class="flex items-center gap-2 flex-1">
+                    <select id="grade-period-select" class="input-ui flex-1">
+                        <option value="all">전체 기간 (누적)</option>
+                        <option value="1year">최근 1년</option>
+                        <option value="6months">최근 6개월</option>
+                        <option value="3months">최근 3개월</option>
+                    </select>
+                    <button id="save-grade-period-btn" class="btn-primary shrink-0"><i class="fas fa-save"></i>저장</button>
+                    <button id="recalculate-all-grades-btn" class="btn-secondary shrink-0"><i class="fas fa-sync-alt"></i>전체 재계산</button>
+                </div>
+            </div>
+            <div id="customer-grades-list" class="divide-y divide-gray-100"></div>
         </div>
 
         <!-- SMS 설정 -->
         <div id="settings-sms-section" class="settings-content hidden">
-            <div class="card-ui p-4">
-                <h3 class="text-sm font-semibold text-gray-800 mb-4">SMS 메시지 설정</h3>
-                <div class="flex flex-col gap-4">
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">주문확인 메시지</label>
-                        <textarea id="sms-order-confirm" class="input-ui resize-y" rows="10"
-                                  placeholder="[경산다육식물농장] {customerName}님, 주문이 접수되었습니다.&#10;&#10;■ 주문번호 {orderNumber}&#10;&#10;■ 주문상세&#10;&#10;{orderDetails}&#10;&#10;■ 결제 정보&#10;{paymentInfo}&#10;&#10;■ 입금계좌 농협 010-9745-6245-08 (예금주: 경산식물원(배은희))&#10;&#10;감사합니다."></textarea>
-                        <div class="text-xs text-gray-400 mt-1.5 bg-gray-50 rounded-lg p-2.5">
-                            <p class="font-semibold text-gray-500 mb-1">사용 가능한 변수:</p>
-                            <ul class="list-disc list-inside space-y-0.5 ml-1">
-                                <li><code class="bg-gray-100 px-1 rounded">{customerName}</code> 고객명</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{orderNumber}</code> 주문번호</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{orderDetails}</code> 주문상세 (상품 목록)</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{totalAmount}</code> 총 결제금액</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{productAmount}</code> 상품 금액</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{shippingFee}</code> 배송비</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{shippingFeeText}</code> 배송비 텍스트</li>
-                                <li><code class="bg-gray-100 px-1 rounded">{paymentInfo}</code> 결제 정보 전체</li>
-                            </ul>
-                        </div>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">입금확인 메시지</label>
-                        <textarea id="sms-payment-confirm" class="input-ui resize-y" rows="3"
-                                  placeholder="[농장명] {customerName}님, 입금이 확인되었습니다.&#10;주문번호: {orderNumber}&#10;배송준비를 시작합니다."></textarea>
-                        <p class="text-xs text-gray-400 mt-1">사용 가능한 변수: {customerName}, {orderNumber}</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">배송시작 메시지</label>
-                        <textarea id="sms-shipping-start" class="input-ui resize-y" rows="3"
-                                  placeholder="[농장명] {customerName}님, 주문하신 상품이 배송을 시작했습니다.&#10;주문번호: {orderNumber}&#10;택배사: {shippingCompany}&#10;송장번호: {trackingNumber}"></textarea>
-                        <p class="text-xs text-gray-400 mt-1">사용 가능한 변수: {customerName}, {orderNumber}, {shippingCompany}, {trackingNumber}</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">배송완료 메시지</label>
-                        <textarea id="sms-shipping-complete" class="input-ui resize-y" rows="3"
-                                  placeholder="[농장명] {customerName}님, 주문하신 상품이 배송완료되었습니다.&#10;주문번호: {orderNumber}&#10;감사합니다."></textarea>
-                        <p class="text-xs text-gray-400 mt-1">사용 가능한 변수: {customerName}, {orderNumber}</p>
-                    </div>
-
-                    <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">대기품목 안내 메시지</label>
-                        <textarea id="sms-waitlist-notify" class="input-ui resize-y" rows="3"
-                                  placeholder="[농장명] {customerName}님, 대기하신 상품이 입고되었습니다.&#10;상품명: {productName}&#10;수량: {quantity}개&#10;주문 가능합니다."></textarea>
-                        <p class="text-xs text-gray-400 mt-1">사용 가능한 변수: {customerName}, {productName}, {quantity}</p>
-                    </div>
-
-                    <div class="flex justify-end gap-2 pt-3 border-t border-gray-100">
-                        <button id="cancel-sms-settings" class="btn-secondary">
-                            <i class="fas fa-times"></i> 취소
-                        </button>
-                        <button id="save-sms-settings" class="btn-primary">
-                            <i class="fas fa-save"></i> 저장
-                        </button>
-                    </div>
+            <!-- 솔라피 API 인증정보 -->
+            <div class="form-grid" style="border-bottom:1px solid #E5E7EB;">
+                <div class="form-col-12">
+                    <span class="form-section-title" style="margin-bottom:0;">솔라피 API 인증정보</span>
+                </div>
+                <div class="form-col-12">
+                    <label class="form-label">API Key</label>
+                    <input type="text" id="sms-api-key" class="form-control font-mono" placeholder="솔라피 API Key">
+                </div>
+                <div class="form-col-12">
+                    <label class="form-label">API Secret</label>
+                    <input type="password" id="sms-api-secret" class="form-control font-mono" placeholder="솔라피 API Secret">
+                </div>
+                <div class="form-col-12">
+                    <label class="form-label">발신번호</label>
+                    <input type="tel" id="sms-from-number" class="form-control" placeholder="01012345678 (- 없이)">
+                    <p class="form-helper">하이픈(-) 없이 숫자만 입력하세요</p>
+                </div>
+                <div class="form-actions">
+                    <button id="save-sms-config-btn" class="btn-primary"><i class="fas fa-save"></i>인증정보 저장</button>
                 </div>
             </div>
+            <!-- SMS 문자 템플릿 -->
+            <div class="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200">
+                <span class="text-xs font-semibold text-gray-600">문자 템플릿</span>
+            </div>
+            <div id="sms-templates-list" class="divide-y divide-gray-100"></div>
         </div>
 
     </div><!-- /콘텐츠 영역 -->

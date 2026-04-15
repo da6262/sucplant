@@ -1,19 +1,28 @@
 /* 환경설정 전용 CSS */
 /* components/settings/settings.css */
 
-/* 탭 버튼 — 다른 섹션과 통일 */
+/* 탭 버튼 — status-tab-btn과 동일한 디자인 시스템 */
 .settings-tab-btn {
     display: inline-flex;
     align-items: center;
     gap: 5px;
+    padding: 5px 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
     background: transparent;
     border: none;
     cursor: pointer;
-    color: #4b5563;
+    color: #6B7280;
     white-space: nowrap;
+    transition: all 0.15s;
+}
+.settings-tab-btn:hover {
+    background: #F3F4F6;
+    color: #374151;
 }
 .settings-tab-btn.active {
-    background: #16A34A !important;
+    background: var(--primary) !important;
     color: #fff !important;
     font-weight: 600;
 }
@@ -48,47 +57,26 @@
 /* 환경설정 버튼 그룹 */
 .settings-buttons {
     display: flex;
-    gap: 0.75rem;
+    gap: 0.5rem;
 }
 
+/* settings-btn-* → btn-primary / btn-secondary 와 동일 스타일로 통일 */
 .settings-btn {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.5rem 1rem;
-    border-radius: 0.5rem;
-    font-weight: 500;
-    transition: all 0.2s;
-    border: none;
-    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    cursor: pointer; transition: all 0.15s;
 }
-
 .settings-btn-save {
-    background-color: #16a34a;
-    color: white;
-    cursor: pointer;
-    pointer-events: auto;
-    opacity: 1;
+    background: var(--primary); color: #fff; border: none;
 }
-
-.settings-btn-save:hover:not(:disabled) {
-    background-color: #15803d;
-}
-
-.settings-btn-save:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
+.settings-btn-save:hover:not(:disabled) { background: var(--primary-hover); }
+.settings-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .settings-btn-reset {
-    background-color: #ffffff;
-    color: #64748b;
-    border: 1px solid #e2e8f0;
+    background: #fff; color: #374151; border: 1px solid #D1D5DB;
 }
-
-.settings-btn-reset:hover {
-    background-color: #f8fafc;
-    color: #475569;
-}
+.settings-btn-reset:hover { background: #F9FAFB; border-color: #9CA3AF; }
 
 /* 환경설정 탭 네비게이션 */
 .settings-tabs-container {
@@ -122,8 +110,8 @@
 }
 
 .settings-tab.active {
-    border-bottom-color: #059669;
-    color: #059669;
+    border-bottom-color: var(--primary-accent);
+    color: var(--primary-accent);
 }
 
 /* 환경설정 콘텐츠 */
@@ -170,19 +158,16 @@
     margin-bottom: 0.5rem;
 }
 
+/* settings-form-input → input-ui 와 동일 스타일로 통일 */
 .settings-form-input {
-    width: 100%;
-    padding: 0.75rem;
-    border: 1px solid #d1d5db;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    transition: all 0.2s;
+    width: 100%; height: 30px; padding: 0 8px;
+    border: 1px solid #D1D5DB; border-radius: 6px;
+    font-size: 12px; color: #111827; outline: none; background: #fff;
+    transition: border-color 0.15s; box-sizing: border-box;
 }
-
 .settings-form-input:focus {
-    outline: none;
-    border-color: #059669;
-    box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.1);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(22,163,74,0.12);
 }
 
 .settings-form-input-group {

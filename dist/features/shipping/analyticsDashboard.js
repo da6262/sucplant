@@ -250,14 +250,14 @@ export class ShippingAnalytics {
                 <div class="bg-gray-50 p-4 rounded-lg">
                     <h3 class="text-lg font-semibold text-gray-800 mb-4">상세 통계</h3>
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="min-w-full table-ui">
                             <thead class="bg-gray-100">
                                 <tr>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">택배사</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">총 건수</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">완료</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">지연</th>
-                                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">성공률</th>
+                                    <th class="px-4 text-left">택배사</th>
+                                    <th class="px-4 text-left">총 건수</th>
+                                    <th class="px-4 text-left">완료</th>
+                                    <th class="px-4 text-left">지연</th>
+                                    <th class="px-4 text-left">성공률</th>
                                 </tr>
                             </thead>
                             <tbody id="carrier-stats-table" class="bg-white divide-y divide-gray-200">
@@ -405,11 +405,11 @@ export class ShippingAnalytics {
 
         tbody.innerHTML = this.analyticsData.carrierStats.map(carrier => `
             <tr>
-                <td class="px-4 py-2 text-sm text-gray-900">${carrier.carrier}</td>
-                <td class="px-4 py-2 text-sm text-gray-900">${carrier.totalOrders}</td>
-                <td class="px-4 py-2 text-sm text-green-600">${carrier.delivered}</td>
-                <td class="px-4 py-2 text-sm text-red-600">${carrier.delayed}</td>
-                <td class="px-4 py-2 text-sm text-blue-600">${carrier.successRate}%</td>
+                <td class="px-4 td-primary">${carrier.carrier}</td>
+                <td class="px-4 td-primary">${carrier.totalOrders}</td>
+                <td class="px-4 text-green-600">${carrier.delivered}</td>
+                <td class="px-4 text-red-600">${carrier.delayed}</td>
+                <td class="px-4 text-blue-600">${carrier.successRate}%</td>
             </tr>
         `).join('');
     }

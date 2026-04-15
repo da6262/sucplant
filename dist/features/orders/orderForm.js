@@ -79,7 +79,7 @@ function generateOrderFormHTML() {
                                             <i class="fas fa-user-search"></i>
                                         </div>
                                     </div>
-                                    <div id="customer-search-results" class="absolute w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto z-30" style="top: 100%; left: 0;">
+                                    <div id="customer-search-results" class="absolute top-full left-0 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto z-30">
                                         <!-- 기존 고객 검색 결과 -->
                                     </div>
                                 </div>
@@ -103,6 +103,18 @@ function generateOrderFormHTML() {
                                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                            placeholder="상세주소 (동/호수, 건물명 등)">
                                 </div>
+                            </div>
+                            <!-- 추가 배송지 섹션 -->
+                            <div class="mt-3">
+                                <div class="flex items-center justify-between mb-1">
+                                    <span class="text-xs text-gray-500">배송지 1 (기본)</span>
+                                    <button type="button" onclick="addExtraShipping()"
+                                            class="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
+                                        <i class="fas fa-plus-circle"></i> 배송지 추가
+                                        <span id="extra-shipping-badge" class="hidden"></span>
+                                    </button>
+                                </div>
+                                <div id="extra-shipping-list"></div>
                             </div>
                             <div id="order-phone-duplicate-message" class="text-sm text-red-600 hidden"></div>
                         </div>
@@ -185,8 +197,8 @@ function generateOrderFormHTML() {
                                         <!-- 상품 검색 결과 (이미지 썸네일 포함) -->
                                     </div>
                                 </div>
-                                <button id="show-product-list" 
-                                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
+                                <button id="show-product-list"
+                                        class="btn-primary"
                                         onclick="showProductManagementModal()">
                                     <i class="fas fa-list"></i>
                                 </button>
@@ -223,8 +235,8 @@ function generateOrderFormHTML() {
                                     <tbody id="cart-items-body">
                                         <!-- 장바구니 아이템들이 여기에 표시됩니다 -->
                                         <tr>
-                                            <td colspan="5" class="text-center text-gray-500 py-4">
-                                                <p class="text-sm">장바구니가 비어있습니다</p>
+                                            <td colspan="5" class="text-center text-gray-500">
+                                                <p>장바구니가 비어있습니다</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -263,7 +275,7 @@ function generateOrderFormHTML() {
                                             onchange="updateShippingMethod()">
                                         <option value="택배">택배</option>
                                         <option value="직접배송">직접배송</option>
-                                        <option value="방문수령">방문수령 (배송비 무료)</option>
+                                        <option value="픽업">픽업 (배송비 무료)</option>
                                     </select>
                                 </div>
                                 <div>
@@ -436,7 +448,7 @@ function generateOrderFormHTML() {
                             <i class="fas fa-eye mr-2"></i>미리보기
                         </button>
                         <button type="submit" form="order-form" data-order-submit="true"
-                                class="px-8 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-semibold">
+                                class="btn-primary" style="padding: 8px 32px;">
                             <i class="fas fa-check mr-2"></i>주문 등록
                         </button>
                     </div>
@@ -616,14 +628,14 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-product-name', productName || '');
         const lineTotal = unitPrice * 1;
         tr.innerHTML = `
-            <td class="px-2 py-1 text-sm align-top">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-[12px] text-gray-500 align-top tabular-nums">${unitPrice.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center align-top whitespace-nowrap">
+            <td class="px-2 align-top">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="px-2 td-secondary align-top tabular-nums">${unitPrice.toLocaleString()}원</td>
+            <td class="px-2 text-center align-top whitespace-nowrap">
                 <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', -1)">−</button>
                 <input type="number" class="quantity-input w-12 text-center border rounded mx-0.5 text-sm" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
                 <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
-            <td class="cart-line-total px-2 py-1 text-right text-sm font-medium tabular-nums align-top">${lineTotal.toLocaleString()}원</td>
+            <td class="cart-line-total px-2 text-right font-medium tabular-nums align-top">${lineTotal.toLocaleString()}원</td>
         `;
         cartBody.appendChild(tr);
     }
@@ -646,7 +658,7 @@ function cartQuantityChange(productId, delta) {
 function ensureCartEmptyRow(cartBody) {
     if (!cartBody || cartBody.querySelector('tr[data-product-id]')) return;
     const thCount = cartBody.closest('table')?.querySelectorAll('thead th')?.length || 4;
-    cartBody.innerHTML = `<tr><td colspan="${thCount}" class="text-center text-gray-500 py-6 text-xs">장바구니가 비어있습니다</td></tr>`;
+    cartBody.innerHTML = window.renderEmptyRow(thCount, '장바구니가 비어있습니다');
 }
 // 라인 소계·상품합계·총금액 실시간 갱신 (원 단위 정수, 단가 스냅샷 기준). updateCartTotal와 동일 규칙 적용.
 function refreshOrderTotal() {
@@ -1026,6 +1038,26 @@ let SHIPPING_SETTINGS = {
     freeShippingThreshold: 50000
 };
 
+/** 환경설정 shippingMethods 배열로 #shipping-method 드롭다운 동적 생성 */
+async function loadShippingMethodsFromSettings() {
+    const select = document.getElementById('shipping-method');
+    if (!select) return;
+    try {
+        const settings = window.settingsDataManager?.getAllSettings();
+        const methods = settings?.shipping?.shippingMethods;
+        if (!Array.isArray(methods) || methods.length === 0) return;
+        // 현재 선택값 보존
+        const current = select.value;
+        select.innerHTML = methods.map(m => {
+            const isFree = m.includes('방문') || m.includes('픽업') || m.includes('수령');
+            return `<option value="${m}"${m === current ? ' selected' : ''}>${m}${isFree ? ' (배송비 무료)' : ''}</option>`;
+        }).join('');
+        console.log('✅ 배송 방법 드롭다운 환경설정 연동 완료:', methods);
+    } catch (e) {
+        console.warn('⚠️ 배송 방법 드롭다운 로드 실패, 기본값 유지:', e);
+    }
+}
+
 // 배송 방법 변경 처리
 function updateShippingMethod() {
     console.log('🚚 배송 방법 변경됨');
@@ -1036,14 +1068,14 @@ function updateShippingMethod() {
     // 배송비 자동 재계산
     updateOrderTotalDisplay();
     
-    // 주소 필드 처리
+    // 주소 필드 처리 (방문수령·픽업 등 직접 수령 방식이면 주소 선택사항)
     const addressField = document.getElementById('order-customer-address');
-    if (shippingMethod === '방문수령') {
-        // 방문수령일 경우 주소 입력 비활성화 (선택사항)
+    const isPickup = shippingMethod && (shippingMethod.includes('방문') || shippingMethod.includes('픽업') || shippingMethod.includes('수령'));
+    if (isPickup) {
         if (addressField) {
-            addressField.placeholder = '방문수령 (주소 입력 선택사항)';
+            addressField.placeholder = `${shippingMethod} (주소 입력 선택사항)`;
         }
-        console.log('✅ 방문수령 선택 - 배송비 0원');
+        console.log(`✅ ${shippingMethod} 선택 - 배송비 0원`);
     } else {
         // 택배/직접배송일 경우 주소 필수
         if (addressField) {
@@ -1070,13 +1102,15 @@ async function initShippingFeeFromSettings() {
         
         try {
             const settings = await window.settingsDataManager.loadSettings();
-            
+
             if (settings && settings.shipping) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee || 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold || 50000;
                 window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
                 console.log('✅ 환경설정에서 배송비 설정 로드 완료:', SHIPPING_SETTINGS);
             }
+            // 배송 방법 드롭다운도 환경설정에서 동적 로드
+            await loadShippingMethodsFromSettings();
             // 제안값 주입: 사용자가 한 번이라도 수정했으면 덮어쓰지 않음
             if (!window._shippingFeeUserEdited) {
                 const defaultFee = (settings && settings.shipping && settings.shipping.defaultShippingFee) || SHIPPING_SETTINGS.defaultShippingFee || 3000;
@@ -1298,7 +1332,7 @@ async function collectOrderFormData() {
             customer_address: fullAddress,
             customer_address_base: baseAddress,
             customer_address_detail: detailAddress,
-            order_status: document.getElementById('order-status')?.value || '입금대기',
+            order_status: document.getElementById('order-status')?.value || '주문접수',
             order_channel: document.getElementById('order-channel')?.value || '',
             shipping_method: document.getElementById('shipping-method')?.value || '택배',
             memo: document.getElementById('order-memo')?.value || '',
@@ -1872,6 +1906,7 @@ window.generateOrderFormHTML = generateOrderFormHTML;
 window.initOrderForm = initOrderForm;
 window.initOrderChannelOptions = initOrderChannelOptions;
 window.initShippingFeeFromSettings = initShippingFeeFromSettings;
+window.loadShippingMethodsFromSettings = loadShippingMethodsFromSettings;
 window.updateShippingFeeDisplay = updateShippingFeeDisplay;
 window.updateShippingMethod = updateShippingMethod;
 window.initCustomerSearch = initCustomerSearch;
@@ -1892,118 +1927,7 @@ window.clearAllSelections = clearAllSelections;
 window.addSelectedProductsToCart = addSelectedProductsToCart;
 window.handleOrderSubmit = handleOrderSubmit;
 
-// 디버깅 함수들
-window.testOrderButton = function() {
-    console.log('🧪 주문 등록 버튼 테스트 시작');
-    
-    // 새 주문 등록 버튼 확인
-    const addOrderBtn = document.getElementById('add-order-btn');
-    console.log('🔍 새 주문 등록 버튼:', addOrderBtn);
-    
-    // 주문 모달 확인
-    const orderModal = document.getElementById('order-modal');
-    console.log('🔍 주문 모달:', orderModal);
-    
-    // 주문 폼 확인
-    const orderForm = document.getElementById('order-form');
-    console.log('🔍 주문 폼:', orderForm);
-    
-    // 주문 등록 버튼 확인
-    const submitButton = document.querySelector('button[type="submit"][form="order-form"]');
-    const orderSubmitButton = document.querySelector('button[data-order-submit="true"]');
-    console.log('🔍 주문 등록 버튼 (form):', submitButton);
-    console.log('🔍 주문 등록 버튼 (data):', orderSubmitButton);
-    
-    // 이벤트 리스너 확인
-    console.log('🔍 window.openOrderModal:', !!window.openOrderModal);
-    console.log('🔍 window.initOrderForm:', !!window.initOrderForm);
-    console.log('🔍 window.handleOrderSubmit:', !!window.handleOrderSubmit);
-    
-    return {
-        addOrderBtn: !!addOrderBtn,
-        orderModal: !!orderModal,
-        orderForm: !!orderForm,
-        submitButton: !!submitButton,
-        openOrderModal: !!window.openOrderModal,
-        initOrderForm: !!window.initOrderForm,
-        handleOrderSubmit: !!window.handleOrderSubmit
-    };
-};
-
-window.testOrderButtonClick = function() {
-    console.log('🧪 주문 등록 버튼 클릭 테스트');
-    
-    const addOrderBtn = document.getElementById('add-order-btn');
-    if (addOrderBtn) {
-        console.log('✅ 새 주문 등록 버튼 클릭 시뮬레이션');
-        addOrderBtn.click();
-    } else {
-        console.error('❌ 새 주문 등록 버튼을 찾을 수 없습니다');
-    }
-};
-
-window.testOrderSubmit = function() {
-    console.log('🧪 주문 제출 테스트');
-    
-    const submitButton = document.querySelector('button[data-order-submit="true"]');
-    if (submitButton) {
-        console.log('✅ 주문 등록 버튼 클릭 시뮬레이션');
-        submitButton.click();
-    } else {
-        console.error('❌ 주문 등록 버튼을 찾을 수 없습니다');
-    }
-};
-
-window.testOrderFormSubmit = function() {
-    console.log('🧪 주문 폼 제출 테스트');
-    
-    const orderForm = document.getElementById('order-form');
-    if (orderForm) {
-        console.log('✅ 주문 폼 제출 이벤트 시뮬레이션');
-        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-        orderForm.dispatchEvent(submitEvent);
-    } else {
-        console.error('❌ 주문 폼을 찾을 수 없습니다');
-    }
-};
-
-window.testCartStatus = function() {
-    console.log('🧪 장바구니 상태 테스트');
-    
-    const cartItems = document.querySelectorAll('[data-product-id]');
-    const cartItemsBody = document.getElementById('cart-items-body');
-    
-    console.log('🔍 장바구니 상태:');
-    console.log('  - 장바구니 아이템 수:', cartItems.length);
-    console.log('  - 장바구니 테이블 바디:', cartItemsBody);
-    
-    cartItems.forEach((item, index) => {
-        const productId = item.getAttribute('data-product-id');
-        const price = item.getAttribute('data-price');
-        const quantityInput = item.querySelector('.quantity-input');
-        const quantity = quantityInput ? quantityInput.value : 'N/A';
-        
-        console.log(`  - 아이템 ${index + 1}:`, {
-            productId: productId,
-            price: price,
-            quantity: quantity
-        });
-    });
-    
-    // 장바구니 총액 계산 테스트
-    if (window.updateCartTotal) {
-        console.log('🧪 장바구니 총액 계산 테스트');
-        window.updateCartTotal();
-    }
-    
-    return {
-        itemCount: cartItems.length,
-        cartItemsBody: !!cartItemsBody,
-        updateCartTotal: !!window.updateCartTotal
-    };
-};
-
-// Supabase 연결 테스트 함수
+// Supabase 연결 테스트 함수 (내부 전용 — window 미등록)
 function testSupabaseConnection() {
     try {
         console.log('🧪 Supabase 연결 테스트 시작');
@@ -2197,73 +2121,47 @@ function openNewCustomerRegistration(customerName) {
 function searchProducts(query) {
     try {
         console.log('🔍 상품 검색:', query);
-        
-        if (!query || query.length < 1) {
-            const resultsDiv = document.getElementById('product-search-results');
-            if (resultsDiv) {
-                resultsDiv.classList.add('hidden');
-            }
+
+        if (!window.supabaseClient) {
+            console.warn('⚠️ Supabase 클라이언트를 찾을 수 없습니다');
             return;
         }
-        
-        // Supabase에서 상품 검색
-        if (window.supabaseClient) {
-            window.supabaseClient
-                .from('farm_products')
-                .select('id, name, price, stock, category, description, image_url')
-                .or(`name.ilike.%${query}%,category.ilike.%${query}%,description.ilike.%${query}%`)
-                .limit(8)
-                .then(({ data, error }) => {
+
+        // 빈 쿼리: 전체 상품 목록 표시 (클릭 시), 아닌 경우 필터 검색
+        const dbQuery = window.supabaseClient
+            .from('farm_products')
+            .select('id, name, price, stock, category, description, image_url');
+
+        const promise = (!query || query.trim().length === 0)
+            ? dbQuery.order('name', { ascending: true }).limit(30)
+            : dbQuery.or(`name.ilike.%${query}%,category.ilike.%${query}%,description.ilike.%${query}%`).limit(15);
+
+        promise.then(({ data, error }) => {
                     if (error) {
                         console.error('❌ 상품 검색 오류:', error);
                         return;
                     }
-                    
+
                     const resultsDiv = document.getElementById('product-search-results');
                     if (!resultsDiv) return;
-                    
+
                     if (data && data.length > 0) {
-                        // 검색 결과 표시 (이미지 썸네일 포함)
                         resultsDiv.innerHTML = data.map(product => `
-                            <div class="p-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                                 onclick="addProductToCart('${product.id}', '${product.name}', ${product.price}, ${product.stock}, event)">
-                                <div class="flex items-center space-x-3">
-                                    <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                                        ${product.image_url ? 
-                                            `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` :
-                                            `<i class="fas fa-leaf text-gray-400"></i>`
-                                        }
-                                    </div>
-                                    <div class="flex-1 min-w-0">
-                                        <div class="text-sm font-medium text-gray-900 truncate">${product.name}</div>
-                                        <div class="text-xs text-gray-500">${product.category || '카테고리 없음'}</div>
-                                        <div class="flex items-center space-x-2 mt-1">
-                                            <span class="text-sm font-semibold text-blue-600">${product.price.toLocaleString()}원</span>
-                                            <span class="text-xs text-gray-400">재고: ${product.stock}개</span>
-                                        </div>
-                                    </div>
-                                    <div class="text-xs text-gray-400">
-                                        <i class="fas fa-plus"></i>
-                                    </div>
-                                </div>
+                            <div class="search-result-item"
+                                 onmousedown="event.preventDefault();"
+                                 onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
+                                <span class="search-result-name">${product.name}</span>
+                                <span class="search-result-cat">${(product.category||'')}</span>
+                                <span class="search-result-price">${product.price.toLocaleString()}원</span>
+                                <span class="search-result-stock">재고 ${product.stock}</span>
                             </div>
                         `).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
-                        // 검색 결과가 없을 때
-                        resultsDiv.innerHTML = `
-                            <div class="p-3 text-center text-gray-500">
-                                <i class="fas fa-search text-gray-400 mb-2"></i>
-                                <div class="text-sm">검색 결과가 없습니다</div>
-                                <div class="text-xs">다른 키워드로 검색해보세요</div>
-                            </div>
-                        `;
+                        resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
                         resultsDiv.classList.remove('hidden');
                     }
                 });
-        } else {
-            console.warn('⚠️ Supabase 클라이언트를 찾을 수 없습니다');
-        }
         
     } catch (error) {
         console.error('❌ 상품 검색 실패:', error);
@@ -2307,13 +2205,13 @@ function addProductToCart(productId, productName, price, stock, event) {
             const newRow = document.createElement('tr');
             newRow.setAttribute('data-product-id', productId);
             newRow.innerHTML = `
-                <td class="px-3 py-2">
-                    <div class="text-sm font-medium text-gray-900">${productName}</div>
+                <td class="px-3">
+                    <div class="font-medium td-primary">${productName}</div>
                 </td>
-                <td class="px-3 py-2">
-                    <span class="text-sm text-gray-600">${price.toLocaleString()}원</span>
+                <td class="px-3">
+                    <span class="td-secondary">${price.toLocaleString()}원</span>
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="decreaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">-</button>
                         <input type="number" class="quantity-input w-12 text-center text-sm border border-gray-300 rounded" 
@@ -2321,10 +2219,10 @@ function addProductToCart(productId, productName, price, stock, event) {
                         <button onclick="increaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">+</button>
                     </div>
                 </td>
-                <td class="px-3 py-2">
-                    <span class="text-sm font-semibold text-blue-600 cart-item-total">${price.toLocaleString()}원</span>
+                <td class="px-3">
+                    <span class="font-semibold text-blue-600 cart-item-total">${price.toLocaleString()}원</span>
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <button onclick="removeCartItem('${productId}')" class="text-red-500 hover:text-red-700 text-xs">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -2382,7 +2280,6 @@ window.selectCustomerFromSearch = selectCustomerFromSearch;
 window.openNewCustomerRegistration = openNewCustomerRegistration;
 window.searchProducts = searchProducts;
 window.addProductToCart = addProductToCart;
-window.testSupabaseConnection = testSupabaseConnection;
 window.handleOrderSubmit = handleOrderSubmit;
 window.updateOrderSubmitButtonState = updateOrderSubmitButtonState;
 
@@ -2591,7 +2488,22 @@ async function handleOrderSubmit(event) {
         // 수정 모드인지 확인
         const isEditMode = window.currentEditingOrderId !== null && window.currentEditingOrderId !== undefined;
         console.log('🔍 주문 처리 모드:', isEditMode ? '수정' : '등록');
-        
+
+        // Fix #4: 수정 모드 재고 조정을 위해 저장 전에 기존 아이템 미리 조회
+        let oldOrderItems = [];
+        if (isEditMode && window.currentEditingOrderId && window.supabaseClient) {
+            try {
+                const { data: existingItems } = await window.supabaseClient
+                    .from('farm_order_items')
+                    .select('product_id, product_name, quantity')
+                    .eq('order_id', window.currentEditingOrderId);
+                oldOrderItems = existingItems || [];
+                console.log(`📦 수정 전 기존 아이템 ${oldOrderItems.length}개 조회 완료`);
+            } catch (e) {
+                console.warn('⚠️ 기존 아이템 조회 실패 (재고 조정 불가):', e);
+            }
+        }
+
         let supabaseOrderData;
         
         // 데이터 단일화: 품목은 farm_order_items만 SSOT. 트랜잭션 RPC 우선 사용.
@@ -2666,29 +2578,40 @@ async function handleOrderSubmit(event) {
         const savedOrder = data[0] || { id: orderId };
         orderId = savedOrder.id;
         
-        // 재고 감소 (신규 주문만, RPC/폴백 공통)
-        if (!isEditMode && orderId) {
-            console.log('📦 재고 감소 시작...');
+        // 재고 처리 (신규: 차감 / 수정: 기존 복원 후 신규 차감)
+        if (orderId) {
+            console.log('📦 재고 처리 시작...');
             try {
-                for (const item of orderData.items) {
-                    if (!item.product_id) continue;
-                    const { data: productData, error: fetchError } = await window.supabaseClient
-                        .from('farm_products')
-                        .select('stock, name')
-                        .eq('id', item.product_id)
-                        .single();
-                    if (fetchError) { console.error(`❌ 상품 조회 실패 (${item.product_name}):`, fetchError); continue; }
-                    const currentStock = productData?.stock ?? 0;
-                    const newStock = Math.max(0, currentStock - item.quantity);
-                    const { error: updateError } = await window.supabaseClient
-                        .from('farm_products')
-                        .update({ stock: newStock })
-                        .eq('id', item.product_id);
-                    if (updateError) console.error(`❌ 재고 감소 실패 (${item.product_name}):`, updateError);
-                    else console.log(`✅ ${item.product_name}: ${currentStock}개 → ${newStock}개`);
+                if (!isEditMode) {
+                    // 신규 주문: 재고 차감
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock, name').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        const newStock = Math.max(0, (p.stock ?? 0) - item.quantity);
+                        await window.supabaseClient.from('farm_products').update({ stock: newStock }).eq('id', item.product_id);
+                        console.log(`✅ 신규 재고 차감 ${item.product_name}: ${p.stock}개 → ${newStock}개`);
+                    }
+                } else if (oldOrderItems.length > 0) {
+                    // Fix #4: 수정 주문: 기존 아이템 재고 복원 → 신규 아이템 재고 차감
+                    for (const item of oldOrderItems) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        await window.supabaseClient.from('farm_products').update({ stock: (p.stock || 0) + item.quantity }).eq('id', item.product_id);
+                        console.log(`✅ 수정 재고 복원 ${item.product_name}: +${item.quantity}개`);
+                    }
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        const newStock = Math.max(0, (p.stock || 0) - item.quantity);
+                        await window.supabaseClient.from('farm_products').update({ stock: newStock }).eq('id', item.product_id);
+                        console.log(`✅ 수정 재고 차감 ${item.product_name}: ${p.stock}개 → ${newStock}개`);
+                    }
                 }
             } catch (stockError) {
-                console.error('❌ 재고 감소 중 오류:', stockError);
+                console.error('❌ 재고 처리 중 오류:', stockError);
             }
         }
         
@@ -2708,14 +2631,65 @@ async function handleOrderSubmit(event) {
             }
         }
         
+        // ── 추가 배송지: 같은 상품으로 주문 자동 분리 생성 ──
+        let extraCreatedCount = 0;
+        if (!isEditMode) {
+            const extraShippings = collectExtraShippingAddresses();
+            for (const extra of extraShippings) {
+                try {
+                    const extraNum = (() => {
+                        const d = new Date();
+                        const yy = String(d.getFullYear()).slice(2);
+                        const mm = String(d.getMonth() + 1).padStart(2, '0');
+                        const dd = String(d.getDate()).padStart(2, '0');
+                        return `ORD-${yy}${mm}${dd}-${Math.random().toString(36).slice(2,6).toUpperCase()}`;
+                    })();
+                    const extraRpc = await window.supabaseClient.rpc('upsert_order_with_items', {
+                        p_order_id: null,
+                        p_order_number: extraNum,
+                        p_order_date: new Date().toISOString(),
+                        p_customer_id: orderData.customer_id || null,
+                        p_customer_name: extra.customer_name || orderData.customer_name,
+                        p_customer_phone: extra.customer_phone || orderData.customer_phone,
+                        p_customer_address: extra.customer_address || '',
+                        p_customer_address_detail: extra.customer_address_detail || null,
+                        p_order_status: orderData.order_status || '주문접수',
+                        p_order_channel: orderData.order_channel || '',
+                        p_memo: extra.memo || orderData.memo || '',
+                        p_shipping_fee: toIntegerWon(orderData.shipping_fee),
+                        p_discount_amount: toIntegerWon(orderData.discount_amount),
+                        p_items: itemsPayload
+                    });
+                    if (extraRpc.error) {
+                        console.error('❌ 추가 배송지 주문 생성 실패:', extraRpc.error);
+                        continue;
+                    }
+                    extraCreatedCount++;
+                    // 추가 배송지 분 재고도 차감
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        await window.supabaseClient.from('farm_products').update({ stock: Math.max(0, (p.stock ?? 0) - item.quantity) }).eq('id', item.product_id);
+                    }
+                } catch (extraErr) {
+                    console.error('❌ 추가 배송지 처리 오류:', extraErr);
+                }
+            }
+        }
+
         // 성공 메시지 표시
-        alert(`주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다!`);
-        
+        if (extraCreatedCount > 0) {
+            alert(`주문이 등록되었습니다!\n추가 배송지 ${extraCreatedCount}건 포함 → 총 ${1 + extraCreatedCount}건 생성`);
+        } else {
+            alert(`주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다!`);
+        }
+
         // 주문 모달 닫기
         if (window.closeOrderModal) {
             window.closeOrderModal();
         }
-        
+
         // 주문 폼 초기화
         console.log('🔄 주문 폼 초기화...');
         const orderForm = document.getElementById('order-form');
@@ -2723,7 +2697,10 @@ async function handleOrderSubmit(event) {
             orderForm.reset();
             console.log('✅ 주문 폼 초기화 완료');
         }
-        
+
+        // 추가 배송지 초기화
+        if (window.resetExtraShipping) resetExtraShipping();
+
         // 장바구니 초기화
         const cartItems = document.getElementById('cart-items-body');
         if (cartItems) {
@@ -2731,54 +2708,14 @@ async function handleOrderSubmit(event) {
             console.log('✅ 장바구니 초기화 완료');
         }
         
-        // 주문관리 탭으로 이동 (앱 정상 내비게이션 사용)
+        // 저장된 주문 상태에 맞는 탭을 글로벌 플래그로 전달
+        // initializeOrderManagement가 로드 완료 후 이 값을 읽어 올바른 탭으로 렌더링
+        const savedOrderStatus = orderData.order_status || '주문접수';
+        window._pendingOrderStatus = isEditMode ? null : savedOrderStatus;
+
+        // 주문관리 탭으로 이동
         const navBtn = document.getElementById('nav-orders');
         if (navBtn) navBtn.click();
-        
-        // 주문 목록 새로고침 (지연 실행)
-        // 신규 주문의 기본 상태는 '입금대기(work_deposit)'이므로 해당 탭으로 전환
-        const savedOrderStatus = orderData.order_status || '입금대기';
-        const statusToTabId = {
-            '입금대기': 'status-work_deposit',
-            '주문접수': 'status-주문접수',
-            '고객안내': 'status-고객안내',
-            '입금확인': 'status-입금확인',
-            '상품준비': 'status-work_todo',
-            '배송준비': 'status-work_todo',
-            '배송중': 'status-배송중',
-            '배송완료': 'status-work_done',
-        };
-        const targetTabId = isEditMode ? null : (statusToTabId[savedOrderStatus] || 'status-work_deposit');
-        setTimeout(async () => {
-            console.log('🔄 주문 목록 새로고침 시작...');
-            if (window.orderDataManager) {
-                try {
-                    // 저장된 주문의 상태에 맞는 탭으로 전환
-                    if (targetTabId) {
-                        document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
-                        const targetTab = document.getElementById(targetTabId);
-                        if (targetTab) targetTab.classList.add('active');
-                    }
-
-                    console.log('📋 주문 데이터 다시 로드 중...');
-                    await window.orderDataManager.loadOrders();
-
-                    console.log('🎨 주문 테이블 다시 렌더링 중...');
-                    const renderStatus = targetTabId ? targetTabId.replace('status-', '') : null;
-                    window.orderDataManager.renderOrdersTable(renderStatus);
-
-                    console.log('📊 필터 카운트 업데이트 중...');
-                    window.orderDataManager.updateFilterCounts();
-
-                    console.log('✅ 주문 목록 새로고침 완료');
-                } catch (refreshError) {
-                    console.error('❌ 주문 목록 새로고침 실패:', refreshError);
-                    console.warn('⚠️ 주문은 등록되었지만 목록 새로고침에 실패했습니다. 페이지를 새로고침해주세요.');
-                }
-            } else {
-                console.warn('⚠️ orderDataManager를 찾을 수 없습니다. 페이지를 새로고침해주세요.');
-            }
-        }, 1000);
         
         console.log('✅ 주문 제출 처리 완료 - 함수 종료');
         return true; // 성공 시 true 반환
@@ -2814,14 +2751,15 @@ async function ensureCustomerFromOrderData(orderData) {
             console.log('📌 phone_normalized 기존 고객 연결:', existing.id);
             return existing.id;
         }
+        // Fix #3: orderData에서는 customer_address_base로 구분하지만
+        // farm_customers 테이블의 실제 컬럼명은 'address' — DB 저장 시 매핑
         const insertRow = {
             name,
             phone,
             address: orderData.customer_address_base != null ? orderData.customer_address_base : (orderData.customer_address || ''),
             address_detail: orderData.customer_address_detail || null,
-            grade: 'GENERAL',
-            youtube_order_count: 0,
-            live_order_count: 0
+            grade: 'BRONZE'
+            // Fix #9: youtube_order_count / live_order_count 컬럼은 farm_customers 테이블에 없으므로 제거
         };
         const { data: inserted, error } = await window.supabaseClient
             .from('farm_customers')
@@ -2887,15 +2825,15 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         row.setAttribute('data-shipping-option', shippingOption);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
-            <td class="px-2 py-1 text-xs">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums">${unitPrice.toLocaleString()}</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
+            <td class="px-2 text-center">
                 <input type="number" class="quantity-input w-12 text-xs text-center border rounded" 
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput(this); updateCartTotal()" onchange="updateCartTotal()">
             </td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
+            <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="text-red-600 hover:text-red-800 text-xs" title="삭제">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -2942,8 +2880,8 @@ window.removeFromCart = function(buttonOrProductId) {
             if (cartItemsBody && cartItemsBody.children.length === 0) {
                 cartItemsBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center text-gray-500 py-2">
-                            <p class="text-xs">장바구니가 비어있습니다</p>
+                        <td colspan="5" class="text-center text-gray-500">
+                            <p>장바구니가 비어있습니다</p>
                         </td>
                     </tr>
                 `;
@@ -3035,6 +2973,193 @@ window.validateForm = validateForm;
 window.initOrderFormSubmit = initOrderFormSubmit;
 window.updateShippingFeeDisplay = updateShippingFeeDisplay;
 window.initOrderChannelFromSettings = initOrderChannelFromSettings;
+
+// ─────────────────────────────────────────────
+// 다중 배송지 (추가 배송지) 관리
+// 배송지 추가 버튼 → 별도 주문 자동 생성
+// ─────────────────────────────────────────────
+window._extraShippingCount = 0;
+
+function addExtraShipping() {
+    _preloadDaumPostcode(); // 버튼 클릭 시 미리 로드 → 이후 Enter 시 동기 호출 가능
+    window._extraShippingCount = (window._extraShippingCount || 0) + 1;
+    const idx = window._extraShippingCount;
+    const container = document.getElementById('extra-shipping-list');
+    if (!container) return;
+
+    const row = document.createElement('div');
+    row.id = `extra-shipping-row-${idx}`;
+    row.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg';
+    row.innerHTML = `
+        <div class="flex items-center justify-between mb-2">
+            <span class="text-xs font-semibold text-blue-700"><i class="fas fa-map-marker-alt mr-1"></i>추가 배송지</span>
+            <button type="button" onclick="removeExtraShipping(${idx})"
+                    class="text-xs text-red-400 hover:text-red-600"><i class="fas fa-times"></i> 삭제</button>
+        </div>
+        <div class="grid grid-cols-2 gap-2 mb-2">
+            <input type="text" id="es-name-${idx}" placeholder="수령인명 *"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <input type="tel" id="es-phone-${idx}" placeholder="연락처"
+                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+        </div>
+        <div class="flex gap-2 mb-2">
+            <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
+                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <button type="button" onclick="openExtraShippingAddressSearch(${idx})"
+                    class="px-2 py-1.5 bg-gray-100 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">
+                <i class="fas fa-search mr-1"></i>검색
+            </button>
+        </div>
+        <div class="mb-2">
+            <input type="text" id="es-detail-${idx}" placeholder="상세주소 (동/호수 등)"
+                   class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+        </div>
+        <textarea id="es-memo-${idx}" rows="2" placeholder="배송 메모 (선택)"
+                  class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+    `;
+    container.appendChild(row);
+    _updateExtraShippingBadge();
+    document.getElementById(`es-name-${idx}`)?.focus();
+}
+
+function removeExtraShipping(idx) {
+    document.getElementById(`extra-shipping-row-${idx}`)?.remove();
+    _updateExtraShippingBadge();
+}
+
+function _updateExtraShippingBadge() {
+    const list = document.getElementById('extra-shipping-list');
+    const count = list ? list.children.length : 0;
+    const badge = document.getElementById('extra-shipping-badge');
+    if (!badge) return;
+    if (count > 0) {
+        badge.textContent = `+${count}개`;
+        badge.className = 'text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1';
+    } else {
+        badge.textContent = '';
+        badge.className = 'hidden';
+    }
+}
+
+function collectExtraShippingAddresses() {
+    const list = document.getElementById('extra-shipping-list');
+    if (!list || list.children.length === 0) return [];
+    const result = [];
+    for (const row of list.querySelectorAll('[id^="extra-shipping-row-"]')) {
+        const idx = row.id.replace('extra-shipping-row-', '');
+        const name    = document.getElementById(`es-name-${idx}`)?.value?.trim() || '';
+        const phone   = document.getElementById(`es-phone-${idx}`)?.value?.trim() || '';
+        const address = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
+        const detail  = document.getElementById(`es-detail-${idx}`)?.value?.trim() || '';
+        const memo    = document.getElementById(`es-memo-${idx}`)?.value?.trim() || '';
+        if (!name && !address) continue;
+        result.push({
+            customer_name: name,
+            customer_phone: phone,
+            customer_address: address + (detail ? ' ' + detail : ''),
+            customer_address_detail: detail || null,
+            memo
+        });
+    }
+    return result;
+}
+
+function resetExtraShipping() {
+    const list = document.getElementById('extra-shipping-list');
+    if (list) list.innerHTML = '';
+    window._extraShippingCount = 0;
+    _updateExtraShippingBadge();
+}
+
+// 카카오 주소 검색 — embed 오버레이 공통 헬퍼
+function _openPostcodeOverlay(query, onComplete) {
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+        alert('주소 검색 서비스 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        _preloadDaumPostcode();
+        return;
+    }
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'background:rgba(0,0,0,0.5)',
+        'z-index:99999', 'display:flex', 'align-items:center', 'justify-content:center'
+    ].join(';');
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:500px;height:550px;background:#fff;border-radius:8px;overflow:hidden;';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = [
+        'position:absolute', 'top:6px', 'right:8px', 'z-index:1',
+        'background:none', 'border:none', 'font-size:18px', 'cursor:pointer', 'color:#555'
+    ].join(';');
+    const remove = () => { if (document.body.contains(overlay)) document.body.removeChild(overlay); };
+    closeBtn.onclick = remove;
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) remove(); });
+
+    wrap.appendChild(closeBtn);
+    overlay.appendChild(wrap);
+    document.body.appendChild(overlay);
+
+    new daum.Postcode({
+        q: query,
+        oncomplete: function(data) {
+            remove();
+            onComplete(data);
+        },
+        onclose: remove
+    }).embed(wrap);
+}
+
+// 메인 주소 필드용 Daum 주소 검색
+function openMainAddressSearch() {
+    const currentInput = document.getElementById('order-customer-address')?.value?.trim() || '';
+    _openPostcodeOverlay(currentInput, function(data) {
+        const addr = data.roadAddress || data.jibunAddress || '';
+        const addrField = document.getElementById('order-customer-address');
+        const detailField = document.getElementById('order-customer-address-detail');
+        if (addrField) {
+            addrField.removeAttribute('readonly');
+            addrField.value = addr;
+            addrField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (detailField) detailField.focus();
+    });
+}
+window.openMainAddressSearch = openMainAddressSearch;
+
+// Daum 우편번호 스크립트 미리 로드 (팝업 차단 방지용 — 비동기 로드 후 open() 하면 차단됨)
+function _preloadDaumPostcode() {
+    if (typeof daum !== 'undefined' && daum.Postcode) return; // 이미 로드됨
+    if (document.querySelector('script[src*="postcode"]')) return; // 로드 중
+    const s = document.createElement('script');
+    s.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    document.head.appendChild(s);
+}
+
+// 추가 배송지용 Daum 주소 검색
+function openExtraShippingAddressSearch(idx) {
+    const currentInput = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
+    _openPostcodeOverlay(currentInput, function(data) {
+        const addr = data.roadAddress || data.jibunAddress || '';
+        const addrField = document.getElementById(`es-address-${idx}`);
+        const detailField = document.getElementById(`es-detail-${idx}`);
+        if (addrField) {
+            addrField.value = addr;
+            addrField.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        if (detailField) detailField.focus();
+    });
+}
+
+window.addExtraShipping    = addExtraShipping;
+window.removeExtraShipping = removeExtraShipping;
+window.resetExtraShipping  = resetExtraShipping;
+window.openExtraShippingAddressSearch = openExtraShippingAddressSearch;
+window._preloadDaumPostcode = _preloadDaumPostcode;
+
+// ─────────────────────────────────────────────
 
 /** 주문 저장 정합성 검증: DB의 total_amount vs Σ(subtotal)+shipping_fee-discount. 콘솔에서 validateOrderTotalAmount(orderId) 호출 가능 */
 window.validateOrderTotalAmount = async function (orderId) {

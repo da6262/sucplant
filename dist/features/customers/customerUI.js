@@ -3,73 +3,28 @@
 
 import { customerDataManager } from './customerData.js';
 import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
+import { formatDate, formatPhone } from '../../utils/formatters.js';
 
 // ----------------------------
-// 페이지네이션 상태
+// 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
 // ----------------------------
-let currentPage = 1;
-let PAGE_SIZE = 20;
-let filteredCustomersCache = [];
+let _gradesCache = null;          // 고객등급 설정 캐시
+let _lastOrderCache = null;       // 전화번호→최근주문일 캐시
+let _lastOrderCacheTime = 0;      // 캐시 타임스탬프
+let _unpaidPhonesCache = null;    // 미납(입금대기) 고객 전화번호 집합
+let _unpaidPhonesCacheTime = 0;
+let _waitlistPhonesCache = null;  // 대기 고객 전화번호 집합
+let _waitlistPhonesCacheTime = 0;
 
-// ----------------------------
-// 플로팅 패널 상태
-// ----------------------------
-let _panelX = null, _panelY = null, _panelW = 380, _panelH = null;
-
-function initFloatingPanelDrag(panel) {
-    const handle = panel.querySelector('.customer-detail-drag-handle');
-    if (!handle || handle._dragBound) return;
-    handle._dragBound = true;
-    let sx, sy, sl, st;
-    handle.addEventListener('mousedown', (e) => {
-        if (e.target.closest('button')) return;
-        e.preventDefault();
-        const rect = panel.getBoundingClientRect();
-        sx = e.clientX; sy = e.clientY; sl = rect.left; st = rect.top;
-        const onMove = (e) => {
-            panel.style.left = Math.max(0, sl + e.clientX - sx) + 'px';
-            panel.style.top = Math.max(0, st + e.clientY - sy) + 'px';
-            panel.style.right = 'auto';
-        };
-        const onUp = () => {
-            _panelX = parseInt(panel.style.left);
-            _panelY = parseInt(panel.style.top);
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    });
-}
-
-function initFloatingPanelResize(panel) {
-    const handle = panel.querySelector('.customer-detail-resize-handle');
-    if (!handle || handle._resizeBound) return;
-    handle._resizeBound = true;
-    let sx, sy, sw, sh;
-    handle.addEventListener('mousedown', (e) => {
-        e.preventDefault();
-        sx = e.clientX; sy = e.clientY;
-        sw = panel.offsetWidth; sh = panel.offsetHeight;
-        const onMove = (e) => {
-            _panelW = Math.max(260, sw + e.clientX - sx);
-            _panelH = Math.max(180, sh + e.clientY - sy);
-            panel.style.width = _panelW + 'px';
-            panel.style.height = _panelH + 'px';
-        };
-        const onUp = () => {
-            document.removeEventListener('mousemove', onMove);
-            document.removeEventListener('mouseup', onUp);
-        };
-        document.addEventListener('mousemove', onMove);
-        document.addEventListener('mouseup', onUp);
-    });
-}
-
-function applyPanelGeometry(panel) {
-    if (_panelX !== null) { panel.style.left = _panelX + 'px'; panel.style.top = _panelY + 'px'; panel.style.right = 'auto'; }
-    if (_panelW) panel.style.width = _panelW + 'px';
-    if (_panelH) panel.style.height = _panelH + 'px';
+// 외부에서 캐시 무효화 (저장/삭제 후 호출)
+export function invalidateCustomerUICache() {
+    _gradesCache = null;
+    _lastOrderCache = null;
+    _lastOrderCacheTime = 0;
+    _unpaidPhonesCache = null;
+    _unpaidPhonesCacheTime = 0;
+    _waitlistPhonesCache = null;
+    _waitlistPhonesCacheTime = 0;
 }
 
 // ----------------------------
@@ -199,7 +154,7 @@ function initCustomerModalSaveHandlers() {
 }
 
 // 고객 테이블 렌더링 함수 (등급 필터링 지원)
-export async function renderCustomersTable(gradeFilter = 'all') {
+export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '') {
     console.log(`🎨 고객 테이블 렌더링 시작 (등급 필터: ${gradeFilter})`);
     
     try {
@@ -212,11 +167,31 @@ export async function renderCustomersTable(gradeFilter = 'all') {
         const sortedCustomers = customerDataManager.sortCustomers(sortBy);
         console.log(`📊 정렬 적용: ${sortBy}`);
         
-        // 등급 필터링 로직
-        const customers = (gradeFilter === 'all')
-            ? sortedCustomers
-            : sortedCustomers.filter(c => c.grade === gradeFilter);
-        
+        // 등급 + 검색어 필터링
+        const term = (searchTerm || '').toLowerCase().trim();
+        let customers = sortedCustomers
+            .filter(c => gradeFilter === 'all' || c.grade === gradeFilter)
+            .filter(c => !term ||
+                (c.name || '').toLowerCase().includes(term) ||
+                (c.phone || '').replace(/\D/g, '').includes(term.replace(/\D/g, ''))
+            );
+
+        // 미납 / 대기 체크박스 필터
+        const filterUnpaid   = document.getElementById('filter-unpaid')?.checked;
+        const filterWaitlist = document.getElementById('filter-waitlist')?.checked;
+        if (filterUnpaid || filterWaitlist) {
+            const [unpaidPhones, waitlistPhones] = await Promise.all([
+                filterUnpaid   ? fetchUnpaidPhones()   : Promise.resolve(new Set()),
+                filterWaitlist ? fetchWaitlistPhones() : Promise.resolve(new Set()),
+            ]);
+            customers = customers.filter(c => {
+                const phone = (c.phone || '').replace(/\D/g, '');
+                if (filterUnpaid   && !unpaidPhones.has(phone))   return false;
+                if (filterWaitlist && !waitlistPhones.has(phone)) return false;
+                return true;
+            });
+        }
+
         console.log(`🎯 필터링된 고객 수: ${customers.length}`);
         
         const container = document.getElementById('customer-list-container');
@@ -224,119 +199,84 @@ export async function renderCustomersTable(gradeFilter = 'all') {
             console.error('❌ 고객 리스트 컨테이너를 찾을 수 없습니다.');
             return;
         }
-        
-        container.innerHTML = '';
-        
+
+        // 페이지당 표시 수 적용
+        const pageSizeEl = document.getElementById('customer-page-size');
+        const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+        const pagedCustomers = pageSize === 0 ? customers : customers.slice(0, pageSize);
+
         // 목록 개수 표시
         const countEl = document.getElementById('customer-list-count');
-        if (countEl) countEl.textContent = `${customers.length}명`;
-        
-        // 하단 상태 바: 총 고객 수 · 오늘 신규
+        if (countEl) countEl.textContent = pageSize === 0 || pagedCustomers.length === customers.length
+            ? `${customers.length}명 표시`
+            : `${pagedCustomers.length} / ${customers.length}명 표시`;
+
+        // 하단 상태 바
         const totalEl = document.getElementById('customer-status-total');
         const todayEl = document.getElementById('customer-status-today');
         if (totalEl) totalEl.textContent = String(allCustomers.length);
         const todayStr = new Date().toISOString().slice(0, 10);
         const todayCount = allCustomers.filter(c => (c.registration_date || '').slice(0, 10) === todayStr).length;
         if (todayEl) todayEl.textContent = String(todayCount);
-        
-        // 캐시 저장 (페이지네이션용) + 페이지 초기화
-        filteredCustomersCache = customers;
-        // 검색/필터 변경 시 1페이지로 리셋
-        const totalPages = PAGE_SIZE === Infinity ? 1 : Math.ceil(filteredCustomersCache.length / PAGE_SIZE);
-        if (currentPage > totalPages) currentPage = 1;
 
-        if (filteredCustomersCache.length === 0) {
-            container.innerHTML = `
-                <div class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</div>
-            `;
-            renderPagination();
+        if (customers.length === 0) {
+            container.innerHTML = window.renderEmptyRow(5, gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.');
             return;
         }
 
-        // 현재 페이지 슬라이스
-        const start = (currentPage - 1) * (PAGE_SIZE === Infinity ? 0 : PAGE_SIZE);
-        const pageCustomers = PAGE_SIZE === Infinity
-            ? filteredCustomersCache
-            : filteredCustomersCache.slice(start, start + PAGE_SIZE);
+        // 두 쿼리를 병렬로 실행 (캐시 있으면 즉시 반환)
+        const [lastOrderMap, grades] = await Promise.all([
+            fetchLastOrderDatesByPhone(),
+            loadCustomerGradesFromSettings()
+        ]);
 
-        // 전화번호별 최근 주문일 조회 (farm_orders에서)
-        const lastOrderMap = await fetchLastOrderDatesByPhone();
+        // 등급명 맵 (동기 조회)
+        const gradeNameMap = Object.fromEntries(grades.map(g => [g.code, g.name]));
 
-        // 표 생성
-        const table = document.createElement('table');
-        table.className = 'customer-table';
-        table.innerHTML = `
-            <thead>
-                <tr>
-                    <th class="w-8"><input type="checkbox" id="customer-select-all" class="customer-checkbox"></th>
-                    <th><button id="sort-by-name-btn" style="background:none;border:none;padding:0;cursor:pointer;font-weight:inherit;font-size:inherit;color:inherit;display:inline-flex;align-items:center;gap:4px;">고객명 <span id="sort-name-arrow" style="font-size:10px;color:#9ca3af;">⇅</span></button></th>
-                    <th>등급</th>
-                    <th>연락처</th>
-                    <th>최근 주문</th>
-                    <th class="text-right">관리</th>
-                </tr>
-            </thead>
-            <tbody id="customer-table-body"></tbody>
-        `;
-        container.appendChild(table);
-        const tbody = table.querySelector('tbody');
-
-        // SMS 데이터 맵 초기화 (openCustomerSMSById에서 사용)
-        window._customerSMSMap = window._customerSMSMap || {};
-
-        for (const customer of pageCustomers) {
-            const gradeDisplayName = await getGradeDisplayName(customer.grade);
+        // HTML을 먼저 문자열로 조립한 뒤 한 번에 교체 (깜박임 방지)
+        const fragment = document.createDocumentFragment();
+        for (const customer of pagedCustomers) {
+            const normalized = (customer.grade && String(customer.grade).trim()) || 'GENERAL';
+            const gradeDisplayName = gradeNameMap[normalized] || normalized;
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
-            const phoneFormatted = formatPhone(customer.phone);
-            const relDate = relativeDate(rawDate);
-
-            // SMS 맵에 등록
-            window._customerSMSMap[customer.id] = {
-                phone: (customer.phone || '').replace(/[^0-9]/g, ''),
-                name: customer.name || '',
-                address: [customer.address, customer.address_detail].filter(Boolean).join(' ')
-            };
-
+            const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
             const tr = document.createElement('tr');
             tr.className = 'customer-row';
             tr.setAttribute('data-customer-id', customer.id);
+            const phoneDisplay = formatPhone(customer.phone);
+            const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
-                <td onclick="event.stopPropagation()"><input type="checkbox" class="customer-checkbox customer-row-check" value="${customer.id}"></td>
-                <td class="font-medium text-gray-900">${escapeHtml(customer.name || '-')}</td>
-                <td><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="text-gray-600 whitespace-nowrap">${escapeHtml(phoneFormatted)}</td>
-                <td class="text-[11px] text-gray-600 whitespace-nowrap">${relDate}</td>
-                <td class="text-right row-actions" onclick="event.stopPropagation()">
-                    <button onclick="openCustomerSMSById('${customer.id}')" class="p-1 text-emerald-500 hover:bg-emerald-50 rounded inline-flex" title="문자"><i class="fas fa-sms text-xs"></i></button>
-                    <button onclick="openOrderForCustomer('${customer.id}')" class="p-1 text-violet-500 hover:bg-violet-50 rounded inline-flex" title="주문 추가"><i class="fas fa-cart-plus text-xs"></i></button>
-                    <button onclick="editCustomer('${customer.id}')" class="p-1 text-blue-500 hover:bg-blue-50 rounded" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                    <button onclick="deleteCustomer('${customer.id}')" class="p-1 text-red-400 hover:bg-red-50 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
+                <td class="px-3 td-secondary">${phoneDisplay || nullDash}</td>
+                <td class="px-3 td-muted">${lastOrderDate || nullDash}</td>
+                <td class="px-3 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="px-3 text-center">
+                    <div class="btn-group">
+                        <button onclick="window.addOrderForCustomer && window.addOrderForCustomer('${customer.id}', '${escapeHtml(customer.name)}', '${escapeHtml(customer.phone || '')}')" class="btn-icon btn-icon-primary" title="주문 추가"><i class="fas fa-cart-plus"></i></button>
+                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                    </div>
                 </td>
             `;
             tr.addEventListener('click', (e) => {
-                if (e.target.closest('button') || e.target.closest('input[type="checkbox"]')) return;
+                if (e.target.closest('button')) return;
                 showCustomerDetail(customer.id);
             });
-            tbody.appendChild(tr);
+            fragment.appendChild(tr);
         }
+        // 기존 내용과 새 내용을 한 번에 교체
+        container.innerHTML = '';
+        container.appendChild(fragment);
 
-        initCheckboxEvents();
-        initNameSortBtn();
-        renderPagination();
-        console.log('✅ 고객 리스트(표) 렌더링 완료');
+        console.log('✅ 고객 리스트(테이블) 렌더링 완료');
         
     } catch (error) {
         console.error('❌ 고객 리스트 렌더링 실패:', error);
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <div class="text-center py-8 text-red-500">
-                    <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
-                    </div>
-                    <p class="text-sm font-medium">고객 목록을 불러오는 중 오류가 발생했습니다.</p>
-                </div>
+                <tr><td colspan="5" class="text-center text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
             `;
         }
     }
@@ -347,34 +287,47 @@ function escapeHtml(str) {
     const s = String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-function formatDisplayDate(val) {
-    if (!val) return '-';
-    const d = typeof val === 'string' ? new Date(val) : val;
-    return isNaN(d.getTime()) ? '-' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+// formatDisplayDate → utils/formatters.js의 formatDate()로 통합됨
+function formatDisplayDate(val) { return formatDate(val); }
+
+/** 미납(입금대기) 고객 전화번호 집합 조회 (30초 캐시) */
+async function fetchUnpaidPhones() {
+    const now = Date.now();
+    if (_unpaidPhonesCache && (now - _unpaidPhonesCacheTime) < 30000) return _unpaidPhonesCache;
+    const set = new Set();
+    if (!window.supabaseClient) return set;
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('customer_phone')
+            .eq('order_status', '입금대기');
+        if (!error && data) {
+            data.forEach(r => { if (r.customer_phone) set.add(r.customer_phone.replace(/\D/g, '')); });
+        }
+    } catch (e) { console.warn('미납 고객 조회 실패:', e); }
+    _unpaidPhonesCache = set;
+    _unpaidPhonesCacheTime = now;
+    return set;
 }
-function formatPhone(phone) {
-    const p = String(phone || '').replace(/[^0-9]/g, '');
-    if (p.length === 11) return `${p.slice(0,3)}-${p.slice(3,7)}-${p.slice(7)}`;
-    if (p.length === 10) return `${p.slice(0,3)}-${p.slice(3,6)}-${p.slice(6)}`;
-    return phone || '-';
-}
-function relativeDate(dateStr) {
-    if (!dateStr) return '-';
-    const diff = Math.floor((Date.now() - new Date(dateStr)) / 86400000);
-    if (diff === 0) return '오늘';
-    if (diff <= 30) return `${diff}일 전`;
-    if (diff <= 365) return `${Math.floor(diff / 30)}개월 전`;
-    return `${Math.floor(diff / 365)}년 전`;
-}
-function getGradeAvatarBg(grade) {
-    const map = {
-        'BLACK_DIAMOND': '#1e293b',
-        'PURPLE_EMPEROR': '#7c3aed',
-        'RED_RUBY': '#dc2626',
-        'GREEN_LEAF': '#16a34a',
-        'GENERAL': '#2563eb'
-    };
-    return map[grade] || '#64748b';
+
+/** 대기자 목록에 있는 고객 전화번호 집합 조회 (30초 캐시) */
+async function fetchWaitlistPhones() {
+    const now = Date.now();
+    if (_waitlistPhonesCache && (now - _waitlistPhonesCacheTime) < 30000) return _waitlistPhonesCache;
+    const set = new Set();
+    if (!window.supabaseClient) return set;
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_waitlist')
+            .select('customer_phone')
+            .eq('status', '대기중');
+        if (!error && data) {
+            data.forEach(r => { if (r.customer_phone) set.add(r.customer_phone.replace(/\D/g, '')); });
+        }
+    } catch (e) { console.warn('대기 고객 조회 실패:', e); }
+    _waitlistPhonesCache = set;
+    _waitlistPhonesCacheTime = now;
+    return set;
 }
 
 /** 고객 전화번호별 최근 주문일 맵 조회 (farm_orders 기준) */
@@ -383,7 +336,12 @@ function normalizePhoneForOrder(phone) {
     return String(phone).replace(/[-\s]/g, '');
 }
 async function fetchLastOrderDatesByPhone() {
-    const map = new Map(); // normalizedPhone -> order_date string
+    // 60초 캐시 — 렌더마다 주문 2000건 재쿼리 방지
+    const now = Date.now();
+    if (_lastOrderCache && (now - _lastOrderCacheTime) < 60000) {
+        return _lastOrderCache;
+    }
+    const map = new Map();
     if (!window.supabaseClient) return map;
     try {
         const { data: orders, error } = await window.supabaseClient
@@ -406,19 +364,21 @@ async function fetchLastOrderDatesByPhone() {
     } catch (e) {
         console.warn('최근 주문일 조회 실패:', e);
     }
+    _lastOrderCache = map;
+    _lastOrderCacheTime = now;
     return map;
 }
 
-// 등급 배지 클래스 반환
+// 등급 배지 클래스 반환 — badge-rich-* (진한 배경 + 흰 텍스트)
 function getGradeBadgeClass(grade) {
     const gradeClasses = {
-        'BLACK_DIAMOND': 'bg-gray-900 text-white',
-        'PURPLE_EMPEROR': 'bg-purple-600 text-white',
-        'RED_RUBY': 'bg-red-600 text-white',
-        'GREEN_LEAF': 'bg-green-600 text-white',
-        'GENERAL': 'bg-blue-600 text-white'
+        'BLACK_DIAMOND':  'badge-rich-black',
+        'PURPLE_EMPEROR': 'badge-rich-purple',
+        'RED_RUBY':       'badge-rich-red',
+        'GREEN_LEAF':     'badge-rich-green',
+        'GENERAL':        'badge-rich-blue'
     };
-    return gradeClasses[grade] || 'bg-gray-500 text-white';
+    return gradeClasses[grade] || 'badge-rich-gray';
 }
 
 // 등급별 그라데이션 클래스 반환
@@ -433,32 +393,24 @@ function getGradeGradient(grade) {
     return gradeGradients[grade] || 'bg-gradient-to-br from-gray-500 to-gray-600';
 }
 
-// 고객관리에서 고객등급 정보 로드
+// 고객관리에서 고객등급 정보 로드 (세션 캐시 — 설정 변경 시 invalidateCustomerUICache() 호출)
 async function loadCustomerGradesFromSettings() {
+    if (_gradesCache) return _gradesCache;
     try {
-        console.log('👥 고객관리에서 고객등급 정보 로드 중...');
-        
         if (window.supabaseClient) {
             const { data, error } = await window.supabaseClient
                 .from('farm_settings')
                 .select('settings')
                 .eq('id', 1)
                 .single();
-            
-            if (error) {
-                console.warn('⚠️ 고객등급 설정 로드 실패, 기본값 사용:', error);
-                return getDefaultCustomerGrades();
-            }
-            
-            if (data && data.settings && data.settings.customerGrades && Array.isArray(data.settings.customerGrades) && data.settings.customerGrades.length > 0) {
-                console.log('✅ 고객관리에서 고객등급 로드됨:', data.settings.customerGrades);
-                return data.settings.customerGrades;
+
+            if (!error && data?.settings?.customerGrades?.length > 0) {
+                _gradesCache = data.settings.customerGrades;
+                return _gradesCache;
             }
         }
-        
-        console.log('📋 기본 고객등급 사용 (환경설정과 동일한 공통 기본값)');
-        return getDefaultCustomerGrades();
-        
+        _gradesCache = getDefaultCustomerGrades();
+        return _gradesCache;
     } catch (error) {
         console.error('❌ 고객등급 로드 실패:', error);
         return getDefaultCustomerGrades();
@@ -603,10 +555,9 @@ function fillCustomerForm(customer) {
         // 메모 글자수 업데이트
         window.updateMemoCharCount(customer.memo || '');
 
-        // 추가 정보에 데이터 있으면 자동 펼치기
-        if (customer.email || customer.memo || (customer.status && customer.status !== 'ACTIVE')) {
-            expandExtraInfoSection();
-        }
+        // 추가 정보에 해당하는 값이 있으면 섹션 자동 펼치기
+        const hasExtra = !!(customer.email || customer.memo || (customer.status && customer.status !== 'ACTIVE'));
+        if (hasExtra) expandExtraInfoSection();
 
         // 고객 ID 설정 (수정 모드)
         const customerIdField = document.getElementById('customer-id');
@@ -632,175 +583,70 @@ function fillCustomerForm(customer) {
     }
 }
 
-// ----------------------------
-// 페이지네이션 렌더링
-// ----------------------------
-function renderPagination() {
-    const total = filteredCustomersCache.length;
-    const isAll = PAGE_SIZE === Infinity;
-    const totalPages = isAll ? 1 : (Math.ceil(total / PAGE_SIZE) || 1);
-    const container = document.getElementById('customer-pagination');
-    if (!container) return;
-
-    const start = total === 0 ? 0 : (isAll ? 1 : (currentPage - 1) * PAGE_SIZE + 1);
-    const end = isAll ? total : Math.min(currentPage * PAGE_SIZE, total);
-
-    // 페이지 크기 버튼
-    const sizes = [10, 20, 50, Infinity];
-    const labels = { 10: '10명', 20: '20명', 50: '50명', Infinity: '전체' };
-    let sizeHtml = sizes.map(s =>
-        `<button onclick="setCustomerPageSize(${s === Infinity ? "'all'" : s})" class="page-btn ${PAGE_SIZE === s ? 'active' : ''}">${labels[s]}</button>`
-    ).join('');
-
-    const todayStr = new Date().toISOString().slice(0, 10);
-    const todayCount = (window.customerDataManager?.getAllCustomers() || []).filter(c => (c.registration_date || c.created_at || '').slice(0, 10) === todayStr).length;
-
-    let html = `<div class="flex items-center gap-1 mr-2">${sizeHtml}</div>`;
-    html += `<span class="text-xs text-gray-400 mr-1">|</span>`;
-    html += `<span class="text-xs text-gray-500 mr-2">${start}-${end}/${total}명</span>`;
-    if (todayCount > 0) html += `<span class="text-[10px] text-emerald-600 mr-1">+${todayCount}</span>`;
-
-    if (!isAll) {
-        html += `<button onclick="gotoPage(${currentPage - 1})" ${currentPage === 1 ? 'disabled' : ''} class="page-btn">‹</button>`;
-        const rangeStart = Math.max(1, currentPage - 2);
-        const rangeEnd = Math.min(totalPages, currentPage + 2);
-        for (let i = rangeStart; i <= rangeEnd; i++) {
-            html += `<button onclick="gotoPage(${i})" class="page-btn ${i === currentPage ? 'active' : ''}">${i}</button>`;
-        }
-        html += `<button onclick="gotoPage(${currentPage + 1})" ${currentPage === totalPages ? 'disabled' : ''} class="page-btn">›</button>`;
-    }
-
-    container.innerHTML = html;
-}
-window.renderPagination = renderPagination;
-
-function gotoPage(page) {
-    const totalPages = PAGE_SIZE === Infinity ? 1 : (Math.ceil(filteredCustomersCache.length / PAGE_SIZE) || 1);
-    if (page < 1 || page > totalPages) return;
-    currentPage = page;
-    const activeTab = document.querySelector('.customer-tab-btn.active');
-    const grade = activeTab ? activeTab.id.replace('customer-grade-', '') : 'all';
-    window.renderCustomersTable(grade);
-}
-window.gotoPage = gotoPage;
-
-function setCustomerPageSize(size) {
-    PAGE_SIZE = size === 'all' ? Infinity : Number(size);
-    currentPage = 1;
-    const activeTab = document.querySelector('.customer-tab-btn.active');
-    const grade = activeTab ? activeTab.id.replace('customer-grade-', '') : 'all';
-    window.renderCustomersTable(grade);
-}
-window.setCustomerPageSize = setCustomerPageSize;
-
-// ----------------------------
-// 체크박스 이벤트
-// ----------------------------
-function updateBulkBar() {
-    const checked = document.querySelectorAll('.customer-row-check:checked');
-    const bar = document.getElementById('customer-bulk-bar');
-    const countEl = document.getElementById('customer-bulk-count');
-    if (!bar) return;
-    if (checked.length > 0) {
-        bar.classList.remove('hidden');
-        if (countEl) countEl.textContent = checked.length;
-    } else {
-        bar.classList.add('hidden');
-    }
-}
-
-function initCheckboxEvents() {
-    const selectAll = document.getElementById('customer-select-all');
-    if (selectAll) {
-        selectAll.addEventListener('change', function () {
-            document.querySelectorAll('.customer-row-check').forEach(cb => cb.checked = this.checked);
-            updateBulkBar();
-        });
-    }
-    document.querySelectorAll('.customer-row-check').forEach(cb => {
-        cb.addEventListener('change', updateBulkBar);
-    });
-}
-
-function initNameSortBtn() {
-    const btn = document.getElementById('sort-by-name-btn');
-    const arrow = document.getElementById('sort-name-arrow');
-    if (!btn) return;
-
-    const currentSort = customerDataManager.customerSortBy || 'newest';
-    if (currentSort === 'name_asc') arrow.textContent = '↑';
-    else if (currentSort === 'name_desc') arrow.textContent = '↓';
-    else arrow.textContent = '⇅';
-
-    btn.addEventListener('click', () => {
-        const cur = customerDataManager.customerSortBy || 'newest';
-        const next = cur === 'name_asc' ? 'name_desc' : 'name_asc';
-        customerDataManager.customerSortBy = next;
-
-        const sortSelect = document.getElementById('customer-sort');
-        if (sortSelect) sortSelect.value = next;
-
-        const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
-        const gradeFilter = activeGradeBtn ? (activeGradeBtn.id.replace('customer-grade-', '') || 'all') : 'all';
-        renderCustomersTable(gradeFilter === 'all' ? undefined : gradeFilter);
-    });
-}
-
-window.clearCustomerSelection = function () {
-    document.querySelectorAll('.customer-row-check, #customer-select-all').forEach(cb => { cb.checked = false; });
-    updateBulkBar();
-};
-
-window.bulkSendSMS = function () {
-    const ids = Array.from(document.querySelectorAll('.customer-row-check:checked')).map(cb => cb.value);
-    if (ids.length === 0) return;
-    alert(`SMS 발송 기능: ${ids.length}명 선택됨 (추후 구현)`);
-};
-
 // 전역 함수로 등록 (HTML에서 호출 가능하도록)
 window.renderCustomersTable = renderCustomersTable;
 window.checkPhoneDuplicate = checkPhoneDuplicate;
 window.fillCustomerForm = fillCustomerForm;
 
-// 고객 행에서 바로 주문 추가 (전역)
-window.openOrderForCustomer = function(customerId) {
-    const data = window._customerSMSMap?.[customerId];
+// 고객에서 바로 주문 추가 (전역)
+window.addOrderForCustomer = function(customerId, customerName, customerPhone) {
     if (typeof window.openOrderModal === 'function') {
-        window.openOrderModal(null, {
-            customerId: customerId,
-            customerPhone: data?.phone || '',
-            customerName: data?.name || '',
-            customerAddress: data?.address || ''
-        });
-    } else if (typeof window.switchSection === 'function') {
-        window.switchSection('orders');
+        window.openOrderModal(null, { customerId, customerName, customerPhone });
+    } else if (typeof window.switchTab === 'function') {
+        window.switchTab('orders');
+        // 탭 전환 후 주문 모달 열기
+        setTimeout(() => {
+            if (typeof window.openOrderModal === 'function') {
+                window.openOrderModal(null, { customerId, customerName, customerPhone });
+            }
+        }, 400);
     }
 };
 
 // 고객 삭제 함수 (전역)
 window.deleteCustomer = async function(customerId) {
     console.log('🗑️ 고객 삭제 요청:', customerId);
-    
-    if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) {
-        return;
+
+    // 연관 주문 확인 (상세 정보 포함)
+    const { data: orders, error: checkError } = await window.supabaseClient
+        .from('farm_orders')
+        .select('id, order_number, created_at, order_date, total_amount, order_status')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
+    if (checkError) { alert('삭제 확인 중 오류: ' + checkError.message); return; }
+
+    if (orders && orders.length > 0) {
+        // 주문 목록 모달 표시 → { selectedIds, deleteCustomer } 반환
+        const result = await showDeleteWithOrdersModal(orders);
+        if (!result) return;
+
+        // 선택된 주문 삭제
+        if (result.selectedIds.length > 0) {
+            const { error: delOrderErr } = await window.supabaseClient
+                .from('farm_orders')
+                .delete()
+                .in('id', result.selectedIds);
+            if (delOrderErr) { alert('주문 삭제 중 오류: ' + delOrderErr.message); return; }
+            console.log(`✅ 주문 ${result.selectedIds.length}건 삭제 완료`);
+        }
+
+        // 고객도 삭제하지 않는 경우 (선택 주문만 삭제)
+        if (!result.deleteCustomer) {
+            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            if (window.showToast) window.showToast(`✅ 주문 ${result.selectedIds.length}건이 삭제되었습니다.`, 3000);
+            return;
+        }
+    } else {
+        if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) return;
     }
-    
+
     try {
         if (window.customerDataManager) {
             await window.customerDataManager.deleteCustomer(customerId);
             console.log('✅ 고객 삭제 완료');
-            
-            // 고객 목록 새로고침
-            if (window.renderCustomersTable) {
-                window.renderCustomersTable('all');
-            }
-            
-            // 성공 알림
-            if (window.showToast) {
-                window.showToast('✅ 고객이 삭제되었습니다.', 3000);
-            }
+            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            if (window.showToast) window.showToast('✅ 고객이 삭제되었습니다.', 3000);
         } else {
-            console.error('❌ customerDataManager를 찾을 수 없습니다.');
             alert('고객 데이터 관리자를 찾을 수 없습니다.');
         }
     } catch (error) {
@@ -808,6 +654,105 @@ window.deleteCustomer = async function(customerId) {
         alert('고객 삭제에 실패했습니다: ' + error.message);
     }
 };
+
+// 주문 목록 + 체크박스 선택 삭제 모달
+// resolve(null) = 취소
+// resolve({ selectedIds, deleteCustomer }) = 확인
+function showDeleteWithOrdersModal(orders) {
+    return new Promise((resolve) => {
+        document.getElementById('delete-with-orders-modal')?.remove();
+
+        const fmt = (d) => d ? d.slice(0, 10) : '-';
+        const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
+        const statusBadge = (s) => {
+            // 상태 배지 색상 — orderData.js getStatusColor() 단일 소스 사용 ('취소' → '주문취소' 정규화 포함)
+            const _normalizedStatus = s === '취소' ? '주문취소' : s;
+            const cls = window.orderDataManager?.getStatusColor?.(_normalizedStatus) || 'badge-neutral';
+            return `<span class="badge ${cls}">${s || '-'}</span>`;
+        };
+
+        const rows = orders.map((o, i) => `
+            <tr data-id="${o.id}">
+                <td class="px-2">
+                    <input type="checkbox" class="order-chk rounded border-gray-300 text-red-500 focus:ring-red-400" data-idx="${i}" checked>
+                </td>
+                <td class="px-2 td-secondary">${fmt(o.created_at || o.order_date)}</td>
+                <td class="px-2 td-primary">${o.order_number || '-'}</td>
+                <td class="px-2 text-right font-medium td-amount">${fmtAmt(o.total_amount)}</td>
+                <td class="px-2 text-center">${statusBadge(o.order_status)}</td>
+            </tr>`).join('');
+
+        const modal = document.createElement('div');
+        modal.id = 'delete-with-orders-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
+        modal.innerHTML = `
+            <div class="modal-container modal-md">
+                <div class="modal-header">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fas fa-trash text-red-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="modal-title">고객 삭제</div>
+                            <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-body">
+                    <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
+                        <table class="w-full table-ui">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
+                                    <th class="px-2 text-left">날짜</th>
+                                    <th class="px-2 text-left">주문번호</th>
+                                    <th class="px-2 text-right">금액</th>
+                                    <th class="px-2 text-center">상태</th>
+                                </tr>
+                            </thead>
+                            <tbody id="order-del-tbody">${rows}</tbody>
+                        </table>
+                    </div>
+                    <p class="mt-2.5 text-xs text-red-500">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
+                </div>
+                <div class="modal-footer">
+                    <button id="btn-cancel-del" class="btn-secondary">취소</button>
+                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:#DC2626;">선택 주문만 삭제</button>
+                    <button id="btn-del-all" class="btn-danger">주문 + 고객 삭제</button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        // 전체 선택 체크박스
+        const chkAll = modal.querySelector('#chk-all');
+        const getChecked = () => Array.from(modal.querySelectorAll('.order-chk:checked')).map(c => orders[+c.dataset.idx].id);
+        chkAll.addEventListener('change', () => {
+            modal.querySelectorAll('.order-chk').forEach(c => c.checked = chkAll.checked);
+        });
+        modal.querySelectorAll('.order-chk').forEach(c => c.addEventListener('change', () => {
+            chkAll.checked = modal.querySelectorAll('.order-chk').length === modal.querySelectorAll('.order-chk:checked').length;
+        }));
+
+        modal.querySelector('#btn-cancel-del').addEventListener('click', () => { modal.remove(); resolve(null); });
+        modal.addEventListener('click', (e) => { if (e.target === modal) { modal.remove(); resolve(null); } });
+
+        modal.querySelector('#btn-del-orders-only').addEventListener('click', () => {
+            const selectedIds = getChecked();
+            if (!selectedIds.length) { alert('삭제할 주문을 선택하세요.'); return; }
+            modal.remove();
+            resolve({ selectedIds, deleteCustomer: false });
+        });
+
+        modal.querySelector('#btn-del-all').addEventListener('click', () => {
+            const selectedIds = getChecked();
+            if (!selectedIds.length) { alert('삭제할 주문을 선택하세요.'); return; }
+            modal.remove();
+            resolve({ selectedIds, deleteCustomer: true });
+        });
+    });
+}
 
 // 고객 수정 함수 (전역)
 window.editCustomer = async function(customerId) {
@@ -864,9 +809,21 @@ window.editCustomer = async function(customerId) {
         } else {
             console.warn('⚠️ openCustomerModal 함수를 찾을 수 없습니다');
         }
-        
-        // 잠시 후 폼에 데이터 채우기 (DOM이 완전히 렌더링되도록)
+
+        // 수정 모드: 탭 표시 + 모달 확장
         setTimeout(() => {
+            // 탭 노출
+            const tabs = document.getElementById('customer-modal-tabs');
+            if (tabs) { tabs.style.display = ''; tabs.classList.remove('hidden'); }
+            // 모달 폭 확장 (modal-sm → modal-md)
+            const modalContent = document.getElementById('customer-modal-content');
+            if (modalContent) {
+                modalContent.classList.remove('modal-sm');
+                modalContent.classList.add('modal-md');
+            }
+            // 정보 탭 활성 상태 유지
+            window.switchCustomerTab?.('info');
+            // 폼 데이터 채우기
             window.fillCustomerForm(customer);
         }, 100);
         
@@ -906,6 +863,10 @@ window.showCustomerDetail = async function(customerId) {
             el.classList.toggle('ring-emerald-500', el.getAttribute('data-customer-id') === customerId);
         });
         
+        // 패널 열기 (detail-open 클래스 추가)
+        const layout = document.querySelector('.customer-admin-layout');
+        if (layout) layout.classList.add('detail-open');
+
         // 1. 오른쪽 패널에 상세 정보 표시
         await showCustomerDetailInPanel(customer);
         
@@ -914,190 +875,158 @@ window.showCustomerDetail = async function(customerId) {
     }
 };
 
-// 고객 상세 정보를 플로팅 패널에 표시
+// 고객 상세 정보를 팝업 모달로 표시
 async function showCustomerDetailInPanel(customer) {
     try {
-        console.log('📋 고객 상세 정보 패널 업데이트:', customer.name);
-
-        // detail-open 토글
-        const layout = document.querySelector('.customer-admin-layout');
-        if (layout) layout.classList.add('detail-open');
-
-        // 선택 행 강조
-        document.querySelectorAll('.customer-row').forEach(r => r.classList.remove('selected'));
-        const sel = document.querySelector(`.customer-row[data-customer-id="${customer.id}"]`);
-        if (sel) { sel.classList.add('selected'); sel.scrollIntoView({ block: 'nearest' }); }
-
-        // 플로팅 패널 설정
-        const mainPanel = document.querySelector('.customer-admin-main');
-        if (mainPanel) {
-            // 드래그 핸들 (최초 1회)
-            if (!mainPanel.querySelector('.customer-detail-drag-handle')) {
-                const dh = document.createElement('div');
-                dh.className = 'customer-detail-drag-handle';
-                dh.innerHTML = `
-                    <div class="drag-dots"><span></span><span></span><span></span><span></span><span></span><span></span></div>
-                    <span class="text-xs font-semibold text-gray-700 flex-1 mx-2 truncate" id="panel-title-name"></span>
-                    <button id="panel-fullpage-btn" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="전체화면"><i class="fas fa-expand text-xs"></i></button>
-                    <button onclick="closeCustomerDetail()" class="p-1 text-gray-400 hover:text-red-500 rounded" title="닫기"><i class="fas fa-times text-xs"></i></button>
-                `;
-                mainPanel.insertBefore(dh, mainPanel.firstChild);
-                dh.querySelector('#panel-fullpage-btn').addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    toggleCustomerPanelFullpage();
-                });
-                initFloatingPanelDrag(mainPanel);
-            }
-            // 리사이즈 핸들 (최초 1회)
-            if (!mainPanel.querySelector('.customer-detail-resize-handle')) {
-                const rh = document.createElement('div');
-                rh.className = 'customer-detail-resize-handle';
-                mainPanel.appendChild(rh);
-                initFloatingPanelResize(mainPanel);
-            }
-            applyPanelGeometry(mainPanel);
-            const titleName = mainPanel.querySelector('#panel-title-name');
-            if (titleName) titleName.textContent = customer.name;
-        }
-
-        // 고객 상세 정보 컨테이너 찾기
+        const overlay = document.getElementById('customer-detail-panel');
         const detailContent = document.getElementById('customer-detail-content');
-        if (!detailContent) return;
+        if (!overlay || !detailContent) return;
 
-        // 등급명 비동기 조회
+        // 모달 타이틀 업데이트
+        const titleEl = document.getElementById('crm-modal-title');
+        if (titleEl) titleEl.textContent = customer.name || '고객 상세';
+
+        // 오버레이 표시 + 닫기 이벤트
+        overlay.classList.remove('hidden');
+        const closeBtn = document.getElementById('close-crm-panel');
+        const closeModal = () => {
+            overlay.classList.add('hidden');
+            document.querySelectorAll('tr.bg-emerald-50').forEach(r => r.classList.remove('bg-emerald-50'));
+        };
+        if (closeBtn) closeBtn.onclick = closeModal;
+        overlay.onclick = (e) => { if (e.target === overlay) closeModal(); };
+
+        // 등급명 / 주소 / 연락처
         const gradeDisplayName = await getGradeDisplayName(customer.grade);
         const addressFull = [customer.address, customer.address_detail].filter(Boolean).join(' ') || '-';
         const phoneForTel = (customer.phone || '').replace(/[^0-9]/g, '');
         const telHref = phoneForTel ? `tel:${phoneForTel}` : '#';
+        const smsPhone = escapeHtml(customer.phone || '');
+        const smsName  = escapeHtml(customer.name || '');
 
-        // 컴팩트 레이아웃
+        // 팝업 내부: 좌(프로필+액션) / 우(주문이력+메모) 2컬럼
         detailContent.innerHTML = `
-            <div class="flex flex-col gap-2">
-                <!-- 프로필 행 -->
-                <div class="flex items-start gap-2">
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-1.5 flex-wrap">
-                            <span class="font-semibold text-gray-900 text-sm">${escapeHtml(customer.name || '-')}</span>
-                            <span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
+            <div class="crm-popup-grid">
+
+                <!-- ─── 좌: 프로필 + 지표 + 액션 ─── -->
+                <div style="display:flex;flex-direction:column;gap:12px;">
+
+                    <!-- 프로필 카드 -->
+                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:16px;">
+                        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
+                            <div>
+                                <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px;">${escapeHtml(customer.name || '-')}</div>
+                                <span class="px-2 py-0.5 text-xs font-semibold rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span>
+                            </div>
+                            <div style="display:flex;gap:4px;">
+                                <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                                <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                            </div>
                         </div>
-                        <div class="text-xs text-gray-500 mt-0.5 space-y-0.5">
-                            <div><i class="fas fa-phone-alt w-3 text-gray-400"></i> ${escapeHtml(formatPhone(customer.phone) || '-')}</div>
-                            <div class="truncate" title="${escapeHtml(addressFull)}"><i class="fas fa-map-marker-alt w-3 text-gray-400"></i> ${escapeHtml(addressFull)}</div>
-                            <div><i class="fas fa-calendar w-3 text-gray-400"></i> 등록 ${customer.registration_date || '-'}</div>
-                        </div>
-                    </div>
-                    <div class="flex flex-col gap-1 shrink-0 text-right">
-                        <div class="text-base font-bold text-emerald-700" id="customer-total-purchase">—</div>
-                        <div class="text-[10px] text-gray-400">총구매액</div>
-                        <div class="text-sm font-bold text-gray-700" id="customer-order-count">—</div>
-                        <div class="text-[10px] text-gray-400">주문수</div>
-                    </div>
-                </div>
-                <!-- 액션 버튼 행 -->
-                <div class="flex gap-1 flex-wrap">
-                    <button type="button" onclick="openCustomerSMSModal('${phoneForTel}', '${(customer.name||'').replace(/'/g,'')}')" class="flex-1 text-center py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100"><i class="fas fa-sms mr-1"></i>문자</button>
-                    <a href="${telHref}" class="flex-1 text-center py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100"><i class="fas fa-phone mr-1"></i>전화</a>
-                    <button type="button" data-action="order-add" data-customer-id="${customer.id}" class="flex-1 text-center py-1.5 text-xs font-medium bg-emerald-50 text-emerald-700 border border-emerald-200 rounded hover:bg-emerald-100"><i class="fas fa-cart-plus mr-1"></i>주문</button>
-                    <button onclick="editCustomer('${customer.id}')" class="py-1.5 px-3 text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200 rounded hover:bg-blue-100"><i class="fas fa-edit"></i></button>
-                    <button onclick="deleteCustomer('${customer.id}')" class="py-1.5 px-3 text-xs font-medium bg-red-50 text-red-500 border border-red-200 rounded hover:bg-red-100"><i class="fas fa-trash"></i></button>
-                </div>
-                <!-- 주문 이력 -->
-                <div class="border border-gray-200 rounded overflow-hidden">
-                    <div class="flex items-center justify-between px-2 py-1.5 bg-gray-50 border-b border-gray-200">
-                        <span class="text-xs font-semibold text-gray-700">주문 이력</span>
-                        <div class="flex gap-1">
-                            <button id="order-view-orders" class="order-view-tab text-[10px] px-2 py-0.5 rounded bg-emerald-600 text-white">건별</button>
-                            <button id="order-view-date" class="order-view-tab text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200">날짜별</button>
-                            <button id="order-view-items" class="order-view-tab text-[10px] px-2 py-0.5 rounded bg-gray-100 text-gray-600 hover:bg-gray-200">전체상품</button>
+                        <div style="font-size:13px;color:#4B5563;display:flex;flex-direction:column;gap:6px;">
+                            <div><i class="fas fa-phone-alt" style="width:16px;color:#9CA3AF;"></i> ${escapeHtml(customer.phone || '-')}</div>
+                            <div style="word-break:break-word;"><i class="fas fa-map-marker-alt" style="width:16px;color:#9CA3AF;"></i> ${escapeHtml(addressFull)}</div>
+                            <div><i class="fas fa-calendar-alt" style="width:16px;color:#9CA3AF;"></i> 등록일 ${formatDate(customer.registration_date)}</div>
                         </div>
                     </div>
-                    <div class="px-2 pt-1.5 pb-1 border-b border-gray-100 bg-white">
-                        <input id="order-item-search" type="text" placeholder="식물 이름 검색..." class="w-full text-xs border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-emerald-400">
+
+                    <!-- 핵심 지표 3개 -->
+                    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
+                        <div style="background:white;border:1px solid #D1FAE5;border-radius:8px;padding:12px;text-align:center;">
+                            <div style="font-size:16px;font-weight:700;color:#059669;" id="customer-total-purchase">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">총 구매액</div>
+                        </div>
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;">
+                            <div style="font-size:16px;font-weight:700;color:#374151;" id="customer-order-count">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">주문 횟수</div>
+                        </div>
+                        <div style="background:white;border:1px solid #FEF3C7;border-radius:8px;padding:12px;text-align:center;">
+                            <div style="font-size:16px;font-weight:700;color:#D97706;" id="customer-loyalty-score">—</div>
+                            <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">단골 점수</div>
+                        </div>
                     </div>
-                    <div class="overflow-auto" style="max-height:240px">
-                        <div id="customer-orders-list" class="text-xs text-gray-500 p-2">불러오는 중...</div>
+
+                    <!-- 액션 버튼 -->
+                    <div style="display:flex;flex-direction:column;gap:6px;">
+                        <button type="button"
+                            onclick="if(window.openCustomerSMSModal)window.openCustomerSMSModal('${smsPhone}','${smsName}');"
+                            class="btn-secondary" style="width:100%;justify-content:center;">
+                            <i class="fas fa-sms"></i> 문자 발송
+                        </button>
+                        <a href="${telHref}" class="btn-secondary" style="width:100%;justify-content:center;text-decoration:none;display:flex;align-items:center;gap:6px;">
+                            <i class="fas fa-phone"></i> 전화 연결
+                        </a>
+                        <button type="button" data-action="order-add" data-customer-id="${customer.id}"
+                            class="btn-primary" style="width:100%;justify-content:center;">
+                            <i class="fas fa-cart-plus"></i> 주문 추가
+                        </button>
                     </div>
+
                 </div>
-                <!-- 메모 -->
-                <div class="border border-gray-200 rounded overflow-hidden">
-                    <div class="flex items-center px-2 py-1.5 bg-gray-50 border-b border-gray-200">
-                        <span class="text-xs font-semibold text-gray-700">메모</span>
+
+                <!-- ─── 우: 주문이력 + 상담기록 ─── -->
+                <div style="display:flex;flex-direction:column;gap:12px;min-width:0;">
+
+                    <!-- 주문 이력 -->
+                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;flex:1;">
+                        <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
+                            <i class="fas fa-receipt" style="color:#9CA3AF;margin-right:6px;"></i>주문 이력
+                        </div>
+                        <div style="overflow-y:auto;max-height:280px;background:white;">
+                            <div id="customer-orders-list" style="font-size:12px;color:#9CA3AF;padding:12px;">불러오는 중...</div>
+                        </div>
                     </div>
-                    <div class="p-1.5">
-                        <textarea id="customer-detail-memo" rows="3" class="w-full p-1.5 border border-gray-200 rounded text-xs resize-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" placeholder="상담 내용, 특이사항...">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
-                        <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}" class="mt-1 w-full py-1 text-xs font-medium bg-emerald-600 text-white rounded hover:bg-emerald-700">저장</button>
+
+                    <!-- 상담 기록 -->
+                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
+                        <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
+                            <i class="fas fa-sticky-note" style="color:#9CA3AF;margin-right:6px;"></i>상담 기록
+                        </div>
+                        <div style="padding:12px;background:white;">
+                            <textarea id="customer-detail-memo"
+                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
+                                placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
+                            <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}"
+                                class="btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
+                                <i class="fas fa-save"></i> 메모 저장
+                            </button>
+                        </div>
                     </div>
+
                 </div>
             </div>
         `;
 
         // 메모 저장 이벤트
-        const memoSaveBtn = document.getElementById('customer-memo-save-btn');
-        if (memoSaveBtn) {
-            memoSaveBtn.addEventListener('click', async () => {
-                const memoEl = document.getElementById('customer-detail-memo');
-                const memo = memoEl ? memoEl.value.trim() : '';
-                try {
-                    await customerDataManager.updateCustomer(customer.id, { ...customer, memo });
-                    if (window.showToast) window.showToast('메모가 저장되었습니다.', 2000);
-                } catch (e) {
-                    if (window.showToast) window.showToast('메모 저장에 실패했습니다.', 2000);
-                }
-            });
-        }
-        const orderAddBtn = detailContent.querySelector('[data-action="order-add"]');
-        if (orderAddBtn) {
-            orderAddBtn.addEventListener('click', () => {
-                if (typeof window.openOrderModal === 'function') window.openOrderModal(null, { customerId: customer.id, customerPhone: customer.phone, customerName: customer.name, customerAddress: [customer.address, customer.address_detail].filter(Boolean).join(' ') });
-                else if (typeof window.switchSection === 'function') window.switchSection('orders');
-            });
-        }
-
-        // 주문 이력 뷰 탭 버튼 이벤트
-        window._customerOrderViewMode = 'orders';
-        window._customerOrderSearch = '';
-        const orderViewBtns = detailContent.querySelectorAll('.order-view-tab');
-        orderViewBtns.forEach(btn => {
-            btn.addEventListener('click', () => {
-                orderViewBtns.forEach(b => {
-                    b.classList.remove('bg-emerald-600', 'text-white');
-                    b.classList.add('bg-gray-100', 'text-gray-600');
-                });
-                btn.classList.remove('bg-gray-100', 'text-gray-600');
-                btn.classList.add('bg-emerald-600', 'text-white');
-                if (btn.id === 'order-view-orders') window._customerOrderViewMode = 'orders';
-                else if (btn.id === 'order-view-date') window._customerOrderViewMode = 'date';
-                else if (btn.id === 'order-view-items') window._customerOrderViewMode = 'items';
-                reRenderCustomerOrders();
-            });
+        document.getElementById('customer-memo-save-btn')?.addEventListener('click', async () => {
+            const memo = document.getElementById('customer-detail-memo')?.value.trim() || '';
+            try {
+                await customerDataManager.updateCustomer(customer.id, { ...customer, memo });
+                if (window.showToast) window.showToast('메모가 저장되었습니다.', 2000);
+            } catch (e) {
+                if (window.showToast) window.showToast('메모 저장에 실패했습니다.', 2000);
+            }
         });
 
-        // 식물명 검색 이벤트
-        const orderItemSearchEl = detailContent.querySelector('#order-item-search');
-        if (orderItemSearchEl) {
-            orderItemSearchEl.addEventListener('input', () => {
-                window._customerOrderSearch = orderItemSearchEl.value.trim();
-                reRenderCustomerOrders();
-            });
-        }
-
-        console.log('✅ 고객 상세 정보 패널 업데이트 완료');
+        // 주문 추가 이벤트
+        detailContent.querySelector('[data-action="order-add"]')?.addEventListener('click', () => {
+            if (typeof window.openOrderModal === 'function')
+                window.openOrderModal(null, { customerId: customer.id, customerPhone: customer.phone, customerName: customer.name });
+        });
 
         // 주문내역 로드
         loadCustomerOrders(customer.id);
-        
+
     } catch (error) {
-        console.error('❌ 고객 상세 정보 패널 업데이트 실패:', error);
+        console.error('❌ 고객 상세 팝업 업데이트 실패:', error);
     }
 }
 
 // 고객 핵심 지표 업데이트: 총 구매액 · 주문 횟수 · 단골 점수 (주문 배열 기준)
 function updateCustomerTotalPurchaseDisplay(orders) {
     const list = orders || [];
-    const EXCLUDED = ['주문취소', '환불완료'];
-    const activeList = list.filter(o => !EXCLUDED.includes(o.order_status));
-    const total = activeList.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-    const count = activeList.length;
+    const total = list.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
+    const count = list.length;
     const loyaltyScore = count * 10; // 단골 점수: 주문 횟수 × 10 (간단 규칙)
     const totalEl = document.getElementById('customer-total-purchase');
     const countEl = document.getElementById('customer-order-count');
@@ -1111,11 +1040,7 @@ function updateCustomerTotalPurchaseDisplay(orders) {
 async function loadCustomerOrders(customerId) {
     try {
         console.log('🛒 고객 주문내역 로드:', customerId);
-        // 새 고객 로드 시 캐시 초기화
-        window._customerOrdersCache = null;
-        window._customerOrderViewMode = window._customerOrderViewMode || 'orders';
-        window._customerOrderSearch = '';
-
+        
         const ordersList = document.getElementById('customer-orders-list');
         if (!ordersList) {
             console.error('❌ 주문내역 컨테이너를 찾을 수 없습니다.');
@@ -1140,106 +1065,36 @@ async function loadCustomerOrders(customerId) {
             throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
         }
         
-        console.log('🌐 Supabase에서 주문내역 로드 중...');
-        
-        // 디버깅: 모든 주문 데이터 먼저 확인
-        const { data: allOrders, error: allOrdersError } = await window.supabaseClient
-            .from('farm_orders')
-            .select('*')
-            .order('order_date', { ascending: false })
-            .limit(10);
-        
-        if (allOrdersError) {
-            console.error('❌ 전체 주문 데이터 조회 실패:', allOrdersError);
-        } else {
-            console.log('📊 전체 주문 데이터 샘플:', allOrders?.slice(0, 3));
-            if (allOrders && allOrders.length > 0) {
-                console.log('📞 주문 데이터의 고객 전화번호 샘플:', allOrders.slice(0, 3).map(order => ({
-                    id: order.id,
-                    customer_phone: order.customer_phone,
-                    customer_name: order.customer_name
-                })));
-                
-                // 주문 아이템 데이터 구조 상세 분석
-                console.log('🔍 주문 아이템 데이터 구조 분석:');
-                allOrders.slice(0, 3).forEach((order, index) => {
-                    console.log(`📦 주문 ${index + 1} 아이템 데이터:`, {
-                        orderId: order.id,
-                        orderNumber: order.order_number,
-                        items: order.items,
-                        order_items: order.order_items,
-                        itemsType: typeof order.items,
-                        order_itemsType: typeof order.order_items,
-                        itemsLength: order.items ? order.items.length : 'N/A',
-                        order_itemsLength: order.order_items ? order.order_items.length : 'N/A'
-                    });
-                    
-                    // order_items가 JSON 문자열인 경우 파싱 시도
-                    if (order.order_items && typeof order.order_items === 'string') {
-                        try {
-                            const parsedItems = JSON.parse(order.order_items);
-                            console.log(`📦 주문 ${index + 1} 파싱된 아이템:`, parsedItems);
-                        } catch (e) {
-                            console.warn(`⚠️ 주문 ${index + 1} order_items JSON 파싱 실패:`, e);
-                        }
-                    }
-                });
-            }
-        }
-        
-        // 고객 전화번호로 주문 검색 (다양한 형식 지원)
-        console.log('🔍 고객 전화번호로 주문 검색:', customer.phone);
-        
         // 전화번호 정규화 (하이픈 제거, 공백 제거)
         const normalizedPhone = customer.phone.replace(/[-\s]/g, '');
-        console.log('📞 정규화된 전화번호:', normalizedPhone);
-        
+
         const { data: ordersData, error } = await window.supabaseClient
             .from('farm_orders')
-            .select('*')
+            .select('*, farm_order_items(*)')
             .or(`customer_phone.eq.${customer.phone},customer_phone.eq.${normalizedPhone}`)
             .order('order_date', { ascending: false });
-        
+
         if (error) {
-            console.error('❌ Supabase 주문내역 로드 실패:', error);
-            throw new Error(`Supabase 주문내역 로드 실패: ${error.message}`);
+            console.error('❌ 주문내역 로드 실패:', error);
+            throw new Error(`주문내역 로드 실패: ${error.message}`);
         }
-        
+
         const orders = ordersData || [];
-        console.log(`✅ Supabase에서 주문 ${orders.length}개 로드됨`);
-        console.log('🔍 로드된 주문 데이터:', orders);
-        
-        // 디버깅: 주문 데이터 상세 분석
-        if (orders.length > 0) {
-            console.log('🔍 주문 데이터 상세 분석:');
-            orders.forEach((order, index) => {
-                console.log(`📋 주문 ${index + 1}:`, {
-                    id: order.id,
-                    order_number: order.order_number,
-                    customer_name: order.customer_name,
-                    customer_phone: order.customer_phone,
-                    total_amount: order.total_amount,
-                    order_items_type: typeof order.order_items,
-                    order_items_length: order.order_items ? (Array.isArray(order.order_items) ? order.order_items.length : 'not_array') : 'null',
-                    order_items_preview: order.order_items ? (typeof order.order_items === 'string' ? order.order_items.substring(0, 100) + '...' : order.order_items) : 'null'
-                });
-            });
-        }
+        orders.forEach(o => { o.items = o.farm_order_items || []; });
         
         // 전화번호 매칭이 안되는 경우 다른 방법으로 시도
         if (orders.length === 0) {
             console.log('🔄 전화번호 매칭 실패, 대안 방법들 시도...');
             
             // 1. 고객명으로 검색
-            console.log('🔍 고객명으로 검색:', customer.name);
             const { data: ordersByName, error: nameError } = await window.supabaseClient
                 .from('farm_orders')
-                .select('*')
+                .select('*, farm_order_items(*)')
                 .eq('customer_name', customer.name)
                 .order('order_date', { ascending: false });
-            
+
             if (!nameError && ordersByName && ordersByName.length > 0) {
-                console.log(`✅ 고객명으로 주문 ${ordersByName.length}개 발견`);
+                ordersByName.forEach(o => { o.items = o.farm_order_items || []; });
                 updateCustomerTotalPurchaseDisplay(ordersByName);
                 await renderCustomerOrders(ordersByName, ordersList);
                 return;
@@ -1259,15 +1114,14 @@ async function loadCustomerOrders(customerId) {
             
             for (const phoneFormat of phoneVariations) {
                 if (phoneFormat && phoneFormat !== customer.phone) {
-                    console.log(`🔍 전화번호 형식 시도: ${phoneFormat}`);
                     const { data: ordersByPhone, error: phoneError } = await window.supabaseClient
                         .from('farm_orders')
-                        .select('*')
+                        .select('*, farm_order_items(*)')
                         .eq('customer_phone', phoneFormat)
                         .order('order_date', { ascending: false });
-                    
+
                     if (!phoneError && ordersByPhone && ordersByPhone.length > 0) {
-                        console.log(`✅ 전화번호 형식 ${phoneFormat}로 주문 ${ordersByPhone.length}개 발견`);
+                        ordersByPhone.forEach(o => { o.items = o.farm_order_items || []; });
                         updateCustomerTotalPurchaseDisplay(ordersByPhone);
                         await renderCustomerOrders(ordersByPhone, ordersList);
                         return;
@@ -1281,12 +1135,12 @@ async function loadCustomerOrders(customerId) {
             if (phoneDigits.length >= 8) { // 최소 8자리 이상일 때만
                 const { data: ordersByPartial, error: partialError } = await window.supabaseClient
                     .from('farm_orders')
-                    .select('*')
-                    .like('customer_phone', `%${phoneDigits.slice(-8)}%`) // 뒤 8자리로 검색
+                    .select('*, farm_order_items(*)')
+                    .like('customer_phone', `%${phoneDigits.slice(-8)}%`)
                     .order('order_date', { ascending: false });
-                
+
                 if (!partialError && ordersByPartial && ordersByPartial.length > 0) {
-                    console.log(`✅ 부분 매칭으로 주문 ${ordersByPartial.length}개 발견`);
+                    ordersByPartial.forEach(o => { o.items = o.farm_order_items || []; });
                     updateCustomerTotalPurchaseDisplay(ordersByPartial);
                     await renderCustomerOrders(ordersByPartial, ordersList);
                     return;
@@ -1322,187 +1176,65 @@ async function loadCustomerOrders(customerId) {
 }
 
 // 고객 주문내역 렌더링 함수
-async function renderCustomerOrders(orders, container, viewMode, searchQuery) {
+async function renderCustomerOrders(orders, container) {
     try {
-        const mode = viewMode || window._customerOrderViewMode || 'orders';
-        const query = (searchQuery !== undefined ? searchQuery : (window._customerOrderSearch || '')).toLowerCase();
-
-        console.log('🎨 고객 주문내역 렌더링:', orders.length, '| 모드:', mode, '| 검색:', query);
-
+        console.log('🎨 고객 주문내역 렌더링:', orders.length);
+        
         if (orders.length === 0) {
             container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
             return;
         }
-
-        // farm_order_items 테이블에서 상품명 일괄 조회 (캐시 있으면 재사용)
-        let ordersWithItems;
-        if (window._customerOrdersCache && (orders === window._customerOrdersCache || (window._customerOrdersCache.length > 0 && orders.length > 0 && window._customerOrdersCache[0].id === orders[0].id && window._customerOrdersCache[0].items !== undefined))) {
-            ordersWithItems = window._customerOrdersCache;
-        } else {
-            const orderIds = orders.map(o => o.id).filter(Boolean);
-            let itemsByOrderId = {};
-            if (orderIds.length > 0 && window.supabaseClient) {
-                const { data: allItems } = await window.supabaseClient
-                    .from('farm_order_items')
-                    .select('order_id, product_name, quantity, unit_price')
-                    .in('order_id', orderIds);
-                (allItems || []).forEach(item => {
-                    if (!itemsByOrderId[item.order_id]) itemsByOrderId[item.order_id] = [];
-                    itemsByOrderId[item.order_id].push(item);
-                });
-            }
-            ordersWithItems = orders.map(order => {
-                const items = itemsByOrderId[order.id] || [];
-                const itemsInfo = items.length > 0
-                    ? items.map(i => `${i.product_name || '상품명 없음'} × ${i.quantity || 1}`).join(', ')
-                    : '-';
-                return { ...order, items, itemsInfo };
-            });
-            window._customerOrdersCache = ordersWithItems;
-        }
-
-        // ── 건별 모드 ──────────────────────────────────────────────
-        if (mode === 'orders') {
-            let filtered = ordersWithItems;
-            if (query) {
-                filtered = ordersWithItems.filter(o => (o.itemsInfo || '').toLowerCase().includes(query));
-            }
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">검색 결과가 없습니다.</p>`;
-                return;
-            }
-            const rowsHTML = filtered.map(order => {
-                const orderDate = order.order_date ? formatDisplayDate(order.order_date) : '-';
-                const totalAmount = order.total_amount != null ? Number(order.total_amount).toLocaleString() : '0';
-                const status = order.order_status || '주문접수';
-                const orderId = order.id;
-                const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 80) + (order.itemsInfo && order.itemsInfo.length > 80 ? '…' : '');
-                return `
-                    <tr class="hover:bg-gray-50 border-b border-gray-100">
-                        <td class="px-2 py-1.5 text-gray-700 whitespace-nowrap">${orderDate}</td>
-                        <td class="px-2 py-1.5 text-gray-900 max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
-                        <td class="px-2 py-1.5 text-gray-900 whitespace-nowrap">${totalAmount}원</td>
-                        <td class="px-2 py-1.5"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getOrderStatusBadgeClass(status)}">${status}</span></td>
-                        <td class="px-2 py-1.5 text-center whitespace-nowrap">
-                            <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-xs">보기</button>
-                        </td>
-                    </tr>
-                `;
-            }).join('');
-            container.innerHTML = `
-                <table class="w-full text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-left">
-                            <th class="px-2 py-1.5 font-medium">주문일</th>
-                            <th class="px-2 py-1.5 font-medium">상품명</th>
-                            <th class="px-2 py-1.5 font-medium">금액</th>
-                            <th class="px-2 py-1.5 font-medium">상태</th>
-                            <th class="px-2 py-1.5 font-medium text-center w-12">보기</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rowsHTML}</tbody>
-                </table>
-            `;
-
-        // ── 날짜별 모드 ────────────────────────────────────────────
-        } else if (mode === 'date') {
-            let filtered = ordersWithItems;
-            if (query) {
-                filtered = ordersWithItems.filter(o => (o.itemsInfo || '').toLowerCase().includes(query));
-            }
-            if (filtered.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">검색 결과가 없습니다.</p>`;
-                return;
-            }
-            // 날짜별 그룹핑
-            const dateGroups = {};
-            filtered.forEach(order => {
-                const dateKey = order.order_date ? order.order_date.slice(0, 10) : '날짜 없음';
-                if (!dateGroups[dateKey]) dateGroups[dateKey] = [];
-                dateGroups[dateKey].push(order);
-            });
-            const sortedDates = Object.keys(dateGroups).sort((a, b) => b.localeCompare(a));
-            const groupsHTML = sortedDates.map(dateKey => {
-                const dayOrders = dateGroups[dateKey];
-                const dayTotal = dayOrders.reduce((sum, o) => sum + (Number(o.total_amount) || 0), 0);
-                const itemsHTML = dayOrders.map(order => {
-                    const totalAmount = order.total_amount != null ? Number(order.total_amount).toLocaleString() : '0';
-                    const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 60) + (order.itemsInfo && order.itemsInfo.length > 60 ? '…' : '');
-                    const orderId = order.id;
-                    return `
-                        <div class="px-2 py-1 flex items-center justify-between hover:bg-gray-50 border-b border-gray-50">
-                            <span class="truncate text-gray-700 mr-2 flex-1" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</span>
-                            <span class="text-gray-500 whitespace-nowrap mr-2">${totalAmount}원</span>
-                            <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-[10px] whitespace-nowrap">보기</button>
-                        </div>
-                    `;
-                }).join('');
-                return `
-                    <div>
-                        <div class="bg-gray-50 px-2 py-1 text-[10px] font-semibold text-gray-500 flex justify-between sticky top-0">
-                            <span>${dateKey}</span>
-                            <span class="text-gray-400">${dayOrders.length}건 · ${dayTotal.toLocaleString()}원</span>
-                        </div>
-                        ${itemsHTML}
-                    </div>
-                `;
-            }).join('');
-            container.innerHTML = groupsHTML || `<p class="text-xs text-gray-500 py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
-
-        // ── 전체상품 모드 ──────────────────────────────────────────
-        } else if (mode === 'items') {
-            // 모든 주문의 아이템 펼치기
-            const allItemRows = [];
-            ordersWithItems.forEach(order => {
-                const orderDate = order.order_date ? formatDisplayDate(order.order_date) : '-';
-                const items = order.items || [];
-                if (items.length === 0) {
-                    if (!query) {
-                        allItemRows.push({ orderDate, product_name: '상품 정보 없음', quantity: '-', unit_price: '-' });
-                    }
-                } else {
-                    items.forEach(item => {
-                        if (!query || (item.product_name || '').toLowerCase().includes(query)) {
-                            allItemRows.push({
-                                orderDate,
-                                orderId: order.id,
-                                product_name: item.product_name || '상품명 없음',
-                                quantity: item.quantity != null ? item.quantity : '-',
-                                unit_price: item.unit_price != null ? Number(item.unit_price).toLocaleString() + '원' : '-'
-                            });
-                        }
-                    });
-                }
-            });
-            if (allItemRows.length === 0) {
-                container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">검색 결과가 없습니다.</p>`;
-                return;
-            }
-            const rowsHTML = allItemRows.map(row => `
-                <tr class="hover:bg-gray-50 border-b border-gray-100">
-                    <td class="px-2 py-1.5 text-gray-500 whitespace-nowrap">${row.orderDate}</td>
-                    <td class="px-2 py-1.5 text-gray-900">${escapeHtml(row.product_name)}</td>
-                    <td class="px-2 py-1.5 text-gray-700 text-center">${row.quantity}</td>
-                    <td class="px-2 py-1.5 text-gray-700 whitespace-nowrap">${row.unit_price}</td>
+        
+        // order.items는 loadCustomerOrders에서 farm_order_items로 pre-attach됨
+        const ordersWithItems = orders.map(order => {
+            const items = Array.isArray(order.items) ? order.items : [];
+            const itemsInfo = items.length > 0
+                ? items.map(item => {
+                    const name = item.product_name || item.name || '상품명 없음';
+                    const quantity = item.quantity || 1;
+                    return `${name} × ${quantity}`;
+                  }).join(', ')
+                : '상품 정보 없음';
+            return { ...order, itemsInfo };
+        });
+        
+        // 주문 이력 테이블: 주문일 | 상품명 | 금액 | 상태 (보기 링크 포함)
+        const rowsHTML = ordersWithItems.map(order => {
+            const orderDate = order.order_date ? formatDisplayDate(order.order_date) : '-';
+            const totalAmount = order.total_amount != null ? Number(order.total_amount).toLocaleString() : '0';
+            const status = order.order_status || '주문접수';
+            const orderId = order.id;
+            const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 80) + (order.itemsInfo && order.itemsInfo.length > 80 ? '…' : '');
+            return `
+                <tr>
+                    <td class="px-2 td-secondary whitespace-nowrap">${orderDate}</td>
+                    <td class="px-2 td-primary max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
+                    <td class="px-2 td-primary whitespace-nowrap">${totalAmount}원</td>
+                    <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
+                    <td class="px-2 text-center whitespace-nowrap">
+                        <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-xs">보기</button>
+                    </td>
                 </tr>
-            `).join('');
-            container.innerHTML = `
-                <table class="w-full text-xs border-collapse">
-                    <thead>
-                        <tr class="bg-gray-50 text-gray-600 text-left">
-                            <th class="px-2 py-1.5 font-medium">주문일</th>
-                            <th class="px-2 py-1.5 font-medium">식물명</th>
-                            <th class="px-2 py-1.5 font-medium text-center">수량</th>
-                            <th class="px-2 py-1.5 font-medium">단가</th>
-                        </tr>
-                    </thead>
-                    <tbody>${rowsHTML}</tbody>
-                </table>
             `;
-        }
-
+        }).join('');
+        
+        container.innerHTML = `
+            <table class="table-ui">
+                <thead>
+                    <tr>
+                        <th>주문일</th>
+                        <th>상품명</th>
+                        <th class="th-num">금액</th>
+                        <th>상태</th>
+                        <th class="text-center w-12">보기</th>
+                    </tr>
+                </thead>
+                <tbody>${rowsHTML}</tbody>
+            </table>
+        `;
+        
         console.log('✅ 고객 주문내역 렌더링 완료');
-
+        
     } catch (error) {
         console.error('❌ 고객 주문내역 렌더링 실패:', error);
         container.innerHTML = `
@@ -1514,16 +1246,6 @@ async function renderCustomerOrders(orders, container, viewMode, searchQuery) {
             </div>
         `;
     }
-}
-
-// 캐시된 데이터로 재렌더링 (DB 재호출 없음)
-function reRenderCustomerOrders() {
-    const cache = window._customerOrdersCache;
-    const container = document.getElementById('customer-orders-list');
-    if (!cache || !container) return;
-    const mode = window._customerOrderViewMode || 'orders';
-    const query = window._customerOrderSearch || '';
-    renderCustomerOrders(cache, container, mode, query);
 }
 
 // 주문 상태 배지 클래스 반환
@@ -1599,7 +1321,7 @@ async function updateCustomerBasicInfo(customer) {
     
     const registrationDateElement = document.getElementById('customer-detail-registration-date');
     if (registrationDateElement) {
-        registrationDateElement.textContent = customer.registration_date || '등록일 없음';
+        registrationDateElement.textContent = formatDate(customer.registration_date) || '등록일 없음';
     }
 }
 
@@ -1903,6 +1625,17 @@ export async function openCustomerModal(customerId = null, tempName = null, call
         // 모달 콘텐츠는 이미 올바른 상태로 설정되어 있음
         console.log('✅ 모달 표시 완료');
         
+        // 새 고객 모드: 탭 숨기기 + 모달 크기 원복
+        const tabsEl = document.getElementById('customer-modal-tabs');
+        if (tabsEl) { tabsEl.style.display = 'none'; tabsEl.classList.add('hidden'); }
+        const modalContentEl = document.getElementById('customer-modal-content');
+        if (modalContentEl) {
+            modalContentEl.classList.remove('modal-md');
+            modalContentEl.classList.add('modal-sm');
+        }
+        // 정보 탭 활성화 (주문이력 패널 숨김)
+        window.switchCustomerTab?.('info');
+
         // 모달 내용 초기화
         document.getElementById('customer-modal-title').textContent = '새 고객 등록';
         document.getElementById('customer-form').reset();
@@ -1938,8 +1671,10 @@ export async function openCustomerModal(customerId = null, tempName = null, call
 
         // 추가 정보 섹션 초기화 (접힌 상태)
         resetExtraInfoSection();
+
         // 상태 버튼 초기화 (활성)
         window.setCustomerStatus('ACTIVE');
+
         // 메모 글자수 초기화
         window.updateMemoCharCount('');
 
@@ -2180,8 +1915,8 @@ function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
         console.log('🔍 고객명 중복 검사:', customerName, '제외 ID:', excludeCustomerId);
         
         if (!window.customerDataManager) {
-            console.warn('⚠️ customerDataManager를 찾을 수 없습니다 - 중복 검사 생략 후 저장 계속');
-            return true;
+            console.warn('⚠️ customerDataManager를 찾을 수 없습니다');
+            return false;
         }
         
         const customers = window.customerDataManager.getAllCustomers();
@@ -2207,12 +1942,9 @@ function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
                     return false; // 취소
                 }
             } else {
-                // 등록 모드 - 중복된 고객명이 있으면 등록을 막음
-                const message = `"${customerName}" 이름의 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n- 등록일: ${existingCustomer.registration_date}\n\n동일한 이름으로는 등록할 수 없습니다. 다른 이름을 사용하거나 기존 고객을 선택해주세요.`;
-                
-                alert(message);
-                console.log('❌ 중복된 고객명으로 인한 등록 차단');
-                return false; // 등록 차단
+                // 등록 모드 - 같은 이름이 있어도 전화번호가 다르면 등록 허용 (확인만)
+                const message = `"${customerName}" 이름의 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n\n다른 사람이 맞으면 확인을 눌러 계속 등록하세요.`;
+                return confirm(message); // 확인 → 계속, 취소 → 중단
             }
         }
         
@@ -2225,45 +1957,16 @@ function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
     }
 }
 
-// 전화번호 포맷팅 함수
-function formatPhoneNumber(input) {
-    try {
-        console.log('📞 전화번호 포맷팅 시작:', input.value);
-        
-        // 숫자만 추출
-        let value = input.value.replace(/[^0-9]/g, '');
-        console.log('🔢 숫자만 추출:', value);
-        
-        // 길이 제한 (11자리)
-        if (value.length > 11) {
-            value = value.substring(0, 11);
-        }
-        
-        // 포맷팅 적용
-        let formatted = '';
-        if (value.length >= 1) {
-            formatted = value.substring(0, 3);
-        }
-        if (value.length >= 4) {
-            formatted += '-' + value.substring(3, 7);
-        }
-        if (value.length >= 8) {
-            formatted += '-' + value.substring(7, 11);
-        }
-        
-        console.log('📱 포맷팅 결과:', formatted);
-        
-        // 입력 필드에 포맷팅된 값 설정
-        input.value = formatted;
-        
-    } catch (error) {
-        console.error('❌ 전화번호 포맷팅 실패:', error);
-    }
-}
-
 // 고객명 중복 검사 함수를 전역으로 등록
 window.checkCustomerNameDuplicate = checkCustomerNameDuplicate;
-window.formatPhoneNumber = formatPhoneNumber;
+// formatPhoneNumber: utils/formatters.js의 window.fmt.phone / window.formatPhone 사용
+window.formatPhoneNumber = function(input) {
+    if (!input) return;
+    const formatted = (window.fmt && window.fmt.phone)
+        ? window.fmt.phone(input.value)
+        : (window.formatPhone ? window.formatPhone(input.value) : input.value);
+    input.value = formatted;
+};
 
 // 키보드 네비게이션 처리
 function handleCustomerNameKeydown(event) {
@@ -2329,6 +2032,7 @@ window.selectAutocompleteItem = selectAutocompleteItem;
 
 // ====== 고객 폼 UX 헬퍼 함수 ======
 
+// 추가 정보 섹션 토글 (접기/펼치기)
 window.toggleCustomerExtraInfo = function() {
     const content = document.getElementById('extra-info-content');
     const icon = document.getElementById('toggle-extra-info-icon');
@@ -2346,22 +2050,29 @@ window.toggleCustomerExtraInfo = function() {
     }
 };
 
+// 등록일 오늘로 빠른 설정
 window.setCustomerRegistrationDateToday = function() {
     const dateField = document.getElementById('customer-form-registration-date');
-    if (dateField) dateField.value = new Date().toISOString().split('T')[0];
+    if (dateField) {
+        dateField.value = new Date().toISOString().split('T')[0];
+    }
 };
 
+// 고객 상태 버튼 선택 (hidden input + 버튼 UI 동기화)
 window.setCustomerStatus = function(status) {
     const hiddenInput = document.getElementById('customer-form-status');
     if (hiddenInput) hiddenInput.value = status;
+
     const styleMap = {
         'ACTIVE':    { on: ['border-green-500',  'bg-green-50',  'text-green-700'],  off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
         'INACTIVE':  { on: ['border-yellow-400', 'bg-yellow-50', 'text-yellow-700'], off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
         'SUSPENDED': { on: ['border-red-400',    'bg-red-50',    'text-red-700'],    off: ['border-gray-200', 'bg-white', 'text-gray-500'] }
     };
+
     document.querySelectorAll('#customer-modal .customer-status-btn').forEach(btn => {
-        const s = styleMap[btn.dataset.status] || styleMap['ACTIVE'];
-        if (btn.dataset.status === status) {
+        const btnStatus = btn.dataset.status;
+        const s = styleMap[btnStatus] || styleMap['ACTIVE'];
+        if (btnStatus === status) {
             btn.classList.remove(...s.off);
             btn.classList.add(...s.on);
         } else {
@@ -2371,14 +2082,18 @@ window.setCustomerStatus = function(status) {
     });
 };
 
+// 메모 글자 수 카운터 업데이트
 window.updateMemoCharCount = function(value) {
     const counter = document.getElementById('memo-char-count');
     if (!counter) return;
     const len = (value || '').length;
     counter.textContent = `${len} / 200`;
-    counter.className = len > 180 ? 'text-xs text-red-500 font-medium' : 'text-xs text-gray-400';
+    counter.className = len > 180
+        ? 'text-xs text-red-500 font-medium'
+        : 'text-xs text-gray-400';
 };
 
+// 추가 정보 섹션 내부 상태 리셋 유틸
 function resetExtraInfoSection() {
     const content = document.getElementById('extra-info-content');
     const icon = document.getElementById('toggle-extra-info-icon');
@@ -2388,6 +2103,7 @@ function resetExtraInfoSection() {
     if (hint) hint.textContent = '클릭하여 펼치기';
 }
 
+// 추가 정보 섹션 펼치기 유틸
 function expandExtraInfoSection() {
     const content = document.getElementById('extra-info-content');
     const icon = document.getElementById('toggle-extra-info-icon');
@@ -2467,6 +2183,90 @@ function resetCustomerForm() {
 }
 
 // 고객 모달 닫기 함수
+// ── 고객 모달 탭 전환 ──────────────────────────────────────
+window.switchCustomerTab = function(tab) {
+    const infoForm    = document.getElementById('customer-form');
+    const ordersPane  = document.getElementById('customer-orders-tab-content');
+    const infoBtn     = document.getElementById('customer-tab-info');
+    const ordersBtn   = document.getElementById('customer-tab-orders');
+    const footer      = document.getElementById('customer-modal-footer');
+
+    const activeStyle   = 'border-bottom:2px solid #16a34a;color:#16a34a;';
+    const inactiveStyle = 'border-bottom:2px solid transparent;color:#6b7280;';
+
+    if (tab === 'info') {
+        infoForm   && (infoForm.style.display   = '');
+        ordersPane && (ordersPane.style.display = 'none');
+        footer     && (footer.style.display     = '');
+        if (infoBtn)   infoBtn.style.cssText   += activeStyle;
+        if (ordersBtn) ordersBtn.style.cssText += inactiveStyle;
+    } else {
+        infoForm   && (infoForm.style.display   = 'none');
+        ordersPane && (ordersPane.style.display = '');
+        footer     && (footer.style.display     = 'none');
+        if (infoBtn)   infoBtn.style.cssText   += inactiveStyle;
+        if (ordersBtn) ordersBtn.style.cssText += activeStyle;
+        // 주문이력 로드
+        const customerId = document.getElementById('customer-id')?.value;
+        if (customerId) _loadCustomerOrdersForModal(customerId);
+    }
+};
+
+async function _loadCustomerOrdersForModal(customerId) {
+    const tbody = document.getElementById('cmod-orders-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center td-muted" style="padding:16px;">불러오는 중...</td></tr>';
+
+    try {
+        const customer = window.customerDataManager?.getCustomerById(customerId);
+        if (!customer || !window.supabaseClient) throw new Error('데이터 없음');
+
+        const normalizedPhone = (customer.phone || '').replace(/\D/g, '');
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('order_date, total_amount, order_status, farm_order_items(product_name, quantity)')
+            .or(`customer_phone.eq.${customer.phone},customer_phone.eq.${normalizedPhone}`)
+            .order('order_date', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+
+        const list = orders || [];
+        const total = list.reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
+        const count = list.length;
+        const avg   = count > 0 ? Math.round(total / count) : 0;
+        const last  = list[0]?.order_date?.slice(0, 10) || '-';
+
+        const fmt = n => n > 0 ? n.toLocaleString() + '원' : '—';
+        const el = id => document.getElementById(id);
+        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmt(total);
+        if (el('cmod-stat-count')) el('cmod-stat-count').textContent = count > 0 ? count + '회' : '—';
+        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmt(avg);
+        if (el('cmod-stat-last'))  el('cmod-stat-last').textContent  = last;
+
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center td-muted" style="padding:16px;">주문 내역이 없습니다</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = list.map(o => {
+            const items = o.farm_order_items || [];
+            const names = items.length > 0
+                ? items.slice(0, 2).map(i => i.product_name || '').join(', ') + (items.length > 2 ? ` 외 ${items.length - 2}` : '')
+                : '-';
+            const statusCls = window.orderDataManager?.getStatusColor?.(o.order_status) || 'badge-neutral';
+            return `<tr>
+                <td class="td-secondary">${(o.order_date || '').slice(0, 10)}</td>
+                <td class="td-primary" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(names)}">${escapeHtml(names)}</td>
+                <td class="td-amount text-right">${o.total_amount ? Number(o.total_amount).toLocaleString() + '원' : '-'}</td>
+                <td class="text-center"><span class="badge ${statusCls}">${o.order_status || '-'}</span></td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('주문이력 로드 실패:', e);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500" style="padding:16px;">불러오기 실패</td></tr>';
+    }
+}
+
 export function closeCustomerModal() {
     try {
         console.log('🔄 고객 모달 닫기');
@@ -2481,6 +2281,15 @@ export function closeCustomerModal() {
             console.warn('⚠️ 고객 모달을 찾을 수 없습니다');
         }
         
+        // 탭 숨기기 + 모달 크기 원복
+        const tabsEl = document.getElementById('customer-modal-tabs');
+        if (tabsEl) { tabsEl.style.display = 'none'; tabsEl.classList.add('hidden'); }
+        const modalContentEl = document.getElementById('customer-modal-content');
+        if (modalContentEl) {
+            modalContentEl.classList.remove('modal-md');
+            modalContentEl.classList.add('modal-sm');
+        }
+
         // 주문 폼에서 온 경우 주문 모달 다시 표시
         if (window.tempCustomerName) {
             const orderModal = document.getElementById('order-modal');
@@ -2588,54 +2397,14 @@ function initCustomerSortListener() {
     // 정렬 버튼 클릭 이벤트
     if (applySortBtn) {
         applySortBtn.addEventListener('click', applySort);
-        console.log('✅ 고객 정렬 버튼 이벤트 리스너 등록 완료');
-    } else {
-        console.warn('⚠️ apply-customer-sort 버튼을 찾을 수 없습니다');
     }
-    
-    // Select 변경 시에도 바로 적용 (선택적)
+
+    // Select 변경 시에도 바로 적용
     if (sortSelect) {
         sortSelect.addEventListener('change', applySort);
-        console.log('✅ 고객 정렬 select 이벤트 리스너 등록 완료');
-    } else {
-        console.warn('⚠️ customer-sort 요소를 찾을 수 없습니다');
     }
+    // 요소가 없으면 조용히 종료 (고객관리 컴포넌트 동적 로드 후 재호출됨)
 }
 
-// 페이지 로드 시 이벤트 리스너 설정
+// 전역 등록 — 고객관리 컴포넌트 로드 완료 시점에 호출됨
 window.initCustomerSortListener = initCustomerSortListener;
-
-// DOM 로드 완료 후 자동 초기화
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCustomerSortListener);
-} else {
-    // 이미 로드된 경우 즉시 실행
-    setTimeout(initCustomerSortListener, 100);
-}
-
-// 고객 상세 패널 닫기
-function closeCustomerDetail() {
-    document.querySelector('.customer-admin-layout')?.classList.remove('detail-open');
-    document.querySelectorAll('.customer-row').forEach(r => r.classList.remove('selected'));
-    const dc = document.getElementById('customer-detail-content');
-    if (dc) dc.innerHTML = `
-        <div class="flex flex-col items-center justify-center h-full text-gray-400 gap-3">
-            <i class="fas fa-user-circle text-4xl opacity-30"></i>
-            <p class="text-sm">고객을 선택하면 상세 정보가 표시됩니다</p>
-        </div>`;
-}
-window.closeCustomerDetail = closeCustomerDetail;
-
-function toggleCustomerPanelFullpage() {
-    const panel = document.querySelector('.customer-admin-main');
-    if (!panel) return;
-    const isFullpage = panel.classList.toggle('panel-fullpage');
-    const btn = document.getElementById('panel-fullpage-btn');
-    if (btn) {
-        btn.title = isFullpage ? '패널로 보기' : '전체화면';
-        btn.querySelector('i').className = isFullpage ? 'fas fa-compress text-xs' : 'fas fa-expand text-xs';
-        btn.classList.toggle('text-blue-500', isFullpage);
-        btn.classList.toggle('text-gray-400', !isFullpage);
-    }
-}
-window.toggleCustomerPanelFullpage = toggleCustomerPanelFullpage;

@@ -23,7 +23,9 @@ class NavigationComponent {
         this.setupSettingsMenu();
         this.setupMobileNavigation();
         this.setupHistoryManagement();
-        this.setActiveTab(data.activeTab || 'dashboard');
+        // setupHistoryManagement may have already set currentTab via handleTabChange
+        // use currentTab so we don't override a URL-hash-based tab restore
+        this.setActiveTab(data.activeTab || this.currentTab);
         
         this.isInitialized = true;
         console.log('✅ Navigation 컴포넌트 초기화 완료');
@@ -204,24 +206,17 @@ class NavigationComponent {
      */
     setActiveTab(tabId) {
         document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
-            btn.classList.remove('bg-emerald-600', 'text-white', 'rounded-lg');
-            if (btn.classList.contains('nav-btn')) {
-                btn.classList.add('text-gray-800');
-            } else {
-                btn.classList.add('text-gray-700');
-            }
+            btn.classList.remove('active', 'bg-emerald-600', 'text-white', 'rounded-lg', 'text-gray-800', 'text-gray-700');
         });
 
         const activeButton = document.getElementById(`nav-${tabId}`);
         const activeMobileButton = document.getElementById(`mobile-nav-${tabId}`);
 
         if (activeButton) {
-            activeButton.classList.remove('text-gray-800');
-            activeButton.classList.add('bg-emerald-600', 'text-white');
+            activeButton.classList.add('active');
         }
         if (activeMobileButton) {
-            activeMobileButton.classList.remove('text-gray-700');
-            activeMobileButton.classList.add('bg-emerald-600', 'text-white', 'rounded-lg');
+            activeMobileButton.classList.add('active');
         }
     }
 
@@ -369,14 +364,8 @@ class NavigationComponent {
             }
         });
         
-        // 초기 히스토리 상태 설정
-        const initialTab = window.location.hash.slice(1) || 'dashboard';
-        if (initialTab !== 'dashboard') {
-            this.handleTabChange(initialTab, true);
-        } else {
-            // 초기 상태를 히스토리에 추가
-            history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
-        }
+        // 초기 히스토리 상태 설정 — 항상 대시보드로 시작
+        history.replaceState({ tab: 'dashboard' }, '', '#dashboard');
         
         this.historyEnabled = true;
         console.log('✅ 히스토리 관리 활성화');

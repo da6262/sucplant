@@ -68,8 +68,10 @@ window.saveProduct = function() {
 };
 
 window.closeProductModal = function() {
-    if (window.orderSystem && window.orderSystem.closeProductModal) {
-        window.orderSystem.closeProductModal();
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
     }
 };
 

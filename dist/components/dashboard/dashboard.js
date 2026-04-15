@@ -402,30 +402,23 @@ class DashboardComponent {
             return;
         }
 
-        const statusColors = {
-            '주문접수': 'bg-blue-100 text-blue-800',
-            '입금대기': 'bg-yellow-100 text-yellow-800',
-            '입금확인': 'bg-green-100 text-green-800',
-            '상품준비': 'bg-yellow-100 text-yellow-800',
-            '배송준비': 'bg-purple-100 text-purple-800',
-            '배송중': 'bg-purple-100 text-purple-800',
-            '배송완료': 'bg-green-100 text-green-800',
-            '주문취소': 'bg-red-100 text-red-800'
-        };
+        // 상태 배지 색상 — orderData.js의 getStatusColor() 단일 소스 사용
+        const getStatusBadge = (s) =>
+            window.orderDataManager?.getStatusColor?.(s) || 'badge-neutral';
 
         recentOrders.forEach(order => {
             const orderItem = document.createElement('div');
             orderItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
             const orderLabel = order.order_id ? String(order.order_id).slice(0, 8) + '…' : '주문';
             const status = order.order_status || '주문접수';
-            const statusClass = statusColors[status] || 'bg-gray-100 text-gray-800';
+            const statusClass = getStatusBadge(status);
             orderItem.innerHTML = `
                 <div class="flex-1">
                     <div class="text-sm font-medium text-gray-900">${orderLabel}</div>
                     <div class="text-xs text-gray-500">${(order.customer_name || '').replace(/</g, '&lt;')}</div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${status}</span>
+                    <span class="badge ${statusClass}">${status}</span>
                     <span class="text-xs text-gray-500">${this.formatCurrency(order.total_amount || 0)}</span>
                 </div>
             `;
@@ -928,13 +921,10 @@ class DashboardComponent {
     }
 
     /**
-     * 통화 포맷팅
+     * 통화 포맷팅 — utils/formatters.js의 formatCurrency()로 위임
      */
     formatCurrency(amount) {
-        return new Intl.NumberFormat('ko-KR', {
-            style: 'currency',
-            currency: 'KRW'
-        }).format(amount);
+        return (window.fmt?.currency ?? window.formatCurrency ?? ((v) => '₩' + Number(v).toLocaleString()))(amount);
     }
 
     /**

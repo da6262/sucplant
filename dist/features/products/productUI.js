@@ -11,7 +11,7 @@ const PRODUCT_FORM_FIELDS = [
     { id: 'wholesale-price', label: '매입가', type: 'number', min: 0, step: 1000 },
     { id: 'stock', label: '재고수량', type: 'number', required: true, min: 0 },
     { id: 'size', label: '사이즈', type: 'select', options: ['소', '중', '대', '특대', '직접 기입'] },
-    { id: 'shipping', label: '배송 옵션', type: 'select', required: true, options: ['일반배송', '당일배송', '직접배송', '픽업'] },
+    { id: 'shipping_option', label: '배송 옵션', type: 'select', required: true, options: ['일반배송', '당일배송', '직접배송', '픽업'] },
     { id: 'description', label: '상품설명', type: 'textarea', rows: 3 },
     { id: 'image', label: '상품 이미지 URL', type: 'url', placeholder: 'https://example.com/image.jpg' }
 ];
@@ -25,7 +25,7 @@ const PRODUCT_TABLE_COLUMNS = [
     { key: 'size', label: '사이즈', width: 'w-1/6' },
     { key: 'price', label: '판매가', width: 'w-1/6', format: 'currency' },
     { key: 'stock', label: '재고', width: 'w-1/12', format: 'number' },
-    { key: 'shipping', label: '배송옵션', width: 'w-1/6' },
+    { key: 'shipping_option', label: '배송옵션', width: 'w-1/6' },
     { key: 'actions', label: '관리', width: 'w-1/12', type: 'actions' }
 ];
 
@@ -33,14 +33,14 @@ const PRODUCT_TABLE_COLUMNS = [
 const COMMON_STYLES = {
     table: {
         row: 'hover:bg-gray-50',
-        cell: 'px-2.5 py-2 text-xs text-gray-900',
-        cellCenter: 'px-2.5 py-2 text-center text-xs'
+        cell: 'px-2.5 text-gray-900',
+        cellCenter: 'px-2.5 text-center'
     },
     button: {
         edit: 'p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded cursor-pointer border-none bg-transparent',
         delete: 'p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer border-none bg-transparent',
-        primary: 'bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors',
-        secondary: 'bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded-lg transition-colors'
+        primary: 'btn-primary',
+        secondary: 'btn-secondary'
     },
     form: {
         input: 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent',
@@ -63,14 +63,12 @@ export class ProductUI {
      */
     setupProductNameAutocomplete() {
         try {
-            console.log('🔍 상품명 자동완성 기능 설정 중...');
-            
             const nameInput = document.getElementById('product-form-name');
             const suggestionsContainer = document.getElementById('product-name-suggestions');
             const duplicateWarning = document.getElementById('product-name-duplicate-warning');
-            
+
+            // 모달이 아직 로드되지 않은 경우 조용히 종료 (동적 로드 후 재호출됨)
             if (!nameInput || !suggestionsContainer) {
-                console.warn('⚠️ 상품명 자동완성 요소를 찾을 수 없습니다');
                 return;
             }
             
@@ -405,8 +403,7 @@ export class ProductUI {
             // 모달 표시
             console.log('📦 모달 표시 중...');
             modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            
+
             // 카테고리 드롭다운 초기화
             console.log('🔄 카테고리 드롭다운 초기화 중...');
             await this.initCategoryOptions();
@@ -414,15 +411,6 @@ export class ProductUI {
             
             // 카테고리 이벤트 리스너 설정 (모달을 열 때마다 재설정)
             this.setupCategoryEventListeners();
-            
-            // 완전한 중앙 정렬을 위한 추가 스타일
-            const modalContent = document.getElementById('product-modal-content');
-            if (modalContent) {
-                modalContent.style.marginLeft = 'auto';
-                modalContent.style.marginRight = 'auto';
-                modalContent.style.marginTop = '0';
-                modalContent.style.marginBottom = '0';
-            }
             
             // 모달 제목 설정
             const modalTitle = document.getElementById('product-modal-title');
@@ -630,13 +618,11 @@ export class ProductUI {
             if (sizeSelect.value === 'custom') {
                 console.log('🔧 직접 기입 모드 활성화 중...');
                 sizeCustom.classList.remove('hidden');
-                sizeCustom.style.display = 'block';
                 sizeCustom.focus();
                 console.log('✅ 직접 기입 모드 활성화 완료');
             } else {
                 console.log('🔧 직접 기입 모드 비활성화 중...');
                 sizeCustom.classList.add('hidden');
-                sizeCustom.style.display = 'none';
                 sizeCustom.value = '';
                 console.log('✅ 직접 기입 모드 비활성화 완료');
             }
@@ -747,8 +733,7 @@ export class ProductUI {
             const modal = document.getElementById('product-modal');
             if (modal) {
                 modal.classList.add('hidden');
-                modal.style.display = 'none';
-                
+
             // 폼 초기화
                 this.resetProductForm();
                 
@@ -809,7 +794,6 @@ export class ProductUI {
             }
             
             if (sizeCustomElement) {
-                sizeCustomElement.style.display = 'none';
                 sizeCustomElement.classList.add('hidden');
                 sizeCustomElement.value = '';
             } else {
@@ -926,18 +910,18 @@ export class ProductUI {
                     if (standardSizes.includes(productSize)) {
                         // 표준 사이즈인 경우
                         sizeSelect.value = productSize;
-                        sizeCustom.style.display = 'none';
+                        sizeCustom.classList.add('hidden');
                         console.log(`✅ 표준 사이즈 설정: ${productSize}`);
                     } else if (productSize) {
                         // 직접 입력된 사이즈인 경우
                         sizeSelect.value = 'custom';
                         sizeCustom.value = productSize;
-                        sizeCustom.style.display = 'block';
+                        sizeCustom.classList.remove('hidden');
                         console.log(`✅ 커스텀 사이즈 설정: ${productSize}`);
                     } else {
                         // 사이즈가 없는 경우
                         sizeSelect.value = '';
-                        sizeCustom.style.display = 'none';
+                        sizeCustom.classList.add('hidden');
                         console.log('✅ 사이즈 없음');
                     }
                 } else {
@@ -1258,7 +1242,16 @@ export class ProductUI {
                     this.resetFilters();
                 });
             }
-            
+
+            // 페이지당 표시 수 선택
+            const productPageSizeEl = document.getElementById('product-page-size');
+            if (productPageSizeEl && !productPageSizeEl._pageSizeListened) {
+                productPageSizeEl._pageSizeListened = true;
+                productPageSizeEl.addEventListener('change', () => {
+                    this.renderProductsTable();
+                });
+            }
+
             console.log('✅ 상품 필터 기능 초기화 완료');
         } catch (error) {
             console.error('❌ 상품 필터 기능 초기화 실패:', error);
@@ -1426,47 +1419,30 @@ export class ProductUI {
             if (!tbody) return;
             
             if (products.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-search text-4xl mb-2"></i><br>
-                            검색 결과가 없습니다
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = window.renderEmptyRow(9, '검색 결과가 없습니다');
                 return;
             }
             
             // 상품 목록 렌더링
             tbody.innerHTML = products.map(product => `
-                <tr class="${COMMON_STYLES.table.row}" data-product-id="${product.id}">
+                <tr data-product-id="${product.id}">
                     ${PRODUCT_TABLE_COLUMNS.map(column => {
                         if (column.type === 'checkbox') {
-                            return `
-                                <td class="${COMMON_STYLES.table.cellCenter}">
-                                    <input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500" data-product-id="${product.id}">
-                                </td>
-                            `;
+                            return `<td class="text-center"><input type="checkbox" class="product-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500" data-product-id="${product.id}"></td>`;
                         }
-                        
+
                         if (column.type === 'actions') {
-                            return `
-                                <td class="${COMMON_STYLES.table.cellCenter}">
-                                    <button data-action="edit" data-product-id="${product.id}" class="${COMMON_STYLES.button.edit}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button data-action="delete" data-product-id="${product.id}" class="${COMMON_STYLES.button.delete}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            `;
+                            return `<td class="text-center" style="white-space:nowrap;">
+                                <button data-action="edit" data-product-id="${product.id}" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                                <button data-action="delete" data-product-id="${product.id}" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                            </td>`;
                         }
                         
                         const value = product[column.key];
                         let formattedValue = value || '-';
                         
                         // 배송옵션 값 변환
-                        if (column.key === 'shipping' && value) {
+                        if (column.key === 'shipping_option' && value) {
                             const shippingMap = {
                                 'always_free': '무료배송',
                                 'normal': '일반배송',
@@ -1480,7 +1456,12 @@ export class ProductUI {
                             formattedValue = `${value}개`;
                         }
                         
-                        return `<td class="${COMMON_STYLES.table.cell}">${formattedValue}</td>`;
+                        const cellClass = column.key === 'name' ? 'td-primary'
+                            : column.format === 'currency' ? 'td-amount'
+                            : column.format === 'number'   ? 'td-num'
+                            : column.key === 'product_code' ? 'td-muted'
+                            : 'td-secondary';
+                        return `<td class="${cellClass}">${formattedValue}</td>`;
                     }).join('')}
                 </tr>
             `).join('');
@@ -1541,23 +1522,29 @@ export class ProductUI {
             const products = productDataManager.getAllProducts();
             console.log('📊 로드된 상품 수:', products.length);
                 console.log('📋 상품 데이터:', products);
-            
+
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('product-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+            const pagedProducts = pageSize === 0 ? products : products.slice(0, pageSize);
+
+            // 하단 카운트 업데이트
+            const productTotalEl = document.getElementById('product-status-total');
+            const productCountEl = document.getElementById('product-list-count');
+            if (productTotalEl) productTotalEl.textContent = String(products.length);
+            if (productCountEl) productCountEl.textContent = pageSize === 0 || pagedProducts.length === products.length
+                ? `${products.length}개 표시`
+                : `${pagedProducts.length} / ${products.length}개 표시`;
+
             if (products.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                            <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-box text-4xl mb-2"></i><br>
-                            등록된 상품이 없습니다
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = window.renderEmptyRow(9, '등록된 상품이 없습니다');
                 return;
             }
-            
+
                 // 상품 목록 렌더링 (컬럼 정의 + 공통 스타일 사용)
                 console.log('🎨 상품 테이블 HTML 생성 중...');
-            tbody.innerHTML = products.map(product => `
-                    <tr class="${COMMON_STYLES.table.row}" data-product-id="${product.id}">
+            tbody.innerHTML = pagedProducts.map(product => `
+                    <tr data-product-id="${product.id}">
                         ${PRODUCT_TABLE_COLUMNS.map(column => {
                             if (column.type === 'checkbox') {
                                 return `
@@ -1589,7 +1576,7 @@ export class ProductUI {
                                 formattedValue = '로딩중...';
                             } else if (value && typeof value === 'object' && value.toString && value.toString().includes('[object Promise]')) {
                                 formattedValue = 'P' + Date.now().toString().slice(-6);
-                            } else if (column.key === 'shipping' && value) {
+                            } else if (column.key === 'shipping_option' && value) {
                                 // 배송옵션 값 변환
                                 const shippingMap = {
                                     'always_free': '무료배송',
@@ -1608,7 +1595,15 @@ export class ProductUI {
                                 formattedValue = new Date(value).toLocaleDateString();
                             }
                             
-                            return `<td class="${COMMON_STYLES.table.cell}">${formattedValue}</td>`;
+                            const cellClass = column.key === 'name' ? 'td-primary'
+                            : column.format === 'currency' ? 'td-amount'
+                            : column.format === 'number'   ? 'td-num'
+                            : column.key === 'product_code' ? 'td-muted'
+                            : 'td-secondary';
+                            if (column.key === 'name') {
+                                return `<td class="${cellClass}"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
+                            }
+                        return `<td class="${cellClass}">${formattedValue}</td>`;
                         }).join('')}
                 </tr>
             `).join('');
@@ -1648,38 +1643,157 @@ export class ProductUI {
         
         // 이벤트 위임을 사용하여 동적으로 생성된 버튼들에 이벤트 리스너 추가
         this.handleTableClick = (e) => {
-            console.log('🖱️ 테이블 클릭 이벤트:', e.target);
-            console.log('🔍 클릭된 요소:', e.target.tagName, e.target.className);
-            
-            const button = e.target.closest('button[data-action]');
-            console.log('🔍 찾은 버튼:', button);
-            
-            if (!button) {
-                console.log('❌ data-action 속성이 있는 버튼을 찾을 수 없습니다');
+            // 상품명 클릭 (detail)
+            const nameLink = e.target.closest('[data-action="detail"]');
+            if (nameLink) {
+                e.preventDefault();
+                e.stopPropagation();
+                this.openProductDetailModal(nameLink.dataset.productId);
                 return;
             }
-            
+
+            const button = e.target.closest('button[data-action]');
+            if (!button) return;
+
             const action = button.dataset.action;
             const productId = button.dataset.productId;
-            console.log('🎯 액션:', action, '상품ID:', productId);
-            
+
             if (action === 'edit') {
-                console.log('✏️ 상품 수정 시작:', productId);
                 e.preventDefault();
                 e.stopPropagation();
                 this.openProductModal(productId);
             } else if (action === 'delete') {
-                console.log('🗑️ 상품 삭제 시작:', productId);
                 e.preventDefault();
                 e.stopPropagation();
                 this.deleteProduct(productId);
-            } else {
-                console.log('❓ 알 수 없는 액션:', action);
             }
         };
         
         tbody.addEventListener('click', this.handleTableClick);
         console.log('✅ 상품 테이블 이벤트 리스너 추가 완료');
+    }
+
+    /**
+     * 상품 상세 모달 열기 (읽기 전용)
+     */
+    openProductDetailModal(productId) {
+        const pdm = getProductDataManager();
+        if (!pdm) return;
+        const product = pdm.getProductById(productId);
+        if (!product) { alert('상품 정보를 찾을 수 없습니다.'); return; }
+
+        // 기존 패널 제거
+        const old = document.getElementById('product-detail-panel');
+        if (old) old.remove();
+
+        const shippingMap = {
+            'always_free': '무료배송', 'normal': '일반배송',
+            'included': '배송비포함', 'direct': '직접배송',
+            '일반배송': '일반배송', '당일배송': '당일배송',
+            '직접배송': '직접배송', '픽업': '픽업'
+        };
+        const statusMap = { 'active': '판매중', 'inactive': '판매중지', 'soldout': '품절' };
+
+        const fmt = v => v != null && v !== '' ? v : '-';
+        const fmtPrice = v => v ? Number(v).toLocaleString() + '원' : '-';
+        const fmtDate = v => v ? new Date(v).toLocaleDateString('ko-KR') : '-';
+        const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
+        const status = statusMap[product.status] || product.status || '-';
+        const statusColor = product.status === 'active' ? 'text-green-600 bg-green-50' : product.status === 'soldout' ? 'text-red-500 bg-red-50' : 'text-gray-500 bg-gray-100';
+
+        const profitMargin = product.profit_margin
+            ? product.profit_margin + '%'
+            : (product.price && product.cost ? Math.round((1 - product.cost / product.price) * 100) + '%' : '-');
+
+        const imageHtml = product.image_url
+            ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
+            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+
+        const panel = document.createElement('div');
+        panel.id = 'product-detail-panel';
+        panel.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40';
+        panel.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[90vh]">
+                <!-- 헤더 -->
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
+                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
+                    <div class="flex items-center gap-2">
+                        <button id="product-detail-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
+                            <i class="fas fa-edit mr-1"></i>수정
+                        </button>
+                        <button id="product-detail-close" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- 본문 -->
+                <div class="overflow-y-auto px-5 py-4 space-y-4">
+                    <!-- 이미지 -->
+                    ${imageHtml}
+                    <!-- 기본 정보 -->
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
+                            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
+                        </div>
+                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
+                    </div>
+                    <!-- 정보 그리드 -->
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
+                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
+                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
+                            <p class="font-semibold text-green-700 text-base">${fmtPrice(product.price)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
+                            <p class="font-medium text-gray-800">${fmtPrice(product.cost)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
+                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
+                            <p class="font-medium text-gray-800">${profitMargin}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
+                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
+                            <p class="font-medium text-gray-800">${shipping}</p>
+                        </div>
+                    </div>
+                    <!-- 설명 -->
+                    ${product.description ? `
+                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
+                    </div>` : ''}
+                    <!-- 등록/수정일 -->
+                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
+                        <span>등록일 ${fmtDate(product.created_at)}</span>
+                        <span>수정일 ${fmtDate(product.updated_at)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        // 닫기
+        panel.querySelector('#product-detail-close').addEventListener('click', () => panel.remove());
+        panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+        // 수정 버튼
+        panel.querySelector('#product-detail-edit-btn').addEventListener('click', () => {
+            panel.remove();
+            this.openProductModal(productId);
+        });
     }
 
     /**
@@ -1778,9 +1892,6 @@ export class ProductUI {
                     
                     // 상품 데이터 업데이트
                     product[field] = convertedValue;
-                    if (field === 'shipping') {
-                        product.shipping_option = convertedValue;
-                    }
                     
                     // Supabase에 저장
                     await productDataManager.saveProducts();
@@ -1970,22 +2081,22 @@ export class ProductUI {
             // 상품 모달 숨기기
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                productModal.style.display = 'none';
+                productModal.classList.add('hidden');
                 console.log('✅ 상품 모달 숨김');
             }
-            
+
             // 카테고리 관리 모달 열기
             if (window.openCategoryModal) {
                 await window.openCategoryModal();
                 console.log('✅ 카테고리 관리 모달 열림');
-                
+
                 // 카테고리 모달이 닫힐 때를 감지하기 위한 옵저버 설정
                 this.setupCategoryModalObserver();
             } else {
                 console.error('❌ openCategoryModal 함수를 찾을 수 없습니다');
                 // 상품 모달 다시 표시
                 if (productModal) {
-                    productModal.style.display = 'flex';
+                    productModal.classList.remove('hidden');
                 }
             }
             
@@ -1994,7 +2105,7 @@ export class ProductUI {
             // 오류 발생 시 상품 모달 다시 표시
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                productModal.style.display = 'flex';
+                productModal.classList.remove('hidden');
             }
         }
     }
@@ -2071,13 +2182,10 @@ window.openProductModal = function(productId = null) {
 };
 
 window.closeProductModal = function() {
-    console.log('🔄 window.closeProductModal 호출됨');
-    console.log('🔍 productUI 존재 여부:', typeof productUI);
-    
-    if (productUI && productUI.closeProductModal) {
-        productUI.closeProductModal();
-    } else {
-        console.error('❌ productUI 또는 closeProductModal 함수가 없습니다');
+    const modal = document.getElementById('product-modal');
+    if (modal) {
+        modal.style.display = 'none';
+        modal.classList.add('hidden');
     }
 };
 

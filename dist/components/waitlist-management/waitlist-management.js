@@ -100,17 +100,7 @@ async function loadWaitlistManagementComponent() {
             return true;
         }
         
-        // 기존 모든 섹션 완전 제거 (대기자 관리 전환 시)
-        console.log('🗑️ 기존 모든 섹션 제거 시작...');
-        const allSections = document.querySelectorAll('[id$="-section"], .tab-content, .content-section, .section-content');
-        allSections.forEach(section => {
-            if (section.id !== 'waitlist-section') { // 대기자 섹션은 제외
-                console.log(`🗑️ 섹션 제거: ${section.id || section.className}`);
-                section.style.display = 'none';
-                section.style.visibility = 'hidden';
-                section.classList.remove('active');
-            }
-        });
+        // 다른 섹션은 건드리지 않음 — 네비게이션 매니저가 show/hide 담당
         
         // 컴포넌트 HTML 로드
         console.log('📦 대기자관리 HTML 컴포넌트 로드 시작...');
@@ -209,7 +199,7 @@ function attachWaitlistEventListeners() {
         console.log('🔗 대기자 관리 이벤트 리스너 연결 시작...');
         
         // 새 대기자 등록 버튼
-        const addWaitlistBtn = document.getElementById('add-farm_waitlist-btn');
+        const addWaitlistBtn = document.getElementById('add-waitlist-btn');
         if (addWaitlistBtn) {
             addWaitlistBtn.addEventListener('click', async function() {
                 console.log('➕ 새 대기자 등록 버튼 클릭');
@@ -273,9 +263,12 @@ function attachWaitlistEventListeners() {
         }
         
         // 대기자 상태별 필터 탭
-        const waitlistTabs = document.querySelectorAll('.farm_waitlist-tab-btn');
+        const waitlistTabs = document.querySelectorAll('.waitlist-tab-btn');
         waitlistTabs.forEach(tab => {
             tab.addEventListener('click', function() {
+                // active 탭 교체
+                waitlistTabs.forEach(t => t.classList.remove('active'));
+                this.classList.add('active');
                 const status = this.id.replace('farm_waitlist-status-', '');
                 if (window.waitlistUI && window.waitlistUI.filterWaitlistByStatus) {
                     window.waitlistUI.filterWaitlistByStatus(status);
@@ -530,7 +523,7 @@ async function createFallbackWaitlistModules() {
                     if (tbody) {
                         tbody.innerHTML = `
                             <tr>
-                                <td colspan="8" class="text-center py-8 text-gray-500">
+                                <td colspan="8" class="text-center text-gray-500">
                                     <i class="fas fa-clock mr-2"></i>대기자 관리 기능이 준비 중입니다.
                                 </td>
                             </tr>

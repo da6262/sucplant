@@ -9,112 +9,119 @@ window.generateOrderFormHTMLMinimal = function () {
 
             <!-- ── 좌측: 고객/주문 정보 ── -->
             <div class="xf-col">
-                <table class="xf-tbl">
-                    <colgroup>
-                        <col style="width:68px">
-                        <col>
-                        <col style="width:56px">
-                        <col>
-                    </colgroup>
-                    <tbody>
-                        <tr>
-                            <th>고객 검색</th>
-                            <td colspan="3" style="position:relative">
-                                <input type="text" id="order-customer-search" class="xf-inp"
-                                       placeholder="이름 또는 연락처 뒷자리"
-                                       oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
-                                       autocomplete="off">
-                                <div id="customer-search-results"
-                                     class="hidden"
-                                     style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:150px;overflow-y:auto;z-index:50;font-size:13px"></div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>고객명 *</th>
-                            <td>
-                                <input type="text" id="order-customer-name" class="xf-inp"
-                                       placeholder="고객명" required
-                                       oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
-                            </td>
-                            <th>연락처 *</th>
-                            <td>
-                                <input type="tel" id="order-customer-phone" class="xf-inp"
-                                       placeholder="연락처" required
-                                       oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>주소 *</th>
-                            <td colspan="3">
-                                <input type="text" id="order-customer-address" class="xf-inp"
-                                       placeholder="주소" required>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>상세주소</th>
-                            <td colspan="3">
-                                <input type="text" id="order-customer-address-detail" class="xf-inp"
-                                       placeholder="상세주소 (선택)">
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>채널</th>
-                            <td>
-                                <select id="order-channel" class="xf-inp"
-                                        onchange="document.getElementById('order-channel-summary').textContent=this.value">
-                                    <option value="유튜브">유튜브</option>
-                                </select>
-                            </td>
-                            <th>상태</th>
-                            <td>
-                                <select id="order-status" class="xf-inp"
-                                        onchange="document.getElementById('order-status-summary').textContent=this.value">
-                                    <option value="입금대기" selected>입금대기</option>
-                                    <option value="주문접수">주문접수</option>
-                                    <option value="고객안내">고객안내</option>
-                                    <option value="입금확인">입금확인</option>
-                                    <option value="상품준비">상품준비</option>
-                                    <option value="배송준비">배송준비</option>
-                                    <option value="배송중">배송중</option>
-                                    <option value="배송완료">배송완료</option>
-                                    <option value="주문취소">주문취소</option>
-                                    <option value="환불완료">환불완료</option>
-                                </select>
-                            </td>
-                        </tr>
-                        <tr>
-                            <th>배송메모</th>
-                            <td colspan="3">
-                                <textarea id="order-memo" class="xf-inp" rows="3" style="resize:vertical;min-height:48px"
-                                          placeholder="배송 관련 메모 (선택)"
-                                          oninput="document.getElementById('order-memo-summary').textContent=this.value.trim()||''"></textarea>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+                <div class="form-grid">
+
+                    <!-- 고객 검색 (col-12) -->
+                    <div class="form-col-12" style="position:relative;">
+                        <label class="form-label">고객 검색</label>
+                        <input type="text" id="order-customer-search" class="form-control"
+                               placeholder="이름 또는 연락처 뒷자리"
+                               oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
+                               autocomplete="off">
+                        <div id="customer-search-results" class="xf-dropdown hidden"></div>
+                    </div>
+
+                    <!-- 고객명 (col-6) | 연락처 (col-6) -->
+                    <div class="form-col-6">
+                        <label class="form-label">고객명 <span class="req">*</span></label>
+                        <input type="text" id="order-customer-name" class="form-control"
+                               placeholder="고객명" required
+                               oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
+                    </div>
+                    <div class="form-col-6">
+                        <label class="form-label">연락처 <span class="req">*</span></label>
+                        <input type="tel" id="order-customer-phone" class="form-control"
+                               placeholder="연락처" required
+                               oninput="if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();">
+                    </div>
+
+                    <!-- 주소 (col-12) -->
+                    <div class="form-col-12">
+                        <label class="form-label">주소 <span class="req">*</span></label>
+                        <div class="form-input-group">
+                            <input type="text" id="order-customer-address" class="form-control"
+                                   placeholder="주소 입력 후 엔터" required
+                                   onkeydown="if(event.key==='Enter'){event.preventDefault();openMainAddressSearch();}">
+                            <button type="button" onclick="openMainAddressSearch()" class="btn-secondary">
+                                주소검색
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- 상세주소 (col-12) -->
+                    <div class="form-col-12">
+                        <label class="form-label">상세주소</label>
+                        <input type="text" id="order-customer-address-detail" class="form-control"
+                               placeholder="상세주소 (선택)">
+                    </div>
+
+                    <!-- 추가배송지 (col-12) -->
+                    <div class="form-col-12" id="extra-shipping-header-row">
+                        <label class="form-label">추가배송지</label>
+                        <div id="extra-shipping-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+                        <button type="button" onclick="addExtraShipping()"
+                                style="margin-top:6px;font-size:11px;color:#2563eb;background:none;border:1px dashed #93c5fd;border-radius:4px;padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                            + 배송지 추가
+                            <span id="extra-shipping-badge" style="display:none;background:#dbeafe;color:#1d4ed8;border-radius:9px;padding:1px 7px;font-size:10px;"></span>
+                        </button>
+                    </div>
+
+                    <!-- 채널 (col-6) | 상태 (col-6) -->
+                    <div class="form-col-6">
+                        <label class="form-label">채널</label>
+                        <select id="order-channel" class="form-control"
+                                onchange="document.getElementById('order-channel-summary').textContent=this.value">
+                            <option value="유튜브">유튜브</option>
+                        </select>
+                    </div>
+                    <div class="form-col-6">
+                        <label class="form-label">상태</label>
+                        <select id="order-status" class="form-control"
+                                onchange="document.getElementById('order-status-summary').textContent=this.value">
+                            <option value="입금대기" selected>입금대기</option>
+                            <option value="주문접수">주문접수</option>
+                            <option value="고객안내">고객안내</option>
+                            <option value="입금확인">입금확인</option>
+                            <option value="상품준비">상품준비</option>
+                            <option value="배송준비">배송준비</option>
+                            <option value="배송중">배송중</option>
+                            <option value="배송완료">배송완료</option>
+                            <option value="주문취소">주문취소</option>
+                            <option value="환불완료">환불완료</option>
+                        </select>
+                    </div>
+
+                    <!-- 배송메모 (col-12) -->
+                    <div class="form-col-12">
+                        <label class="form-label">배송메모</label>
+                        <textarea id="order-memo" class="form-control xf-memo" rows="2"
+                                  placeholder="배송 관련 메모 (선택)"
+                                  oninput="document.getElementById('order-memo-summary').textContent=this.value.trim()||''"></textarea>
+                    </div>
+
+                </div>
             </div>
 
             <!-- ── 우측: 상품 추가 + 장바구니 ── -->
             <div class="xf-col">
 
                 <!-- 퀵 상품 + 검색 -->
-                <table class="xf-tbl" style="margin-bottom:5px">
+                <table class="xf-tbl xf-mb-sm">
                     <tbody>
                         <tr>
-                            <th style="width:60px;vertical-align:top;padding-top:6px">상품 추가</th>
+                            <th class="xf-th-vtop" style="width:60px">상품 추가</th>
                             <td>
-                                <div id="quick-product-buttons"
-                                     style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:4px;max-height:60px;overflow:hidden">
-                                    <div style="grid-column:1/-1;text-align:center;color:#999;font-size:11px;padding:6px">로딩 중...</div>
+                                <div id="quick-product-buttons" class="xf-quick-grid">
+                                    <div class="xf-quick-grid-loading">로딩 중...</div>
                                 </div>
-                                <div style="position:relative">
+                                <div class="xf-pos-rel">
                                     <input type="text" id="product-search" class="xf-inp"
-                                           placeholder="상품명 검색 후 클릭하여 추가"
+                                           placeholder="클릭하거나 상품명 검색"
                                            oninput="searchProducts(this.value)" autocomplete="off"
-                                           onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}">
+                                           onfocus="searchProducts(this.value)"
+                                           onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}if(event.key==='Escape'){document.getElementById('product-search-results')?.classList.add('hidden');this.blur();}">
                                     <div id="product-search-results"
-                                         class="hidden"
-                                         style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:140px;overflow-y:auto;z-index:20;font-size:13px"></div>
+                                         class="xf-dropdown xf-dropdown-product hidden"></div>
                                 </div>
                             </td>
                         </tr>
@@ -125,16 +132,16 @@ window.generateOrderFormHTMLMinimal = function () {
                 <table class="xf-tbl xf-cart">
                     <thead>
                         <tr>
-                            <th style="text-align:left">상품명</th>
-                            <th style="width:60px;text-align:right">단가</th>
-                            <th style="width:82px;text-align:center">수량</th>
-                            <th style="width:68px;text-align:right">소계</th>
+                            <th class="text-left">상품명</th>
+                            <th class="text-right" style="width:60px">단가</th>
+                            <th class="text-center" style="width:82px">수량</th>
+                            <th class="text-right" style="width:68px">소계</th>
                             <th style="width:20px"></th>
                         </tr>
                     </thead>
                     <tbody id="cart-items-body">
                         <tr>
-                            <td colspan="5" style="text-align:center;color:#aaa;padding:14px 0;font-size:12px">
+                            <td colspan="5" class="text-center td-muted">
                                 장바구니가 비어있습니다
                             </td>
                         </tr>
@@ -162,9 +169,8 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr class="xf-total-row">
-                            <td colspan="3" style="text-align:right;font-weight:700;font-size:13px;padding:5px 6px">총금액</td>
-                            <td colspan="2" style="text-align:right;font-weight:700;font-size:15px;color:#16a34a;padding:5px 6px"
-                                id="final-total-amount">0원</td>
+                            <td colspan="3" class="xf-total-label">총금액</td>
+                            <td colspan="2" class="xf-total-amount" id="final-total-amount">0원</td>
                         </tr>
                     </tfoot>
                 </table>
@@ -314,7 +320,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 width: 100%;
                 margin-top: 6px;
                 padding: 9px 0;
-                background: #16a34a;
+                background: var(--primary);
                 color: #fff;
                 font-size: 14px;
                 font-weight: 700;

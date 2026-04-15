@@ -75,129 +75,102 @@ async function loadShippingManagementComponent() {
         
         // 기본 배송관리 UI 생성
         const shippingHTML = `
-            <div class="space-y-6">
+            <div class="app-section-frame">
                 <!-- 배송관리 헤더 -->
-                <div class="mb-6">
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <h2 class="text-2xl font-bold text-gray-800">배송 관리</h2>
-                            <p class="text-gray-600 mt-1">배송 상태를 관리하고 추적하세요</p>
+                <div class="app-section-header">
+                    <div class="app-section-heading">
+                        <div class="app-section-icon">
+                            <i class="fas fa-truck text-sm"></i>
                         </div>
-                        <div class="flex space-x-3">
-                            <button id="generate-rozen-excel-btn" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                <i class="fas fa-file-download mr-2"></i>배송준비 주문 Excel
-                            </button>
-                            <button id="advanced-shipping-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                <i class="fas fa-cogs mr-2"></i>고급 배송관리
-                            </button>
-                            <button id="add-shipping-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                <i class="fas fa-plus mr-2"></i>배송 등록
-                            </button>
-                            <button id="bulk-shipping-btn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                <i class="fas fa-upload mr-2"></i>일괄 등록
-                            </button>
-                            <button id="export-shipping-btn" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg transition-colors flex items-center">
-                                <i class="fas fa-download mr-2"></i>내보내기
-                            </button>
+                        <div>
+                            <div class="app-section-title">배송 관리</div>
+                            <div class="app-section-subtitle">배송 상태를 관리하고 추적하세요</div>
+                        </div>
+                    </div>
+                    <div class="app-toolbar">
+                        <button id="bulk-tracking-shipping-btn" class="app-btn app-btn-muted" onclick="openShippingTrackingPanel && openShippingTrackingPanel()">
+                            <i class="fas fa-barcode mr-1 text-xs"></i><span class="text-xs">송장 일괄입력</span>
+                        </button>
+                        <button id="generate-rozen-excel-btn" class="app-btn app-btn-muted">
+                            <i class="fas fa-file-excel mr-1 text-xs"></i><span class="text-xs">Excel</span>
+                        </button>
+                        <button id="add-shipping-btn" class="app-btn app-btn-primary">
+                            <i class="fas fa-plus mr-1 text-xs"></i><span class="text-xs">배송 등록</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 송장번호 일괄입력 패널 (접힘) -->
+                <div id="shipping-tracking-panel" class="hidden shrink-0 border-b border-amber-200 bg-amber-50">
+                    <div class="px-4 py-3">
+                        <div class="flex items-center justify-between mb-2">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-barcode text-amber-600 text-sm"></i>
+                                <span class="text-sm font-semibold text-amber-800">송장번호 일괄입력</span>
+                                <span class="text-xs text-amber-600">배송준비 주문에 송장번호를 입력하세요</span>
+                            </div>
+                            <div class="flex items-center gap-2">
+                                <button id="shipping-tracking-save-all-btn" class="app-btn app-btn-primary text-xs px-3 py-1">
+                                    <i class="fas fa-save mr-1"></i>전체 저장
+                                </button>
+                                <button id="shipping-tracking-close-btn" class="app-btn app-btn-muted text-xs px-2 py-1" onclick="document.getElementById('shipping-tracking-panel').classList.add('hidden')">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="table-ui w-full">
+                                <thead>
+                                    <tr>
+                                        <th class="text-left">주문번호</th>
+                                        <th class="text-left">고객명</th>
+                                        <th class="text-left">상품</th>
+                                        <th class="text-right">금액</th>
+                                        <th class="text-left" style="min-width:180px">송장번호 입력</th>
+                                        <th class="text-center">저장</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="shipping-tracking-rows">
+                                    <tr><td colspan="6" class="text-center td-muted">불러오는 중...</td></tr>
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
 
-                <!-- 송장번호 추적 섹션 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">송장번호로 배송 추적</h3>
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">송장번호</label>
-                            <input type="text" id="tracking-number-input" 
-                                   placeholder="송장번호를 입력하세요 (예: 1234567890)" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">택배사 (선택사항)</label>
-                            <select id="carrier-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
-                                <option value="">자동 감지</option>
-                                <option value="cj">CJ대한통운</option>
-                                <option value="hanjin">한진택배</option>
-                                <option value="lotte">롯데택배</option>
-                                <option value="logen">로젠택배</option>
-                                <option value="kdexp">대한통운</option>
-                                <option value="epost">우체국택배</option>
-                            </select>
-                        </div>
-                        <div class="flex items-end">
-                            <button id="track-shipment-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-search mr-2"></i>배송 추적
-                            </button>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 배송 추적 결과 -->
-                <div id="tracking-result" class="hidden">
-                    <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">배송 추적 결과</h3>
-                        <div id="tracking-details">
-                            <!-- 추적 결과가 여기에 표시됩니다 -->
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 배송 검색 및 필터 -->
-                <div class="bg-white rounded-lg shadow-md p-6">
-                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">검색</label>
-                            <input type="text" id="shipping-search" placeholder="주문번호, 고객명으로 검색..." 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">배송 상태</label>
-                            <select id="shipping-status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                                <option value="">전체 상태</option>
-                                <option value="배송준비">배송준비</option>
-                                <option value="배송중">배송중</option>
-                                <option value="배송완료">배송완료</option>
-                                <option value="배송지연">배송지연</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">배송일</label>
-                            <input type="date" id="shipping-date-filter" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent">
-                        </div>
-                        <div class="flex items-end">
-                            <button id="shipping-filter-btn" class="w-full bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg transition-colors">
-                                <i class="fas fa-search mr-2"></i>검색
-                            </button>
-                        </div>
-                    </div>
+                <!-- 상태 필터 탭 + 검색 -->
+                <div class="filter-bar">
+                    <nav class="app-pill-bar flex-1">
+                        <button id="shipping-status-all" class="shipping-tab-btn status-tab-btn active"><i class="fas fa-list mr-1"></i>전체</button>
+                        <button id="shipping-status-배송준비" class="shipping-tab-btn status-tab-btn"><i class="fas fa-box mr-1"></i>배송준비</button>
+                        <button id="shipping-status-배송중" class="shipping-tab-btn status-tab-btn"><i class="fas fa-shipping-fast mr-1"></i>배송중</button>
+                        <button id="shipping-status-배송완료" class="shipping-tab-btn status-tab-btn"><i class="fas fa-check-circle mr-1"></i>배송완료</button>
+                        <button id="shipping-status-배송지연" class="shipping-tab-btn status-tab-btn"><i class="fas fa-exclamation-circle mr-1"></i>배송지연</button>
+                    </nav>
+                    <input type="text" id="shipping-search" placeholder="주문번호, 고객명 검색..." class="input-ui" style="max-width:180px;">
+                    <input type="date" id="shipping-date-filter" class="input-ui" style="max-width:140px;">
                 </div>
 
                 <!-- 배송 목록 테이블 -->
-                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="flex-1 overflow-auto">
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
+                        <table class="table-ui min-w-full">
+                            <thead>
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">주문번호</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">고객명</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송지</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송 상태</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송일</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                                    <th class="text-left">주문번호</th>
+                                    <th class="text-left">고객명</th>
+                                    <th class="text-left">배송지</th>
+                                    <th class="text-left">배송 상태</th>
+                                    <th class="text-left">배송일</th>
+                                    <th class="text-left">송장번호</th>
+                                    <th class="text-center">관리</th>
                                 </tr>
                             </thead>
-                            <tbody id="shipping-table-body" class="bg-white divide-y divide-gray-200">
-                                <!-- 배송 데이터가 여기에 동적으로 로드됩니다 -->
+                            <tbody id="shipping-table-body">
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                                        <div class="flex flex-col items-center space-y-2">
-                                            <i class="fas fa-truck text-gray-400 text-2xl"></i>
-                                            <p class="text-sm">배송 데이터가 없습니다</p>
-                                            <p class="text-xs text-gray-400">송장번호를 입력하거나 주문을 등록해보세요</p>
-                                        </div>
-                                    </td>
+                                    <td colspan="7" class="text-center td-muted">
+                                        <i class="fas fa-truck text-2xl mb-2 block"></i>
+                                        배송 데이터가 없습니다</td>
                                 </tr>
                             </tbody>
                         </table>
@@ -287,39 +260,30 @@ async function loadBasicShippingData() {
         console.log('📊 총 배송 데이터:', shippingOrders.length + '개');
 
         if (shippingOrders.length === 0) {
-            tbody.innerHTML = `
-                <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
-                        <div class="flex flex-col items-center space-y-2">
-                            <i class="fas fa-truck text-gray-400 text-2xl"></i>
-                            <p class="text-sm">배송 데이터가 없습니다</p>
-                            <p class="text-xs text-gray-400">배송 등록 버튼을 클릭하여 배송을 등록해보세요</p>
-                        </div>
-                    </td>
-                </tr>
-            `;
+            tbody.innerHTML = window.renderEmptyRow(7, '배송 데이터가 없습니다');
             return;
         }
 
         tbody.innerHTML = shippingOrders.map(order => `
             <tr class="hover:bg-gray-50">
-                <td class="px-4 py-3 text-sm font-medium text-gray-900">${order.order_number || order.id}</td>
-                <td class="px-4 py-3 text-sm text-gray-900">${order.customer_name || '고객명'}</td>
-                <td class="px-4 py-3 text-sm text-gray-500 max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
-                <td class="px-4 py-3 text-sm">
-                    <span class="px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(order.order_status || order.status)}">
+                <td class="px-4 td-primary font-medium">${order.order_number || order.id}</td>
+                <td class="px-4 td-primary">${order.customer_name || '고객명'}</td>
+                <td class="px-4 td-secondary max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
+                <td class="px-4">
+                    <span class="badge ${getStatusColor(order.order_status || order.status)}">
                         ${order.order_status || order.status || '상태 없음'}
                     </span>
                 </td>
-                <td class="px-4 py-3 text-sm text-gray-500">${formatDate(order.order_date)}</td>
-                <td class="px-4 py-3 text-sm">
-                    <div class="flex space-x-2">
+                <td class="px-4 td-secondary">${formatDate(order.order_date)}</td>
+                <td class="px-4 td-secondary">${order.tracking_number || '—'}</td>
+                <td class="px-4">
+                    <div class="flex items-center gap-2">
                         ${order.tracking_number ? `
-                            <button onclick="trackOrder('${order.id}')" class="text-blue-600 hover:text-blue-800 text-xs" title="배송 추적">
+                            <button onclick="trackOrder('${order.id}')" class="text-blue-500 hover:text-blue-700 text-xs" title="배송 추적">
                                 <i class="fas fa-search"></i>
                             </button>
                         ` : ''}
-                        <button onclick="editShipping('${order.id}')" class="text-green-600 hover:text-green-800 text-xs" title="수정">
+                        <button onclick="editShipping('${order.id}')" class="text-emerald-600 hover:text-emerald-800 text-xs" title="수정">
                             <i class="fas fa-edit"></i>
                         </button>
                     </div>
@@ -345,8 +309,10 @@ function getStatusColor(status) {
     return colors[status] || 'bg-gray-100 text-gray-800';
 }
 
-// 날짜 포맷팅
+// 날짜 포맷팅: utils/formatters.js의 window.formatDate 사용
+// (로컬 구현 제거 — window.formatDate가 없을 때 폴백)
 function formatDate(dateString) {
+    if (window.formatDate) return window.formatDate(dateString);
     if (!dateString) return '날짜 없음';
     return new Date(dateString).toLocaleDateString('ko-KR');
 }
@@ -1084,45 +1050,39 @@ async function loadAdvancedShippingSystem() {
 }
 
 // 배송 등록 모달 표시
-function showAddShippingModal() {
+async function showAddShippingModal() {
     try {
-        console.log('➕ 배송 등록 모달 표시');
-        
-        // 주문 목록 가져오기
-        if (!window.orderDataManager) {
-            console.warn('⚠️ orderDataManager를 찾을 수 없습니다. 테스트 데이터를 생성합니다.');
-            createTestOrders();
+        if (!window.supabaseClient) {
+            alert('데이터베이스에 연결되지 않았습니다.');
+            return;
         }
-        
-        const allOrders = window.orderDataManager ? window.orderDataManager.getAllOrders() : getTestOrders();
-        const availableOrders = allOrders.filter(order => {
-            const status = order.order_status || order.status;
-            return ['입금확인', '상품준비', '배송준비'].includes(status);
-        });
-        
-        console.log('📋 전체 주문 수:', allOrders.length);
-        console.log('📦 배송 등록 가능한 주문 수:', availableOrders.length);
-        console.log('📋 배송 등록 가능한 주문들:', availableOrders);
-        
-        if (availableOrders.length === 0) {
-            // 테스트 주문 생성 제안
-            const createTest = confirm('배송 등록 가능한 주문이 없습니다.\n\n테스트용 주문을 생성하시겠습니까?');
-            if (createTest) {
-                createTestOrders();
-                // 다시 시도
-                setTimeout(() => showAddShippingModal(), 1000);
-                return;
-            } else {
-                alert('배송 등록 가능한 주문 상태:\n- 입금확인\n- 상품준비\n- 배송준비\n\n주문관리에서 주문 상태를 변경해주세요.');
-                return;
-            }
+
+        // 로딩 버튼 상태
+        const btn = document.getElementById('add-shipping-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1 text-xs"></i><span class="text-xs">불러오는 중...</span>'; }
+
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('id, order_number, customer_name, order_status, order_items, total_amount')
+            .in('order_status', ['입금확인', '상품준비', '배송준비'])
+            .order('order_date', { ascending: false });
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1 text-xs"></i><span class="text-xs">배송 등록</span>'; }
+
+        if (error) throw new Error(error.message);
+
+        if (!orders || orders.length === 0) {
+            alert('배송 등록 가능한 주문이 없습니다.\n(입금확인 / 상품준비 / 배송준비 상태 주문만 표시됩니다)');
+            return;
         }
-        
-        showAddShippingForm(availableOrders);
-        
+
+        showAddShippingForm(orders);
+
     } catch (error) {
         console.error('❌ 배송 등록 모달 표시 실패:', error);
-        alert('배송 등록 모달을 표시할 수 없습니다: ' + error.message);
+        alert('주문 목록을 불러올 수 없습니다: ' + error.message);
+        const btn = document.getElementById('add-shipping-btn');
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1 text-xs"></i><span class="text-xs">배송 등록</span>'; }
     }
 }
 
@@ -1301,57 +1261,18 @@ async function confirmAddShipping() {
         confirmBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>등록 중...';
         confirmBtn.disabled = true;
         
-        // 주문 상태 업데이트
-        if (window.orderDataManager) {
-            try {
-                await window.orderDataManager.updateOrderStatus(orderId, '배송중');
-                console.log('✅ 주문 상태가 배송중으로 변경됨');
-            } catch (updateError) {
-                console.warn('⚠️ 주문 상태 업데이트 실패:', updateError);
-                // 계속 진행
-            }
-        }
-        
-        // Supabase에 배송 정보 저장
-        if (window.supabaseClient) {
-            try {
-                // 주문 테이블에 송장번호 및 배송 상태 업데이트
-                const { error: updateError } = await window.supabaseClient
-                    .from('farm_orders')
-                    .update({
-                        tracking_number: trackingNumber,
-                        order_status: '배송중',
-                        updated_at: new Date().toISOString()
-                    })
-                    .eq('id', orderId);
-                
-                if (updateError) {
-                    console.error('❌ Supabase 업데이트 실패:', updateError);
-                    throw new Error(`배송 정보 저장 실패: ${updateError.message}`);
-                }
-                
-                console.log('✅ Supabase에 배송 정보 저장 완료');
-            } catch (supabaseError) {
-                console.error('❌ Supabase 저장 중 오류:', supabaseError);
-                throw supabaseError;
-            }
-        }
-        
-        // 전역 배송 데이터에도 저장 (로컬 캐시용)
-        const shippingInfo = {
-            orderId,
-            trackingNumber,
-            carrier,
-            carrierName: getCarrierName(carrier),
-            memo,
-            registeredAt: new Date().toISOString(),
-            status: '배송중'
-        };
-        
-        if (!window.shippingData) {
-            window.shippingData = [];
-        }
-        window.shippingData.push(shippingInfo);
+        // Supabase에 송장번호·배송상태 저장
+        const { error: updateError } = await window.supabaseClient
+            .from('farm_orders')
+            .update({
+                tracking_number: trackingNumber,
+                carrier: carrier,
+                order_status: '배송중',
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', orderId);
+
+        if (updateError) throw new Error(`저장 실패: ${updateError.message}`);
         
         console.log('✅ 배송 등록 완료:', shippingInfo);
         console.log('📊 전체 배송 데이터:', window.shippingData);
@@ -1363,7 +1284,8 @@ async function confirmAddShipping() {
         await loadBasicShippingData();
         
         // 성공 메시지
-        alert(`배송이 성공적으로 등록되었습니다!\n\n주문번호: ${orderId}\n송장번호: ${trackingNumber}\n택배사: ${getCarrierName(carrier)}`);
+        Swal?.fire({ icon: 'success', title: '배송 등록 완료', text: `송장번호 ${trackingNumber} · 상태가 배송중으로 변경됐습니다`, timer: 2000, showConfirmButton: false })
+            ?? alert('배송이 등록됐습니다.');
         
     } catch (error) {
         console.error('❌ 배송 등록 실패:', error);
@@ -1620,20 +1542,20 @@ async function showRozenExcelPreview() {
                         <!-- 본문 -->
                         <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                                <table class="min-w-full table-ui border border-gray-300">
                                     <thead class="bg-blue-50">
                                         <tr>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인명</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300"></th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인주소</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인전화번호</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인핸드폰번호</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">택배수량</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">택배운임</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">운임구분</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">품목명</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300"></th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">배송메세지</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인명</th>
+                                            <th class="px-3 font-bold border border-gray-300"></th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인주소</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인전화번호</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인핸드폰번호</th>
+                                            <th class="px-3 font-bold border border-gray-300">택배수량</th>
+                                            <th class="px-3 font-bold border border-gray-300">택배운임</th>
+                                            <th class="px-3 font-bold border border-gray-300">운임구분</th>
+                                            <th class="px-3 font-bold border border-gray-300">품목명</th>
+                                            <th class="px-3 font-bold border border-gray-300"></th>
+                                            <th class="px-3 font-bold border border-gray-300">배송메세지</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -1644,17 +1566,17 @@ async function showRozenExcelPreview() {
                                             const message = order.memo || order.shipping_message || '';
                                             return `
                                                 <tr class="hover:bg-gray-50">
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300">${order.customer_name || ''}</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${address}</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300">${phone}</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">1</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">3800</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">010</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${itemName}</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${message}</td>
+                                                    <td class="px-3 td-primary border border-gray-300">${order.customer_name || ''}</td>
+                                                    <td class="px-3 td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${address}</td>
+                                                    <td class="px-3 td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300">${phone}</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">1</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">3800</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">010</td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${itemName}</td>
+                                                    <td class="px-3 text-center td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${message}</td>
                                                 </tr>
                                             `;
                                         }).join('')}
@@ -2153,7 +2075,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                         
                         <!-- Excel 표 형태 편집 영역 -->
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200" id="template-table">
+                            <table class="min-w-full table-ui" id="template-table">
                                 <thead class="bg-gray-100">
                                     <!-- Excel 컬럼 레터 (A, B, C...) -->
                                     <tr id="template-column-letters" class="border-b border-gray-300">
@@ -2217,7 +2139,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                     <div id="template-preview" class="hidden">
                         <h4 class="text-sm font-medium text-gray-700 mb-2">미리보기</h4>
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                            <table id="preview-table" class="min-w-full divide-y divide-gray-200">
+                            <table id="preview-table" class="min-w-full table-ui">
                                 <!-- 미리보기 테이블이 여기에 표시됩니다 -->
                             </table>
                         </div>
@@ -2317,15 +2239,15 @@ function addTemplateRowToTable(cells = [], columnCount = 6) {
     }
     
     row.innerHTML = cells.slice(0, columnCount).map((cell, index) => `
-        <td class="px-4 py-2 border-r border-gray-200">
-            <input type="text" 
-                   value="${(cell || '').trim()}" 
-                   class="data-input w-full px-2 py-1 border border-gray-200 rounded text-sm"
+        <td class="px-4 border-r border-gray-200">
+            <input type="text"
+                   value="${(cell || '').trim()}"
+                   class="data-input w-full px-2 py-1 border border-gray-200 rounded"
                    data-col-index="${index}"
                    placeholder="데이터">
         </td>
     `).join('') + `
-        <td class="px-4 py-2 text-center">
+        <td class="px-4 text-center">
             <button class="text-red-600 hover:text-red-800 text-sm" onclick="removeTemplateRow(this)">
                 <i class="fas fa-trash"></i>
             </button>
@@ -2524,7 +2446,7 @@ function previewTemplate(content) {
             const cells = lines[i].split(',');
             tableHTML += '<tr>';
             cells.forEach(cell => {
-                tableHTML += `<td class="px-4 py-2 text-sm text-gray-600">${cell.trim()}</td>`;
+                tableHTML += `<td class="px-4 td-secondary">${cell.trim()}</td>`;
             });
             tableHTML += '</tr>';
         }
@@ -3098,12 +3020,122 @@ function testShippingTracking() {
     }
 }
 
+// 송장번호 일괄입력 패널 열기/닫기 (배송관리 섹션)
+async function openShippingTrackingPanel() {
+    const panel = document.getElementById('shipping-tracking-panel');
+    if (!panel) return;
+
+    const isHidden = panel.classList.contains('hidden');
+    if (!isHidden) {
+        panel.classList.add('hidden');
+        return;
+    }
+
+    panel.classList.remove('hidden');
+
+    const tbody = document.getElementById('shipping-tracking-rows');
+    if (!tbody || !window.supabaseClient) return;
+
+    tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-amber-600">불러오는 중...</td></tr>`;
+
+    try {
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('id, order_number, customer_name, order_items, total_amount, tracking_number, order_status')
+            .eq('order_status', '배송준비')
+            .order('order_date', { ascending: false });
+
+        if (error || !orders || orders.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-amber-600">배송준비 상태의 주문이 없습니다</td></tr>`;
+            return;
+        }
+
+        tbody.innerHTML = orders.map(o => {
+            const items = Array.isArray(o.order_items) ? o.order_items.map(i => i.product_name || i.name || '').filter(Boolean).join(', ') : '';
+            return `<tr class="hover:bg-amber-50">
+                <td class="px-2 td-primary">${o.order_number || o.id.slice(0,8)}</td>
+                <td class="px-2 td-primary">${o.customer_name || ''}</td>
+                <td class="px-2 td-secondary max-w-[120px] truncate" title="${items}">${items}</td>
+                <td class="px-2 td-primary">${(o.total_amount||0).toLocaleString()}원</td>
+                <td class="px-2">
+                    <input type="text" class="shipping-tracking-input w-full border border-amber-300 rounded px-2 py-1 focus:ring-1 focus:ring-amber-400"
+                        placeholder="송장번호 입력" value="${o.tracking_number || ''}" data-order-id="${o.id}">
+                </td>
+                <td class="px-2">
+                    <button onclick="saveShippingOneTracking('${o.id}', this)" class="app-btn app-btn-soft text-[10px] px-2 py-0.5">저장</button>
+                </td>
+            </tr>`;
+        }).join('');
+
+        // 전체 저장 버튼 (onclick으로 중복 등록 방지)
+        const saveAllBtn = document.getElementById('shipping-tracking-save-all-btn');
+        if (saveAllBtn) saveAllBtn.onclick = saveAllShippingTrackings;
+    } catch (e) {
+        tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-red-500">오류: ${e.message}</td></tr>`;
+    }
+}
+
+async function saveShippingOneTracking(orderId, btn) {
+    const row = btn.closest('tr');
+    const input = row?.querySelector('.shipping-tracking-input');
+    const trackingNum = input?.value?.trim();
+    if (!trackingNum || !window.supabaseClient) return;
+
+    const origText = btn.textContent;
+    btn.textContent = '...';
+    btn.disabled = true;
+
+    const { error } = await window.supabaseClient
+        .from('farm_orders')
+        .update({ tracking_number: trackingNum })
+        .eq('id', orderId);
+
+    btn.disabled = false;
+    if (error) {
+        btn.textContent = '실패';
+        setTimeout(() => { btn.textContent = origText; }, 2000);
+    } else {
+        btn.textContent = '✓';
+        input.classList.add('border-green-400', 'bg-green-50');
+        setTimeout(() => { btn.textContent = origText; }, 2000);
+    }
+}
+
+async function saveAllShippingTrackings() {
+    const inputs = document.querySelectorAll('#shipping-tracking-rows .shipping-tracking-input');
+    const btn = document.getElementById('shipping-tracking-save-all-btn');
+    if (!btn) return;
+
+    btn.textContent = '저장 중...';
+    btn.disabled = true;
+
+    let successCount = 0;
+    for (const input of inputs) {
+        const orderId = input.dataset.orderId;
+        const trackingNum = input.value.trim();
+        if (!trackingNum || !orderId || !window.supabaseClient) continue;
+        const { error } = await window.supabaseClient
+            .from('farm_orders')
+            .update({ tracking_number: trackingNum })
+            .eq('id', orderId);
+        if (!error) successCount++;
+    }
+
+    btn.disabled = false;
+    btn.innerHTML = '<i class="fas fa-save mr-1"></i>전체 저장';
+    if (successCount > 0) {
+        Swal?.fire({ icon: 'success', title: `${successCount}건 저장 완료`, timer: 1500, showConfirmButton: false });
+    }
+}
+
 // 전역 함수로 등록
 window.loadShippingManagementComponent = loadShippingManagementComponent;
 window.trackShipmentByNumber = trackShipmentByNumber;
 window.testShippingTracking = testShippingTracking;
 window.closeRozenExcelPreview = closeRozenExcelPreview;
 window.downloadRozenExcel = downloadRozenExcel;
+window.openShippingTrackingPanel = openShippingTrackingPanel;
+window.saveShippingOneTracking = saveShippingOneTracking;
 
 // export for module import
 export { loadShippingManagementComponent };

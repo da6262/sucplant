@@ -15,6 +15,8 @@ function computeCountsFromOrderRows(rows) {
         countBy[st] = (countBy[st] || 0) + 1;
     });
     const total = rows.length;
+    // Fix #10: work_todo(상품준비+배송준비)와 work_ship_today(배송준비+배송중)는
+    // '배송준비' 상태에서 의도적으로 중복됨 — 배송준비 = 포장완료+출고대기로 두 탭 모두에 표시
     return [
         { status_key: 'all', count: total },
         { status_key: 'work_todo', count: (countBy['상품준비'] || 0) + (countBy['배송준비'] || 0) },
@@ -23,6 +25,18 @@ function computeCountsFromOrderRows(rows) {
         { status_key: 'work_done', count: countBy['배송완료'] || 0 },
         ...Object.entries(countBy).map(([k, v]) => ({ status_key: k, count: v }))
     ];
+}
+
+/**
+ * 주문 상태(st)가 filterStatus 탭에 속하는지 판단.
+ * Fix #8: _loadOrdersFallback / filterOrdersByStatus 공유 헬퍼 — 상태 필터 중복 정의 방지.
+ * 복합 필터: work_todo(상품준비+배송준비)만 탭으로 제공.
+ * work_deposit / work_ship_today / work_done 은 미사용이므로 제거.
+ */
+function matchOrderStatusFilter(st, filterStatus) {
+    if (!filterStatus || filterStatus === 'all') return true;
+    if (filterStatus === 'work_todo') return st === '상품준비' || st === '배송준비';
+    return st === filterStatus;
 }
 
 class OrderDataManager {
@@ -45,6 +59,9 @@ class OrderDataManager {
         // 날짜 필터
         this._dateFrom = null;  // Date 객체 또는 null
         this._dateTo = null;    // Date 객체 또는 null
+
+        // 채널 필터
+        this._channelFilter = '';  // '' = 전체
         
         // Master-Detail 패턴을 위한 선택된 고객 정보
         this.selectedCustomerId = null;
@@ -283,14 +300,8 @@ class OrderDataManager {
         const kstToday = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
         kstToday.setHours(0, 0, 0, 0);
         const statusNorm = (s) => (s && String(s).trim()) || '주문접수';
-        const matchFilter = (st) => {
-            if (!filterStatus || filterStatus === 'all') return true;
-            if (filterStatus === 'work_todo') return st === '상품준비' || st === '배송준비';
-            if (filterStatus === 'work_deposit') return st === '입금대기';
-            if (filterStatus === 'work_ship_today') return st === '배송준비' || st === '배송중';
-            if (filterStatus === 'work_done') return st === '배송완료';
-            return st === filterStatus;
-        };
+        // Fix #8: 공유 헬퍼 matchOrderStatusFilter 사용 — 중복 정의 제거
+        const matchFilter = (st) => matchOrderStatusFilter(st, filterStatus);
         const rows = [];
         for (const o of orders) {
             const st = statusNorm(o.order_status);
@@ -318,7 +329,8 @@ class OrderDataManager {
             // payment_status: 서버에서 계산한 값이 없으므로 클라이언트에서 계산 (RPC 사용 권장)
             const paymentStatus = st === '입금대기' ? null : '입금확인';
             // delivery_status: 서버에서 계산한 값이 없으므로 클라이언트에서 계산 (RPC 사용 권장)
-            // 참고: RPC get_order_rows는 '미등록' 또는 '배송완료'만 반환하지만, 폴백에서는 tracking_number도 고려
+            // Fix #2/#7: RPC get_order_rows는 '미등록'/'배송완료'만 반환하지만, 폴백에서는
+            // tracking_number까지 고려한 '송장입력' 상태를 계산 후 fallbackRow에 덮어씀
             const deliveryStatus = st === '배송완료' ? '배송완료' : (o.tracking_number && String(o.tracking_number).trim() ? '송장입력' : '미등록');
             // 폴백 전용 변환 함수 사용
             const fallbackRow = this.toOrderRowSpecFromFallback({
@@ -334,8 +346,9 @@ class OrderDataManager {
                 items_subtotal: itemsSubtotal,
                 items: agg.list.map(it => ({ product_name: it.product_name, quantity: it.quantity, total: it.quantity * (itemsSubtotal / (agg.list.reduce((s, i) => s + i.quantity, 0) || 1)) }))
             });
-            // 폴백에서 계산한 summary로 덮어쓰기
+            // 폴백에서 계산한 summary / deliveryStatus로 덮어쓰기
             fallbackRow.order_items_summary = summary;
+            fallbackRow.delivery_status = deliveryStatus; // Fix #2/#7: tracking_number 고려한 정확한 값
             rows.push(fallbackRow);
         }
         return rows.slice(pOffset || 0, (pOffset || 0) + (pLimit || 500));
@@ -359,11 +372,22 @@ class OrderDataManager {
         if (!Array.isArray(countRows)) return;
         const map = {};
         countRows.forEach((row) => { map[row.status_key] = Number(row.count) || 0; });
-        const statusKeys = ['all', 'work_todo', 'work_deposit', 'work_ship_today', 'work_done', '주문접수', '고객안내', '입금대기', '입금확인', '상품준비', '배송준비', '배송중', '배송완료', '주문취소', '환불완료'];
+        const statusKeys = ['all', 'work_todo', '주문접수', '고객안내', '입금대기', '입금확인', '상품준비', '배송준비', '배송중', '배송완료', '주문취소', '환불완료'];
         statusKeys.forEach((key) => {
             const el = document.getElementById(`count-${key}`);
             if (el) el.textContent = map[key] != null ? map[key] : 0;
         });
+        // 네비게이션 '처리할 주문' 뱃지 업데이트
+        const todoCount = map['work_todo'] || 0;
+        const navBadge = document.getElementById('nav-order-todo-badge');
+        if (navBadge) {
+            if (todoCount > 0) {
+                navBadge.textContent = todoCount > 99 ? '99+' : todoCount;
+                navBadge.style.display = 'flex';
+            } else {
+                navBadge.style.display = 'none';
+            }
+        }
     }
 
     // 주문 아이템들에 상품명 정보 보강
@@ -414,14 +438,10 @@ class OrderDataManager {
         try {
             const rows = Array.isArray(this.farm_order_rows) ? this.farm_order_rows : [];
             const norm = (s) => (s != null && String(s).trim() !== '') ? String(s).trim() : '주문접수';
-
+            // Fix #8: 공유 헬퍼 matchOrderStatusFilter 사용 — _loadOrdersFallback과 동일 로직 유지
             let filtered;
             if (!status || status === 'all') filtered = rows;
-            else if (status === 'work_todo') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '상품준비' || st === '배송준비'; });
-            else if (status === 'work_deposit') filtered = rows.filter((r) => norm(r.order_status) === '입금대기');
-            else if (status === 'work_ship_today') filtered = rows.filter((r) => { const st = norm(r.order_status); return st === '배송준비' || st === '배송중'; });
-            else if (status === 'work_done') filtered = rows.filter((r) => norm(r.order_status) === '배송완료');
-            else filtered = rows.filter((r) => norm(r.order_status) === status);
+            else filtered = rows.filter((r) => matchOrderStatusFilter(norm(r.order_status), status));
 
             // 날짜 필터 적용
             if (this._dateFrom || this._dateTo) {
@@ -433,6 +453,13 @@ class OrderDataManager {
                     if (this._dateTo && d > this._dateTo) return false;
                     return true;
                 });
+            }
+
+            // 채널 필터 적용
+            if (this._channelFilter) {
+                filtered = filtered.filter(r =>
+                    (r.order_channel || '') === this._channelFilter
+                );
             }
 
             return filtered;
@@ -628,7 +655,6 @@ class OrderDataManager {
             return {
                 ...order,
                 items: normalizedItems,
-                order_items: normalizedItems,
                 status: order.order_status || order.status || '주문접수',
                 total_amount: order.total_amount != null ? Number(order.total_amount) : 0,
                 shipping_fee: order.shipping_fee != null ? Number(order.shipping_fee) : 0,
@@ -651,6 +677,19 @@ class OrderDataManager {
             const filterStatus = status !== undefined && status !== null ? status : this.getCurrentFilterStatus();
             const filteredOrders = this.filterOrdersByStatus(filterStatus);
             console.log(`📊 렌더링할 주문 수: ${filteredOrders.length}개`);
+
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('order-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 50;
+            const pagedOrders = pageSize === 0 ? filteredOrders : filteredOrders.slice(0, pageSize);
+
+            // 하단 상태 바 업데이트
+            const orderTotalEl = document.getElementById('order-status-total');
+            const orderCountEl = document.getElementById('order-list-count');
+            if (orderTotalEl) orderTotalEl.textContent = String(filteredOrders.length);
+            if (orderCountEl) orderCountEl.textContent = pageSize === 0 || pagedOrders.length === filteredOrders.length
+                ? `${filteredOrders.length}건 표시`
+                : `${pagedOrders.length} / ${filteredOrders.length}건 표시`;
             
             // 테이블 바디 요소 찾기
             const tableBody = document.getElementById('orders-table-body');
@@ -683,7 +722,7 @@ class OrderDataManager {
                 const detail = this._loadErrorMessage ? `<p class="mt-1 text-red-600 text-[11px] max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="px-4 py-6 text-center text-gray-500 text-xs">
+                        <td colspan="10" class="px-4 text-center text-gray-500">
                             <i class="fas ${isEmpty ? 'fa-inbox' : 'fa-exclamation-triangle'} text-2xl ${isEmpty ? 'text-gray-300' : 'text-amber-400'} mb-1 block"></i>
                             <p>${message}</p>
                             ${detail}
@@ -693,7 +732,7 @@ class OrderDataManager {
             } else {
                 // 각 주문 행을 렌더링
                 console.log('🔄 주문 행 렌더링 시작...');
-                const rowsHTML = filteredOrders.map((order, index) => {
+                const rowsHTML = pagedOrders.map((order, index) => {
                     try {
                         console.log(`📝 주문 ${index + 1}/${filteredOrders.length} 렌더링:`, order.id);
                         const rowHTML = this.renderOrderRow(order);
@@ -703,7 +742,7 @@ class OrderDataManager {
                         console.error(`❌ 주문 ${order.id} 행 렌더링 실패:`, rowError);
                         return `
                             <tr>
-                                <td colspan="9" class="px-6 py-4 text-center text-red-500">
+                                <td colspan="9" class="px-6 text-center text-red-500">
                                     <i class="fas fa-exclamation-triangle mr-2"></i>
                                     주문 데이터 오류 (ID: ${order.id})
                                 </td>
@@ -836,7 +875,7 @@ class OrderDataManager {
 
     // 상품 요약 1줄: 단일 "상품명 × 수량", 복수 "대표상품 외 N건"
     getOrderProductSummary(order) {
-        const items = order.items || order.order_items || [];
+        const items = order.items || [];
         if (!items.length) return '-';
         const first = items[0];
         const name = (first.product_name || '상품').trim() || '상품';
@@ -921,50 +960,58 @@ class OrderDataManager {
                 ddayText = dday.text;
                 ddayWarn = dday.warn;
             }
+            // 장기 미입금 강조: 입금대기 상태 + 3일 이상 경과
+            const dNum = isRowSpec ? order.d_day : (ddayText !== '-' ? parseInt(ddayText.replace('D+','')) : null);
+            const isOverdue = orderStatus === '입금대기' && dNum != null && dNum >= 3;
+
             const smsStatus = isRowSpec ? { label: '미발송', tip: '클릭하여 SMS 발송' } : this.getSmsStatus(order);
             const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
+            const nullDash = '<span class="td-null">—</span>';
+            const rowBg = isSelected ? 'row-selected' : (isOverdue ? 'row-overdue' : '');
             return `
-                <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 ${isSelected ? 'bg-indigo-50' : ''} cursor-pointer py-0" 
-                    onclick="openOrderDetailModal('${rowId}')" 
+                <tr class="${rowBg} transition-colors cursor-pointer"
+                    onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" 
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
+                        <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1"
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle font-medium tabular-nums ${ddayWarn ? 'text-red-600 font-semibold' : 'text-gray-600'}">${ddayText}</td>
-                    <td class="px-2 py-1.5 align-middle font-semibold text-gray-900">${customerName}</td>
-                    <td class="px-2 py-1.5 align-middle text-gray-700" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary}</div></td>
-                    <td class="px-2 py-1.5 align-middle whitespace-nowrap text-[10px] text-gray-400">${orderNumber}</td>
-                    <td class="px-2 py-1.5 text-right align-middle font-medium text-gray-900 tabular-nums">${totalAmount.toLocaleString()}원</td>
-                    <td class="px-2 py-1.5 align-middle relative" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
+                    <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
+                    <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
+                    <td class="px-2 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
+                    <td class="px-2 td-amount text-right text-numeric">${totalAmount > 0 ? '₩' + totalAmount.toLocaleString() : nullDash}</td>
+                    <td class="px-2 text-center align-middle relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
                         <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
-                                <button class="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
+                                <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>
                             `).join('')}
                         </div>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
-                        <button class="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                        <button class="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                    <td class="px-2 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
+                        <div class="btn-group">
+                            <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
+                            <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>
+                        </div>
                     </td>
                 </tr>
             `;
         } catch (error) {
             const rid = order.order_id ?? order.id;
             console.error(`❌ 주문 ${rid} 행 렌더링 실패:`, error);
-            return `<tr><td colspan="10" class="px-4 py-2 text-center text-red-500 text-xs">주문 데이터 오류</td></tr>`;
+            return `<tr><td colspan="10" class="px-4 text-center text-red-500">주문 데이터 오류</td></tr>`;
         }
     }
     
@@ -1002,9 +1049,21 @@ class OrderDataManager {
     toOrderRowSpecFromFallback(order) {
         const orderStatus = order.status || order.order_status || '주문접수';
         const createdAt = order.order_date || order.created_at || order.createdAt;
-        const dday = this.getOrderDDay(order);
         const phone = String(order.customer_phone || '');
         const phoneLast4 = phone.replace(/\D/g, '').slice(-4);
+
+        // Fix #15: d_day를 숫자로 반환 (renderOrderRow에서 'D+'+d_day 로 조합)
+        // 배송완료/주문취소 또는 날짜 없으면 null, 아니면 주문일~오늘(KST) 일수
+        let dDayNum = null;
+        if (orderStatus !== '배송완료' && orderStatus !== '주문취소' && createdAt) {
+            try {
+                const kstNow = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Seoul' }));
+                kstNow.setHours(0, 0, 0, 0);
+                const createdDate = new Date(createdAt);
+                createdDate.setHours(0, 0, 0, 0);
+                dDayNum = Math.floor((kstNow - createdDate) / 86400000);
+            } catch (e) { dDayNum = null; }
+        }
 
         // 클라이언트 계산 (폴백 전용)
         const payment_status = orderStatus === '입금대기' ? null : '입금확인';
@@ -1016,7 +1075,7 @@ class OrderDataManager {
         return {
             order_id: order.id,
             order_created_at: createdAt ? new Date(createdAt).toISOString() : null,
-            d_day: dday.text,
+            d_day: dDayNum,
             customer_name: (order.customer_name || '').trim() || '고객명 없음',
             customer_phone_last4: phoneLast4,
             order_items_summary: this.getOrderProductSummary(order),
@@ -1052,19 +1111,19 @@ class OrderDataManager {
         return orders.map(o => this.toOrderRowSpecFromRpc(o));
     }
 
-    // 상태별 badge 클래스 반환
+    // 상태별 배지 클래스 반환 — badge-* 시맨틱 컬러 팔레트
     getStatusColor(status) {
         const statusColors = {
-            '주문접수': 'badge-info',
-            '고객안내': 'badge-info',
-            '입금대기': 'badge-warning',
-            '입금확인': 'badge-success',
-            '상품준비': 'badge-warning',
-            '배송준비': 'badge-warning',
-            '배송중':   'badge-info',
-            '배송완료': 'badge-success',
-            '주문취소': 'badge-neutral',
-            '환불완료': 'badge-neutral',
+            '주문접수': 'badge-warning',   // 노랑 — 처리 대기
+            '고객안내': 'badge-info',       // 파랑 — 안내 중
+            '입금대기': 'badge-orange',     // 주황 — 결제 대기
+            '입금확인': 'badge-success',    // 초록 — 확인 완료
+            '상품준비': 'badge-purple',     // 보라 — 처리 중
+            '배송준비': 'badge-info',       // 파랑 — 출고 준비
+            '배송중':   'badge-sky',        // 하늘 — 이동 중
+            '배송완료': 'badge-success',    // 초록 — 완료
+            '주문취소': 'badge-neutral',    // 회색 — 무효
+            '환불완료': 'badge-danger',     // 빨강 — 반환
         };
         return statusColors[status] || 'badge-neutral';
     }
@@ -1136,10 +1195,16 @@ class OrderDataManager {
     }
     
     // 주문상태 변경
-    async changeOrderStatus(orderId, newStatus) {
+    async changeOrderStatus(orderId, newStatus, refundReason = null) {
+        // 환불완료 시 사유 입력 모달 먼저 표시
+        if (newStatus === '환불완료' && refundReason === null) {
+            this._showRefundReasonModal(orderId);
+            return;
+        }
+
         try {
             console.log('주문상태 변경:', { orderId, newStatus });
-            
+
             // 로딩 상태 표시
             const statusElement = document.querySelector(`[onclick*="toggleOrderStatusEdit('${orderId}'"]`);
             if (statusElement) {
@@ -1150,37 +1215,49 @@ class OrderDataManager {
                     </div>
                 `;
             }
-            
+
             // Supabase 클라이언트 확인
             if (!window.supabaseClient) {
                 console.error('❌ Supabase 클라이언트가 연결되지 않았습니다');
                 alert('데이터베이스 연결이 필요합니다.');
                 return;
             }
-            
+
+            // 업데이트 데이터 구성 (환불 사유 있으면 memo에 추가)
+            const updateData = {
+                order_status: newStatus,
+                updated_at: new Date().toISOString()
+            };
+            if (refundReason) {
+                const { data: ord } = await window.supabaseClient
+                    .from('farm_orders').select('memo').eq('id', orderId).single();
+                const prevMemo = ord?.memo || '';
+                const dateStr = new Date().toLocaleDateString('ko-KR');
+                updateData.memo = prevMemo
+                    ? `${prevMemo}\n[환불사유 ${dateStr}] ${refundReason}`
+                    : `[환불사유 ${dateStr}] ${refundReason}`;
+            }
+
             // Supabase 업데이트
             const { error } = await window.supabaseClient
                 .from('farm_orders')
-                .update({ 
-                    order_status: newStatus,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', orderId);
-            
+
             if (error) {
                 console.error('❌ 주문상태 업데이트 실패:', error);
                 alert('주문상태 업데이트에 실패했습니다: ' + error.message);
                 return;
             }
-            
+
             console.log('✅ 주문상태 업데이트 완료');
-            
+
             // 주문 취소/환불 시 고객 구매 금액 차감 및 재고 복원 처리
             if (newStatus === '주문취소' || newStatus === '환불완료') {
                 await this.handleOrderCancellation(orderId);
                 await this.restoreProductStock(orderId);
             }
-            
+
             const orderIndex = (this.farm_orders || []).findIndex(order => order.id === orderId);
             if (orderIndex !== -1) {
                 this.farm_orders[orderIndex].order_status = newStatus;
@@ -1192,14 +1269,68 @@ class OrderDataManager {
             await this.loadOrders();
             this.renderOrdersTable();
             this.updateFilterCounts();
-            
+
             // 성공 메시지
             this.showStatusChangeSuccess(orderId, newStatus);
-            
+
+            // 입금확인 시 SMS 발송 옵션 제공
+            if (newStatus === '입금확인') {
+                setTimeout(() => {
+                    if (confirm('입금확인 문자를 발송할까요?')) {
+                        if (window.showSMSTemplateModal) {
+                            window.showSMSTemplateModal(orderId);
+                            setTimeout(() => {
+                                const sel = document.getElementById('sms-template-select');
+                                if (sel) { sel.value = 'paymentConfirm'; sel.dispatchEvent(new Event('change')); }
+                            }, 150);
+                        }
+                    }
+                }, 300);
+            }
+
         } catch (error) {
             console.error('❌ 주문상태 변경 실패:', error);
             alert('주문상태 변경에 실패했습니다: ' + error.message);
         }
+    }
+
+    // 환불 사유 입력 모달
+    _showRefundReasonModal(orderId) {
+        const existing = document.getElementById('refund-reason-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'refund-reason-modal';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '600';
+        modal.innerHTML = `
+            <div class="modal-container modal-sm">
+                <div class="modal-header">
+                    <span class="modal-title"><i class="fas fa-undo text-red-500 mr-2"></i>환불 사유 입력</span>
+                    <button id="refund-modal-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
+                </div>
+                <div class="modal-body">
+                    <textarea id="refund-reason-input" rows="3"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
+                        placeholder="환불 사유를 입력하세요 (예: 상품 불량, 단순 변심 등)"></textarea>
+                </div>
+                <div class="modal-footer">
+                    <button id="refund-modal-cancel" class="btn-secondary">취소</button>
+                    <button id="refund-modal-confirm" class="btn-primary"><i class="fas fa-check mr-1"></i>환불완료 처리</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const close = () => modal.remove();
+        modal.querySelector('#refund-modal-close').addEventListener('click', close);
+        modal.querySelector('#refund-modal-cancel').addEventListener('click', close);
+        modal.querySelector('#refund-modal-confirm').addEventListener('click', async () => {
+            const reason = modal.querySelector('#refund-reason-input').value.trim();
+            modal.remove();
+            await this.changeOrderStatus(orderId, '환불완료', reason || '사유 없음');
+        });
+        modal.querySelector('#refund-reason-input').focus();
     }
     
     // 상태 변경 성공 메시지 표시
@@ -1209,11 +1340,10 @@ class OrderDataManager {
         if (statusElement) {
             const statusColor = this.getStatusColor(newStatus);
             statusElement.innerHTML = `
-                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor} shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 group" 
-                      onclick="toggleOrderStatusEdit('${orderId}', '${newStatus}')" 
+                <span class="badge ${statusColor} cursor-pointer"
+                      onclick="toggleOrderStatusEdit('${orderId}', '${newStatus}')"
                       title="클릭하여 주문상태 변경">
                     ${newStatus}
-                    <i class="fas fa-edit ml-1 text-xs opacity-70 group-hover:opacity-100 transition-opacity duration-200"></i>
                 </span>
             `;
             
@@ -1301,77 +1431,67 @@ class OrderDataManager {
     }
     
     // 주문 취소/환불 시 상품 재고 복원
+    // Fix #5/#6: farm_order_items를 DB에서 직접 조회 (this.farm_orders.items에 의존하지 않음)
     async restoreProductStock(orderId) {
         try {
             console.log('🔄 상품 재고 복원 시작:', orderId);
-            
+
             if (!window.supabaseClient) {
                 console.error('❌ Supabase 클라이언트를 찾을 수 없습니다');
                 return;
             }
-            
-            // 주문 정보 조회
-            const order = this.farm_orders.find(o => o.id === orderId);
-            if (!order) {
-                console.error('❌ 주문을 찾을 수 없습니다:', orderId);
+
+            // farm_order_items에서 직접 조회 (메모리의 farm_orders.items에 의존하지 않음)
+            const { data: orderItems, error: itemsError } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('product_id, product_name, quantity')
+                .eq('order_id', orderId);
+
+            if (itemsError) {
+                console.error('❌ 주문 아이템 조회 실패:', itemsError);
                 return;
             }
-            
-            // 주문 아이템 정보 확인
-            const orderItems = order.items ?? [];
-            if (!Array.isArray(orderItems) || orderItems.length === 0) {
-                console.warn('⚠️ 주문 아이템이 없습니다:', orderId);
+            if (!orderItems || orderItems.length === 0) {
+                console.warn('⚠️ 복원할 주문 아이템이 없습니다:', orderId);
                 return;
             }
-            
+
             console.log(`📦 재고 복원할 상품 수: ${orderItems.length}개`);
-            
-            // 각 상품의 재고 복원
+
             for (const item of orderItems) {
                 try {
-                    const productName = item.product_name || item.name;
                     const quantity = parseInt(item.quantity) || 0;
-                    
-                    if (!productName || quantity <= 0) {
-                        console.warn('⚠️ 유효하지 않은 상품 정보:', item);
-                        continue;
-                    }
-                    
-                    // 상품 정보 조회
-                    const { data: product, error: productError } = await window.supabaseClient
+                    if (!item.product_id || quantity <= 0) continue;
+
+                    const { data: product } = await window.supabaseClient
                         .from('farm_products')
                         .select('id, name, stock')
-                        .eq('name', productName)
-                        .single();
-                    
-                    if (productError || !product) {
-                        console.warn(`⚠️ 상품을 찾을 수 없습니다: ${productName}`);
+                        .eq('id', item.product_id)
+                        .maybeSingle();
+
+                    if (!product) {
+                        console.warn(`⚠️ 상품을 찾을 수 없습니다 (id: ${item.product_id}, 이름: ${item.product_name})`);
                         continue;
                     }
-                    
-                    // 재고 복원
+
                     const newStock = (product.stock || 0) + quantity;
                     const { error: updateError } = await window.supabaseClient
                         .from('farm_products')
-                        .update({ 
-                            stock: newStock,
-                            updated_at: new Date().toISOString()
-                        })
+                        .update({ stock: newStock, updated_at: new Date().toISOString() })
                         .eq('id', product.id);
-                    
+
                     if (updateError) {
-                        console.error(`❌ 상품 재고 복원 실패: ${productName}`, updateError);
+                        console.error(`❌ 재고 복원 실패: ${product.name}`, updateError);
                     } else {
-                        console.log(`✅ 상품 재고 복원 완료: ${productName} (+${quantity}개) → ${newStock}개`);
+                        console.log(`✅ 재고 복원: ${product.name} (+${quantity}개) → ${newStock}개`);
                     }
-                    
                 } catch (itemError) {
-                    console.error(`❌ 상품 재고 복원 중 오류:`, itemError);
+                    console.error('❌ 아이템 재고 복원 오류:', itemError);
                 }
             }
-            
+
             console.log('✅ 상품 재고 복원 완료');
-            
+
         } catch (error) {
             console.error('❌ 상품 재고 복원 실패:', error);
         }
@@ -1556,6 +1676,38 @@ class OrderDataManager {
         }
     }
     
+    // 채널 필터 설정 및 테이블 갱신
+    setChannelFilter(channel) {
+        this._channelFilter = channel || '';
+        const status = this.getCurrentFilterStatus();
+        this.renderOrdersTable(status);
+    }
+
+    // 채널 필터 셀렉트 초기화 (farm_channels DB에서 옵션 로드)
+    async initChannelFilterSelect() {
+        const sel = document.getElementById('order-channel-filter');
+        if (!sel) return;
+        try {
+            let channels = [];
+            if (window.salesChannelsDataManager) {
+                await window.salesChannelsDataManager.loadChannels();
+                channels = window.salesChannelsDataManager.getActiveChannels();
+            } else if (window.supabaseClient) {
+                const { data } = await window.supabaseClient
+                    .from('farm_channels')
+                    .select('name, is_active')
+                    .eq('is_active', true)
+                    .order('sort_order', { ascending: true });
+                channels = data || [];
+            }
+            const current = sel.value;
+            sel.innerHTML = '<option value="">전체</option>' +
+                channels.map(c => `<option value="${c.name}"${c.name === current ? ' selected' : ''}>${c.name}</option>`).join('');
+        } catch (e) {
+            console.warn('⚠️ 채널 필터 초기화 실패:', e);
+        }
+    }
+
     // 현재 필터 상태 가져오기 (활성화된 status-tab-btn 기준)
     getCurrentFilterStatus() {
         const active = document.querySelector('.status-tab-btn.active');
@@ -1848,6 +2000,9 @@ window.orderDataManager = orderDataManager;
 /** 대시보드 등에서 get_order_rows 기반 카운트 사용 (단일 소스) */
 window.computeCountsFromOrderRows = computeCountsFromOrderRows;
 
+// 채널 필터 전역 함수
+window.setOrderChannelFilter = (channel) => orderDataManager.setChannelFilter(channel);
+
 // 전역 함수들 등록
 window.toggleOrderStatusEdit = (orderId, currentStatus) => {
     orderDataManager.toggleOrderStatusEdit(orderId, currentStatus);
@@ -1901,8 +2056,9 @@ var ORDER_ROW_PAYMENT_STATUS_ALLOWED = ['입금확인'];
 
 /**
  * ORDER_ROW_DATA_SPEC 검증. Enum 범위 밖 값이 있으면 로그/에러로 즉시 검출.
+ * Fix #14: 개발 모드에서만 등록 — window._DEBUG_ORDER_ROWS = true 설정 필요
  */
-window.validateOrderRowSpec = function () {
+if (window._DEBUG_ORDER_ROWS) window.validateOrderRowSpec = function () {
     if (!window.orderDataManager) {
         console.warn('orderDataManager 없음');
         return { ok: false };
@@ -1984,75 +2140,13 @@ window.validateOrderRowSpec = function () {
     };
 };
 
-/**
- * 테스트용: 주문관리 테이블에 실제로 전달되는 "렌더링 직전 데이터"(filteredOrders)를 콘솔에 출력.
- * renderOrdersTable과 동일: farm_order_rows 우선(있으면) → filterOrdersByStatus(getCurrentFilterStatus()).
- * 개발자 콘솔에서 수동 호출. ORDER_ROW_DATA_SPEC / 10개 필드와 무관.
- */
-window.logRenderedOrderRows = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return;
-    }
-    var filterStatus = orderDataManager.getCurrentFilterStatus();
-    var filteredOrders = orderDataManager.filterOrdersByStatus(filterStatus);
-    var useRows = Array.isArray(orderDataManager.farm_order_rows) && orderDataManager.farm_order_rows.length > 0;
-    console.log('주문관리 테이블 렌더링 직전 데이터 (filteredOrders)');
-    console.log('filterStatus:', filterStatus, '| count:', filteredOrders.length);
-    console.log('data source:', useRows ? 'farm_order_rows → filterOrdersByStatus' : 'farm_orders → filterOrdersByStatus');
-    console.log(filteredOrders);
-    return filteredOrders;
-};
-
-/**
- * 현재 화면에 보이는 목록과 동일 건수의 ORDER_ROW_DATA_SPEC 10필드 JSON 출력.
- * getOrderRowSpecList() = 단일 소스(get_order_rows) 기반 필터 결과와 동일.
- */
-window.logOrderRowSpec = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return [];
-    }
-    var rows = orderDataManager.getOrderRowSpecList();
-    console.log('ORDER_ROW_DATA_SPEC (10 fields), 전체 건수:', rows.length);
-    console.table(rows);
-    console.log(JSON.stringify(rows, null, 2));
-    return rows;
-};
-
-/**
- * 검증: 목록 행 수와 탭 카운트(all) 일치 여부. 카운트는 get_order_rows rows 기반이므로 일치해야 함.
- */
-window.verifyOrderCountsMatch = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return null;
-    }
-    var dm = window.orderDataManager;
-    var listLen = Array.isArray(dm.farm_order_rows) ? dm.farm_order_rows.length : 0;
-    var countRows = dm._lastCountRows || [];
-    var allRow = countRows.find(function (r) { return r.status_key === 'all'; });
-    var countAll = allRow != null ? Number(allRow.count) : NaN;
-    var statusKeys = ['주문접수','고객안내','입금대기','입금확인','상품준비','배송준비','배송중','배송완료','주문취소','환불완료'];
-    var sumByStatus = 0;
-    statusKeys.forEach(function (k) {
-        var r = countRows.find(function (x) { return x.status_key === k; });
-        if (r) sumByStatus += Number(r.count) || 0;
-    });
-    var ok = (listLen === countAll && sumByStatus === countAll);
-    console.log('verifyOrderCountsMatch — 목록 행 수 = 탭 카운트(all) 일치 여부');
-    console.log('  목록 행 수(farm_order_rows.length):', listLen);
-    console.log('  탭 카운트(status_key=all):', countAll);
-    console.log('  상태별 count 합계(주문접수~환불완료):', sumByStatus);
-    console.log('  일치:', ok ? '예' : '아니오');
-    return { listLen: listLen, countAll: countAll, sumByStatus: sumByStatus, ok: ok };
-};
 
 /**
  * 검증용: 상위 n건 샘플만 d_day / order_items_summary / items_subtotal 중심으로 콘솔 출력.
  * get_order_rows 규칙대로 나오는지 확인. 예: logOrderRowSpecSamples(3)
+ * Fix #14: 개발 모드에서만 등록 — window._DEBUG_ORDER_ROWS = true 설정 필요
  */
-window.logOrderRowSpecSamples = function (n) {
+if (window._DEBUG_ORDER_ROWS) window.logOrderRowSpecSamples = function (n) {
     if (!window.orderDataManager) {
         console.warn('orderDataManager 없음');
         return [];
@@ -2076,38 +2170,6 @@ window.logOrderRowSpecSamples = function (n) {
     return samples;
 };
 
-// 디버깅용 전역 함수들
-window.debugBulkActions = function() {
-    console.log('🔍 일괄 작업 디버깅 시작');
-    
-    const selectedCount = orderDataManager.selectedOrders.size;
-    console.log('📊 선택된 주문 수:', selectedCount);
-    console.log('📊 선택된 주문 ID들:', Array.from(orderDataManager.selectedOrders));
-    
-    const bulkContainer = document.getElementById('bulk-action-container');
-    console.log('📦 일괄 작업 컨테이너:', bulkContainer);
-    
-    if (bulkContainer) {
-        console.log('📦 컨테이너 내용:', bulkContainer.innerHTML);
-    }
-    
-    // 강제로 일괄 작업 버튼 표시
-    if (selectedCount > 0) {
-        orderDataManager.forceShowBulkActionButtons();
-        console.log('✅ 일괄 작업 버튼 강제 표시 완료');
-    }
-    
-    return {
-        selectedCount: selectedCount,
-        bulkContainer: bulkContainer,
-        selectedOrders: Array.from(orderDataManager.selectedOrders)
-    };
-};
-
-window.forceShowBulkButtons = function() {
-    console.log('🔄 일괄 작업 버튼 강제 표시');
-    orderDataManager.forceShowBulkActionButtons();
-};
 
 // 고객 구매 금액 차감 함수 전역 등록
 window.deductCustomerPurchaseAmount = (customerPhone, deductAmount) => {
@@ -2172,47 +2234,7 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 디버깅 함수들
-window.debugOrderTable = function() {
-    console.log('🔍 주문 테이블 디버깅 시작');
-    
-    // 테이블 바디 요소 확인
-    const tableBody = document.getElementById('orders-table-body');
-    console.log('📋 테이블 바디:', tableBody);
-    
-    if (tableBody) {
-        console.log('📋 테이블 바디 부모:', tableBody.parentElement);
-        console.log('📋 테이블 바디 내용 길이:', tableBody.innerHTML.length);
-        console.log('📋 테이블 바디 자식 요소 수:', tableBody.children.length);
-        console.log('📋 테이블 바디 첫 번째 자식:', tableBody.firstElementChild);
-    }
-    
-    // 주문 데이터 확인
-    console.log('📊 전체 주문 수:', orderDataManager.farm_orders.length);
-    console.log('📊 필터링된 주문 수:', orderDataManager.filterOrdersByStatus('all').length);
-    
-    // 테이블 렌더링 강제 실행
-    console.log('🔄 테이블 렌더링 강제 실행');
-    orderDataManager.renderOrdersTable('all');
-    
-    return {
-        tableBody: tableBody,
-        orderCount: orderDataManager.farm_orders.length,
-        filteredCount: orderDataManager.filterOrdersByStatus('all').length
-    };
-};
-
-window.forceRenderOrders = function() {
-    console.log('🔄 주문 테이블 강제 렌더링');
-    if (window.orderDataManager) {
-        window.orderDataManager.renderOrdersTable('all');
-    } else {
-        console.error('❌ orderDataManager를 찾을 수 없습니다');
-    }
-};
-
 // 모듈 내보내기
-// renderOrdersTable 함수를 별도로 export
 export function renderOrdersTable(status = 'all') {
     return orderDataManager.renderOrdersTable(status);
 }

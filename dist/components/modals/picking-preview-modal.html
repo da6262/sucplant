@@ -1,33 +1,35 @@
 <!-- 상품별 피킹 미리보기 모달 -->
-<div id="picking-preview-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-6xl w-full max-h-screen overflow-auto">
-            <div class="p-6">
-                <div class="flex justify-end items-center mb-6">
-                    <button id="close-picking-preview-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
-                </div>
-                
-                <div id="picking-preview-content" class="mb-6 p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-96 overflow-auto">
-                    <!-- 미리보기 내용이 여기에 표시됩니다 -->
-                </div>
-                
-                <div class="flex justify-between items-center mt-6 pt-4 border-t border-gray-200">
-                    <div class="text-sm text-gray-600">
-                        <i class="fas fa-info-circle mr-1"></i>
-                        미리보기 화면입니다. 출력 버튼을 클릭하여 실제 인쇄하세요.
-                    </div>
-                    <div class="flex space-x-3">
-                        <button id="print-picking-preview" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg transition-colors">
-                            <i class="fas fa-print mr-2"></i>피킹 리스트 출력
-                        </button>
-                        <button id="close-picking-preview-modal-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                            닫기
-                        </button>
-                    </div>
-                </div>
+<div id="picking-preview-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-xl">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-clipboard-list mr-2 text-gray-600"></i>피킹 리스트 미리보기
+            </span>
+            <button id="close-picking-preview-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 본문 -->
+        <div class="modal-body">
+            <div class="text-sm text-gray-600 mb-3">
+                <i class="fas fa-info-circle mr-1"></i>
+                미리보기 화면입니다. 출력 버튼을 클릭하여 실제 인쇄하세요.
+            </div>
+            <div id="picking-preview-content" class="p-4 border border-gray-200 rounded-lg bg-gray-50 min-h-96 overflow-auto">
+                <!-- 미리보기 내용이 여기에 표시됩니다 -->
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="close-picking-preview-modal-btn" class="btn-secondary">닫기</button>
+            <button id="print-picking-preview" class="btn-primary">
+                <i class="fas fa-print mr-1"></i>피킹 리스트 출력
+            </button>
+        </div>
+
     </div>
 </div>
