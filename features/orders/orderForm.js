@@ -3071,28 +3071,61 @@ function resetExtraShipping() {
     _updateExtraShippingBadge();
 }
 
-// 메인 주소 필드용 Daum 주소 검색
-function openMainAddressSearch() {
+// 카카오 주소 검색 — embed 오버레이 공통 헬퍼
+function _openPostcodeOverlay(query, onComplete) {
     if (typeof daum === 'undefined' || !daum.Postcode) {
         alert('주소 검색 서비스 로딩 중입니다. 잠시 후 다시 시도해주세요.');
         _preloadDaumPostcode();
         return;
     }
-    const currentInput = document.getElementById('order-customer-address')?.value?.trim() || '';
+
+    const overlay = document.createElement('div');
+    overlay.style.cssText = [
+        'position:fixed', 'inset:0', 'background:rgba(0,0,0,0.5)',
+        'z-index:99999', 'display:flex', 'align-items:center', 'justify-content:center'
+    ].join(';');
+
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;width:500px;height:550px;background:#fff;border-radius:8px;overflow:hidden;';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.textContent = '✕';
+    closeBtn.style.cssText = [
+        'position:absolute', 'top:6px', 'right:8px', 'z-index:1',
+        'background:none', 'border:none', 'font-size:18px', 'cursor:pointer', 'color:#555'
+    ].join(';');
+    const remove = () => { if (document.body.contains(overlay)) document.body.removeChild(overlay); };
+    closeBtn.onclick = remove;
+    overlay.addEventListener('mousedown', e => { if (e.target === overlay) remove(); });
+
+    wrap.appendChild(closeBtn);
+    overlay.appendChild(wrap);
+    document.body.appendChild(overlay);
+
     new daum.Postcode({
-        q: currentInput,
+        q: query,
         oncomplete: function(data) {
-            const addr = data.roadAddress || data.jibunAddress || '';
-            const addrField = document.getElementById('order-customer-address');
-            const detailField = document.getElementById('order-customer-address-detail');
-            if (addrField) {
-                addrField.removeAttribute('readonly');
-                addrField.value = addr;
-                addrField.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            if (detailField) detailField.focus();
+            remove();
+            onComplete(data);
+        },
+        onclose: remove
+    }).embed(wrap);
+}
+
+// 메인 주소 필드용 Daum 주소 검색
+function openMainAddressSearch() {
+    const currentInput = document.getElementById('order-customer-address')?.value?.trim() || '';
+    _openPostcodeOverlay(currentInput, function(data) {
+        const addr = data.roadAddress || data.jibunAddress || '';
+        const addrField = document.getElementById('order-customer-address');
+        const detailField = document.getElementById('order-customer-address-detail');
+        if (addrField) {
+            addrField.removeAttribute('readonly');
+            addrField.value = addr;
+            addrField.dispatchEvent(new Event('input', { bubbles: true }));
         }
-    }).open();
+        if (detailField) detailField.focus();
+    });
 }
 window.openMainAddressSearch = openMainAddressSearch;
 
@@ -3105,27 +3138,19 @@ function _preloadDaumPostcode() {
     document.head.appendChild(s);
 }
 
-// 추가 배송지용 Daum 주소 검색 — 동기 호출로 팝업 차단 회피
+// 추가 배송지용 Daum 주소 검색
 function openExtraShippingAddressSearch(idx) {
-    if (typeof daum === 'undefined' || !daum.Postcode) {
-        alert('주소 검색 서비스 로딩 중입니다. 잠시 후 다시 시도해주세요.');
-        _preloadDaumPostcode();
-        return;
-    }
     const currentInput = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
-    new daum.Postcode({
-        q: currentInput,   // 입력한 주소로 바로 검색 결과 표시
-        oncomplete: function(data) {
-            const addr = data.roadAddress || data.jibunAddress || '';
-            const addrField = document.getElementById(`es-address-${idx}`);
-            const detailField = document.getElementById(`es-detail-${idx}`);
-            if (addrField) {
-                addrField.value = addr;
-                addrField.dispatchEvent(new Event('input', { bubbles: true }));
-            }
-            if (detailField) detailField.focus();
+    _openPostcodeOverlay(currentInput, function(data) {
+        const addr = data.roadAddress || data.jibunAddress || '';
+        const addrField = document.getElementById(`es-address-${idx}`);
+        const detailField = document.getElementById(`es-detail-${idx}`);
+        if (addrField) {
+            addrField.value = addr;
+            addrField.dispatchEvent(new Event('input', { bubbles: true }));
         }
-    }).open();
+        if (detailField) detailField.focus();
+    });
 }
 
 window.addExtraShipping    = addExtraShipping;
