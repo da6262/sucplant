@@ -872,10 +872,21 @@ function attachOrderEventListeners() {
             });
         }
         
+        // 페이지당 표시 수 선택
+        const orderPageSize = document.getElementById('order-page-size');
+        if (orderPageSize) {
+            orderPageSize.addEventListener('change', function() {
+                if (window.orderDataManager) {
+                    window.orderDataManager.renderOrdersTable();
+                }
+            });
+            console.log('✅ 주문 페이지 크기 선택 이벤트 리스너 연결 완료');
+        }
+
         // 이벤트 리스너 연결 완료 플래그 설정
         window.orderEventListenersAttached = true;
         console.log('🔗 주문관리 이벤트 리스너 연결 완료');
-        
+
     } catch (error) {
         console.error('❌ 주문관리 이벤트 리스너 연결 실패:', error);
         // 오류가 발생해도 기본적인 기능은 유지

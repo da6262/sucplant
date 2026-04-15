@@ -650,6 +650,19 @@ class OrderDataManager {
             const filterStatus = status !== undefined && status !== null ? status : this.getCurrentFilterStatus();
             const filteredOrders = this.filterOrdersByStatus(filterStatus);
             console.log(`📊 렌더링할 주문 수: ${filteredOrders.length}개`);
+
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('order-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 50;
+            const pagedOrders = pageSize === 0 ? filteredOrders : filteredOrders.slice(0, pageSize);
+
+            // 하단 상태 바 업데이트
+            const orderTotalEl = document.getElementById('order-status-total');
+            const orderCountEl = document.getElementById('order-list-count');
+            if (orderTotalEl) orderTotalEl.textContent = String(filteredOrders.length);
+            if (orderCountEl) orderCountEl.textContent = pageSize === 0 || pagedOrders.length === filteredOrders.length
+                ? `${filteredOrders.length}건 표시`
+                : `${pagedOrders.length} / ${filteredOrders.length}건 표시`;
             
             // 테이블 바디 요소 찾기
             const tableBody = document.getElementById('orders-table-body');
@@ -692,7 +705,7 @@ class OrderDataManager {
             } else {
                 // 각 주문 행을 렌더링
                 console.log('🔄 주문 행 렌더링 시작...');
-                const rowsHTML = filteredOrders.map((order, index) => {
+                const rowsHTML = pagedOrders.map((order, index) => {
                     try {
                         console.log(`📝 주문 ${index + 1}/${filteredOrders.length} 렌더링:`, order.id);
                         const rowHTML = this.renderOrderRow(order);

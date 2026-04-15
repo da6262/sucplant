@@ -33,8 +33,8 @@ const PRODUCT_TABLE_COLUMNS = [
 const COMMON_STYLES = {
     table: {
         row: 'hover:bg-gray-50',
-        cell: 'px-2.5 py-2 text-xs text-gray-900',
-        cellCenter: 'px-2.5 py-2 text-center text-xs'
+        cell: 'px-2.5 py-1.5 text-xs text-gray-900',
+        cellCenter: 'px-2.5 py-1.5 text-center text-xs'
     },
     button: {
         edit: 'p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded cursor-pointer border-none bg-transparent',
@@ -1253,7 +1253,16 @@ export class ProductUI {
                     this.resetFilters();
                 });
             }
-            
+
+            // 페이지당 표시 수 선택
+            const productPageSizeEl = document.getElementById('product-page-size');
+            if (productPageSizeEl && !productPageSizeEl._pageSizeListened) {
+                productPageSizeEl._pageSizeListened = true;
+                productPageSizeEl.addEventListener('change', () => {
+                    this.renderProductsTable();
+                });
+            }
+
             console.log('✅ 상품 필터 기능 초기화 완료');
         } catch (error) {
             console.error('❌ 상품 필터 기능 초기화 실패:', error);
@@ -1536,7 +1545,20 @@ export class ProductUI {
             const products = productDataManager.getAllProducts();
             console.log('📊 로드된 상품 수:', products.length);
                 console.log('📋 상품 데이터:', products);
-            
+
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('product-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+            const pagedProducts = pageSize === 0 ? products : products.slice(0, pageSize);
+
+            // 하단 카운트 업데이트
+            const productTotalEl = document.getElementById('product-status-total');
+            const productCountEl = document.getElementById('product-list-count');
+            if (productTotalEl) productTotalEl.textContent = String(products.length);
+            if (productCountEl) productCountEl.textContent = pageSize === 0 || pagedProducts.length === products.length
+                ? `${products.length}개 표시`
+                : `${pagedProducts.length} / ${products.length}개 표시`;
+
             if (products.length === 0) {
                 tbody.innerHTML = `
                     <tr>
@@ -1548,10 +1570,10 @@ export class ProductUI {
                 `;
                 return;
             }
-            
+
                 // 상품 목록 렌더링 (컬럼 정의 + 공통 스타일 사용)
                 console.log('🎨 상품 테이블 HTML 생성 중...');
-            tbody.innerHTML = products.map(product => `
+            tbody.innerHTML = pagedProducts.map(product => `
                     <tr class="${COMMON_STYLES.table.row}" data-product-id="${product.id}">
                         ${PRODUCT_TABLE_COLUMNS.map(column => {
                             if (column.type === 'checkbox') {

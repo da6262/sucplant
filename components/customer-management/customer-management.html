@@ -65,7 +65,18 @@
     <!-- 하단 상태 바 -->
     <footer id="customer-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
         <span>총 <strong id="customer-status-total">0</strong>명 · <span id="customer-list-count">0명 표시</span></span>
-        <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
+        <div class="flex items-center gap-2">
+            <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
+            <span class="text-gray-300">|</span>
+            <label class="flex items-center gap-1 text-gray-500">표시
+                <select id="customer-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="10">10명</option>
+                    <option value="20" selected>20명</option>
+                    <option value="50">50명</option>
+                    <option value="0">전체</option>
+                </select>
+            </label>
+        </div>
     </footer>
 </div>
 

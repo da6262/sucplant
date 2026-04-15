@@ -176,9 +176,16 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             return;
         }
 
+        // 페이지당 표시 수 적용
+        const pageSizeEl = document.getElementById('customer-page-size');
+        const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+        const pagedCustomers = pageSize === 0 ? customers : customers.slice(0, pageSize);
+
         // 목록 개수 표시
         const countEl = document.getElementById('customer-list-count');
-        if (countEl) countEl.textContent = `${customers.length}명`;
+        if (countEl) countEl.textContent = pageSize === 0 || pagedCustomers.length === customers.length
+            ? `${customers.length}명 표시`
+            : `${pagedCustomers.length} / ${customers.length}명 표시`;
 
         // 하단 상태 바
         const totalEl = document.getElementById('customer-status-total');
@@ -204,7 +211,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
 
         // HTML을 먼저 문자열로 조립한 뒤 한 번에 교체 (깜박임 방지)
         const fragment = document.createDocumentFragment();
-        for (const customer of customers) {
+        for (const customer of pagedCustomers) {
             const normalized = (customer.grade && String(customer.grade).trim()) || 'GENERAL';
             const gradeDisplayName = gradeNameMap[normalized] || normalized;
             const phoneKey = normalizePhoneForOrder(customer.phone);

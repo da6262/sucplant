@@ -227,10 +227,23 @@ export class WaitlistUI {
                 return;
             }
             
+            // 페이지 크기 적용
+            const pageSizeEl = document.getElementById('waitlist-page-size');
+            const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
+            const pagedWaitlist = pageSize === 0 ? waitlist : waitlist.slice(0, pageSize);
+
+            // 하단 카운트 업데이트
+            const totalEl = document.getElementById('waitlist-status-total');
+            const countEl = document.getElementById('waitlist-list-count');
+            if (totalEl) totalEl.textContent = String(waitlist.length);
+            if (countEl) countEl.textContent = pageSize === 0 || pagedWaitlist.length === waitlist.length
+                ? `${waitlist.length}명 표시`
+                : `${pagedWaitlist.length} / ${waitlist.length}명 표시`;
+
             // 성능 최적화: DocumentFragment 사용
             const fragment = document.createDocumentFragment();
-            
-            if (waitlist.length === 0) {
+
+            if (pagedWaitlist.length === 0) {
                 const emptyRow = document.createElement('tr');
                 emptyRow.innerHTML = `
                     <td colspan="8" class="text-center py-8 text-gray-500">
@@ -240,20 +253,20 @@ export class WaitlistUI {
                 fragment.appendChild(emptyRow);
             } else {
                 // 대기자 목록 렌더링 (DocumentFragment로 배치 처리)
-                waitlist.forEach((item, index) => {
+                pagedWaitlist.forEach((item, index) => {
                     const row = this.createWaitlistRow(item, index);
                     fragment.appendChild(row);
                 });
             }
-            
+
             // 한 번에 DOM에 추가 (성능 최적화)
             tbody.innerHTML = '';
             tbody.appendChild(fragment);
-            
+
             // 통계 업데이트
             this.updateWaitlistStats();
-            
-            console.log(`✅ 대기자 목록 테이블 렌더링 완료: ${waitlist.length}개`);
+
+            console.log(`✅ 대기자 목록 테이블 렌더링 완료: ${pagedWaitlist.length}/${waitlist.length}개`);
         } catch (error) {
             console.error('❌ 대기자 목록 테이블 렌더링 실패:', error);
         }
@@ -267,17 +280,17 @@ export class WaitlistUI {
         row.className = 'hover:bg-gray-50 transition-colors';
         const nd = '<span class="td-null">—</span>';
         row.innerHTML = `
-            <td class="px-2.5 py-2 td-muted text-center">${index + 1}</td>
-            <td class="px-2.5 py-2 td-primary td-link">${item.customer_name || nd}</td>
-            <td class="px-2.5 py-2 td-secondary">${formatPhone(item.customer_phone)}</td>
-            <td class="px-2.5 py-2 td-primary">${item.product_name || nd}</td>
-            <td class="px-2.5 py-2 td-secondary">${item.product_category || nd}</td>
-            <td class="px-2.5 py-2 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
-            <td class="px-2.5 py-2 text-center">
+            <td class="px-2.5 py-1.5 td-muted text-center">${index + 1}</td>
+            <td class="px-2.5 py-1.5 td-primary td-link">${item.customer_name || nd}</td>
+            <td class="px-2.5 py-1.5 td-secondary">${formatPhone(item.customer_phone)}</td>
+            <td class="px-2.5 py-1.5 td-primary">${item.product_name || nd}</td>
+            <td class="px-2.5 py-1.5 td-secondary">${item.product_category || nd}</td>
+            <td class="px-2.5 py-1.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
+            <td class="px-2.5 py-1.5 text-center">
                 <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
             </td>
-            <td class="px-2.5 py-2 td-muted">${formatDate(item.register_date) || nd}</td>
-            <td class="px-2.5 py-2 text-center">
+            <td class="px-2.5 py-1.5 td-muted">${formatDate(item.register_date) || nd}</td>
+            <td class="px-2.5 py-1.5 text-center">
                 <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
                             class="btn-icon btn-icon-edit"

@@ -1079,8 +1079,20 @@ function attachCustomerEventListeners() {
             console.log('✅ 고객 저장 버튼 이벤트 리스너 연결 완료');
         }
         
+        // 페이지당 표시 수 선택
+        const customerPageSize = document.getElementById('customer-page-size');
+        if (customerPageSize) {
+            customerPageSize.addEventListener('change', function() {
+                const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+                const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+                const searchTerm = customerSearch ? customerSearch.value.trim() : '';
+                if (window.renderCustomersTable) window.renderCustomersTable(gradeFilter, searchTerm);
+            });
+            console.log('✅ 페이지 크기 선택 이벤트 리스너 연결 완료');
+        }
+
         console.log('✅ 고객관리 이벤트 리스너 연결 완료');
-        
+
     } catch (error) {
         console.error('❌ 고객관리 이벤트 리스너 연결 실패:', error);
     }

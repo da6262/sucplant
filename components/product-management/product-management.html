@@ -60,21 +60,33 @@
     </table>
 </div>
 
-<!-- 페이지네이션 -->
-<div class="px-3 py-1.5 flex items-center justify-between border-t border-gray-100 bg-white">
-    <span class="text-xs text-gray-500"><span id="products-pagination-info">페이지 정보</span></span>
-    <div class="flex items-center gap-1">
-        <button id="products-pagination-prev" class="btn-secondary" style="padding:3px 8px;">
-            <i class="fas fa-chevron-left text-xs"></i>
-        </button>
-        <div id="products-pagination-numbers" class="flex gap-1"></div>
-        <button id="products-pagination-next" class="btn-secondary" style="padding:3px 8px;">
-            <i class="fas fa-chevron-right text-xs"></i>
-        </button>
-        <button id="prev-products-page-btn" class="hidden"></button>
-        <button id="next-products-page-btn" class="hidden"></button>
+<!-- 페이지네이션 / 하단 상태 바 -->
+<footer id="product-status-footer" class="shrink-0 px-3 py-1.5 flex items-center justify-between border-t border-gray-100 bg-white text-xs text-gray-600">
+    <span>총 <strong id="product-status-total">0</strong>개 · <span id="product-list-count">0개 표시</span></span>
+    <div class="flex items-center gap-2">
+        <span id="products-pagination-info" class="text-gray-400"></span>
+        <div class="flex items-center gap-1">
+            <button id="products-pagination-prev" class="btn-secondary" style="padding:3px 8px;">
+                <i class="fas fa-chevron-left text-xs"></i>
+            </button>
+            <div id="products-pagination-numbers" class="flex gap-1"></div>
+            <button id="products-pagination-next" class="btn-secondary" style="padding:3px 8px;">
+                <i class="fas fa-chevron-right text-xs"></i>
+            </button>
+            <button id="prev-products-page-btn" class="hidden"></button>
+            <button id="next-products-page-btn" class="hidden"></button>
+        </div>
+        <span class="text-gray-300">|</span>
+        <label class="flex items-center gap-1 text-gray-500">표시
+            <select id="product-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                <option value="10">10개</option>
+                <option value="20" selected>20개</option>
+                <option value="50">50개</option>
+                <option value="0">전체</option>
+            </select>
+        </label>
     </div>
-</div>
+</footer>
 
 <!-- 상품 일괄 등록 모달 -->
 <div id="product-import-modal" class="modal-overlay" style="display:none;">
