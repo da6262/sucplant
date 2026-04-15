@@ -111,68 +111,10 @@ async function loadOrderManagementComponent() {
 }
 
 // 이벤트 리스너 정리 함수
+// orders-section은 loadOrderManagementComponent에서 innerHTML=''로 통째로 교체되므로
+// cloneNode/replaceChild 불필요. body에 달린 order-modal은 건드리지 않는다.
 function cleanupOrderEventListeners() {
-    try {
-        console.log('🧹 주문관리 이벤트 리스너 정리 중...');
-        
-        // 모든 주문관리 관련 이벤트 리스너를 강제로 제거
-        const orderElements = [
-            'add-order-btn',
-            'order-search',
-            'order-filter',
-            'order-sort',
-            'refresh-orders',
-            'export-orders',
-            'import-orders'
-        ];
-        
-        orderElements.forEach(elementId => {
-            const element = document.getElementById(elementId);
-            if (element) {
-                // 기존 이벤트 리스너를 완전히 제거하기 위해 요소를 복제
-                const newElement = element.cloneNode(true);
-                element.parentNode.replaceChild(newElement, element);
-            }
-        });
-        
-        // 상태 탭 버튼들 정리
-        const statusTabs = document.querySelectorAll('.status-tab-btn');
-        statusTabs.forEach(tab => {
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
-        });
-        
-        // 주문 테이블 관련 이벤트 리스너 정리
-        const orderTable = document.getElementById('orders-table');
-        if (orderTable) {
-            const newTable = orderTable.cloneNode(true);
-            orderTable.parentNode.replaceChild(newTable, orderTable);
-        }
-        
-        // 주문 모달 관련 이벤트 리스너 정리
-        const orderModal = document.getElementById('order-modal');
-        if (orderModal) {
-            const newModal = orderModal.cloneNode(true);
-            orderModal.parentNode.replaceChild(newModal, orderModal);
-        }
-        
-        // 전역 이벤트 리스너 정리
-        if (window.orderEventListeners) {
-            window.orderEventListeners.forEach(listener => {
-                if (listener.element && listener.event && listener.handler) {
-                    listener.element.removeEventListener(listener.event, listener.handler);
-                }
-            });
-            window.orderEventListeners = [];
-        }
-        
-        // 이벤트 리스너 연결 플래그 리셋
-        window.orderEventListenersAttached = false;
-        
-        console.log('✅ 주문관리 이벤트 리스너 정리 완료');
-    } catch (error) {
-        console.error('❌ 이벤트 리스너 정리 실패:', error);
-    }
+    window.orderEventListenersAttached = false;
 }
 
 // DOM 완전 로딩 대기 및 초기화 함수
@@ -217,9 +159,6 @@ async function waitForDOMAndInitialize() {
 async function initializeOrderManagement() {
     try {
         console.log('🔄 주문관리 초기화 시작');
-        
-        // 기존 이벤트 리스너 정리
-        cleanupOrderEventListeners();
         
         // 새 주문 저장 후 이동 시 pendingOrderStatus 플래그로 목표 탭 결정
         // 그 외에는 기본 all(전체) 탭
@@ -283,17 +222,18 @@ async function initializeOrderManagement() {
     }
 }
 
-// 주문 상세 모달 로드
+// 주문 상세 모달 로드 (중복 방지: 이미 존재하면 재사용)
 async function loadOrderDetailModal() {
     try {
+        if (document.getElementById('order-detail-modal')) return; // 이미 있으면 스킵
         console.log('📦 주문 상세 모달 컴포넌트 로드 중...');
-        
+
         const response = await fetch('components/modals/order-detail-modal.html');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
         const modalHTML = await response.text();
-        
+
         // 모달을 body에 추가
         document.body.insertAdjacentHTML('beforeend', modalHTML);
         console.log('✅ 주문 상세 모달 컴포넌트 로드 완료');
