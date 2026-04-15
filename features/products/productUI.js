@@ -11,7 +11,7 @@ const PRODUCT_FORM_FIELDS = [
     { id: 'wholesale-price', label: '매입가', type: 'number', min: 0, step: 1000 },
     { id: 'stock', label: '재고수량', type: 'number', required: true, min: 0 },
     { id: 'size', label: '사이즈', type: 'select', options: ['소', '중', '대', '특대', '직접 기입'] },
-    { id: 'shipping', label: '배송 옵션', type: 'select', required: true, options: ['일반배송', '당일배송', '직접배송', '픽업'] },
+    { id: 'shipping_option', label: '배송 옵션', type: 'select', required: true, options: ['일반배송', '당일배송', '직접배송', '픽업'] },
     { id: 'description', label: '상품설명', type: 'textarea', rows: 3 },
     { id: 'image', label: '상품 이미지 URL', type: 'url', placeholder: 'https://example.com/image.jpg' }
 ];
@@ -25,7 +25,7 @@ const PRODUCT_TABLE_COLUMNS = [
     { key: 'size', label: '사이즈', width: 'w-1/6' },
     { key: 'price', label: '판매가', width: 'w-1/6', format: 'currency' },
     { key: 'stock', label: '재고', width: 'w-1/12', format: 'number' },
-    { key: 'shipping', label: '배송옵션', width: 'w-1/6' },
+    { key: 'shipping_option', label: '배송옵션', width: 'w-1/6' },
     { key: 'actions', label: '관리', width: 'w-1/12', type: 'actions' }
 ];
 
@@ -1444,7 +1444,7 @@ export class ProductUI {
                         let formattedValue = value || '-';
                         
                         // 배송옵션 값 변환
-                        if (column.key === 'shipping' && value) {
+                        if (column.key === 'shipping_option' && value) {
                             const shippingMap = {
                                 'always_free': '무료배송',
                                 'normal': '일반배송',
@@ -1578,7 +1578,7 @@ export class ProductUI {
                                 formattedValue = '로딩중...';
                             } else if (value && typeof value === 'object' && value.toString && value.toString().includes('[object Promise]')) {
                                 formattedValue = 'P' + Date.now().toString().slice(-6);
-                            } else if (column.key === 'shipping' && value) {
+                            } else if (column.key === 'shipping_option' && value) {
                                 // 배송옵션 값 변환
                                 const shippingMap = {
                                     'always_free': '무료배송',
@@ -1772,9 +1772,6 @@ export class ProductUI {
                     
                     // 상품 데이터 업데이트
                     product[field] = convertedValue;
-                    if (field === 'shipping') {
-                        product.shipping_option = convertedValue;
-                    }
                     
                     // Supabase에 저장
                     await productDataManager.saveProducts();
