@@ -401,34 +401,24 @@ class ProductManagementComponent {
                          : 'badge badge-green';
 
         row.innerHTML = `
-            <td class="px-2 text-center">
+            <td class="text-center">
                 <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
             </td>
-            <td class="px-2 whitespace-nowrap td-muted text-2xs">${product.product_code || '-'}</td>
-            <td class="px-2 whitespace-nowrap">
-                <div class="product-name-link text-xs font-medium text-gray-800 cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
-                ${product.description ? `<div class="text-gray-400 text-2xs truncate max-w-[160px]">${product.description}</div>` : ''}
+            <td class="td-muted">${product.product_code || '-'}</td>
+            <td class="td-primary">
+                <div class="product-name-link cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
+                ${product.description ? `<div class="td-muted truncate" style="max-width:160px">${product.description}</div>` : ''}
             </td>
-            <td class="px-2 whitespace-nowrap">
-                <span class="badge badge-blue text-2xs">${product.category || '미분류'}</span>
-            </td>
-            <td class="px-2 whitespace-nowrap td-muted text-xs">${product.size || '-'}</td>
-            <td class="px-2 whitespace-nowrap text-right text-numeric">${this.formatCurrency(product.price)}</td>
-            <td class="px-2 whitespace-nowrap text-right">
-                <span class="${stockColor}">${product.stock || 0}개</span>
-            </td>
-            <td class="px-2 whitespace-nowrap td-muted text-xs">${product.shipping_option || '-'}</td>
-            <td class="px-2 whitespace-nowrap text-center">
+            <td><span class="badge badge-blue">${product.category || '미분류'}</span></td>
+            <td class="td-secondary">${product.size || '-'}</td>
+            <td class="td-amount">${this.formatCurrency(product.price)}</td>
+            <td class="td-num"><span class="${stockColor}">${product.stock || 0}개</span></td>
+            <td class="td-secondary">${product.shipping_option || '-'}</td>
+            <td class="text-center">
                 <div class="btn-group">
-                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
-                        <i class="fas fa-pen"></i>
-                    </button>
-                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정"><i class="fas fa-pen"></i></button>
+                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제"><i class="fas fa-copy"></i></button>
+                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제"><i class="fas fa-trash"></i></button>
                 </div>
             </td>
         `;

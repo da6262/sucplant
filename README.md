@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.92-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.93-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.93 | refactor: 상품관리 테이블 셀 클래스 시맨틱 통일 — `createProductRow()`의 인라인 Tailwind 클래스(`px-2 whitespace-nowrap text-xs font-medium text-gray-800` 등)를 `td-primary`·`td-secondary`·`td-muted`·`td-amount`·`td-num` 시맨틱 클래스로 교체, 고객관리·주문관리와 디자인 시스템 통일 |
 | v3.2.92 | fix: 콘솔 오류 완전 제거 — `index.html` 존재하지 않는 스크립트 참조 7개 제거(`auto-waitlist-improvement.js` · `waitlist-data-migration.js` · `waitlist-autocomplete-fix.js` · `waitlist-data-cleanup.js` · `fix-order-data.js` · `fix-module-loading.js` · `web-fallback-system.js`), `loadScriptConditionally` 블록 삭제. fix: `main.js` `updateCategoryDropdown` import 오류 — `categoryUI.js`에서 함수명이 `updateProductCategoryDropdown`으로 변경됐으나 import 미갱신으로 발생한 `SyntaxError` 수정 (별칭 import `as updateCategoryDropdown` 적용) |
 | v3.2.91 | feat: 주소 입력 실시간 검색 — 주소 입력창 `readonly`+검색버튼 방식을 타이핑 자동완성으로 전환, 2글자 이상 입력 시 350ms 디바운스 후 Daum 우편번호 iframe 임베드, 주소 선택 시 닫히며 상세주소로 포커스, 외부 클릭 닫기. `onfocus` 핸들러 제거로 모달 열릴 때 빈 값으로 API 호출하는 콘솔 에러 원인 제거 |
 | v3.2.90 | feat: 고객 등록/관리 UX 개선 3종 — ①동명이인 허용(전화번호 다르면 등록 가능, 중복 시 confirm 다이얼로그로 전환) ②고객 삭제 FK 방어(주문 내역 있으면 삭제 차단·안내 메시지) ③고객 등록 모달 `form-grid` 컴팩트 디자인 통일 |
