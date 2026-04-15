@@ -222,7 +222,7 @@ async function initializeOrderManagement() {
         cleanupOrderEventListeners();
         
         // 새 주문 저장 후 이동 시 pendingOrderStatus 플래그로 목표 탭 결정
-        // 그 외에는 기본 work_todo(처리할 주문) 탭
+        // 그 외에는 기본 all(전체) 탭
         const pendingStatus = window._pendingOrderStatus || null;
         window._pendingOrderStatus = null; // 소비 후 초기화
 
@@ -238,8 +238,8 @@ async function initializeOrderManagement() {
         };
         const activeTabId = pendingStatus
             ? (statusToTabId[pendingStatus] || `status-${pendingStatus}`)
-            : 'status-work_todo';
-        const activeStatus = pendingStatus || 'work_todo';
+            : 'status-all';
+        const activeStatus = pendingStatus || 'all';
 
         document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
         const activeTab = document.getElementById(activeTabId);

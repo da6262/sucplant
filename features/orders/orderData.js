@@ -376,6 +376,17 @@ class OrderDataManager {
             const el = document.getElementById(`count-${key}`);
             if (el) el.textContent = map[key] != null ? map[key] : 0;
         });
+        // 네비게이션 '처리할 주문' 뱃지 업데이트
+        const todoCount = map['work_todo'] || 0;
+        const navBadge = document.getElementById('nav-order-todo-badge');
+        if (navBadge) {
+            if (todoCount > 0) {
+                navBadge.textContent = todoCount > 99 ? '99+' : todoCount;
+                navBadge.style.display = 'flex';
+            } else {
+                navBadge.style.display = 'none';
+            }
+        }
     }
 
     // 주문 아이템들에 상품명 정보 보강

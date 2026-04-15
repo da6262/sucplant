@@ -1310,7 +1310,7 @@ async function collectOrderFormData() {
             customer_address: fullAddress,
             customer_address_base: baseAddress,
             customer_address_detail: detailAddress,
-            order_status: document.getElementById('order-status')?.value || '입금대기',
+            order_status: document.getElementById('order-status')?.value || '주문접수',
             order_channel: document.getElementById('order-channel')?.value || '',
             shipping_method: document.getElementById('shipping-method')?.value || '택배',
             memo: document.getElementById('order-memo')?.value || '',
