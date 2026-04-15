@@ -364,9 +364,26 @@ if (!window.showSettingsTab) {
                     targetTabButton.classList.add('active');
                 }
                 
-                // SMS 설정 탭인 경우 특별 처리
-                if (tabName === 'sms') {
-                    loadSMSSettings();
+                // 탭별 데이터 로드
+                switch (tabName) {
+                    case 'general':
+                        if (window.loadGeneralSettings) window.loadGeneralSettings();
+                        break;
+                    case 'shipping':
+                        if (window.loadShippingSettings) window.loadShippingSettings();
+                        break;
+                    case 'channels':
+                        if (window.loadSalesChannels) window.loadSalesChannels();
+                        break;
+                    case 'orders':
+                        if (window.loadOrderStatuses) window.loadOrderStatuses();
+                        break;
+                    case 'customers':
+                        if (window.loadCustomerGrades) window.loadCustomerGrades();
+                        break;
+                    case 'sms':
+                        loadSMSSettings();
+                        break;
                 }
             } else {
                 console.warn('⚠️ 환경설정 탭을 찾을 수 없습니다:', tabName);
