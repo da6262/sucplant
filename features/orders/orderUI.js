@@ -1210,49 +1210,4 @@ export function printOrder(orderId) {
     }
 }
 
-// 디버깅 함수들
-window.testProductInfo = async function(productId) {
-    console.log('🧪 상품 정보 조회 테스트:', productId);
-    const productInfo = await getProductInfo(productId);
-    console.log('📦 조회 결과:', productInfo);
-    return productInfo;
-};
-
-window.testOrderEdit = function(orderId) {
-    console.log('🧪 주문 수정 테스트:', orderId);
-    if (window.openOrderModal) {
-        window.openOrderModal(orderId);
-    } else {
-        console.error('❌ openOrderModal 함수를 찾을 수 없습니다');
-    }
-};
-
-window.testProductQuery = async function(productId) {
-    console.log('🧪 상품 조회 쿼리 테스트:', productId);
-    
-    if (!window.supabaseClient) {
-        console.error('❌ Supabase 클라이언트가 없습니다');
-        return null;
-    }
-    
-    try {
-        const { data: product, error } = await window.supabaseClient
-            .from('farm_products')
-            .select('id, name, price, description, category, stock, image_url')
-            .eq('id', productId)
-            .single();
-        
-        if (error) {
-            console.error('❌ 상품 조회 실패:', error);
-            return null;
-        }
-        
-        console.log('✅ 상품 조회 성공:', product);
-        return product;
-        
-    } catch (error) {
-        console.error('❌ 상품 조회 중 오류:', error);
-        return null;
-    }
-};
 

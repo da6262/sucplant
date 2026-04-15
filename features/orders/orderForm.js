@@ -1904,118 +1904,7 @@ window.clearAllSelections = clearAllSelections;
 window.addSelectedProductsToCart = addSelectedProductsToCart;
 window.handleOrderSubmit = handleOrderSubmit;
 
-// 디버깅 함수들
-window.testOrderButton = function() {
-    console.log('🧪 주문 등록 버튼 테스트 시작');
-    
-    // 새 주문 등록 버튼 확인
-    const addOrderBtn = document.getElementById('add-order-btn');
-    console.log('🔍 새 주문 등록 버튼:', addOrderBtn);
-    
-    // 주문 모달 확인
-    const orderModal = document.getElementById('order-modal');
-    console.log('🔍 주문 모달:', orderModal);
-    
-    // 주문 폼 확인
-    const orderForm = document.getElementById('order-form');
-    console.log('🔍 주문 폼:', orderForm);
-    
-    // 주문 등록 버튼 확인
-    const submitButton = document.querySelector('button[type="submit"][form="order-form"]');
-    const orderSubmitButton = document.querySelector('button[data-order-submit="true"]');
-    console.log('🔍 주문 등록 버튼 (form):', submitButton);
-    console.log('🔍 주문 등록 버튼 (data):', orderSubmitButton);
-    
-    // 이벤트 리스너 확인
-    console.log('🔍 window.openOrderModal:', !!window.openOrderModal);
-    console.log('🔍 window.initOrderForm:', !!window.initOrderForm);
-    console.log('🔍 window.handleOrderSubmit:', !!window.handleOrderSubmit);
-    
-    return {
-        addOrderBtn: !!addOrderBtn,
-        orderModal: !!orderModal,
-        orderForm: !!orderForm,
-        submitButton: !!submitButton,
-        openOrderModal: !!window.openOrderModal,
-        initOrderForm: !!window.initOrderForm,
-        handleOrderSubmit: !!window.handleOrderSubmit
-    };
-};
-
-window.testOrderButtonClick = function() {
-    console.log('🧪 주문 등록 버튼 클릭 테스트');
-    
-    const addOrderBtn = document.getElementById('add-order-btn');
-    if (addOrderBtn) {
-        console.log('✅ 새 주문 등록 버튼 클릭 시뮬레이션');
-        addOrderBtn.click();
-    } else {
-        console.error('❌ 새 주문 등록 버튼을 찾을 수 없습니다');
-    }
-};
-
-window.testOrderSubmit = function() {
-    console.log('🧪 주문 제출 테스트');
-    
-    const submitButton = document.querySelector('button[data-order-submit="true"]');
-    if (submitButton) {
-        console.log('✅ 주문 등록 버튼 클릭 시뮬레이션');
-        submitButton.click();
-    } else {
-        console.error('❌ 주문 등록 버튼을 찾을 수 없습니다');
-    }
-};
-
-window.testOrderFormSubmit = function() {
-    console.log('🧪 주문 폼 제출 테스트');
-    
-    const orderForm = document.getElementById('order-form');
-    if (orderForm) {
-        console.log('✅ 주문 폼 제출 이벤트 시뮬레이션');
-        const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-        orderForm.dispatchEvent(submitEvent);
-    } else {
-        console.error('❌ 주문 폼을 찾을 수 없습니다');
-    }
-};
-
-window.testCartStatus = function() {
-    console.log('🧪 장바구니 상태 테스트');
-    
-    const cartItems = document.querySelectorAll('[data-product-id]');
-    const cartItemsBody = document.getElementById('cart-items-body');
-    
-    console.log('🔍 장바구니 상태:');
-    console.log('  - 장바구니 아이템 수:', cartItems.length);
-    console.log('  - 장바구니 테이블 바디:', cartItemsBody);
-    
-    cartItems.forEach((item, index) => {
-        const productId = item.getAttribute('data-product-id');
-        const price = item.getAttribute('data-price');
-        const quantityInput = item.querySelector('.quantity-input');
-        const quantity = quantityInput ? quantityInput.value : 'N/A';
-        
-        console.log(`  - 아이템 ${index + 1}:`, {
-            productId: productId,
-            price: price,
-            quantity: quantity
-        });
-    });
-    
-    // 장바구니 총액 계산 테스트
-    if (window.updateCartTotal) {
-        console.log('🧪 장바구니 총액 계산 테스트');
-        window.updateCartTotal();
-    }
-    
-    return {
-        itemCount: cartItems.length,
-        cartItemsBody: !!cartItemsBody,
-        updateCartTotal: !!window.updateCartTotal
-    };
-};
-
-// Supabase 연결 테스트 함수
+// Supabase 연결 테스트 함수 (내부 전용 — window 미등록)
 function testSupabaseConnection() {
     try {
         console.log('🧪 Supabase 연결 테스트 시작');
@@ -2368,7 +2257,6 @@ window.selectCustomerFromSearch = selectCustomerFromSearch;
 window.openNewCustomerRegistration = openNewCustomerRegistration;
 window.searchProducts = searchProducts;
 window.addProductToCart = addProductToCart;
-window.testSupabaseConnection = testSupabaseConnection;
 window.handleOrderSubmit = handleOrderSubmit;
 window.updateOrderSubmitButtonState = updateOrderSubmitButtonState;
 

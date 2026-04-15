@@ -145,6 +145,10 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.52 | 주문관리 재방문 시 새 주문·탭·체크박스 버튼 먹통 수정 — addEventListener+플래그 방식 → onclick/onchange 할당으로 교체 |
+| v3.2.51 | nav 처리할주문 뱃지 + 진입 기본탭 전체 + 신규주문 기본상태 주문접수 — nav-orders 옆 빨간 숫자 뱃지(99+ 상한), 진입 기본값 work_todo→all, 주문 등록 기본 상태 입금대기→주문접수 |
+| v3.2.40 | 주문관리 상태 표시 정리 — 미사용 복합 필터(work_deposit·work_ship_today·work_done) 제거, 상태 배지 색상 단일 소스화(dashboard.js·customerUI.js → orderData.js `getStatusColor()` 위임), '취소'→'주문취소' 상태명 정규화 |
+| v3.2.39 | 주문관리 코드 정리 — 일괄 삭제 버튼 추가, 디버그 전역 함수 7개·테스트 함수 8개 window 노출 제거, orderSearch.js 중복 cart 함수 window 등록 6개 제거 |
 | v3.2.51 | 폼 디자인 시스템 도입 — 12컬럼 그리드(`form-grid`) · 라벨 상단 고정(Top-Label) · 입력창 42px 높이 통일(`form-control`) · 필드 간격 `gap-y-4`(16px) · 컨테이너 패딩 24px 일원화. 적용: 고객 등록 모달·주문 등록 좌측 패널·판매채널 모달·환경설정 일반/배송/SMS. 신규 CSS: `form-col-6/12`·`form-input-group`·`form-input-unit`·`form-section`·`form-actions`. `modal-body` 패딩 24px 표준화 |
 | v3.2.50 | 레거시 DB 테이블 삭제 — `customer_grades`(farm_settings JSONB로 대체), `sales_channels`(farm_channels로 대체), `shipping_settings`(farm_settings로 대체), `device_info`(미사용) 4개 테이블 Supabase에서 완전 삭제. 현재 사용 테이블: farm_customers·orders·order_items·products·categories·waitlist·settings·channels·settings_kv·admin_users |
 | v3.2.49 | 환경설정 DB 정리 — 스키마에만 존재하고 앱에서 미사용인 `farm_order_statuses`·`farm_customer_grades` 테이블 식별, `drop-unused-settings-tables.sql` 제거 스크립트 추가. 환경설정 탭별 DB 연결 구조 정리: 일반·배송·주문상태·고객등급·SMS는 `farm_settings` JSONB, 판매채널은 `farm_channels` 전용 테이블로 관리 |
