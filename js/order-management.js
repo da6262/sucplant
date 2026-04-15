@@ -221,10 +221,29 @@ async function initializeOrderManagement() {
         // 기존 이벤트 리스너 정리
         cleanupOrderEventListeners();
         
-        // 기본 진입 탭: 지금 처리할 주문(work_todo)
+        // 새 주문 저장 후 이동 시 pendingOrderStatus 플래그로 목표 탭 결정
+        // 그 외에는 기본 work_todo(처리할 주문) 탭
+        const pendingStatus = window._pendingOrderStatus || null;
+        window._pendingOrderStatus = null; // 소비 후 초기화
+
+        const statusToTabId = {
+            '주문접수': 'status-주문접수',
+            '고객안내': 'status-고객안내',
+            '입금대기': 'status-입금대기',
+            '입금확인': 'status-입금확인',
+            '상품준비': 'status-work_todo',
+            '배송준비': 'status-work_todo',
+            '배송중':   'status-배송중',
+            '배송완료': 'status-배송완료',
+        };
+        const activeTabId = pendingStatus
+            ? (statusToTabId[pendingStatus] || `status-${pendingStatus}`)
+            : 'status-work_todo';
+        const activeStatus = pendingStatus || 'work_todo';
+
         document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
-        const defaultTab = document.getElementById('status-work_todo');
-        if (defaultTab) defaultTab.classList.add('active');
+        const activeTab = document.getElementById(activeTabId);
+        if (activeTab) activeTab.classList.add('active');
 
         // 주문 데이터 초기화
         if (window.orderDataManager) {
@@ -233,12 +252,11 @@ async function initializeOrderManagement() {
                 await window.orderDataManager.loadOrders();
             } catch (loadErr) {
                 console.error('❌ 주문 목록 로드 실패 (테이블은 빈 상태로 표시):', loadErr);
-                // 실패해도 farm_order_rows=[] 상태로 테이블은 그려서 "불러올 수 없습니다" 메시지 표시
                 window.orderDataManager._loadErrorMessage = loadErr && (loadErr.message || String(loadErr));
             }
-            // 주문 테이블 렌더링 (기본 work_todo) — 로드 실패 시에도 빈 테이블 + 에러 메시지 표시
+            // 저장 후 이동이면 해당 상태 탭으로, 아니면 work_todo
             if (window.orderDataManager.renderOrdersTable) {
-                window.orderDataManager.renderOrdersTable('work_todo');
+                window.orderDataManager.renderOrdersTable(activeStatus);
             }
             // 주문 상태별 카운트 업데이트
             if (window.orderDataManager.updateFilterCounts) {
