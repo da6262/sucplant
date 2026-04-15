@@ -46,7 +46,7 @@ export class ShippingManager {
                                 <button id="refresh-shipping-data" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
                                     <i class="fas fa-sync-alt mr-2"></i>새로고침
                                 </button>
-                                <button id="export-shipping-data" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                <button id="export-shipping-data" class="btn-primary">
                                     <i class="fas fa-download mr-2"></i>내보내기
                                 </button>
                             </div>
@@ -536,7 +536,7 @@ export class ShippingManager {
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold">라벨 관리</h3>
                     <div class="space-x-2">
-                        <button id="generate-labels" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <button id="generate-labels" class="btn-primary">
                             <i class="fas fa-plus mr-2"></i>라벨 생성
                         </button>
                         <button id="print-labels" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
@@ -581,7 +581,7 @@ export class ShippingManager {
                         <button id="optimize-routes" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg">
                             <i class="fas fa-route mr-2"></i>경로 최적화
                         </button>
-                        <button id="export-routes" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <button id="export-routes" class="btn-primary">
                             <i class="fas fa-download mr-2"></i>경로 내보내기
                         </button>
                     </div>
@@ -615,7 +615,7 @@ export class ShippingManager {
                         <button id="test-notification" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
                             <i class="fas fa-bell mr-2"></i>테스트 알림
                         </button>
-                        <button id="send-bulk-sms" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg">
+                        <button id="send-bulk-sms" class="btn-primary">
                             <i class="fas fa-paper-plane mr-2"></i>일괄 발송
                         </button>
                     </div>
@@ -1022,8 +1022,8 @@ export class ShippingManager {
                                         class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                                     취소
                                 </button>
-                                <button onclick="shippingManager.sendBulkSMS()" 
-                                        class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                                <button onclick="shippingManager.sendBulkSMS()"
+                                        class="btn-primary">
                                     발송
                                 </button>
                             </div>

@@ -83,6 +83,7 @@
        ══════════════════════════════════════════════ */
     --tbl-row-height:       30px;
     --tbl-cell-py:          5px;
+    --tbl-thumb-size:       28px;
     --tbl-header-bg:        var(--bg-lighter);
     --tbl-header-fw:        600;
     --tbl-font-size:        13px;
@@ -788,6 +789,26 @@ body {
 
 /* app-btn → btn-primary/secondary 동일 스타일로 통일 완료 (위 정의 참고) */
 
+/* ── 안전망: 미처리 하드코딩 그린 차단 ─────────────────────────────────
+   소스 교체가 완료된 파일: settings.css · dashboard.js · productUI.js ·
+   customerUI.js · orderForm.js · orderFormMinimalLayout.js · orderSMS.js ·
+   shippingManager.js · 모달 HTML 3종
+   아래 규칙은 혹시 누락된 Tailwind 클래스가 있을 경우를 위한 최종 안전망.
+────────────────────────────────────────────────────────────────────── */
+.bg-green-600, .bg-green-500,
+.bg-emerald-600, .bg-emerald-500 { background-color: var(--primary) !important; }
+.hover\:bg-green-700:hover,
+.hover\:bg-green-600:hover,
+.hover\:bg-emerald-700:hover,
+.hover\:bg-emerald-600:hover    { background-color: var(--primary-hover) !important; }
+/* 테두리색 통일 */
+.border-green-600, .border-emerald-600 { border-color: var(--primary) !important; }
+/* 포커스 링 통일 */
+.focus\:ring-green-500:focus,
+.focus\:ring-emerald-500:focus  { --tw-ring-color: var(--primary) !important; }
+.focus\:border-green-500:focus,
+.focus\:border-emerald-500:focus { border-color: var(--primary) !important; }
+
 /* =====================
    Badge — 표준 알약 배지 (8대 스펙)
    ===================== */
@@ -894,7 +915,7 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     align-items: center;
     gap: 12px;
     flex-wrap: wrap;
-    padding: 8px 24px;
+    padding: 5px 24px;
     border-bottom: 1px solid #E2E8F0;
     background-color: #ffffff;
     flex-shrink: 0;
@@ -924,7 +945,7 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 .btn-search i, .btn-search .fas { font-size: 11px; }
 /* 반응형 */
 @media (max-width: 768px) {
-    .filter-bar { gap: 8px; padding: 8px 16px; }
+    .filter-bar { gap: 8px; padding: 5px 16px; }
 }
 
 /* Status tab bar 컨테이너 */
@@ -1049,7 +1070,9 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 .text-11px { font-size: 11px; }
 
 /* =====================================================
-   [Spec ①] Table Header Unification — 전 테이블 thead 통합
+   [Spec ①] Table Unification — 전 테이블 thead/tbody 통합
+   thead: 한번만 수정하면 모든 테이블 헤더 적용
+   tbody: 한번만 수정하면 모든 테이블 데이터 행 적용
    ===================================================== */
 table thead th {
     background-color: var(--bg-lighter) !important;
@@ -1059,6 +1082,30 @@ table thead th {
     border-bottom: 2px solid #E2E8F0 !important;
     font-size: 11px; font-weight: 600; color: var(--text-body);
     padding: 6px 8px; white-space: nowrap; vertical-align: middle;
+}
+
+/* ── tbody td 전역 통합: --tbl-cell-py 하나로 전체 제어 ── */
+table tbody td {
+    padding: var(--tbl-cell-py) 8px;
+    font-size: var(--tbl-font-size);
+    vertical-align: middle;
+    color: var(--text-body);
+    border-bottom: 1px solid var(--tbl-border-color);
+}
+table tbody tr:hover td { background: var(--tbl-hover-bg); }
+
+/* ── 테이블 내 이미지/썸네일 크기 통합 제어 ── */
+table tbody td img {
+    max-height: var(--tbl-thumb-size, 28px);
+    max-width:  var(--tbl-thumb-size, 28px);
+    object-fit: cover;
+}
+table tbody td .product-thumb,
+table tbody td [class*="shrink-0"] {
+    width:  var(--tbl-thumb-size, 28px) !important;
+    height: var(--tbl-thumb-size, 28px) !important;
+    min-width:  var(--tbl-thumb-size, 28px) !important;
+    min-height: var(--tbl-thumb-size, 28px) !important;
 }
 /* .table-ui thead th — override: keep sticky, add 2px bottom */
 .table-ui thead th {

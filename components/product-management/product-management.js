@@ -409,10 +409,10 @@ class ProductManagementComponent {
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <div class="flex items-center gap-2">
-                    <div class="shrink-0 w-10 h-10">
+                    <div class="shrink-0 w-7 h-7">
                         ${product.image_url
-                            ? `<img class="w-10 h-10 rounded-lg object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
-                            : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
+                            ? `<img class="w-7 h-7 rounded object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
+                            : `<div class="w-7 h-7 rounded bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
                         }
                     </div>
                     <div>
@@ -648,7 +648,7 @@ class ProductManagementComponent {
             const pageBtn = document.createElement('button');
             pageBtn.className = `px-2 py-1 text-xs border rounded transition-colors ${
                 i === this.currentPage
-                    ? 'bg-emerald-600 text-white border-emerald-600'
+                    ? 'status-tab-btn active'
                     : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
             }`;
             pageBtn.textContent = i;

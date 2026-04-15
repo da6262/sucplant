@@ -402,15 +402,16 @@ class DashboardComponent {
             return;
         }
 
+        // 표준 .badge 시스템 사용 — 하드코딩 Tailwind 색상 제거
         const statusColors = {
-            '주문접수': 'bg-blue-100 text-blue-800',
-            '입금대기': 'bg-yellow-100 text-yellow-800',
-            '입금확인': 'bg-green-100 text-green-800',
-            '상품준비': 'bg-yellow-100 text-yellow-800',
-            '배송준비': 'bg-purple-100 text-purple-800',
-            '배송중': 'bg-purple-100 text-purple-800',
-            '배송완료': 'bg-green-100 text-green-800',
-            '주문취소': 'bg-red-100 text-red-800'
+            '주문접수': 'badge-info',
+            '입금대기': 'badge-warning',
+            '입금확인': 'badge-success',
+            '상품준비': 'badge-warning',
+            '배송준비': 'badge-purple',
+            '배송중':   'badge-purple',
+            '배송완료': 'badge-success',
+            '주문취소': 'badge-danger'
         };
 
         recentOrders.forEach(order => {
@@ -425,7 +426,7 @@ class DashboardComponent {
                     <div class="text-xs text-gray-500">${(order.customer_name || '').replace(/</g, '&lt;')}</div>
                 </div>
                 <div class="flex items-center space-x-2">
-                    <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${statusClass}">${status}</span>
+                    <span class="badge ${statusClass}">${status}</span>
                     <span class="text-xs text-gray-500">${this.formatCurrency(order.total_amount || 0)}</span>
                 </div>
             `;

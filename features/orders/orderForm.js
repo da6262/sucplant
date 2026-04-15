@@ -185,8 +185,8 @@ function generateOrderFormHTML() {
                                         <!-- 상품 검색 결과 (이미지 썸네일 포함) -->
                                     </div>
                                 </div>
-                                <button id="show-product-list" 
-                                        class="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg text-sm transition-colors"
+                                <button id="show-product-list"
+                                        class="btn-primary"
                                         onclick="showProductManagementModal()">
                                     <i class="fas fa-list"></i>
                                 </button>
@@ -436,7 +436,7 @@ function generateOrderFormHTML() {
                             <i class="fas fa-eye mr-2"></i>미리보기
                         </button>
                         <button type="submit" form="order-form" data-order-submit="true"
-                                class="px-8 py-2 bg-green-500 hover:bg-green-600 text-white rounded-lg transition-colors font-semibold">
+                                class="btn-primary" style="padding: 8px 32px;">
                             <i class="fas fa-check mr-2"></i>주문 등록
                         </button>
                     </div>

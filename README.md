@@ -1,82 +1,50 @@
 # 경산다육식물농장 관리시스템
 
-![버전](https://img.shields.io/badge/version-3.2.10-brightgreen)
-![기술](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Supabase-blue)
+> White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-White Platter 전문 농장의 주문·재고·고객 통합 관리 웹앱입니다.
+[![version](https://img.shields.io/badge/version-v3.2.3-brightgreen)](https://github.com/da6262/sucplant)
+[![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
 
-## 최근 변경사항 (v3.2.11)
+## 주요 기능
 
-| 항목 | 내용 |
-|------|------|
-| 고객관리 등급관리 버튼 버그 수정 | 탭 재방문 시 등급관리 버튼 먹통 현상 수정 (cleanup 후 이벤트 리스너 미재연결 문제) |
-
-## 변경사항 (v3.2.10)
-
-| 항목 | 내용 |
-|------|------|
-| 버전 자동 증가 git hook | 커밋마다 패치 버전 자동 +1, setup-hooks.bat/sh로 설치 |
-
-## 변경사항 (v3.2.7)
-
-| 항목 | 내용 |
-|------|------|
-| 표시 수 선택 추가 | 주문/상품/고객/대기자 관리 하단바에 10·20·50·전체 표시 수 선택 셀렉터 추가 |
-
-## 변경사항 (v3.2.6)
-
-| 항목 | 내용 |
-|------|------|
-| 고객 목록 주문 추가 버튼 | 고객 목록 관리 컬럼에 장바구니 버튼 추가, 클릭 시 해당 고객 정보로 주문 모달 바로 열림 |
-
-## 변경사항 (v3.2.5)
-
-| 항목 | 내용 |
-|------|------|
-| 고객 삭제 모달 개선 | 주문 목록을 체크박스로 표시, 선택 주문만 삭제 / 주문+고객 모두 삭제 / 취소 3가지 옵션 제공 |
-| 대기자 관리 업데이트 | 대기자 UI 및 컴포넌트 개선 |
-
-## 변경사항 (v3.2.4)
-
-| 항목 | 내용 |
-|------|------|
-| 고객 등록 모달 개선 | 필수정보 / 주소 / 추가정보 3섹션 구성, 상태 토글 버튼(활성·비활성·정지), 메모 글자수 카운터, 오늘 날짜 버튼, Ctrl+Enter 저장 |
-| 버튼 텍스트 변경 | "새 고객" → "고객 등록" |
-| 등급 관리 이동 | 고객관리 화면의 등급 관리 버튼 클릭 시 환경설정 탭으로 이동 |
-| 전화번호 색상 통일 | 고객 목록에서 전화번호 색상을 이름과 동일하게 통일 |
-| 한글 검색 버그 수정 | IME 조합 중 검색이 안 되던 문제 수정 (`compositionend` 이벤트 추가) |
-| 고객 삭제 개선 | 주문이 있는 고객 삭제 시 주문도 함께 삭제하는 확인 다이얼로그 제공 |
-| Supabase RLS 수정 | 미인증 상태에서 기본 카테고리/상품 생성 시도 방지 |
+| 탭 | 기능 |
+|----|------|
+| 📊 **대시보드** | 오늘 현황 요약, 실시간 주문 피드, 재고 알림, 매출 차트 |
+| 👥 **고객관리** | CRM 목록, 등급 관리(씨앗·새싹·그린·골드·VIP), 주문 이력, 상담 기록 |
+| 📦 **주문관리** | 주문 등록·수정·상태 변경, 피킹 리스트, 일괄 처리, SMS 발송 |
+| 🌿 **상품관리** | 상품 등록·재고 관리, 카테고리 분류, 이미지 업로드 |
+| ⏳ **대기자관리** | 재입고 대기 등록, 상태 추적(대기중→연락완료→주문전환), 탭 카운트 배지 |
+| 🚚 **배송관리** | 배송 현황, 라벨 출력, SMS 일괄 발송 |
+| ⚙️ **환경설정** | 농장 정보, 배송 설정, 알림 설정 |
 
 ---
 
 ## 기술 스택
 
-| 분류 | 기술 |
-|------|------|
-| 언어 | Vanilla JavaScript (ES Modules) |
-| 스타일 | Tailwind CSS (CDN) + `styles/index-inline.css` |
-| 차트 | Chart.js |
-| DB | Supabase (PostgreSQL) |
-| 서버 | Node.js 내장 HTTP 서버 (`server.js`) |
+```
+Frontend  : Vanilla JS (ES Modules) + Tailwind CSS (CDN) + Chart.js
+Backend   : Supabase (PostgreSQL + RLS + Realtime)
+빌드 없음 : index.html 직접 실행 (번들러 불필요)
+```
 
 ---
 
 ## 실행 방법
 
 ```bash
-# Windows
+# 서버 시작 (Windows)
 start-server.bat
 
-# macOS / Linux
-bash start-server.sh
+# 또는 직접 실행
+node server.js
+
+# 브라우저 접속
+http://localhost:8000
 ```
 
-브라우저에서 **http://localhost:8000** 접속
-
-> 개발용 로그인: `admin` / `admin123`
+> Supabase 연결이 없으면 데이터 조회·저장 불가. `js/supabase-config.js` 설정 필요.
 
 ---
 
@@ -84,229 +52,120 @@ bash start-server.sh
 
 ```
 sucplant/
-├── index.html                        # 메인 진입점
-├── main.js                           # ES 모듈 진입점 (features/* import)
-├── server.js                         # Node.js 정적 파일 서버
-├── start-server.bat                  # Windows 실행 스크립트
+├── index.html                      # 메인 진입점 (탭 라우터 포함)
+├── main.js                         # ES 모듈 진입점
+├── server.js                       # Node.js 정적 서버 (no-cache 헤더)
+│
+├── features/                       # 기능 모듈
+│   ├── customers/   customerData · customerUI
+│   ├── orders/      orderData · orderUI · orderForm · orderSMS
+│   ├── products/    productData · productUI
+│   ├── waitlist/    waitlistData · waitlistUI
+│   ├── shipping/    shippingManager
+│   ├── dashboard/   dashboardData · dashboardUI
+│   └── settings/    settingsUI
+│
+├── components/                     # 동적 로드 HTML 컴포넌트
+│   ├── waitlist-management/
+│   ├── product-management/
+│   ├── customer-management/
+│   ├── order-management/
+│   ├── dashboard/
+│   ├── settings/
+│   ├── modals/
+│   └── header · navigation
 │
 ├── js/
-│   ├── app.js                        # OrderManagementSystem 클래스 (핵심 오케스트레이터)
-│   └── supabase-production-config.js # Supabase 연결 설정
-│
-├── features/                         # 기능 모듈 (ES Modules)
-│   ├── customers/                    # 고객 관리 (CRM, 등급)
-│   │   ├── customerData.js
-│   │   └── customerUI.js
-│   ├── orders/                       # 주문 관리
-│   │   ├── orderData.js
-│   │   ├── orderUI.js
-│   │   ├── orderForm.js
-│   │   └── orderFormMinimalLayout.js
-│   ├── products/                     # 상품 관리
-│   ├── categories/                   # 카테고리 관리
-│   ├── shipping/                     # 배송 관리
-│   ├── dashboard/                    # 대시보드 데이터
-│   ├── waitlist/                     # 대기자 관리 UI
-│   └── settings/                    # 환경설정
-│
-├── components/                       # 탭별 HTML 컴포넌트 (동적 로드)
-│   ├── dashboard/
-│   ├── order-management/
-│   ├── customer-management/
-│   ├── product-management/
-│   ├── waitlist-management/
-│   ├── shipping-management/
-│   └── settings/
+│   ├── app.js                      # OrderManagementSystem 오케스트레이터
+│   └── supabase-config.js         # Supabase 연결 설정
 │
 ├── utils/
-│   └── formatters.js                 # 공통 데이터 포매터 (단일 진실 공급원)
+│   ├── ui.js          # renderPageHeader · renderFilterBar · renderEmptyRow
+│   └── formatters.js  # formatDate · formatPhone · formatCurrency
 │
 └── styles/
-    └── index-inline.css              # 디자인 토큰 + 공통 컴포넌트 CSS
+    └── index-inline.css           # 디자인 시스템 (CSS 변수 중앙 제어)
 ```
 
 ---
 
-## 주요 기능
+## 디자인 시스템 (v3.2.3)
 
-| 기능 | 설명 |
-|------|------|
-| 대시보드 | 매출 차트, 주문·고객·상품 통계 카드 |
-| 주문관리 | 주문 CRUD, 상태 변경, 정렬/필터 |
-| 고객관리 | CRM 패널, 등급 관리, 구매 이력, 주문 포함 고객 삭제 |
-| 상품관리 | 상품 CRUD, 썸네일, 카테고리·재고 관리 |
-| 대기자관리 | 품절 상품 대기 등록, 상태 추적 |
-| 배송관리 | 배송 상태 추적 |
-| 환경설정 | 시스템 설정, 판매채널 관리 |
+모든 색상·여백·폰트 크기는 CSS 변수 하나로 제어됩니다.
 
----
+```css
+/* styles/index-inline.css :root */
+--primary:        #16A34A;   /* 브랜드 그린 — 버튼, 활성 탭 */
+--primary-hover:  #15803D;   /* hover 상태 */
+--primary-accent: #059669;   /* 에메랄드 — 아이콘, 링크 */
 
-## 데이터베이스 (Supabase)
-
-`js/supabase-production-config.js` 에 프로젝트 URL과 anon key 설정
-
-```js
-const SUPABASE_URL = 'https://xxxx.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJ...';
+--tbl-cell-py:    4px;       /* 테이블 행 높이 전역 제어 */
+--tbl-font-size:  12px;      /* 테이블 폰트 크기 */
 ```
 
-**주요 테이블**
+### 공통 클래스
 
-| 테이블 | 설명 |
-|--------|------|
-| `farm_customers` | 고객 정보 |
-| `farm_orders` | 주문 내역 |
-| `farm_products` | 상품 목록 |
-| `farm_categories` | 카테고리 |
-| `farm_waitlist` | 대기자 목록 |
-
-> 전역 접근: `window.supabaseClient`
+| 분류 | 클래스 |
+|------|--------|
+| 버튼 | `.btn-primary` `.btn-secondary` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` |
+| 배지 | `.badge` + `.badge-success` `.badge-warning` `.badge-danger` `.badge-info` `.badge-purple` `.badge-neutral` |
+| 테이블 | `.table-ui` `.td-primary` `.td-secondary` `.td-amount` `.td-muted` `.td-null` |
+| 필터 바 | `.filter-bar` `.input-ui` `.btn-search` |
+| 상태 탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
+| 헤더 | `.page-header` `.action-group` |
 
 ---
 
 ## 아키텍처
 
-### 탭 전환 흐름
+- **탭 라우팅**: `switchTab(tabId)` → `loadTabComponent(tabId)` → HTML `fetch()` 동적 삽입
+- **전역 등록**: `features/*` 함수 → `window.*` → HTML `onclick=""` 직접 호출
+- **오케스트레이터**: `window.orderSystem` (OrderManagementSystem)
+- **캐시 방지**: `server.js` 전 응답에 `Cache-Control: no-cache, no-store`
 
-```
-사용자 클릭
-  → window.switchTab(tabId)
-  → loadTabComponent(tabId)     // HTML fetch & DOM 삽입
-  → 각 feature 초기화 함수 호출
-```
+---
 
-### 전역 등록 규칙
+## 데이터베이스
 
-- `features/*` 함수 → `window.*` 전역 등록 (HTML에서 직접 호출)
-- `OrderManagementSystem` 메서드 → `window.orderSystem.메서드()` 로 호출
-- 공통 포매터 → `window.fmt.date()`, `window.fmt.currency()` 등
+| 테이블 | 용도 |
+|--------|------|
+| `farm_customers` | 고객 정보 (등급, 메모) |
+| `farm_orders` | 주문 헤더 |
+| `farm_order_items` | 주문 상세 품목 |
+| `farm_products` | 상품 목록 |
+| `farm_categories` | 카테고리 |
+| `farm_waitlist` | 대기자 목록 |
+| `farm_settings` | 농장·배송·알림 설정 |
+
+접근: `window.supabaseClient.from('테이블명')`
+
+---
+
+## 변경 이력
+
+### v3.2.3 — 2026-04-15 규격화 완성
+- **하드코딩 완전 박멸**: `features/*` · `components/*` 전체에서 `bg-green-600` / `bg-emerald-600` / `#16A34A` 소스 교체 완료. `--primary` 변수 하나로 전체 색상 통제
+- **대기자 필터 재구성**: 3단 필터(통계바 + 상태탭 + 검색바) → 가로 1줄 `filter-bar` [검색 + 초기화 + | + 상태 탭 배지]
+- **대시보드 배지 규격화**: Tailwind 인라인 색상 → `.badge badge-*` 표준 시스템
+- **전역 테이블 통합**: `table tbody td` 전역 규칙 — `--tbl-cell-py` 하나로 모든 탭 행 높이 제어
+- **필터 바 높이 통일**: 41px 통일 (대기자·상품·고객·주문 전 탭)
+- **settings.css 정화**: `#16A34A` × 5 → `var(--primary)` 완전 교체
 
 ---
 
 ## 개발 가이드
 
-### CSS 변수 시스템 (`styles/index-inline.css`)
+### 새 탭 추가
 
-모든 색상·여백·그림자는 반드시 `var()` 사용 — 하드코딩 금지
+1. `index.html`에 `<div id="newtab-section">` 추가
+2. `loadTabComponent()` switch에 `case 'newtab':` 추가
+3. `components/newtab-management/newtab-management.html` 생성
+4. `features/newtab/newtabUI.js` 생성 → `window.newtabUI = new NewtabUI()`
 
-```css
-:root {
-  /* 색상 */
-  --primary:              #16A34A;   /* 주 색상 (녹색) */
-  --primary-hover:        #15803D;
-  --primary-accent:       #059669;
-  --danger:               #DC2626;   /* 경고/삭제 */
-  --info:                 #2563EB;   /* 정보/링크 */
+### 브랜드 색상 변경
 
-  /* 배경 */
-  --bg-page:              #F1F5F9;   /* 페이지 배경 */
-  --bg-light:             #F9FAFB;
-  --bg-lighter:           #F8FAFC;   /* 테이블 헤더 배경 */
-
-  /* 텍스트 */
-  --text-heading:         #111827;
-  --text-body:            #374151;
-  --border:               #E2E8F0;
-
-  /* 형태 */
-  --radius-sm: 4px;  --radius-md: 6px;
-  --radius-lg: 8px;  --radius-xl: 12px;
-  --shadow-sm: 0 1px 4px rgba(0,0,0,0.06);
-  --shadow-lg: 0 8px 32px rgba(0,0,0,0.18);
-
-  /* 폰트 */
-  --font-sans: 'Noto Sans KR', 'Inter', -apple-system, sans-serif;
-}
-```
-
-### 공통 클래스
-
-| 클래스 | 용도 |
-|--------|------|
-| `.page-header` | 각 탭 상단 제목 영역 |
-| `.filter-bar` | 검색·필터 입력 묶음 (높이 30px) |
-| `.btn-group` | 액션 버튼 묶음 (gap: 8px, center 정렬) |
-| `.btn-icon` | 30×30px 아이콘 버튼 |
-| `.btn-xs` | 소형 버튼 (padding: 3px 10px) |
-| `.text-numeric` | 숫자 데이터 (tabular-nums, bold) |
-| `.badge-*` | 상태 배지 |
-| `.crm-panel` | 고객 상세 슬라이드 패널 |
-| `.th-sortable` | 정렬 가능 테이블 헤더 |
-| `.td-null` | 빈 값 표시 (—) |
-
-### 테이블 정렬 기준
-
-| 컬럼 유형 | 정렬 |
-|-----------|------|
-| 텍스트 (이름, 상품명 등) | `text-left` |
-| 숫자 (가격, 수량) | `text-right text-numeric` |
-| 배지, 버튼, 상태 | `text-center` |
-
-### 공통 포매터 (`utils/formatters.js`)
-
-모든 데이터 포매팅은 반드시 이 파일을 경유 — `toLocaleString()` 직접 사용 금지
-
-```js
-// ES 모듈 import (features/*.js)
-import { formatDate, formatCurrency, formatPhone } from '../../utils/formatters.js';
-
-formatDate(value)       // '2024-01-15'
-formatDateTime(value)   // '2024-01-15 09:30'
-formatCurrency(amount)  // '₩12,345'
-formatWon(amount)       // '12,345원'
-formatPhone(number)     // '010-1234-5678'
-formatQty(count)        // '3개'
-nullDash(value)         // <span class="td-null">—</span>
-
-// 전역 접근 (components/*.js 클래스 내부)
-window.fmt.date(value)
-window.fmt.currency(amount)
-window.fmt.phone(number)
-window.fmt.qty(count)
-window.fmt.nullDash(value)
-```
+`styles/index-inline.css` `:root` 블록의 `--primary` 값 하나만 수정하면 버튼·배지·탭 전체에 즉시 반영됩니다.
 
 ---
 
-## 버전 관리
-
-**커밋할 때마다 버전이 자동으로 올라갑니다. 아무것도 수동으로 바꿀 필요 없습니다.**
-
-```
-git commit 발생
-      │
-      ├── hooks/pre-commit → js/config.js 패치 버전 자동 +1
-      ├── server.js 시작 시 → README.md 배지 자동 동기화
-      ├── 네비게이션바 배지 → window.APP_VERSION 자동 반영
-      └── 로컬 JS/CSS 경로 → ?v=X.X.X 캐시 버스팅 자동 삽입
-```
-
-| 파일 | 역할 |
-|------|------|
-| `js/config.js` | 버전 단일 저장소 (`_APP_VER`) |
-| `hooks/pre-commit` | 커밋 시 패치 버전 자동 증가 |
-| `server.js` | 서버 시작 시 README 배지 자동 동기화 + JS/CSS 캐시 버스팅 |
-
-### 처음 클론 후 hook 설치 (최초 1회만)
-
-```bash
-# Windows
-setup-hooks.bat
-
-# macOS / Linux
-bash setup-hooks.sh
-```
-
-설치 후에는 `git commit` 할 때마다 버전이 자동으로 올라갑니다.
-
----
-
-## GitHub
-
-**https://github.com/da6262/sucplant**
-
-```bash
-git add .
-git commit -m "커밋 메시지"
-git push origin main
-```
+*경산다육식물농장 내부 전용 시스템*

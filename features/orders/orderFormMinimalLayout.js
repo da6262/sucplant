@@ -311,7 +311,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 width: 100%;
                 margin-top: 6px;
                 padding: 9px 0;
-                background: #16a34a;
+                background: var(--primary);
                 color: #fff;
                 font-size: 14px;
                 font-weight: 700;

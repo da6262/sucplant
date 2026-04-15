@@ -506,7 +506,7 @@ function openCustomerSMSModal(phone, customerName) {
             </div>
             <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
                 <button id="customer-sms-cancel" class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium">취소</button>
-                <button id="customer-sms-send" class="text-xs px-4 py-1.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 font-medium">
+                <button id="customer-sms-send" class="btn-primary">
                     <i class="fas fa-paper-plane mr-1"></i>발송
                 </button>
             </div>
@@ -536,7 +536,7 @@ function openCustomerSMSModal(phone, customerName) {
             await sendSolapiSMS(phone, message);
             modal.remove();
             const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 z-[700] px-4 py-2.5 bg-emerald-600 text-white text-sm rounded-lg shadow-lg flex items-center gap-2';
+            toast.className = 'fixed bottom-4 right-4 z-[700] px-4 py-2.5 text-sm rounded-lg shadow-lg flex items-center gap-2 btn-primary';
             toast.innerHTML = '<i class="fas fa-check-circle"></i> SMS 발송 완료';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);

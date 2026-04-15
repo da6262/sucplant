@@ -22,7 +22,7 @@
     color: #374151;
 }
 .settings-tab-btn.active {
-    background: #16A34A !important;
+    background: var(--primary) !important;
     color: #fff !important;
     font-weight: 600;
 }
@@ -68,9 +68,9 @@
     cursor: pointer; transition: all 0.15s;
 }
 .settings-btn-save {
-    background: #16A34A; color: #fff; border: none;
+    background: var(--primary); color: #fff; border: none;
 }
-.settings-btn-save:hover:not(:disabled) { background: #15803D; }
+.settings-btn-save:hover:not(:disabled) { background: var(--primary-hover); }
 .settings-btn-save:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .settings-btn-reset {
@@ -110,8 +110,8 @@
 }
 
 .settings-tab.active {
-    border-bottom-color: #059669;
-    color: #059669;
+    border-bottom-color: var(--primary-accent);
+    color: var(--primary-accent);
 }
 
 /* 환경설정 콘텐츠 */
@@ -166,7 +166,7 @@
     transition: border-color 0.15s; box-sizing: border-box;
 }
 .settings-form-input:focus {
-    border-color: #16A34A;
+    border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(22,163,74,0.12);
 }
 

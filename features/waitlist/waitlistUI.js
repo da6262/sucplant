@@ -240,28 +240,18 @@ export class WaitlistUI {
                 ? `${waitlist.length}명 표시`
                 : `${pagedWaitlist.length} / ${waitlist.length}명 표시`;
 
-            // 성능 최적화: DocumentFragment 사용
-            const fragment = document.createDocumentFragment();
-
             if (pagedWaitlist.length === 0) {
-                const emptyRow = document.createElement('tr');
-                emptyRow.innerHTML = `
-                    <td colspan="8" class="text-center py-8 text-gray-500">
-                        <i class="fas fa-clock mr-2"></i>등록된 대기자가 없습니다.
-                    </td>
-                `;
-                fragment.appendChild(emptyRow);
+                // 빈 상태 표시 — 공통 유틸 사용 (colspan=9: 번호·고객명·연락처·희망상품·카테고리·희망가격·상태·등록일·관리)
+                tbody.innerHTML = window.renderEmptyRow(9, '등록된 대기자가 없습니다.');
             } else {
-                // 대기자 목록 렌더링 (DocumentFragment로 배치 처리)
+                // 성능 최적화: DocumentFragment로 일괄 DOM 추가
+                const fragment = document.createDocumentFragment();
                 pagedWaitlist.forEach((item, index) => {
-                    const row = this.createWaitlistRow(item, index);
-                    fragment.appendChild(row);
+                    fragment.appendChild(this.createWaitlistRow(item, index));
                 });
+                tbody.innerHTML = '';
+                tbody.appendChild(fragment);
             }
-
-            // 한 번에 DOM에 추가 (성능 최적화)
-            tbody.innerHTML = '';
-            tbody.appendChild(fragment);
 
             // 통계 업데이트
             this.updateWaitlistStats();
@@ -322,23 +312,25 @@ export class WaitlistUI {
     }
 
     /**
-     * 대기자 통계 업데이트
+     * 대기자 통계 업데이트 — 탭 카운트 배지 업데이트
      */
     updateWaitlistStats() {
         try {
             const stats = waitlistDataManager.getWaitlistStats();
-            
-            // 통계 카드 업데이트
-            const totalElement = document.getElementById('waitlist-total-count');
-            const waitingElement = document.getElementById('waitlist-waiting-count');
-            const contactedElement = document.getElementById('waitlist-contacted-count');
-            const convertedElement = document.getElementById('waitlist-converted-count');
-            
-            if (totalElement) totalElement.textContent = stats.total;
-            if (waitingElement) waitingElement.textContent = stats.waiting;
-            if (contactedElement) contactedElement.textContent = stats.contacted;
-            if (convertedElement) convertedElement.textContent = stats.converted;
-            
+
+            // 탭 카운트 배지 업데이트
+            const countAll       = document.getElementById('waitlist-count-all');
+            const countWaiting   = document.getElementById('waitlist-count-대기중');
+            const countContacted = document.getElementById('waitlist-count-연락완료');
+            const countConverted = document.getElementById('waitlist-count-주문전환');
+            const countCancelled = document.getElementById('waitlist-count-취소');
+
+            if (countAll)       countAll.textContent       = stats.total;
+            if (countWaiting)   countWaiting.textContent   = stats.waiting;
+            if (countContacted) countContacted.textContent = stats.contacted;
+            if (countConverted) countConverted.textContent = stats.converted;
+            if (countCancelled) countCancelled.textContent = stats.cancelled;
+
             console.log('📊 대기자 통계 업데이트 완료:', stats);
         } catch (error) {
             console.error('❌ 대기자 통계 업데이트 실패:', error);

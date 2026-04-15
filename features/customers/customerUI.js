@@ -822,9 +822,9 @@ async function showCustomerDetailInPanel(customer) {
             <div class="relative space-y-4">
                 <!-- 플로팅 액션: 문자 발송, 전화 연결, 주문 추가 (에메랄드) -->
                 <div class="flex flex-wrap gap-2 justify-end sticky top-0 z-10 bg-white/95 py-1 -mt-1">
-                    <a href="${smsHref}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700" title="문자 발송"><i class="fas fa-sms"></i> 문자 발송</a>
-                    <a href="${telHref}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700" title="전화 연결"><i class="fas fa-phone"></i> 전화 연결</a>
-                    <button type="button" data-action="order-add" data-customer-id="${customer.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700" title="주문 추가"><i class="fas fa-cart-plus"></i> 주문 추가</button>
+                    <a href="${smsHref}" class="btn-primary" title="문자 발송"><i class="fas fa-sms"></i> 문자 발송</a>
+                    <a href="${telHref}" class="btn-primary" title="전화 연결"><i class="fas fa-phone"></i> 전화 연결</a>
+                    <button type="button" data-action="order-add" data-customer-id="${customer.id}" class="btn-primary" title="주문 추가"><i class="fas fa-cart-plus"></i> 주문 추가</button>
                 </div>
                 <!-- 1단: 프로필 및 핵심 지표 -->
                 <div class="rounded-lg border border-gray-200 bg-gray-50/50 p-4">
@@ -867,7 +867,7 @@ async function showCustomerDetailInPanel(customer) {
                     <h4 class="text-sm font-semibold text-gray-800 px-3 py-2 border-b border-gray-200 bg-gray-50">상담 기록</h4>
                     <div class="p-2 bg-white">
                         <textarea id="customer-detail-memo" class="w-full min-h-[100px] p-2 border border-gray-200 rounded text-sm resize-y focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500" placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
-                        <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}" class="mt-2 py-1.5 px-3 rounded text-xs font-medium bg-emerald-600 text-white hover:bg-emerald-700">메모 저장</button>
+                        <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}" class="mt-2 btn-primary">메모 저장</button>
                     </div>
                 </div>
             </div>
