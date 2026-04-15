@@ -520,19 +520,18 @@ window.fillCustomerForm = fillCustomerForm;
 window.deleteCustomer = async function(customerId) {
     console.log('🗑️ 고객 삭제 요청:', customerId);
 
-    // 연관 주문 확인 (전체 개수)
+    // 연관 주문 확인 (상세 정보 포함)
     const { data: orders, error: checkError } = await window.supabaseClient
         .from('farm_orders')
-        .select('id')
-        .eq('customer_id', customerId);
+        .select('id, order_number, created_at, order_date, total_amount, order_status')
+        .eq('customer_id', customerId)
+        .order('created_at', { ascending: false });
     if (checkError) { alert('삭제 확인 중 오류: ' + checkError.message); return; }
 
     if (orders && orders.length > 0) {
-        // 주문이 있으면 함께 삭제할지 묻는 확인창
-        const confirmed = confirm(
-            `이 고객에게 주문 ${orders.length}건이 있습니다.\n주문도 함께 삭제하시겠습니까?\n\n확인 → 주문 + 고객 모두 삭제\n취소 → 삭제 안 함`
-        );
-        if (!confirmed) return;
+        // 주문 목록 모달 표시
+        const proceed = await showDeleteWithOrdersModal(orders);
+        if (!proceed) return;
 
         // 주문 먼저 삭제
         const orderIds = orders.map(o => o.id);
@@ -540,10 +539,7 @@ window.deleteCustomer = async function(customerId) {
             .from('farm_orders')
             .delete()
             .in('id', orderIds);
-        if (delOrderErr) {
-            alert('주문 삭제 중 오류: ' + delOrderErr.message);
-            return;
-        }
+        if (delOrderErr) { alert('주문 삭제 중 오류: ' + delOrderErr.message); return; }
         console.log(`✅ 주문 ${orders.length}건 삭제 완료`);
     } else {
         if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) return;
@@ -563,6 +559,79 @@ window.deleteCustomer = async function(customerId) {
         alert('고객 삭제에 실패했습니다: ' + error.message);
     }
 };
+
+// 주문 목록 보여주는 삭제 확인 모달
+function showDeleteWithOrdersModal(orders) {
+    return new Promise((resolve) => {
+        // 기존 모달 제거
+        document.getElementById('delete-with-orders-modal')?.remove();
+
+        const formatDate = (d) => d ? (d.slice(0, 10)) : '-';
+        const formatAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
+        const statusColor = (s) => {
+            const map = { '입금대기': 'text-yellow-600', '배송완료': 'text-blue-600', '배송중': 'text-indigo-600', '취소': 'text-red-500' };
+            return map[s] || 'text-gray-600';
+        };
+
+        const rows = orders.map(o => `
+            <tr class="border-b border-gray-100 text-sm">
+                <td class="py-1.5 px-2 text-gray-500">${formatDate(o.created_at || o.order_date)}</td>
+                <td class="py-1.5 px-2 text-gray-700">${o.order_number || '-'}</td>
+                <td class="py-1.5 px-2 text-right font-medium">${formatAmt(o.total_amount)}</td>
+                <td class="py-1.5 px-2 text-center ${statusColor(o.order_status)}">${o.order_status || '-'}</td>
+            </tr>`).join('');
+
+        const modal = document.createElement('div');
+        modal.id = 'delete-with-orders-modal';
+        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4';
+        modal.innerHTML = `
+            <div class="bg-white rounded-xl shadow-xl w-full max-w-md">
+                <div class="p-4 border-b border-gray-200 flex items-center gap-2">
+                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center">
+                        <i class="fas fa-trash text-red-500 text-sm"></i>
+                    </div>
+                    <div>
+                        <div class="font-semibold text-gray-900">고객 삭제</div>
+                        <div class="text-xs text-gray-500">이 고객에게 주문 ${orders.length}건이 있습니다</div>
+                    </div>
+                </div>
+                <div class="p-4">
+                    <div class="max-h-52 overflow-y-auto rounded-lg border border-gray-200">
+                        <table class="w-full">
+                            <thead class="bg-gray-50 text-xs text-gray-500">
+                                <tr>
+                                    <th class="py-1.5 px-2 text-left">날짜</th>
+                                    <th class="py-1.5 px-2 text-left">주문번호</th>
+                                    <th class="py-1.5 px-2 text-right">금액</th>
+                                    <th class="py-1.5 px-2 text-center">상태</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <p class="mt-3 text-xs text-red-500">⚠️ 위 주문을 모두 삭제한 후 고객도 삭제됩니다. 복구할 수 없습니다.</p>
+                </div>
+                <div class="flex gap-2 p-4 border-t border-gray-200">
+                    <button id="cancel-delete-orders" class="flex-1 py-2 px-4 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">취소</button>
+                    <button id="confirm-delete-orders" class="flex-1 py-2 px-4 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">주문 + 고객 모두 삭제</button>
+                </div>
+            </div>`;
+
+        document.body.appendChild(modal);
+
+        document.getElementById('confirm-delete-orders').addEventListener('click', () => {
+            modal.remove();
+            resolve(true);
+        });
+        document.getElementById('cancel-delete-orders').addEventListener('click', () => {
+            modal.remove();
+            resolve(false);
+        });
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) { modal.remove(); resolve(false); }
+        });
+    });
+}
 
 // 고객 수정 함수 (전역)
 window.editCustomer = async function(customerId) {
