@@ -258,36 +258,34 @@ window.fmt.nullDash(value)
 
 ## 버전 관리
 
-**버전 번호 하나만 바꾸면 시스템 전체가 자동으로 반영됩니다.**
+**커밋할 때마다 버전이 자동으로 올라갑니다. 아무것도 수동으로 바꿀 필요 없습니다.**
 
 ```
-js/config.js  ←  여기 _APP_VER 값만 수정
+git commit 발생
       │
-      ├── server.js: 시작 시 읽어서 모든 HTML 서빙 시 ?v=X.X.X 자동 주입
-      ├── 사이드바 배지: window.APP_VERSION 읽어서 표시
-      └── README.md: 수동으로 배지 텍스트 맞추기
+      ├── hooks/pre-commit → js/config.js 패치 버전 자동 +1
+      ├── server.js 시작 시 → README.md 배지 자동 동기화
+      ├── 네비게이션바 배지 → window.APP_VERSION 자동 반영
+      └── 로컬 JS/CSS 경로 → ?v=X.X.X 캐시 버스팅 자동 삽입
 ```
 
 | 파일 | 역할 |
 |------|------|
-| `js/config.js` | `_APP_VER = 'X.X.X'` — 단 한 곳에서 관리 |
-| `server.js` | HTML 응답 시 로컬 `.js`/`.css` 경로에 `?v=X.X.X` 자동 삽입 |
-| `components/header/header.html` | `#app-version-number` span |
-| `components/header/header.js` | `updateVersionBadge()` — DOM에 버전 기입 |
+| `js/config.js` | 버전 단일 저장소 (`_APP_VER`) |
+| `hooks/pre-commit` | 커밋 시 패치 버전 자동 증가 |
+| `server.js` | 서버 시작 시 README 배지 자동 동기화 + JS/CSS 캐시 버스팅 |
 
-### 버전 업데이트 절차
-
-```js
-// js/config.js
-const _APP_VER = '3.3.0';  // ← 이것만 변경 후 서버 재시작
-```
+### 처음 클론 후 hook 설치 (최초 1회만)
 
 ```bash
-# 서버 재시작
-start-server.bat
+# Windows
+setup-hooks.bat
+
+# macOS / Linux
+bash setup-hooks.sh
 ```
 
-브라우저 콘솔에 `🌱 경산다육식물농장 관리시스템 v3.3.0` 확인
+설치 후에는 `git commit` 할 때마다 버전이 자동으로 올라갑니다.
 
 ---
 

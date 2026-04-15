@@ -1,0 +1,28 @@
+#!/bin/sh
+# 커밋할 때마다 js/config.js 패치 버전 자동 증가
+
+CONFIG="js/config.js"
+
+# 현재 버전 읽기
+CURRENT=$(grep -oP "_APP_VER\s*=\s*'\K[^']+" "$CONFIG")
+if [ -z "$CURRENT" ]; then
+    echo "⚠️  config.js 버전 읽기 실패, 건너뜀"
+    exit 0
+fi
+
+# 버전 분리 (major.minor.patch)
+MAJOR=$(echo "$CURRENT" | cut -d. -f1)
+MINOR=$(echo "$CURRENT" | cut -d. -f2)
+PATCH=$(echo "$CURRENT" | cut -d. -f3)
+
+# 패치 +1
+NEW_PATCH=$((PATCH + 1))
+NEW_VER="$MAJOR.$MINOR.$NEW_PATCH"
+
+# config.js 업데이트
+sed -i "s/_APP_VER\s*=\s*'$CURRENT'/_APP_VER = '$NEW_VER'/" "$CONFIG"
+
+echo "🔖 버전 자동 증가: v$CURRENT → v$NEW_VER"
+
+# 스테이징에 추가
+git add "$CONFIG"
