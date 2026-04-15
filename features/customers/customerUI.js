@@ -213,13 +213,14 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             tr.className = 'hover:bg-gray-50 cursor-pointer';
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = (customer.phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+            const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
-                <td class="px-3 py-2 text-xs font-medium text-gray-900">${escapeHtml(customer.name || '-')}</td>
-                <td class="px-3 py-2 text-xs text-gray-500">${phoneDisplay || '-'}</td>
-                <td class="px-3 py-2 text-xs text-gray-500">${lastOrderDate}</td>
+                <td class="px-3 py-2 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
+                <td class="px-3 py-2 td-secondary">${phoneDisplay || nullDash}</td>
+                <td class="px-3 py-2 td-muted">${lastOrderDate || nullDash}</td>
                 <td class="px-3 py-2"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
                 <td class="px-3 py-2">
-                    <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                    <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
                     <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                 </td>
             `;

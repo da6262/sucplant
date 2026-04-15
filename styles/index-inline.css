@@ -30,13 +30,76 @@
 
     /* 8. 상태 배지 높이 */
     --status-badge-h:    20px;
+
+    /* ── Typography & Color Hierarchy (8대 스펙) ── */
+    --text-primary:      #1E293B;   /* 이름·상품명 등 핵심 데이터 */
+    --text-secondary:    #64748B;   /* 전화번호·카테고리 등 보조 */
+    --text-muted:        #94A3B8;   /* 날짜·주문번호 등 부수 정보 */
+    --text-link:         #3B82F6;   /* 클릭 가능 텍스트 */
+    --text-amount:       #0F172A;   /* 금액 — 가장 진한 색 */
+    --text-null:         #94A3B8;   /* 빈 데이터(—) */
 }
 
-/* Base */
+/* =====================
+   Base — Spec ①: 서체 통일 13px 산세리프
+   ===================== */
 body {
-    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    font-family: 'Noto Sans KR', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     background-color: #f1f5f9;
     font-size: 13px;
+}
+
+/* =====================
+   Typography & Data — 8대 스펙 유틸리티
+   ===================== */
+
+/* Spec ② — 텍스트 컬러 위계 */
+.td-primary   { color: var(--text-primary);   font-weight: 500; }
+.td-secondary { color: var(--text-secondary); }
+.td-muted     { color: var(--text-muted);     font-size: 11px; }
+
+/* Spec ③ — 숫자 전용: 고정폭 + 우정렬 */
+.td-num {
+    font-family: 'Inter', 'Noto Sans KR', monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    text-align: right;
+    color: var(--text-secondary);
+}
+
+/* Spec ④ — 금액: 가장 진한 색 + 굵기 */
+.td-amount {
+    font-family: 'Inter', 'Noto Sans KR', monospace;
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum";
+    text-align: right;
+    color: var(--text-amount);
+    font-weight: 600;
+}
+
+/* Spec ⑥ — 행 간격: 모든 테이블 td에 line-height 1.5 */
+.app-table td, .table-ui td, .tbl-ui td,
+.customer-table td, .customer-row td {
+    line-height: 1.5;
+    vertical-align: middle;
+}
+
+/* Spec ⑦ — 링크/액션 텍스트 */
+.td-link {
+    color: var(--text-link);
+    cursor: pointer;
+    transition: color 0.15s;
+}
+.td-link:hover {
+    color: #2563EB;
+    text-decoration: underline;
+}
+
+/* Spec ⑧ — 빈 데이터(null/empty) */
+.td-null {
+    color: var(--text-null);
+    font-size: 12px;
+    user-select: none;
 }
 
 /* =====================

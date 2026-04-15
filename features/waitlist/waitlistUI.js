@@ -264,19 +264,18 @@ export class WaitlistUI {
     createWaitlistRow(item, index) {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
+        const nd = '<span class="td-null">—</span>';
         row.innerHTML = `
-            <td class="px-2.5 py-2 text-xs text-gray-900">${index + 1}</td>
-            <td class="px-2.5 py-2 text-xs font-medium text-gray-900">${item.customer_name}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.customer_phone || '-'}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_name}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.product_category || '-'}</td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.expected_price ? item.expected_price.toLocaleString() + '원' : '-'}</td>
-            <td class="px-2.5 py-2 text-xs">
-                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${this.getStatusBadgeClass(item.status)}">
-                    ${item.status}
-                </span>
+            <td class="px-2.5 py-2 td-muted">${index + 1}</td>
+            <td class="px-2.5 py-2 td-primary td-link">${item.customer_name || nd}</td>
+            <td class="px-2.5 py-2 td-secondary">${item.customer_phone || nd}</td>
+            <td class="px-2.5 py-2 td-primary">${item.product_name || nd}</td>
+            <td class="px-2.5 py-2 td-secondary">${item.product_category || nd}</td>
+            <td class="px-2.5 py-2 td-amount">${item.expected_price ? item.expected_price.toLocaleString() + '원' : nd}</td>
+            <td class="px-2.5 py-2">
+                <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
             </td>
-            <td class="px-2.5 py-2 text-xs text-gray-900">${item.register_date ? new Date(item.register_date).toLocaleDateString('ko-KR') : '-'}</td>
+            <td class="px-2.5 py-2 td-muted">${item.register_date ? new Date(item.register_date).toLocaleDateString('ko-KR') : nd}</td>
             <td class="px-2.5 py-2 text-xs text-gray-900">
                 <div class="flex space-x-2">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
@@ -305,12 +304,12 @@ export class WaitlistUI {
      */
     getStatusBadgeClass(status) {
         const statusClasses = {
-            '대기중': 'bg-orange-100 text-orange-800',
-            '연락완료': 'bg-blue-100 text-blue-800',
-            '주문전환': 'bg-green-100 text-green-800',
-            '취소': 'bg-red-100 text-red-800'
+            '대기중':   'badge-warning',   // 노랑 — 대기 중
+            '연락완료': 'badge-info',       // 파랑 — 연락됨
+            '주문전환': 'badge-success',    // 초록 — 완료
+            '취소':     'badge-danger',     // 빨강 — 취소
         };
-        return statusClasses[status] || 'bg-gray-100 text-gray-800';
+        return statusClasses[status] || 'badge-neutral';
     }
 
     /**

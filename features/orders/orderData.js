@@ -924,20 +924,21 @@ class OrderDataManager {
             const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
+            const nullDash = '<span class="td-null">—</span>';
             return `
-                <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 ${isSelected ? 'bg-indigo-50' : ''} cursor-pointer py-0" 
-                    onclick="openOrderDetailModal('${rowId}')" 
+                <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 ${isSelected ? 'bg-indigo-50' : ''} cursor-pointer py-0"
+                    onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
                     <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
-                        <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" 
+                        <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1"
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 py-1.5 text-center align-middle font-medium tabular-nums ${ddayWarn ? 'text-red-600 font-semibold' : 'text-gray-600'}">${ddayText}</td>
-                    <td class="px-2 py-1.5 align-middle font-semibold text-gray-900">${customerName}</td>
-                    <td class="px-2 py-1.5 align-middle text-gray-700" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary}</div></td>
-                    <td class="px-2 py-1.5 align-middle whitespace-nowrap text-[10px] text-gray-400">${orderNumber}</td>
-                    <td class="px-2 py-1.5 text-right align-middle font-medium text-gray-900 tabular-nums">${totalAmount.toLocaleString()}원</td>
+                    <td class="px-2 py-1.5 text-center td-num ${ddayWarn ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}</td>
+                    <td class="px-2 py-1.5 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
+                    <td class="px-2 py-1.5 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
+                    <td class="px-2 py-1.5 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
+                    <td class="px-2 py-1.5 td-amount">${totalAmount > 0 ? totalAmount.toLocaleString() + '원' : nullDash}</td>
                     <td class="px-2 py-1.5 align-middle relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor}"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경" style="cursor:pointer;">${orderStatus}</span>
