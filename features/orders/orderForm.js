@@ -26,436 +26,8 @@ function normalizeQuantityInput(el) {
 // 주문 폼 HTML 생성 (최소 입력·최대 속도 레이아웃 우선)
 function generateOrderFormHTML() {
     if (typeof window.generateOrderFormHTMLMinimal === 'function') return window.generateOrderFormHTMLMinimal();
-    return `
-        <!-- 메인 컨텐츠 - 3단 레이아웃 (레거시) -->
-        <div class="space-y-6">
-            <!-- 상단: 주문 요약 대시보드 -->
-            <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                            <i class="fas fa-shopping-cart text-blue-600 text-lg"></i>
-                        </div>
-                        <div>
-                            <h3 class="text-lg font-semibold text-blue-800">주문 요약</h3>
-                            <p class="text-sm text-blue-600">현재 주문 상태를 확인하세요</p>
-                        </div>
-                    </div>
-                    <div class="flex space-x-4">
-                        <div class="text-center">
-                            <div class="text-2xl font-bold text-blue-600" id="order-summary-total">0원</div>
-                            <div class="text-xs text-blue-500">총 주문금액</div>
-                        </div>
-                        <div class="text-center">
-                            <div class="text-lg font-semibold text-green-600" id="order-summary-items">0개</div>
-                            <div class="text-xs text-green-500">상품 수량</div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <div class="grid grid-cols-1 xl:grid-cols-3 gap-6 h-full">
-                <!-- 좌측: 고객 정보, 주문 정보 -->
-                <div class="space-y-6">
-                    <!-- 고객 정보 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-user mr-3 text-blue-600"></i>고객 정보
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 고객명, 연락처 한 줄 배치 -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div class="relative">
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">
-                                        <i class="fas fa-search text-blue-500 mr-1"></i>고객명 *
-                                        <span class="text-xs text-gray-500 ml-2">(입력 시 자동 검색)</span>
-                                    </label>
-                                    <div class="relative">
-                                        <input type="text" id="order-customer-name" 
-                                               class="w-full px-3 py-2 pr-10 border-2 border-blue-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                               placeholder="🔍 고객 이름을 입력하세요" required
-                                               oninput="searchExistingCustomers(this.value)" autocomplete="off">
-                                        <div class="absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-400">
-                                            <i class="fas fa-user-search"></i>
-                                        </div>
-                                    </div>
-                                    <div id="customer-search-results" class="absolute top-full left-0 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto z-30">
-                                        <!-- 기존 고객 검색 결과 -->
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">연락처 *</label>
-                                    <input type="tel" id="order-customer-phone" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-gray-50"
-                                           placeholder="고객 선택 시 자동 입력됩니다" required readonly>
-                                </div>                            </div>
-                            <!-- 주소 검색 및 상세주소 한 줄 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">주소 *</label>
-                                <div class="flex space-x-2">
-                                    <!-- 기본주소 (검색된 주소) -->
-                                    <input type="text" id="order-customer-address" 
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="고객 선택 시 자동 입력됩니다" required readonly>
-                                    <!-- 주소는 고객 선택 시 자동 입력되므로 검색 버튼 불필요 -->
-                                    <!-- 상세주소 입력 -->
-                                    <input type="text" id="order-customer-address-detail" 
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="상세주소 (동/호수, 건물명 등)">
-                                </div>
-                            </div>
-                            <!-- 추가 배송지 섹션 -->
-                            <div class="mt-3">
-                                <div class="flex items-center justify-between mb-1">
-                                    <span class="text-xs text-gray-500">배송지 1 (기본)</span>
-                                    <button type="button" onclick="addExtraShipping()"
-                                            class="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium">
-                                        <i class="fas fa-plus-circle"></i> 배송지 추가
-                                        <span id="extra-shipping-badge" class="hidden"></span>
-                                    </button>
-                                </div>
-                                <div id="extra-shipping-list"></div>
-                            </div>
-                            <div id="order-phone-duplicate-message" class="text-sm text-red-600 hidden"></div>
-                        </div>
-                    </div>
-
-                    <!-- 주문 정보 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-clipboard-list mr-3 text-purple-600"></i>주문 정보
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 주문상태와 주문채널 한 줄 배치 -->
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">주문 상태</label>
-                                    <select id="order-status" 
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="주문접수">1. 주문접수</option>
-                                        <option value="고객안내">2. 고객안내</option>
-                                        <option value="입금대기">3. 입금대기</option>
-                                        <option value="입금확인">4. 입금확인</option>
-                                        <option value="상품준비">5. 상품준비</option>
-                                        <option value="배송준비">6. 배송준비</option>
-                                        <option value="배송중">7. 배송중</option>
-                                        <option value="배송완료">8. 배송완료</option>
-                                        <option value="주문취소">9. 주문취소</option>
-                                        <option value="환불완료">10. 환불완료</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">주문 채널</label>
-                                    <select id="order-channel" 
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                        <!-- 환경설정에서 동적으로 로드됩니다 -->
-                                    </select>
-                                </div>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">배송 메모</label>
-                                <textarea id="order-memo" rows="3"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                          placeholder="배송 관련 메모 입력..."></textarea>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 중앙: 상품 검색, 장바구니 -->
-                <div class="space-y-6">
-                    <!-- 상품 검색 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-search mr-3 text-green-600"></i>상품 검색
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 상품 검색 필터 -->
-                            <div class="flex space-x-2 mb-4">
-                                <select id="product-category-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">전체 카테고리</option>
-                                    <!-- 카테고리 옵션들이 동적으로 로드됩니다 -->
-                                </select>
-                                <select id="product-price-filter" class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="">전체 가격대</option>
-                                    <option value="0-10000">1만원 이하</option>
-                                    <option value="10000-30000">1-3만원</option>
-                                    <option value="30000-50000">3-5만원</option>
-                                    <option value="50000-100000">5-10만원</option>
-                                    <option value="100000">10만원 이상</option>
-                                </select>
-                            </div>
-                            
-                            <!-- 상품 검색 입력 -->
-                            <div class="flex space-x-2">
-                                <div class="flex-1 relative">
-                                    <input type="text" id="product-search" 
-                                           class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="상품명, 브랜드, 태그로 검색..."
-                                           oninput="searchProducts(this.value)">
-                                    <div id="product-search-results" class="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg hidden max-h-64 overflow-y-auto">
-                                        <!-- 상품 검색 결과 (이미지 썸네일 포함) -->
-                                    </div>
-                                </div>
-                                <button id="show-product-list"
-                                        class="btn-primary"
-                                        onclick="showProductManagementModal()">
-                                    <i class="fas fa-list"></i>
-                                </button>
-                            </div>
-                            
-                            <!-- 인기 상품 빠른 선택 -->
-                            <div class="bg-gray-50 rounded-lg p-3">
-                                <h4 class="text-sm font-medium text-gray-700 mb-2">인기 상품</h4>
-                                <div id="popular-products" class="flex space-x-2 overflow-x-auto">
-                                    <!-- 인기 상품 버튼들이 동적으로 로드됩니다 -->
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 장바구니 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-shopping-cart mr-3 text-orange-600"></i>장바구니
-                        </h3>
-                        <div class="space-y-4">
-                            <div id="cart-items" class="max-h-64 overflow-y-auto bg-gray-50 rounded-lg border">
-                                <!-- 장바구니 표 헤더 -->
-                                <table class="w-full text-sm">
-                                    <thead class="bg-gray-100 sticky top-0">
-                                        <tr class="border-b border-gray-200">
-                                            <th class="px-3 py-2 text-left font-medium text-gray-700">상품명</th>
-                                            <th class="px-3 py-2 text-right font-medium text-gray-700">단가(원)</th>
-                                            <th class="px-3 py-2 text-center font-medium text-gray-700">수량</th>
-                                            <th class="px-3 py-2 text-right font-medium text-gray-700">소계(원)</th>
-                                            <th class="px-3 py-2 text-center font-medium text-gray-700">삭제</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="cart-items-body">
-                                        <!-- 장바구니 아이템들이 여기에 표시됩니다 -->
-                                        <tr>
-                                            <td colspan="5" class="text-center text-gray-500">
-                                                <p>장바구니가 비어있습니다</p>
-                                            </td>
-                                        </tr>
-                                    </tbody>
-                                </table>
-                            </div>
-                            <!-- 합계 영역: items_subtotal / shipping_fee / discount_amount / total_amount 실시간 일치 -->
-                            <div id="order-total-summary" class="bg-blue-50 border border-blue-200 rounded-lg p-4 hidden">
-                                <div class="space-y-2">
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">상품합계:</span>
-                                        <span id="product-total-amount" class="font-medium tabular-nums">0원</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">배송비:</span>
-                                        <span id="shipping-total-amount" class="font-medium tabular-nums">0원</span>
-                                    </div>
-                                    <div class="flex justify-between text-sm">
-                                        <span class="text-gray-600">할인:</span>
-                                        <span id="discount-total-amount" class="font-medium text-red-600 tabular-nums">-0원</span>
-                                    </div>
-                                    <div class="border-t border-blue-200 pt-2">
-                                        <div class="flex justify-between text-lg font-bold">
-                                            <span class="text-blue-800">총액:</span>
-                                            <span id="final-total-amount" class="text-blue-600 tabular-nums">0원</span>
-                                        </div>
-                                        <p id="order-total-zero-warning" class="text-amber-600 text-xs mt-1 hidden">총액이 0원으로 처리됨</p>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">배송 방법</label>
-                                    <select id="shipping-method" 
-                                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-green-500"
-                                            onchange="updateShippingMethod()">
-                                        <option value="택배">택배</option>
-                                        <option value="직접배송">직접배송</option>
-                                        <option value="픽업">픽업 (배송비 무료)</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">배송비 (주문별 입력)</label>
-                                    <div class="flex items-center space-x-2">
-                                        <input type="number" id="shipping-fee-input" step="1" min="0"
-                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" 
-                                               value="0" oninput="window._shippingFeeUserEdited=true; if(window.normalizeIntegerInput) normalizeIntegerInput(this); updateCartTotal()" onchange="updateCartTotal()"
-                                               title="주문별 최종 배송비. 총액 계산에 사용됩니다">
-                                        <span class="text-sm text-gray-600">원</span>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">할인액</label>
-                                    <div class="flex items-center space-x-2">
-                                        <input type="number" id="discount-amount" step="1" min="0"
-                                               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" 
-                                               value="0" oninput="normalizeIntegerInput(this); updateCartTotal()" onchange="updateCartTotal()">
-                                        <span class="text-sm text-gray-600">원</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 우측: 주문 설정, 할인, 배송 옵션 -->
-                <div class="space-y-6">
-                    <!-- 주문 설정 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-cog mr-3 text-purple-600"></i>주문 설정
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 주문 우선순위 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">주문 우선순위</label>
-                                <select id="order-priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="normal">일반</option>
-                                    <option value="urgent">긴급</option>
-                                    <option value="vip">VIP</option>
-                                </select>
-                            </div>
-                            
-                            
-                            <!-- 결제 방법 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">결제 방법</label>
-                                <select id="payment-method" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                                    <option value="bank_transfer">계좌이체</option>
-                                    <option value="card">카드결제</option>
-                                    <option value="cash">현금</option>
-                                    <option value="other">기타</option>
-                                </select>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 할인 및 쿠폰 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-tag mr-3 text-red-600"></i>할인 및 쿠폰
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 쿠폰 적용 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">쿠폰 코드</label>
-                                <div class="flex space-x-2">
-                                    <input type="text" id="coupon-code" 
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                           placeholder="쿠폰 코드 입력">
-                                    <button type="button" onclick="applyCoupon()" 
-                                            class="px-4 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700 transition-colors">
-                                        적용
-                                    </button>
-                                </div>
-                            </div>
-                            
-                            <!-- 할인 옵션 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">할인 옵션</label>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="new-customer-discount" class="mr-2">
-                                        <span class="text-sm">신규고객 할인 (5%)</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="bulk-order-discount" class="mr-2">
-                                        <span class="text-sm">대량주문 할인 (10%)</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="loyalty-discount" class="mr-2">
-                                        <span class="text-sm">단골고객 할인 (3%)</span>
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <!-- 수동 할인 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">수동 할인</label>
-                                <div class="flex items-center space-x-2">
-                                    <input type="number" id="manual-discount" 
-                                           class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" 
-                                           value="0" min="0" onchange="updateCartTotal()">
-                                    <span class="text-sm text-gray-600">원</span>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 주문 메모 및 알림 카드 -->
-                    <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4 flex items-center">
-                            <i class="fas fa-sticky-note mr-3 text-yellow-600"></i>메모 및 알림
-                        </h3>
-                        <div class="space-y-4">
-                            <!-- 주문 메모 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">주문 메모</label>
-                                <textarea id="order-notes" rows="3"
-                                          class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
-                                          placeholder="주문 관련 특이사항을 입력하세요..."></textarea>
-                            </div>
-                            
-                            <!-- 알림 설정 -->
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">알림 설정</label>
-                                <div class="space-y-2">
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="sms-notification" class="mr-2" checked>
-                                        <span class="text-sm">SMS 알림 발송</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="email-notification" class="mr-2">
-                                        <span class="text-sm">이메일 알림 발송</span>
-                                    </label>
-                                    <label class="flex items-center">
-                                        <input type="checkbox" id="auto-status-update" class="mr-2" checked>
-                                        <span class="text-sm">자동 상태 업데이트</span>
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- 하단 액션 버튼들 -->
-            <div class="bg-white rounded-lg p-6 border border-gray-200 shadow-sm">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-4">
-                        <div class="text-sm text-gray-600">
-                            <span class="font-medium">총 상품:</span> <span id="total-items-count">0</span>개
-                        </div>
-                        <div class="text-sm text-gray-600">
-                            <span class="font-medium">총 금액:</span> <span id="total-amount-display" class="text-lg font-bold text-blue-600">0원</span>
-                        </div>
-                    </div>
-                    <div class="flex space-x-3">
-                        <button type="button" onclick="clearOrderForm()" 
-                                class="px-6 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                            <i class="fas fa-eraser mr-2"></i>초기화
-                        </button>
-                        <button type="button" onclick="saveOrderDraft()" 
-                                class="px-6 py-2 bg-yellow-500 hover:bg-yellow-600 text-white rounded-lg transition-colors">
-                            <i class="fas fa-save mr-2"></i>임시저장
-                        </button>
-                        <button type="button" onclick="previewOrder()" 
-                                class="px-6 py-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors">
-                            <i class="fas fa-eye mr-2"></i>미리보기
-                        </button>
-                        <button type="submit" form="order-form" data-order-submit="true"
-                                class="btn-primary" style="padding: 8px 32px;">
-                            <i class="fas fa-check mr-2"></i>주문 등록
-                        </button>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
+    console.warn("[orderForm] generateOrderFormHTMLMinimal not loaded — falling back to empty form");
+    return "";
 }
 
 // 쿠폰 적용 함수
@@ -530,17 +102,20 @@ async function loadQuickProductsForMinimal() {
             .select('id, name, price')
             .limit(6)
             .order('created_at', { ascending: false });
+        const emptyMsg = (msg) =>
+            `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:8px 0;">${msg}</div>`;
         if (error || !products || products.length === 0) {
-            container.innerHTML = '<div class="col-span-3 text-center text-gray-400 text-xs py-2">등록된 상품이 없습니다</div>';
+            container.innerHTML = emptyMsg('등록된 상품이 없습니다');
             return;
         }
+        const quickBtn = `min-height:32px;min-width:32px;padding:6px 8px;border-radius:8px;border:1px solid var(--border-light);background:var(--bg-white);font-size:12px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         container.innerHTML = products.map(p => {
             const name = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            return `<button type="button" onclick="addQuickProductToCart('${p.id}','${name}',${parseFloat(p.price)||0})"
-                class="min-h-[32px] min-w-[32px] px-2 py-1.5 rounded-lg border border-gray-200 bg-white hover:bg-green-50 hover:border-green-300 text-xs text-left truncate">${(p.name || '').substring(0, 12)} ${(parseFloat(p.price)||0).toLocaleString()}원</button>`;
+            const price = (parseFloat(p.price) || 0).toLocaleString();
+            return `<button type="button" class="truncate" style="${quickBtn}" onclick="addQuickProductToCart('${p.id}','${name}',${parseFloat(p.price)||0})">${(p.name || '').substring(0, 12)} <span class="tabular-nums">${price}원</span></button>`;
         }).join('');
     } catch (e) {
-        container.innerHTML = '<div class="col-span-3 text-center text-gray-400 text-xs py-2">로드 실패</div>';
+        container.innerHTML = `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:8px 0;">로드 실패</div>`;
     }
 }
 
@@ -554,16 +129,18 @@ async function loadPopularProducts() {
     try {
         const popularProductsContainer = document.getElementById('popular-products');
         if (!popularProductsContainer) return;
-        popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400 flex items-center space-x-2"><i class="fas fa-spinner fa-spin"></i><span>로딩 중...</span></div>`;
+        const popInfo = (msg, withSpinner = false) =>
+            `<div class="txt-muted txt-sm" style="display:flex;align-items:center;gap:6px;">${withSpinner ? '<i class="fas fa-spinner fa-spin"></i>' : ''}<span>${msg}</span></div>`;
+        popularProductsContainer.innerHTML = popInfo('로딩 중...', true);
         if (!window.supabaseClient) {
-            popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400">인기 상품을 불러올 수 없습니다</div>`;
+            popularProductsContainer.innerHTML = popInfo('인기 상품을 불러올 수 없습니다');
             return;
         }
         const { data: orderItemsData, error: orderItemsError } = await window.supabaseClient
             .from('farm_order_items')
             .select('product_name, quantity');
         if (orderItemsError) {
-            popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400">인기 상품을 불러올 수 없습니다</div>`;
+            popularProductsContainer.innerHTML = popInfo('인기 상품을 불러올 수 없습니다');
             return;
         }
         const productCounts = {};
@@ -572,7 +149,7 @@ async function loadPopularProducts() {
         });
         const topProductNames = Object.entries(productCounts).sort((a, b) => b[1] - a[1]).slice(0, 6).map(([name]) => name);
         if (topProductNames.length === 0) {
-            popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400">아직 주문 데이터가 없습니다</div>`;
+            popularProductsContainer.innerHTML = popInfo('아직 주문 데이터가 없습니다');
             return;
         }
         const { data: productsData, error: productsError } = await window.supabaseClient
@@ -580,25 +157,28 @@ async function loadPopularProducts() {
             .select('id, name, price, image_url, stock')
             .in('name', topProductNames);
         if (productsError || !productsData?.length) {
-            popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400">인기 상품이 없습니다</div>`;
+            popularProductsContainer.innerHTML = popInfo('인기 상품이 없습니다');
             return;
         }
         const sortedProducts = productsData.sort((a, b) => (productCounts[b.name] || 0) - (productCounts[a.name] || 0));
+        const popBtn = `flex-shrink:0;background:var(--bg-white);border:1px solid var(--border-light);border-radius:8px;padding:8px;transition:all .15s;cursor:pointer;`;
+        const popImg = `width:56px;height:56px;background:var(--bg-light);border-radius:6px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;`;
         popularProductsContainer.innerHTML = sortedProducts.map(product => `
-            <button onclick="addPopularProduct('${product.id}', '${(product.name||'').replace(/'/g, "\\'")}', ${product.price})"
-                    class="flex-shrink-0 bg-white border border-gray-200 rounded-lg p-2 hover:bg-blue-50 hover:border-blue-300 transition-all shadow-sm">
-                <div class="w-14 h-14 bg-gray-100 rounded-lg mb-1 flex items-center justify-center overflow-hidden">
-                    ${product.image_url ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` : `<i class="fas fa-seedling text-green-500 text-xl"></i>`}
+            <button type="button" style="${popBtn}" onclick="addPopularProduct('${product.id}', '${(product.name||'').replace(/'/g, "\\'")}', ${product.price})">
+                <div style="${popImg}">
+                    ${product.image_url
+                        ? `<img src="${product.image_url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`
+                        : `<i class="fas fa-seedling" style="color:var(--primary-accent);font-size:20px;"></i>`}
                 </div>
-                <div class="text-xs text-center w-20">
-                    <div class="font-medium text-gray-800 truncate">${product.name}</div>
-                    <div class="text-blue-600 font-semibold">${product.price.toLocaleString()}원</div>
+                <div style="width:80px;text-align:center;">
+                    <div class="txt-body truncate" style="font-size:12px;font-weight:500;">${product.name}</div>
+                    <div class="tabular-nums" style="font-size:12px;font-weight:600;color:var(--primary-accent);">${product.price.toLocaleString()}원</div>
                 </div>
             </button>
         `).join('');
     } catch (error) {
         const popularProductsContainer = document.getElementById('popular-products');
-        if (popularProductsContainer) popularProductsContainer.innerHTML = `<div class="text-xs text-gray-400">오류가 발생했습니다</div>`;
+        if (popularProductsContainer) popularProductsContainer.innerHTML = `<div class="txt-muted txt-sm">오류가 발생했습니다</div>`;
     }
 }
 
@@ -627,15 +207,17 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-unit-price', String(unitPrice));
         tr.setAttribute('data-product-name', productName || '');
         const lineTotal = unitPrice * 1;
+        const stepBtn = `width:28px;height:28px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
+        const cellPad = `padding:6px 8px;vertical-align:top;`;
         tr.innerHTML = `
-            <td class="px-2 align-top">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 td-secondary align-top tabular-nums">${unitPrice.toLocaleString()}원</td>
-            <td class="px-2 text-center align-top whitespace-nowrap">
-                <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', -1)">−</button>
-                <input type="number" class="quantity-input w-12 text-center border rounded mx-0.5 text-sm" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
-                <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', 1)">+</button>
+            <td class="txt-body" style="${cellPad}">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="td-secondary tabular-nums" style="${cellPad}text-align:right;">${unitPrice.toLocaleString()}원</td>
+            <td style="${cellPad}text-align:center;white-space:nowrap;">
+                <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', -1)">−</button>
+                <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;display:inline-block;margin:0 2px;padding:4px;" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
+                <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
-            <td class="cart-line-total px-2 text-right font-medium tabular-nums align-top">${lineTotal.toLocaleString()}원</td>
+            <td class="cart-line-total tabular-nums" style="${cellPad}text-align:right;font-weight:500;">${lineTotal.toLocaleString()}원</td>
         `;
         cartBody.appendChild(tr);
     }
@@ -1398,57 +980,28 @@ function showProductManagementModal(event) {
             existingModal.remove();
         }
         
-        // 상품관리 모달 HTML 생성
-        const modalHTML = `
-            <div id="product-management-modal" class="fixed inset-0 z-50 overflow-y-auto">
-                <div class="fixed inset-0 bg-black bg-opacity-50" onclick="closeProductManagementModal(event)"></div>
-                <div class="flex min-h-full items-center justify-center p-4">
-                    <div class="relative bg-white rounded-lg shadow-xl w-full max-w-4xl max-h-[80vh] overflow-hidden">
-                        <!-- 헤더 -->
-                        <div class="bg-white border-b border-gray-200 px-4 py-3">
-                            <div class="flex items-center justify-between">
-                                <div class="flex items-center space-x-3">
-                                    <button onclick="closeProductManagementModal(event)" 
-                                            class="flex items-center space-x-2 text-gray-600 hover:text-gray-800 transition-colors">
-                                        <i class="fas fa-times"></i>
-                                        <span>닫기</span>
-                                    </button>
-                                    <div class="h-6 w-px bg-gray-300"></div>
-                                    <h1 class="text-lg font-bold text-gray-800">상품 목록</h1>
-                                </div>
-                                <div class="flex items-center space-x-2">
-                                    <span class="text-sm text-gray-500">상품 선택</span>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <!-- 검색 바 -->
-                        <div class="p-4 border-b border-gray-200">
-                            <div class="flex space-x-2">
-                                <input type="text" id="product-modal-search" 
-                                       class="flex-1 px-3 py-2 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                       placeholder="상품명으로 검색..."
-                                       oninput="searchProductsInModal(this.value)">
-                                <button onclick="loadAllProducts()" 
-                                        class="px-4 py-2 bg-blue-600 text-white rounded text-sm hover:bg-blue-700 transition-colors">
-                                    전체 로드
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <!-- 상품 목록 -->
-                        <div class="overflow-y-auto max-h-[calc(80vh-140px)]">
-                            <div id="product-modal-list" class="p-4">
-                                <div class="text-center text-gray-500 py-8">
-                                    <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                                    <p>상품 목록을 불러오는 중...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+        const body = `
+            ${renderFilterBar(`
+                <input type="text" id="product-modal-search"
+                       placeholder="상품명으로 검색..." oninput="searchProductsInModal(this.value)">
+                <button class="btn-primary" onclick="loadAllProducts()">전체 로드</button>
+            `)}
+            <div id="product-modal-list">
+                <div class="td-null" style="text-align:center;padding:40px 8px;">
+                    <i class="fas fa-spinner fa-spin" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                    상품 목록을 불러오는 중...
                 </div>
             </div>
         `;
+
+        const modalHTML = renderModal({
+            id: 'product-management-modal',
+            title: '상품 목록',
+            size: 'lg',
+            icon: 'fa-box',
+            body,
+            closeCall: 'closeProductManagementModal(event)'
+        });
         
         // 모달 추가
         document.body.insertAdjacentHTML('beforeend', modalHTML);
@@ -1496,13 +1049,13 @@ async function loadAllProducts() {
         const productList = document.getElementById('product-modal-list');
         if (!productList) return;
         
-        // 로딩 표시
-        productList.innerHTML = `
-            <div class="text-center text-gray-500 py-8">
-                <i class="fas fa-spinner fa-spin text-2xl mb-2"></i>
-                <p>상품 목록을 불러오는 중...</p>
-            </div>
-        `;
+        const stateBlock = (icon, message, color) => `
+            <div class="td-null" style="text-align:center;padding:40px 8px;${color ? `color:${color};` : ''}">
+                <i class="fas ${icon}" style="font-size:24px;display:block;margin-bottom:8px;"></i>
+                <p>${message}</p>
+            </div>`;
+
+        productList.innerHTML = stateBlock('fa-spinner fa-spin', '상품 목록을 불러오는 중...');
         
         if (window.supabaseClient) {
             // 🔥 캐시 무효화: 타임스탬프 추가하여 항상 최신 데이터 가져오기
@@ -1516,13 +1069,11 @@ async function loadAllProducts() {
             
             if (error) {
                 console.error('❌ 상품 목록 로드 실패:', error);
-                productList.innerHTML = `
-                    <div class="text-center text-red-500 py-8">
-                        <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                        <p>상품 목록을 불러올 수 없습니다</p>
-                        <p class="text-sm">${error.message}</p>
-                    </div>
-                `;
+                productList.innerHTML = stateBlock(
+                    'fa-exclamation-triangle',
+                    `상품 목록을 불러올 수 없습니다<br><span class="txt-muted txt-sm">${error.message}</span>`,
+                    'var(--danger)'
+                );
                 return;
             }
             
@@ -1532,109 +1083,74 @@ async function loadAllProducts() {
                 console.log('📦 첫 번째 상품:', data[0]);
                 console.log('📦 전체 상품 목록:', data.map(p => `${p.name} (${p.price}원)`).join(', '));
                 
+                const cardStyle = `background:var(--bg-white);border:1px solid var(--border-light);border-radius:8px;padding:16px;transition:box-shadow .15s;`;
+                const stepperBtn = `width:24px;height:24px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;`;
+
                 productList.innerHTML = `
-                    <!-- 선택된 상품 요약 -->
-                    <div id="selected-products-summary" class="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4 hidden">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-blue-800">선택된 상품: <span id="selected-count">0</span>개</span>
-                            <button onclick="clearAllSelections()" class="text-xs text-blue-600 hover:text-blue-800">전체 해제</button>
+                    <div id="selected-products-summary" class="hidden" style="background:var(--info-light,#eff6ff);border:1px solid var(--info,#60a5fa);border-radius:8px;padding:12px;margin-bottom:16px;">
+                        <div class="flex-between">
+                            <span class="txt-body" style="font-weight:500;color:var(--info-dark,#1e40af);">선택된 상품: <span id="selected-count">0</span>개</span>
+                            <button class="btn-text" onclick="clearAllSelections()">전체 해제</button>
                         </div>
                     </div>
-                    
-                    <!-- 상품 목록 -->
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        ${data.map(product => `
-                            <div class="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow" data-shipping-option="${product.shipping_option || '일반배송'}">
-                                <div class="flex items-start space-x-3 mb-3">
-                                    <!-- 체크박스 -->
-                                    <div class="flex-shrink-0 pt-1">
-                                        <input type="checkbox" 
-                                               id="product-${product.id}" 
-                                               class="product-checkbox w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                                               data-shipping-option="${product.shipping_option || '일반배송'}"
-                                               onchange="toggleProductSelection('${product.id}', '${product.name}', ${product.price}, '${product.shipping_option || '일반배송'}')">
+
+                    <div class="grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;">
+                        ${data.map(product => {
+                            const so = product.shipping_option || '일반배송';
+                            const stock = product.stock || 999;
+                            return `
+                            <div style="${cardStyle}" data-shipping-option="${so}">
+                                <div class="flex-gap-3" style="display:flex;align-items:flex-start;margin-bottom:12px;">
+                                    <div style="flex-shrink:0;padding-top:4px;">
+                                        <input type="checkbox" id="product-${product.id}" class="product-checkbox"
+                                               data-shipping-option="${so}"
+                                               onchange="toggleProductSelection('${product.id}', '${product.name}', ${product.price}, '${so}')">
                                     </div>
-                                    
-                                    <!-- 상품 이미지 -->
-                                    <div class="w-16 h-16 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden flex-shrink-0">
-                                        ${product.image_url ? 
-                                            `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` :
-                                            `<i class="fas fa-seedling text-gray-400 text-xl"></i>`
-                                        }
+                                    <div style="width:64px;height:64px;background:var(--bg-light);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                        ${product.image_url
+                                            ? `<img src="${product.image_url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`
+                                            : `<i class="fas fa-seedling" style="color:var(--text-muted);font-size:20px;"></i>`}
                                     </div>
-                                    
-                                    <!-- 상품 정보 -->
-                                    <div class="flex-1 min-w-0">
-                                        <h3 class="text-sm font-semibold text-gray-900 mb-1">${product.name}</h3>
-                                        <p class="text-lg font-bold text-blue-600">${product.price.toLocaleString()}원</p>
+                                    <div style="flex:1;min-width:0;">
+                                        <h3 class="txt-body" style="font-weight:600;margin-bottom:4px;">${product.name}</h3>
+                                        <p style="font-size:17px;font-weight:700;color:var(--primary-accent);">${product.price.toLocaleString()}원</p>
                                     </div>
                                 </div>
-                                
-                                <!-- 재고 및 배송 정보 -->
-                                <div class="text-xs text-gray-500 mb-3 space-y-1">
+
+                                <div class="txt-muted txt-sm" style="margin-bottom:12px;">
                                     <div><i class="fas fa-box"></i> 재고: ${product.stock || 0}개</div>
-                                    ${product.shipping_option && product.shipping_option !== '일반배송' ? 
-                                        `<div class="text-blue-600 font-medium"><i class="fas fa-truck"></i> ${product.shipping_option}</div>` : 
-                                        ''}
+                                    ${so !== '일반배송' ? `<div style="color:var(--primary-accent);font-weight:500;margin-top:2px;"><i class="fas fa-truck"></i> ${so}</div>` : ''}
                                 </div>
-                                
-                                <!-- 수량 입력 (체크박스가 선택되었을 때만 표시) -->
+
                                 <div id="quantity-${product.id}" class="hidden">
-                                    <label class="block text-xs text-gray-600 mb-1">수량</label>
-                                    <div class="flex items-center space-x-2">
-                                        <button type="button" onclick="decreaseQuantity('${product.id}')" 
-                                                class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center text-xs">
-                                            <i class="fas fa-minus"></i>
-                                        </button>
-                                        <input type="number" 
-                                               id="qty-${product.id}" 
-                                               class="w-16 px-2 py-1 text-xs border border-gray-300 rounded text-center" 
-                                               value="1" min="1" max="${product.stock || 999}"
-                                               onchange="validateQuantity('${product.id}', ${product.stock || 999})">
-                                        <button type="button" onclick="increaseQuantity('${product.id}', ${product.stock || 999})" 
-                                                class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded flex items-center justify-center text-xs">
-                                            <i class="fas fa-plus"></i>
-                                        </button>
+                                    <label class="form-label" style="font-size:12px;margin-bottom:4px;display:block;">수량</label>
+                                    <div class="flex-gap-2" style="display:flex;align-items:center;">
+                                        <button type="button" style="${stepperBtn}" onclick="decreaseQuantity('${product.id}')"><i class="fas fa-minus"></i></button>
+                                        <input type="number" id="qty-${product.id}" class="form-control"
+                                               style="width:64px;text-align:center;padding:4px 8px;font-size:12px;"
+                                               value="1" min="1" max="${stock}"
+                                               onchange="validateQuantity('${product.id}', ${stock})">
+                                        <button type="button" style="${stepperBtn}" onclick="increaseQuantity('${product.id}', ${stock})"><i class="fas fa-plus"></i></button>
                                     </div>
                                 </div>
-                                
-                                <!-- 상품 설명 -->
-                                ${product.description ? `
-                                    <p class="text-xs text-gray-600 line-clamp-2 mt-2">${product.description}</p>
-                                ` : ''}
-                            </div>
-                        `).join('')}
+
+                                ${product.description ? `<p class="txt-muted txt-sm" style="margin-top:8px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;">${product.description}</p>` : ''}
+                            </div>`;
+                        }).join('')}
                     </div>
-                    
-                    <!-- 하단 액션 버튼 -->
-                    <div class="mt-6 flex justify-end space-x-3">
-                        <button onclick="closeProductManagementModal(event)" 
-                                class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded text-sm hover:bg-gray-50 transition-colors">
-                            취소
-                        </button>
-                        <button onclick="addSelectedProductsToCart(event)" 
-                                class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm transition-colors">
-                            선택한 상품 장바구니에 추가
-                        </button>
-                    </div>
+
+                    ${renderFormActions(`
+                        <button class="btn-secondary" onclick="closeProductManagementModal(event)">취소</button>
+                        <button class="btn-primary" onclick="addSelectedProductsToCart(event)">선택한 상품 장바구니에 추가</button>
+                    `)}
                 `;
                 console.log('✅ 상품 목록 로드 완료:', data.length + '개');
             } else {
-                productList.innerHTML = `
-                    <div class="text-center text-gray-500 py-8">
-                        <i class="fas fa-box-open text-2xl mb-2"></i>
-                        <p>등록된 상품이 없습니다</p>
-                    </div>
-                `;
+                productList.innerHTML = stateBlock('fa-box-open', '등록된 상품이 없습니다');
             }
         } else {
             console.error('❌ Supabase 클라이언트가 연결되지 않았습니다');
-            productList.innerHTML = `
-                <div class="text-center text-red-500 py-8">
-                    <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
-                    <p>데이터베이스 연결이 필요합니다</p>
-                </div>
-            `;
+            productList.innerHTML = stateBlock('fa-exclamation-triangle', '데이터베이스 연결이 필요합니다', 'var(--danger)');
         }
         
     } catch (error) {
@@ -1987,28 +1503,29 @@ function searchExistingCustomers(query) {
                     console.log('🔍 검색 결과 데이터:', data);
                     console.log('🔍 데이터 길이:', data ? data.length : 'null');
                     
+                    const rowStyle = `padding:12px;cursor:pointer;border-bottom:1px solid var(--border-light);transition:background .15s;`;
                     if (data && data.length > 0) {
                         console.log('🔍 검색 결과 있음:', data.length, '개');
                         resultsDiv.innerHTML = data.map(customer => {
                             const addr = (customer.address || '').replace(/'/g, "\\'");
                             const addrDetail = (customer.address_detail || '').replace(/'/g, "\\'");
+                            const grade = customer.grade || 'GENERAL';
                             return `
-                            <div class="p-3 hover:bg-blue-50 hover:text-blue-900 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors duration-150"
-                                 onclick="selectCustomerFromSearch('${customer.id}', '${(customer.name || '').replace(/'/g, "\\'")}', '${(customer.phone || '').replace(/'/g, "\\'")}', '${addr}', '${customer.grade || 'GENERAL'}', '${addrDetail}')">
-                                <div class="flex items-center justify-between">
-                                    <div class="flex items-center space-x-3">
-                                        <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                                            <i class="fas fa-user text-blue-600 text-xs"></i>
+                            <div class="search-result-row" style="${rowStyle}"
+                                 onclick="selectCustomerFromSearch('${customer.id}', '${(customer.name || '').replace(/'/g, "\\'")}', '${(customer.phone || '').replace(/'/g, "\\'")}', '${addr}', '${grade}', '${addrDetail}')">
+                                <div class="flex-between">
+                                    <div class="flex-gap-3" style="display:flex;align-items:center;">
+                                        <div style="width:32px;height:32px;background:var(--primary-soft,#dcfce7);border-radius:50%;display:flex;align-items:center;justify-content:center;">
+                                            <i class="fas fa-user" style="color:var(--primary-accent);font-size:11px;"></i>
                                         </div>
                                         <div>
-                                            <div class="text-sm font-medium text-gray-900">${customer.name}</div>
-                                            <div class="text-xs text-gray-500">${customer.phone}</div>
+                                            <div class="txt-body" style="font-weight:500;">${customer.name}</div>
+                                            <div class="txt-muted txt-sm tabular-nums">${customer.phone}</div>
                                         </div>
                                     </div>
-                                    <div class="text-xs px-2 py-1 bg-gray-100 text-gray-600 rounded-full">${customer.grade || 'GENERAL'}</div>
+                                    ${renderGradeBadge(grade)}
                                 </div>
-                            </div>
-                        `;
+                            </div>`;
                         }).join('');
                         resultsDiv.classList.remove('hidden');
                         console.log('✅ 검색 결과 표시 완료');
@@ -2016,14 +1533,14 @@ function searchExistingCustomers(query) {
                         console.log('🔍 검색 결과 없음, 인라인 입력 안내');
                         const safeQuery = (searchValue || '').replace(/'/g, "\\'");
                         resultsDiv.innerHTML = `
-                            <div class="p-3 text-gray-600 border-b border-gray-100">
-                                <div class="text-xs font-medium text-gray-700 mb-1">검색 결과 없음</div>
-                                <div class="text-[11px] text-gray-500">아래 고객명·연락처·주소를 직접 입력한 뒤 주문 저장하면 고객이 자동 등록됩니다.</div>
+                            <div style="${rowStyle}cursor:default;">
+                                <div class="txt-body" style="font-weight:500;font-size:12px;margin-bottom:4px;">검색 결과 없음</div>
+                                <div class="txt-muted" style="font-size:11px;">아래 고객명·연락처·주소를 직접 입력한 뒤 주문 저장하면 고객이 자동 등록됩니다.</div>
                             </div>
-                            <div class="p-2 hover:bg-green-50 cursor-pointer border-b border-gray-200 last:border-b-0 transition-colors"
+                            <div class="search-result-row" style="${rowStyle}"
                                  onclick="openNewCustomerRegistration('${safeQuery}')">
-                                <div class="flex items-center space-x-2 text-xs text-green-700">
-                                    <i class="fas fa-plus text-green-600"></i>
+                                <div class="flex-gap-2" style="display:flex;align-items:center;color:var(--primary-accent);font-size:12px;">
+                                    <i class="fas fa-plus"></i>
                                     <span>"${(searchValue || '').replace(/"/g, '&quot;')}" 로 고객 등록 모달 열기</span>
                                 </div>
                             </div>
@@ -2204,28 +1721,24 @@ function addProductToCart(productId, productName, price, stock, event) {
             // 새 상품 추가
             const newRow = document.createElement('tr');
             newRow.setAttribute('data-product-id', productId);
+            const stepBtn2 = `width:24px;height:24px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);font-size:11px;cursor:pointer;`;
+            const cellPad2 = `padding:6px 12px;vertical-align:middle;`;
             newRow.innerHTML = `
-                <td class="px-3">
-                    <div class="font-medium td-primary">${productName}</div>
-                </td>
-                <td class="px-3">
-                    <span class="td-secondary">${price.toLocaleString()}원</span>
-                </td>
-                <td class="px-3 text-center">
-                    <div class="flex items-center justify-center space-x-1">
-                        <button onclick="decreaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">-</button>
-                        <input type="number" class="quantity-input w-12 text-center text-sm border border-gray-300 rounded" 
+                <td class="td-primary" style="${cellPad2}font-weight:500;">${productName}</td>
+                <td class="td-secondary tabular-nums" style="${cellPad2}text-align:right;">${price.toLocaleString()}원</td>
+                <td style="${cellPad2}text-align:center;">
+                    <div style="display:inline-flex;align-items:center;gap:4px;">
+                        <button type="button" style="${stepBtn2}" onclick="decreaseQuantity('${productId}')">-</button>
+                        <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;padding:4px;"
                                value="1" min="1" max="${stock}" onchange="updateCartItemTotal(this.closest('tr'))">
-                        <button onclick="increaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">+</button>
+                        <button type="button" style="${stepBtn2}" onclick="increaseQuantity('${productId}')">+</button>
                     </div>
                 </td>
-                <td class="px-3">
-                    <span class="font-semibold text-blue-600 cart-item-total">${price.toLocaleString()}원</span>
+                <td class="tabular-nums" style="${cellPad2}text-align:right;">
+                    <span class="cart-item-total" style="font-weight:600;color:var(--primary-accent);">${price.toLocaleString()}원</span>
                 </td>
-                <td class="px-3 text-center">
-                    <button onclick="removeCartItem('${productId}')" class="text-red-500 hover:text-red-700 text-xs">
-                        <i class="fas fa-trash"></i>
-                    </button>
+                <td style="${cellPad2}text-align:center;">
+                    ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: `removeCartItem('${productId}')` })}
                 </td>
             `;
             
@@ -2824,19 +2337,18 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         row.setAttribute('data-price', unitPrice);
         row.setAttribute('data-shipping-option', shippingOption);
         const subtotal = unitPrice * qty;
+        const cellPad3 = `padding:6px 8px;vertical-align:middle;`;
         row.innerHTML = `
-            <td class="px-2">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
-            <td class="px-2 text-center">
-                <input type="number" class="quantity-input w-12 text-xs text-center border rounded" 
+            <td class="txt-body" style="${cellPad3}">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="td-secondary tabular-nums" style="${cellPad3}text-align:right;">${unitPrice.toLocaleString()}</td>
+            <td style="${cellPad3}text-align:center;">
+                <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;padding:4px;"
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput(this); updateCartTotal()" onchange="updateCartTotal()">
             </td>
-            <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
-            <td class="px-2 text-center">
-                <button type="button" onclick="removeFromCart(this)" class="text-red-600 hover:text-red-800 text-xs" title="삭제">
-                    <i class="fas fa-trash"></i>
-                </button>
+            <td class="cart-line-total tabular-nums" style="${cellPad3}text-align:right;font-weight:500;">${subtotal.toLocaleString()}원</td>
+            <td style="${cellPad3}text-align:center;">
+                ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: 'removeFromCart(this)' })}
             </td>
         `;
         
@@ -2878,13 +2390,7 @@ window.removeFromCart = function(buttonOrProductId) {
             // 장바구니가 비어있으면 빈 메시지 표시
             const cartItemsBody = document.getElementById('cart-items-body');
             if (cartItemsBody && cartItemsBody.children.length === 0) {
-                cartItemsBody.innerHTML = `
-                    <tr>
-                        <td colspan="5" class="text-center text-gray-500">
-                            <p>장바구니가 비어있습니다</p>
-                        </td>
-                    </tr>
-                `;
+                cartItemsBody.innerHTML = renderEmptyRow(5, '장바구니가 비어있습니다');
             }
             
             // 총액 업데이트
@@ -2989,33 +2495,31 @@ function addExtraShipping() {
 
     const row = document.createElement('div');
     row.id = `extra-shipping-row-${idx}`;
-    row.className = 'mt-2 p-3 bg-blue-50 border border-blue-200 rounded-lg';
+    row.className = 'extra-shipping-row';
+    row.style.cssText = `margin-top:8px;padding:12px;background:var(--primary-soft,#dcfce7);border:1px solid var(--primary-accent-light,#86efac);border-radius:8px;`;
     row.innerHTML = `
-        <div class="flex items-center justify-between mb-2">
-            <span class="text-xs font-semibold text-blue-700"><i class="fas fa-map-marker-alt mr-1"></i>추가 배송지</span>
-            <button type="button" onclick="removeExtraShipping(${idx})"
-                    class="text-xs text-red-400 hover:text-red-600"><i class="fas fa-times"></i> 삭제</button>
-        </div>
-        <div class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" id="es-name-${idx}" placeholder="수령인명 *"
-                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
-            <input type="tel" id="es-phone-${idx}" placeholder="연락처"
-                   class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
-        </div>
-        <div class="flex gap-2 mb-2">
-            <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
-                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
-            <button type="button" onclick="openExtraShippingAddressSearch(${idx})"
-                    class="px-2 py-1.5 bg-gray-100 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">
-                <i class="fas fa-search mr-1"></i>검색
+        <div class="flex-between" style="margin-bottom:8px;">
+            <span class="txt-body" style="font-size:12px;font-weight:600;color:var(--primary-accent-dark,#166534);">
+                <i class="fas fa-map-marker-alt" style="margin-right:4px;"></i>추가 배송지
+            </span>
+            <button type="button" class="btn-text" style="color:var(--danger);font-size:12px;" onclick="removeExtraShipping(${idx})">
+                <i class="fas fa-times"></i> 삭제
             </button>
         </div>
-        <div class="mb-2">
-            <input type="text" id="es-detail-${idx}" placeholder="상세주소 (동/호수 등)"
-                   class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px;">
+            <input type="text" id="es-name-${idx}" class="form-control" placeholder="수령인명 *">
+            <input type="tel" id="es-phone-${idx}" class="form-control tabular-nums" placeholder="연락처">
         </div>
-        <textarea id="es-memo-${idx}" rows="2" placeholder="배송 메모 (선택)"
-                  class="w-full px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500 resize-none"></textarea>
+        <div style="display:flex;gap:8px;margin-bottom:8px;">
+            <input type="text" id="es-address-${idx}" class="form-control" style="flex:1;" placeholder="기본주소 *">
+            <button type="button" class="btn-secondary" style="white-space:nowrap;" onclick="openExtraShippingAddressSearch(${idx})">
+                <i class="fas fa-search"></i> 검색
+            </button>
+        </div>
+        <div style="margin-bottom:8px;">
+            <input type="text" id="es-detail-${idx}" class="form-control" placeholder="상세주소 (동/호수 등)">
+        </div>
+        <textarea id="es-memo-${idx}" rows="2" class="form-control xf-memo" placeholder="배송 메모 (선택)"></textarea>
     `;
     container.appendChild(row);
     _updateExtraShippingBadge();
@@ -3033,8 +2537,7 @@ function _updateExtraShippingBadge() {
     const badge = document.getElementById('extra-shipping-badge');
     if (!badge) return;
     if (count > 0) {
-        badge.textContent = `+${count}개`;
-        badge.className = 'text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full ml-1';
+        badge.outerHTML = `<span id="extra-shipping-badge" style="margin-left:4px;">${renderBadge(`+${count}개`, 'success')}</span>`;
     } else {
         badge.textContent = '';
         badge.className = 'hidden';
