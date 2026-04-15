@@ -520,38 +520,42 @@ window.fillCustomerForm = fillCustomerForm;
 window.deleteCustomer = async function(customerId) {
     console.log('🗑️ 고객 삭제 요청:', customerId);
 
-    // 연관 주문 확인
+    // 연관 주문 확인 (전체 개수)
     const { data: orders, error: checkError } = await window.supabaseClient
         .from('farm_orders')
         .select('id')
-        .eq('customer_id', customerId)
-        .limit(1);
+        .eq('customer_id', customerId);
     if (checkError) { alert('삭제 확인 중 오류: ' + checkError.message); return; }
-    if (orders && orders.length > 0) {
-        alert('이 고객에게 주문 내역이 있어 삭제할 수 없습니다.\n주문을 먼저 삭제한 후 고객을 삭제하세요.');
-        return;
-    }
 
-    if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) {
-        return;
+    if (orders && orders.length > 0) {
+        // 주문이 있으면 함께 삭제할지 묻는 확인창
+        const confirmed = confirm(
+            `이 고객에게 주문 ${orders.length}건이 있습니다.\n주문도 함께 삭제하시겠습니까?\n\n확인 → 주문 + 고객 모두 삭제\n취소 → 삭제 안 함`
+        );
+        if (!confirmed) return;
+
+        // 주문 먼저 삭제
+        const orderIds = orders.map(o => o.id);
+        const { error: delOrderErr } = await window.supabaseClient
+            .from('farm_orders')
+            .delete()
+            .in('id', orderIds);
+        if (delOrderErr) {
+            alert('주문 삭제 중 오류: ' + delOrderErr.message);
+            return;
+        }
+        console.log(`✅ 주문 ${orders.length}건 삭제 완료`);
+    } else {
+        if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) return;
     }
 
     try {
         if (window.customerDataManager) {
             await window.customerDataManager.deleteCustomer(customerId);
             console.log('✅ 고객 삭제 완료');
-            
-            // 고객 목록 새로고침
-            if (window.renderCustomersTable) {
-                window.renderCustomersTable('all');
-            }
-            
-            // 성공 알림
-            if (window.showToast) {
-                window.showToast('✅ 고객이 삭제되었습니다.', 3000);
-            }
+            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            if (window.showToast) window.showToast('✅ 고객이 삭제되었습니다.', 3000);
         } else {
-            console.error('❌ customerDataManager를 찾을 수 없습니다.');
             alert('고객 데이터 관리자를 찾을 수 없습니다.');
         }
     } catch (error) {
