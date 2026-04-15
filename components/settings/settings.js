@@ -397,7 +397,7 @@ async function loadSMSSettings() {
                     <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
                     <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
                     <div class="flex justify-end mt-1.5">
-                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary" style="padding:3px 10px;font-size:11px;">저장</button>
+                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
                     </div>
                 </div>
             `;

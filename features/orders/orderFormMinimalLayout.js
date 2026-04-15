@@ -19,14 +19,13 @@ window.generateOrderFormHTMLMinimal = function () {
                     <tbody>
                         <tr>
                             <th>고객 검색</th>
-                            <td colspan="3" style="position:relative">
+                            <td colspan="3" class="xf-pos-rel">
                                 <input type="text" id="order-customer-search" class="xf-inp"
                                        placeholder="이름 또는 연락처 뒷자리"
                                        oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
                                        autocomplete="off">
                                 <div id="customer-search-results"
-                                     class="hidden"
-                                     style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:150px;overflow-y:auto;z-index:50;font-size:13px"></div>
+                                     class="xf-dropdown hidden"></div>
                             </td>
                         </tr>
                         <tr>
@@ -85,7 +84,7 @@ window.generateOrderFormHTMLMinimal = function () {
                         <tr>
                             <th>배송메모</th>
                             <td colspan="3">
-                                <textarea id="order-memo" class="xf-inp" rows="3" style="resize:vertical;min-height:48px"
+                                <textarea id="order-memo" class="xf-inp xf-memo" rows="3"
                                           placeholder="배송 관련 메모 (선택)"
                                           oninput="document.getElementById('order-memo-summary').textContent=this.value.trim()||''"></textarea>
                             </td>
@@ -98,24 +97,22 @@ window.generateOrderFormHTMLMinimal = function () {
             <div class="xf-col">
 
                 <!-- 퀵 상품 + 검색 -->
-                <table class="xf-tbl" style="margin-bottom:5px">
+                <table class="xf-tbl xf-mb-sm">
                     <tbody>
                         <tr>
-                            <th style="width:60px;vertical-align:top;padding-top:6px">상품 추가</th>
+                            <th class="xf-th-vtop" style="width:60px">상품 추가</th>
                             <td>
-                                <div id="quick-product-buttons"
-                                     style="display:grid;grid-template-columns:repeat(3,1fr);gap:2px;margin-bottom:4px;max-height:60px;overflow:hidden">
-                                    <div style="grid-column:1/-1;text-align:center;color:#999;font-size:11px;padding:6px">로딩 중...</div>
+                                <div id="quick-product-buttons" class="xf-quick-grid">
+                                    <div class="xf-quick-grid-loading">로딩 중...</div>
                                 </div>
-                                <div style="position:relative">
+                                <div class="xf-pos-rel">
                                     <input type="text" id="product-search" class="xf-inp"
                                            placeholder="클릭하거나 상품명 검색"
                                            oninput="searchProducts(this.value)" autocomplete="off"
                                            onfocus="searchProducts(this.value)"
                                            onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}if(event.key==='Escape'){document.getElementById('product-search-results')?.classList.add('hidden');this.blur();}">
                                     <div id="product-search-results"
-                                         class="hidden"
-                                         style="position:absolute;top:100%;left:0;width:100%;background:#fff;border:1px solid #aaa;box-shadow:0 2px 6px rgba(0,0,0,.15);max-height:140px;overflow-y:auto;z-index:20;font-size:13px"></div>
+                                         class="xf-dropdown xf-dropdown-product hidden"></div>
                                 </div>
                             </td>
                         </tr>

@@ -79,7 +79,7 @@ function generateOrderFormHTML() {
                                             <i class="fas fa-user-search"></i>
                                         </div>
                                     </div>
-                                    <div id="customer-search-results" class="absolute w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto z-30" style="top: 100%; left: 0;">
+                                    <div id="customer-search-results" class="absolute top-full left-0 w-full mt-1 bg-white border-2 border-blue-200 rounded-lg shadow-xl hidden max-h-48 overflow-y-auto z-30">
                                         <!-- 기존 고객 검색 결과 -->
                                     </div>
                                 </div>

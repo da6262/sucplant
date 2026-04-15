@@ -94,7 +94,7 @@ async function loadSMSSettings() {
                     <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
                     <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
                     <div class="flex justify-end mt-1.5">
-                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary" style="padding:3px 10px;font-size:11px;">저장</button>
+                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
                     </div>
                 </div>
             `;
@@ -1106,8 +1106,8 @@ window.startEditGrade = function(index) {
         <span class="text-xs text-gray-400 shrink-0">원 이상</span>
         <input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui w-14 text-xs text-right" min="0" max="100">
         <span class="text-xs text-gray-400 shrink-0">%</span>
-        <button onclick="saveInlineGrade(${index})" class="btn-primary shrink-0" style="padding:3px 10px;font-size:11px;">저장</button>
-        <button onclick="cancelEditGrade(${index})" class="btn-secondary shrink-0" style="padding:3px 8px;font-size:11px;">취소</button>
+        <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs shrink-0">저장</button>
+        <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs shrink-0">취소</button>
     `;
     row.querySelector(`#grade-name-${index}`)?.focus();
 };
