@@ -11,12 +11,20 @@ import { formatDate, formatPhone } from '../../utils/formatters.js';
 let _gradesCache = null;          // 고객등급 설정 캐시
 let _lastOrderCache = null;       // 전화번호→최근주문일 캐시
 let _lastOrderCacheTime = 0;      // 캐시 타임스탬프
+let _unpaidPhonesCache = null;    // 미납(입금대기) 고객 전화번호 집합
+let _unpaidPhonesCacheTime = 0;
+let _waitlistPhonesCache = null;  // 대기 고객 전화번호 집합
+let _waitlistPhonesCacheTime = 0;
 
 // 외부에서 캐시 무효화 (저장/삭제 후 호출)
 export function invalidateCustomerUICache() {
     _gradesCache = null;
     _lastOrderCache = null;
     _lastOrderCacheTime = 0;
+    _unpaidPhonesCache = null;
+    _unpaidPhonesCacheTime = 0;
+    _waitlistPhonesCache = null;
+    _waitlistPhonesCacheTime = 0;
 }
 
 // ----------------------------
@@ -161,13 +169,29 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         
         // 등급 + 검색어 필터링
         const term = (searchTerm || '').toLowerCase().trim();
-        const customers = sortedCustomers
+        let customers = sortedCustomers
             .filter(c => gradeFilter === 'all' || c.grade === gradeFilter)
             .filter(c => !term ||
                 (c.name || '').toLowerCase().includes(term) ||
                 (c.phone || '').replace(/\D/g, '').includes(term.replace(/\D/g, ''))
             );
-        
+
+        // 미납 / 대기 체크박스 필터
+        const filterUnpaid   = document.getElementById('filter-unpaid')?.checked;
+        const filterWaitlist = document.getElementById('filter-waitlist')?.checked;
+        if (filterUnpaid || filterWaitlist) {
+            const [unpaidPhones, waitlistPhones] = await Promise.all([
+                filterUnpaid   ? fetchUnpaidPhones()   : Promise.resolve(new Set()),
+                filterWaitlist ? fetchWaitlistPhones() : Promise.resolve(new Set()),
+            ]);
+            customers = customers.filter(c => {
+                const phone = (c.phone || '').replace(/\D/g, '');
+                if (filterUnpaid   && !unpaidPhones.has(phone))   return false;
+                if (filterWaitlist && !waitlistPhones.has(phone)) return false;
+                return true;
+            });
+        }
+
         console.log(`🎯 필터링된 고객 수: ${customers.length}`);
         
         const container = document.getElementById('customer-list-container');
@@ -265,6 +289,46 @@ function escapeHtml(str) {
 }
 // formatDisplayDate → utils/formatters.js의 formatDate()로 통합됨
 function formatDisplayDate(val) { return formatDate(val); }
+
+/** 미납(입금대기) 고객 전화번호 집합 조회 (30초 캐시) */
+async function fetchUnpaidPhones() {
+    const now = Date.now();
+    if (_unpaidPhonesCache && (now - _unpaidPhonesCacheTime) < 30000) return _unpaidPhonesCache;
+    const set = new Set();
+    if (!window.supabaseClient) return set;
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('customer_phone')
+            .eq('order_status', '입금대기');
+        if (!error && data) {
+            data.forEach(r => { if (r.customer_phone) set.add(r.customer_phone.replace(/\D/g, '')); });
+        }
+    } catch (e) { console.warn('미납 고객 조회 실패:', e); }
+    _unpaidPhonesCache = set;
+    _unpaidPhonesCacheTime = now;
+    return set;
+}
+
+/** 대기자 목록에 있는 고객 전화번호 집합 조회 (30초 캐시) */
+async function fetchWaitlistPhones() {
+    const now = Date.now();
+    if (_waitlistPhonesCache && (now - _waitlistPhonesCacheTime) < 30000) return _waitlistPhonesCache;
+    const set = new Set();
+    if (!window.supabaseClient) return set;
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_waitlist')
+            .select('customer_phone')
+            .eq('status', '대기중');
+        if (!error && data) {
+            data.forEach(r => { if (r.customer_phone) set.add(r.customer_phone.replace(/\D/g, '')); });
+        }
+    } catch (e) { console.warn('대기 고객 조회 실패:', e); }
+    _waitlistPhonesCache = set;
+    _waitlistPhonesCacheTime = now;
+    return set;
+}
 
 /** 고객 전화번호별 최근 주문일 맵 조회 (farm_orders 기준) */
 function normalizePhoneForOrder(phone) {

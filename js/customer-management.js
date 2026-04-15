@@ -1057,6 +1057,12 @@ function attachCustomerEventListeners() {
                     allTab.classList.add('active');
                 }
                 
+                // 미납/대기 체크박스 초기화
+                const filterUnpaid   = document.getElementById('filter-unpaid');
+                const filterWaitlist = document.getElementById('filter-waitlist');
+                if (filterUnpaid)   filterUnpaid.checked   = false;
+                if (filterWaitlist) filterWaitlist.checked = false;
+
                 // 테이블 초기화
                 if (window.renderCustomersTable) {
                     window.renderCustomersTable('all');
@@ -1064,7 +1070,20 @@ function attachCustomerEventListeners() {
             });
             console.log('✅ 고객 검색 초기화 버튼 이벤트 리스너 연결 완료');
         }
-        
+
+        // 미납 / 대기 체크박스 필터
+        const filterUnpaidEl   = document.getElementById('filter-unpaid');
+        const filterWaitlistEl = document.getElementById('filter-waitlist');
+        const doCheckboxFilter = function() {
+            const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+            const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+            const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
+            if (window.renderCustomersTable) window.renderCustomersTable(gradeFilter, searchTerm);
+        };
+        if (filterUnpaidEl)   filterUnpaidEl.addEventListener('change',   doCheckboxFilter);
+        if (filterWaitlistEl) filterWaitlistEl.addEventListener('change', doCheckboxFilter);
+        console.log('✅ 미납/대기 체크박스 필터 이벤트 리스너 연결 완료');
+
         // 고객 모달 저장 버튼
         const saveCustomerBtn = document.querySelector('button[onclick="saveCustomer()"]');
         if (saveCustomerBtn) {
