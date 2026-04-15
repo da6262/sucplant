@@ -56,17 +56,17 @@
                     <div id="phone-duplicate-message" class="form-error hidden"></div>
                 </div>
 
-                <!-- 주소 (col-12) -->
+                <!-- 주소 (col-12) - 타이핑하면 자동 검색 -->
                 <div class="form-col-12">
                     <label class="form-label">주소</label>
-                    <div class="form-input-group">
-                        <input type="text" id="customer-form-address" placeholder="주소 검색" readonly
-                               class="form-control">
-                        <button type="button" id="customer-form-address-search"
-                                onclick="window.openAddressSearch()" class="btn-secondary">
-                            <i class="fas fa-search mr-1"></i>검색
-                        </button>
-                    </div>
+                    <input type="text" id="customer-form-address"
+                           placeholder="주소 입력 시 자동 검색 (2글자 이상)"
+                           autocomplete="off"
+                           oninput="window.handleAddressInput(this.value)"
+                           class="form-control">
+                    <div id="address-embed-container"
+                         class="hidden mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-md"
+                         style="height:300px;"></div>
                 </div>
 
                 <!-- 상세주소 (col-12) -->

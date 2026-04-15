@@ -401,41 +401,23 @@ class ProductManagementComponent {
                          : 'badge badge-green';
 
         row.innerHTML = `
-            <td class="px-2">
+            <td class="px-2 text-center">
                 <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
             </td>
+            <td class="px-2 whitespace-nowrap td-muted text-2xs">${product.product_code || '-'}</td>
             <td class="px-2 whitespace-nowrap">
-                <div class="flex items-center gap-2">
-                    <div class="shrink-0 w-7 h-7">
-                        ${product.image_url
-                            ? `<img class="w-7 h-7 rounded object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
-                            : `<div class="w-7 h-7 rounded bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
-                        }
-                    </div>
-                    <div>
-                        <div class="product-name-link text-xs font-medium text-gray-800 cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
-                        ${product.description ? `<div class="text-gray-400 text-2xs">${product.description}</div>` : ''}
-                    </div>
-                </div>
+                <div class="product-name-link text-xs font-medium text-gray-800 cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
+                ${product.description ? `<div class="text-gray-400 text-2xs truncate max-w-[160px]">${product.description}</div>` : ''}
             </td>
             <td class="px-2 whitespace-nowrap">
                 <span class="badge badge-blue text-2xs">${product.category || '미분류'}</span>
             </td>
-            <td class="px-2 whitespace-nowrap text-right text-numeric">
-                ${this.formatCurrency(product.price)}
-            </td>
-            <td class="px-2 whitespace-nowrap text-right td-muted">
-                ${product.cost ? this.formatCurrency(product.cost) : '-'}
-            </td>
-            <td class="px-2 whitespace-nowrap text-right text-numeric">
+            <td class="px-2 whitespace-nowrap td-muted text-xs">${product.size || '-'}</td>
+            <td class="px-2 whitespace-nowrap text-right text-numeric">${this.formatCurrency(product.price)}</td>
+            <td class="px-2 whitespace-nowrap text-right">
                 <span class="${stockColor}">${product.stock || 0}개</span>
             </td>
-            <td class="px-2 whitespace-nowrap text-center">
-                <span class="${badgeClass} text-2xs">${this.getStockStatusText(stockStatus)}</span>
-            </td>
-            <td class="px-2 whitespace-nowrap td-muted">
-                ${this.formatDate(product.created_at)}
-            </td>
+            <td class="px-2 whitespace-nowrap td-muted text-xs">${product.shipping_option || '-'}</td>
             <td class="px-2 whitespace-nowrap text-center">
                 <div class="btn-group">
                     <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
