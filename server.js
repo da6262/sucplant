@@ -19,7 +19,26 @@ try {
 }
 
 // ─────────────────────────────────────────────
-// 2. HTML 응답에 ?v=VERSION 자동 주입
+// 2. README.md 배지 자동 동기화
+//    _APP_VER 바꾸고 서버 재시작하면 배지도 자동 갱신
+// ─────────────────────────────────────────────
+try {
+    const readmePath = path.join(__dirname, 'README.md');
+    const readme     = fs.readFileSync(readmePath, 'utf8');
+    const synced     = readme.replace(
+        /!\[버전\]\(https:\/\/img\.shields\.io\/badge\/version-[^-]+-brightgreen\)/,
+        `![버전](https://img.shields.io/badge/version-${APP_VERSION}-brightgreen)`
+    );
+    if (synced !== readme) {
+        fs.writeFileSync(readmePath, synced, 'utf8');
+        console.log(`📝 README.md 버전 배지 자동 동기화 → v${APP_VERSION}`);
+    }
+} catch (e) {
+    console.warn('⚠️  README.md 배지 동기화 실패:', e.message);
+}
+
+// ─────────────────────────────────────────────
+// 3. HTML 응답에 ?v=VERSION 자동 주입
 //    로컬 .js / .css 파일 경로에만 적용
 //    CDN(https://, //) 은 건드리지 않음
 // ─────────────────────────────────────────────
@@ -34,7 +53,7 @@ function injectVersion(htmlContent, version) {
 }
 
 // ─────────────────────────────────────────────
-// MIME 타입 매핑
+// 4. MIME 타입 매핑
 // ─────────────────────────────────────────────
 const mimeTypes = {
     '.html' : 'text/html; charset=utf-8',
@@ -53,7 +72,7 @@ const mimeTypes = {
 };
 
 // ─────────────────────────────────────────────
-// 3. 서버
+// 5. 서버
 // ─────────────────────────────────────────────
 const server = http.createServer((req, res) => {
     const parsedUrl = url.parse(req.url);
