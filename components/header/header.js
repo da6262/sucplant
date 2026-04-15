@@ -350,7 +350,10 @@ class HeaderComponent {
     }
 }
 
-// 컴포넌트 등록
+// 전역 등록 (index.html의 initializeNavigationAfterScriptsLoaded에서 사용)
+window.HeaderComponent = HeaderComponent;
+
+// componentLoader 방식도 유지
 if (window.componentLoader) {
     window.componentLoader.registerComponent('header', {
         template: 'components/header/header.html',
