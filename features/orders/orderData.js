@@ -939,8 +939,8 @@ class OrderDataManager {
                     <td class="px-2 py-1.5 align-middle whitespace-nowrap text-[10px] text-gray-400">${orderNumber}</td>
                     <td class="px-2 py-1.5 text-right align-middle font-medium text-gray-900 tabular-nums">${totalAmount.toLocaleString()}원</td>
                     <td class="px-2 py-1.5 align-middle relative" onclick="event.stopPropagation()">
-                        <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-medium ${statusColor}" 
-                              onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
+                        <span class="badge ${statusColor}"
+                              onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경" style="cursor:pointer;">${orderStatus}</span>
                         <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
                                 <button class="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
@@ -955,8 +955,8 @@ class OrderDataManager {
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
                     <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
-                        <button class="p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-edit text-xs"></i></button>
-                        <button class="p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                        <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
+                        <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>
             `;
@@ -1051,21 +1051,21 @@ class OrderDataManager {
         return orders.map(o => this.toOrderRowSpecFromRpc(o));
     }
 
-    // 상태별 색상 반환
+    // 상태별 배지 클래스 반환 — badge-* 시맨틱 컬러 팔레트
     getStatusColor(status) {
         const statusColors = {
-            '주문접수': 'bg-yellow-100 text-yellow-800',
-            '고객안내': 'bg-blue-100 text-blue-800',
-            '입금대기': 'bg-orange-100 text-orange-800',
-            '입금확인': 'bg-green-100 text-green-800',
-            '상품준비': 'bg-purple-100 text-purple-800',
-            '배송준비': 'bg-indigo-100 text-indigo-800',
-            '배송중': 'bg-cyan-100 text-cyan-800',
-            '배송완료': 'bg-emerald-100 text-emerald-800',
-            '주문취소': 'bg-gray-100 text-gray-800',
-            '환불완료': 'bg-red-100 text-red-800'
+            '주문접수': 'badge-warning',   // 노랑 — 처리 대기
+            '고객안내': 'badge-info',       // 파랑 — 안내 중
+            '입금대기': 'badge-orange',     // 주황 — 결제 대기
+            '입금확인': 'badge-success',    // 초록 — 확인 완료
+            '상품준비': 'badge-purple',     // 보라 — 처리 중
+            '배송준비': 'badge-info',       // 파랑 — 출고 준비
+            '배송중':   'badge-sky',        // 하늘 — 이동 중
+            '배송완료': 'badge-success',    // 초록 — 완료
+            '주문취소': 'badge-neutral',    // 회색 — 무효
+            '환불완료': 'badge-danger',     // 빨강 — 반환
         };
-        return statusColors[status] || 'bg-gray-100 text-gray-800';
+        return statusColors[status] || 'badge-neutral';
     }
 
     // Supabase 실시간 동기화 설정
@@ -1208,11 +1208,11 @@ class OrderDataManager {
         if (statusElement) {
             const statusColor = this.getStatusColor(newStatus);
             statusElement.innerHTML = `
-                <span class="inline-flex items-center px-3 py-1.5 rounded-full text-xs font-semibold ${statusColor} shadow-sm cursor-pointer hover:shadow-lg hover:scale-105 transition-all duration-200 group" 
-                      onclick="toggleOrderStatusEdit('${orderId}', '${newStatus}')" 
+                <span class="badge ${statusColor}"
+                      onclick="toggleOrderStatusEdit('${orderId}', '${newStatus}')"
+                      style="cursor:pointer;"
                       title="클릭하여 주문상태 변경">
                     ${newStatus}
-                    <i class="fas fa-edit ml-1 text-xs opacity-70 group-hover:opacity-100 transition-opacity duration-200"></i>
                 </span>
             `;
             

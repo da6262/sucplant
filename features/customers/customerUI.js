@@ -217,7 +217,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
                 <td class="px-3 py-2 text-xs font-medium text-gray-900">${escapeHtml(customer.name || '-')}</td>
                 <td class="px-3 py-2 text-xs text-gray-500">${phoneDisplay || '-'}</td>
                 <td class="px-3 py-2 text-xs text-gray-500">${lastOrderDate}</td>
-                <td class="px-3 py-2"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="px-3 py-2"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
                 <td class="px-3 py-2">
                     <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
                     <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
@@ -296,16 +296,16 @@ async function fetchLastOrderDatesByPhone() {
     return map;
 }
 
-// 등급 배지 클래스 반환
+// 등급 배지 클래스 반환 — badge-rich-* (진한 배경 + 흰 텍스트)
 function getGradeBadgeClass(grade) {
     const gradeClasses = {
-        'BLACK_DIAMOND': 'bg-gray-900 text-white',
-        'PURPLE_EMPEROR': 'bg-purple-600 text-white',
-        'RED_RUBY': 'bg-red-600 text-white',
-        'GREEN_LEAF': 'bg-green-600 text-white',
-        'GENERAL': 'bg-blue-600 text-white'
+        'BLACK_DIAMOND':  'badge-rich-black',
+        'PURPLE_EMPEROR': 'badge-rich-purple',
+        'RED_RUBY':       'badge-rich-red',
+        'GREEN_LEAF':     'badge-rich-green',
+        'GENERAL':        'badge-rich-blue'
     };
-    return gradeClasses[grade] || 'bg-gray-500 text-white';
+    return gradeClasses[grade] || 'badge-rich-gray';
 }
 
 // 등급별 그라데이션 클래스 반환
@@ -728,7 +728,7 @@ async function showCustomerDetailInPanel(customer) {
                         </div>
                     </div>
                     <div class="mt-3 flex gap-2">
-                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
                         <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                     </div>
                 </div>

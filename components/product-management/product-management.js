@@ -443,9 +443,9 @@ class ProductManagementComponent {
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <div class="flex gap-1">
                     <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
-                        <i class="fas fa-edit"></i>
+                        <i class="fas fa-pen"></i>
                     </button>
-                    <button class="duplicate-product-btn btn-icon" data-product-id="${product.id}" title="복제" style="color:#059669;">
+                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제">
                         <i class="fas fa-copy"></i>
                     </button>
                     <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제">

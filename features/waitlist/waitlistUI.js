@@ -280,14 +280,14 @@ export class WaitlistUI {
             <td class="px-2.5 py-2 text-xs text-gray-900">
                 <div class="flex space-x-2">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
-                            class="text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded p-1 transition-colors"
+                            class="btn-icon btn-icon-edit"
                             title="수정">
-                        <i class="fas fa-edit text-xs"></i>
+                        <i class="fas fa-pen"></i>
                     </button>
                     <button onclick="waitlistUI.deleteWaitlist('${item.id}')"
-                            class="text-red-400 hover:text-red-600 hover:bg-red-50 rounded p-1 transition-colors"
+                            class="btn-icon btn-icon-delete"
                             title="삭제">
-                        <i class="fas fa-trash text-xs"></i>
+                        <i class="fas fa-trash"></i>
                     </button>
                     <button onclick="waitlistUI.updateStatus('${item.id}')" 
                             class="text-green-600 hover:text-green-800 transition-colors" 

@@ -252,27 +252,7 @@ body {
    상태 배지
    ===================== */
 
-.badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 2px 8px;
-    border-radius: 20px;
-    font-size: 11px;
-    font-weight: 600;
-    white-space: nowrap;
-    line-height: 1.5;
-    height: var(--status-badge-h);
-}
-
-.badge-orange  { background: #fff7ed; color: #c2410c; }
-.badge-blue    { background: #eff6ff; color: #1d4ed8; }
-.badge-purple  { background: #faf5ff; color: #6d28d9; }
-.badge-green   { background: #f0fdf4; color: #15803d; }
-.badge-emerald { background: #ecfdf5; color: #059669; }
-.badge-red     { background: #fef2f2; color: #b91c1c; }
-.badge-yellow  { background: #fefce8; color: #a16207; }
-.badge-gray    { background: #f8fafc; color: #475569; }
-.badge-sky     { background: #f0f9ff; color: #0369a1; }
+/* 첫 번째 .badge 정의 — 아래 Design System 섹션의 통합 정의로 대체됨 (중복 제거) */
 
 /* =====================
    테이블
@@ -638,32 +618,56 @@ body {
 .btn-danger:hover { background: #B91C1C; }
 .btn-danger i, .btn-danger .fas { font-size: 11px; }
 
-/* 아이콘 전용 소형 버튼 (테이블 행 수정/삭제) */
+/* =====================
+   아이콘 버튼 — 테이블 행 액션 (수정·삭제·복제)
+   ===================== */
 .btn-icon {
     display: inline-flex; align-items: center; justify-content: center;
     width: 26px; height: 26px; border-radius: 6px;
-    background: transparent; border: none; cursor: pointer;
-    transition: background 0.15s; font-size: 12px;
+    border: none; cursor: pointer; font-size: 12px;
+    transition: background 0.15s, transform 0.15s;
 }
-.btn-icon-edit  { color: #2563EB; }
-.btn-icon-edit:hover  { background: #EFF6FF; }
-.btn-icon-delete { color: #DC2626; }
+/* Spec ⑤ 호버 scale 1.1 애니메이션 */
+.btn-icon:hover { transform: scale(1.1); }
+/* Spec ④ 항상 연한 배경 표시 (클릭 영역 명확화) */
+.btn-icon-edit   { color: #2563EB; background: rgba(37, 99, 235, 0.07); }
+.btn-icon-edit:hover   { background: #EFF6FF; }
+/* Spec ⑥ 삭제 버튼 — 항상 Danger 빨강 */
+.btn-icon-delete { color: #DC2626; background: rgba(220, 38, 38, 0.07); }
 .btn-icon-delete:hover { background: #FEF2F2; }
+/* 복제 버튼 */
+.btn-icon-copy   { color: #059669; background: rgba(5, 150, 105, 0.07); }
+.btn-icon-copy:hover   { background: #ECFDF5; }
 
 /* app-btn → btn-primary/secondary 동일 스타일로 통일 완료 (위 정의 참고) */
 
-/* Badge */
+/* =====================
+   Badge — 표준 알약 배지 (8대 스펙)
+   ===================== */
 .badge {
-    display: inline-flex; align-items: center;
-    padding: 2px 8px; border-radius: 9999px;
-    font-size: 11px; font-weight: 500; white-space: nowrap; line-height: 1.6;
-    height: var(--status-badge-h);
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 8px; border-radius: 9999px;
+    height: 20px; font-size: 10px; font-weight: 600;
+    white-space: nowrap; line-height: 1;
 }
-.badge-neutral { background: #F3F4F6; color: #6B7280; }
+/* 시맨틱 컬러 — 연한 배경 + 진한 텍스트 (Spec: 8번 가독성) */
+.badge-neutral { background: #F3F4F6; color: #4B5563; }
 .badge-success { background: #DCFCE7; color: #15803D; }
 .badge-warning { background: #FEF3C7; color: #B45309; }
 .badge-info    { background: #DBEAFE; color: #1D4ED8; }
 .badge-danger  { background: #FEE2E2; color: #DC2626; }
+.badge-purple  { background: #F3E8FF; color: #7C3AED; }
+.badge-sky     { background: #E0F2FE; color: #0369A1; }
+.badge-orange  { background: #FFF7ED; color: #C2410C; }
+.badge-green   { background: #F0FDF4; color: #15803D; }
+.badge-gray    { background: #F8FAFC; color: #475569; }
+/* Rich 배지 — 진한 배경 + 흰 텍스트 (Spec: 8번 고대비) */
+.badge-rich-black  { background: #1E293B; color: #fff; }
+.badge-rich-purple { background: #7C3AED; color: #fff; }
+.badge-rich-red    { background: #DC2626; color: #fff; }
+.badge-rich-green  { background: #16A34A; color: #fff; }
+.badge-rich-blue   { background: #2563EB; color: #fff; }
+.badge-rich-gray   { background: #6B7280; color: #fff; }
 
 /* Card */
 .card-ui {
