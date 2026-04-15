@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.3-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.15-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -142,6 +142,11 @@ sucplant/
 ---
 
 ## 변경 이력
+
+### v3.2.15 — 2026-04-15 SMS 환경설정 연동 수정
+- **주문 SMS 실제 발송**: `sendSMS()` → `sendSolapiSMS()` 직접 호출로 수정 (기존: `window.solapi` SDK 체크하다 브라우저에 없어서 콘솔 로그만 찍히던 버그 수정)
+- **API 인증정보 환경설정 연동**: 환경설정 SMS탭에 솔라피 API Key / API Secret / 발신번호 입력 필드 추가 — 저장 후 모든 문자 발송에 즉시 반영
+- **런타임 설정 우선**: `getSolapiConfig()` 함수로 환경설정 값 우선 사용, 없을 시 코드 기본값 폴백
 
 ### v3.2.3 — 2026-04-15 규격화 완성
 - **하드코딩 완전 박멸**: `features/*` · `components/*` 전체에서 `bg-green-600` / `bg-emerald-600` / `#16A34A` 소스 교체 완료. `--primary` 변수 하나로 전체 색상 통제
