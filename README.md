@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.85-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.86-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.86 | fix: 상품 등록·수정 모달 저장 후 안 닫히고 먹통 — `removeEventListeners()`의 `product-modal` cloneNode 제거(모달은 document.body 소속이라 cloneNode 시 addEventListener 리스너 전부 날아가 저장 버튼 먹통 발생), 저장 버튼만 cloneNode 교체로 중복 리스너 방지. feat: 상품명 클릭 시 읽기전용 상세 패널 표시(이미지·판매가·매입가·마진율·재고·배송옵션·설명·등록일, 수정 버튼 포함) |
 | v3.2.85 | fix: 상품관리 `shipping` / `shipping_option` 중복 필드 정리 — `PRODUCT_FORM_FIELDS` · `PRODUCT_TABLE_COLUMNS` · 테이블 렌더링 · 인라인 편집 모두 `shipping_option` 단일 키로 통일, 로컬 메모리 이중 저장 제거, 인라인 편집 이중 쓰기 제거 |
 | v3.2.84 | 상품관리 테이블 디자인 시스템 통일 — `#products-section` flex 레이아웃 래퍼 추가, thead 컬럼(8개)↔JS tbody(9개) 불일치 수정(상품코드·사이즈·배송옵션 컬럼 정렬), `td-primary/td-amount/td-num/td-muted/td-secondary` 셀 클래스 적용, `btn-icon-edit/btn-icon-delete` 버튼 통일, 일괄 등록 모달 `style="display:none;"` → `hidden` 수정 |
 | v3.2.81 | 상품 등록 모달 레이아웃 개선 — `modal-lg`(720px) → `modal-xl`(960px) 확대, 상품명 col-4→col-6 / 카테고리·사이즈 col-4→col-3으로 비율 조정, `modal-body .form-grid` gap 10px→16px 여백 확대 |

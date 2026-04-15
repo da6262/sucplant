@@ -105,13 +105,14 @@ class ProductManagementComponent {
                 productTable.parentNode.replaceChild(newTable, productTable);
             }
             
-            // 상품 모달 정리
+            // 상품 모달은 document.body에 위치하므로 cloneNode 대신 클래스/스타일만 초기화
+            // (cloneNode를 쓰면 addEventListener 기반 리스너가 전부 날아가 저장 버튼 먹통 발생)
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                const newModal = productModal.cloneNode(true);
-                productModal.parentNode.replaceChild(newModal, productModal);
+                productModal.style.display = 'none';
+                productModal.classList.add('hidden');
             }
-            
+
             // 전역 이벤트 리스너 정리
             if (window.productEventListeners) {
                 window.productEventListeners.forEach(listener => {
@@ -411,7 +412,7 @@ class ProductManagementComponent {
                         }
                     </div>
                     <div>
-                        <div class="text-xs font-medium text-gray-800">${product.name}</div>
+                        <div class="product-name-link text-xs font-medium text-gray-800 cursor-pointer hover:text-green-700 hover:underline" data-product-id="${product.id}">${product.name}</div>
                         ${product.description ? `<div class="text-gray-400 text-2xs">${product.description}</div>` : ''}
                     </div>
                 </div>
@@ -459,6 +460,14 @@ class ProductManagementComponent {
      * 행 이벤트 리스너 추가
      */
     addRowEventListeners(row, product) {
+        // 상품명 클릭 → 상세 패널
+        const nameLink = row.querySelector('.product-name-link');
+        if (nameLink) {
+            nameLink.addEventListener('click', () => {
+                this.openProductDetailPanel(product);
+            });
+        }
+
         // 편집 버튼
         const editBtn = row.querySelector('.edit-product-btn');
         if (editBtn) {
@@ -886,6 +895,121 @@ class ProductManagementComponent {
     }
 
     /**
+     * 상품 상세 패널 열기 (읽기 전용)
+     */
+    openProductDetailPanel(product) {
+        const old = document.getElementById('product-detail-panel');
+        if (old) old.remove();
+
+        const shippingMap = {
+            'always_free': '무료배송', 'normal': '일반배송',
+            'included': '배송비포함', 'direct': '직접배송',
+            '일반배송': '일반배송', '당일배송': '당일배송',
+            '직접배송': '직접배송', '픽업': '픽업'
+        };
+        const statusMap = { 'active': '판매중', 'inactive': '판매중지', 'soldout': '품절' };
+
+        const fmt   = v => (v != null && v !== '') ? v : '-';
+        const fmtP  = v => v ? Number(v).toLocaleString() + '원' : '-';
+        const fmtD  = v => v ? new Date(v).toLocaleDateString('ko-KR') : '-';
+
+        const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
+        const status   = statusMap[product.status] || product.status || '-';
+        const statusColor = product.status === 'active'   ? 'text-green-600 bg-green-50'
+                          : product.status === 'soldout'  ? 'text-red-500 bg-red-50'
+                          : 'text-gray-500 bg-gray-100';
+
+        const profitMargin = product.profit_margin
+            ? product.profit_margin + '%'
+            : (product.price && product.cost
+                ? Math.round((1 - product.cost / product.price) * 100) + '%'
+                : '-');
+
+        const imageHtml = product.image_url
+            ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
+            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+
+        const panel = document.createElement('div');
+        panel.id = 'product-detail-panel';
+        panel.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40';
+        panel.innerHTML = `
+            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col" style="max-height:90vh;">
+                <!-- 헤더 -->
+                <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
+                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
+                    <div class="flex items-center gap-2">
+                        <button id="pd-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
+                            <i class="fas fa-edit mr-1"></i>수정
+                        </button>
+                        <button id="pd-close-btn" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+                <!-- 본문 -->
+                <div class="overflow-y-auto px-5 py-4 space-y-4">
+                    ${imageHtml}
+                    <div>
+                        <div class="flex items-start justify-between gap-2 mb-1">
+                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
+                            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
+                        </div>
+                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3 text-sm">
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
+                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
+                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
+                            <p class="font-semibold text-green-700 text-base">${fmtP(product.price)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
+                            <p class="font-medium text-gray-800">${fmtP(product.cost)}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
+                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3">
+                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
+                            <p class="font-medium text-gray-800">${profitMargin}</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
+                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
+                            <p class="font-medium text-gray-800">${shipping}</p>
+                        </div>
+                    </div>
+                    ${product.description ? `
+                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
+                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
+                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
+                    </div>` : ''}
+                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
+                        <span>등록일 ${fmtD(product.created_at)}</span>
+                        <span>수정일 ${fmtD(product.updated_at)}</span>
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(panel);
+
+        panel.querySelector('#pd-close-btn').addEventListener('click', () => panel.remove());
+        panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+        panel.querySelector('#pd-edit-btn').addEventListener('click', () => {
+            panel.remove();
+            this.editProduct(product);
+        });
+    }
+
+    /**
      * 상품 폼 초기화
      */
     resetProductForm() {
@@ -1048,16 +1172,15 @@ class ProductManagementComponent {
     setupModalSaveButton() {
         const saveBtn = document.getElementById('save-product-btn');
         if (saveBtn) {
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            saveBtn.removeEventListener('click', this.handleSaveProduct);
-            
+            // cloneNode로 버튼을 교체해 기존 리스너를 완전히 제거
+            const newSaveBtn = saveBtn.cloneNode(true);
+            saveBtn.parentNode.replaceChild(newSaveBtn, saveBtn);
+
             // 새로운 이벤트 리스너 추가
             this.handleSaveProduct = async () => {
-                console.log('💾 상품 저장 버튼 클릭됨');
                 await this.saveProduct();
             };
-            
-            saveBtn.addEventListener('click', this.handleSaveProduct);
+            newSaveBtn.addEventListener('click', this.handleSaveProduct);
             console.log('✅ 모달 저장 버튼 이벤트 리스너 등록 완료');
         }
     }
