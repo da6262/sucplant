@@ -1,13 +1,19 @@
 # 경산다육식물농장 관리시스템
 
-![버전](https://img.shields.io/badge/version-3.2.5-brightgreen)
+![버전](https://img.shields.io/badge/version-3.2.3-brightgreen)
 ![기술](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Supabase-blue)
 
 White Platter 전문 농장의 주문·재고·고객 통합 관리 웹앱입니다.
 
 ---
 
-## 최근 변경사항 (v3.2.5)
+## 최근 변경사항 (v3.2.6)
+
+| 항목 | 내용 |
+|------|------|
+| 고객 목록 주문 추가 버튼 | 고객 목록 관리 컬럼에 장바구니 버튼 추가, 클릭 시 해당 고객 정보로 주문 모달 바로 열림 |
+
+## 변경사항 (v3.2.5)
 
 | 항목 | 내용 |
 |------|------|
