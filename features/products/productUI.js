@@ -1430,14 +1430,7 @@ export class ProductUI {
             if (!tbody) return;
             
             if (products.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-search text-4xl mb-2"></i><br>
-                            검색 결과가 없습니다
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = window.renderEmptyRow(9, '검색 결과가 없습니다');
                 return;
             }
             
@@ -1560,14 +1553,7 @@ export class ProductUI {
                 : `${pagedProducts.length} / ${products.length}개 표시`;
 
             if (products.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                            <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-box text-4xl mb-2"></i><br>
-                            등록된 상품이 없습니다
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = window.renderEmptyRow(9, '등록된 상품이 없습니다');
                 return;
             }
 

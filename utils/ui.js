@@ -1,6 +1,19 @@
 /**
  * 경산다육식물농장 관리시스템 — 공통 UI 렌더러
  *
+ * ─── 채택 현황 (v3.2.25) ───────────────────────────────────────────
+ *  renderEmptyRow   ✅ 전체 채택 완료
+ *    waitlistUI.js · customerUI.js · productUI.js(×2)
+ *    shippingUI.js · orderForm.js
+ *
+ *  renderFilterBar  ⬜ 대기
+ *    필터 바가 HTML 컴포넌트에 정적으로 선언되어 있어 JS 생성 불필요.
+ *    JS에서 동적 필터 바가 필요한 경우 이 함수를 사용할 것.
+ *
+ *  renderPageHeader ⬜ 대기
+ *    페이지 헤더가 HTML 컴포넌트에 정적으로 선언되어 있어 JS 생성 불필요.
+ * ────────────────────────────────────────────────────────────────────
+ *
  * 사용 예:
  *   import { renderPageHeader } from '../../utils/ui.js';
  *

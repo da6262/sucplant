@@ -646,7 +646,7 @@ function cartQuantityChange(productId, delta) {
 function ensureCartEmptyRow(cartBody) {
     if (!cartBody || cartBody.querySelector('tr[data-product-id]')) return;
     const thCount = cartBody.closest('table')?.querySelectorAll('thead th')?.length || 4;
-    cartBody.innerHTML = `<tr><td colspan="${thCount}" class="text-center text-gray-500 py-6 text-xs">장바구니가 비어있습니다</td></tr>`;
+    cartBody.innerHTML = window.renderEmptyRow(thCount, '장바구니가 비어있습니다');
 }
 // 라인 소계·상품합계·총금액 실시간 갱신 (원 단위 정수, 단가 스냅샷 기준). updateCartTotal와 동일 규칙 적용.
 function refreshOrderTotal() {

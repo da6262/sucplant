@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.23-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.25-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -145,6 +145,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.25 | 빈 행 렌더링 표준화 — `renderEmptyRow()` 전 탭 통일 (고객·상품·배송·주문폼), `utils/ui.js` 채택 현황 문서화 |
+| v3.2.24 | README 배지 버전 동기화 |
 | v3.2.23 | 주문 워크플로우 개선 — ①주문확인 문자 발송 시 자동 입금대기 전환 ②입금대기 3일+ 경과 행 빨간 강조 ③입금확인 상태 변경 시 SMS 발송 옵션 ④품절 안내 문자 템플릿 추가 ⑤배송시작 문자에 CJ대한통운 배송조회 링크 포함 ⑥환불완료 처리 시 사유 입력 모달 (메모에 자동 기록) |
 | v3.2.22 | README 변경이력 정리 |
 | v3.2.18 | 테이블 행 간격 CSS 변수 통합 — `--tbl-cell-py` 변수가 Tailwind에 밀리던 특이도 문제 수정, 고객관리·상품관리 `table-ui` 클래스 누락 보완 |

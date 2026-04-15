@@ -196,7 +196,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         if (todayEl) todayEl.textContent = String(todayCount);
 
         if (customers.length === 0) {
-            container.innerHTML = `<tr><td colspan="5" class="px-4 py-8 text-center text-gray-500 text-sm">${gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.'}</td></tr>`;
+            container.innerHTML = window.renderEmptyRow(5, gradeFilter === 'all' ? '등록된 고객이 없습니다.' : '해당 등급 고객이 없습니다.');
             return;
         }
 

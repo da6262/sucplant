@@ -24,14 +24,7 @@ export class ShippingUI {
             }
             
             if (orders.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="9" class="text-center py-8 text-gray-500">
-                            <i class="fas fa-box-open text-4xl mb-2"></i><br>
-                            배송할 주문이 없습니다
-                        </td>
-                    </tr>
-                `;
+                tbody.innerHTML = window.renderEmptyRow(9, '배송할 주문이 없습니다');
                 return;
             }
             
