@@ -62,11 +62,11 @@ import {
 } from './features/categories/categoryData.js';
 
 // 카테고리 UI 모듈 import
-import { 
+import {
     openCategoryModal,
     closeCategoryModal,
     loadCategoriesList,
-    updateCategoryDropdown
+    updateProductCategoryDropdown as updateCategoryDropdown
 } from './features/categories/categoryUI.js';
 
 // 주문 데이터 모듈 import
