@@ -685,14 +685,16 @@ body {
 .btn-danger i, .btn-danger .fas { font-size: 11px; }
 
 /* =====================
-   아이콘 버튼 — 테이블 행 액션 (수정·삭제·복제)
+   아이콘 버튼 — 테이블 행 액션 (수정·삭제·복제)   [Spec ⑤: 30×30px, 8px gap]
    ===================== */
 .btn-icon {
     display: inline-flex; align-items: center; justify-content: center;
-    width: 26px; height: 26px; border-radius: 6px;
+    width: 30px; height: 30px; border-radius: 6px;
     border: none; cursor: pointer; font-size: 12px;
     transition: background 0.15s, transform 0.15s;
 }
+/* 버튼 그룹 컨테이너 — 8px 간격 */
+.btn-group { display: flex; align-items: center; gap: 8px; justify-content: center; }
 /* Spec ⑤ 호버 scale 1.1 애니메이션 */
 .btn-icon:hover { transform: scale(1.1); }
 /* Spec ④ 항상 연한 배경 표시 (클릭 영역 명확화) */
@@ -823,6 +825,14 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 .filter-bar input[type="search"] {
     max-width: 240px;
 }
+/* ── Filter Bar 요소 높이 30px 통일 [Spec ⑦] ── */
+.filter-bar input,
+.filter-bar select,
+.filter-bar .input-ui { height: 30px; padding-top: 0; padding-bottom: 0; box-sizing: border-box; }
+.filter-bar .btn-search,
+.filter-bar .btn-secondary,
+.filter-bar .btn-primary  { height: 30px; padding-top: 0; padding-bottom: 0; }
+
 /* 검색 버튼 — 브랜드 컬러 #22C55E (Primary Action) */
 .btn-search {
     display: inline-flex; align-items: center; gap: 5px;
@@ -943,3 +953,54 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
    ===================================================== */
 .text-2xs  { font-size: 10px; }
 .text-11px { font-size: 11px; }
+
+/* =====================================================
+   [Spec ①] Table Header Unification — 전 테이블 thead 통합
+   ===================================================== */
+table thead th {
+    background-color: #F8FAFC !important;
+    border-top:   none !important;
+    border-left:  none !important;
+    border-right: none !important;
+    border-bottom: 2px solid #E2E8F0 !important;
+    font-size: 11px; font-weight: 600; color: #374151;
+    padding: 6px 8px; white-space: nowrap; vertical-align: middle;
+}
+/* .table-ui thead th — override: keep sticky, add 2px bottom */
+.table-ui thead th {
+    position: sticky; top: 0; z-index: 1;
+    border-bottom: 2px solid var(--tbl-border-color) !important;
+}
+/* 정렬 가능 컬럼 */
+.th-sortable { cursor: pointer; }
+.th-sortable:hover { background-color: #F1F5F9 !important; }
+
+/* =====================================================
+   [Spec ④] Numeric Data Style
+   ===================================================== */
+.text-numeric {
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.01em;
+}
+
+/* =====================================================
+   [Spec ⑧] CRM Detail Panel — 고객 상세 플로팅 패널
+   ===================================================== */
+.crm-panel {
+    position: fixed; top: 80px; right: 20px;
+    width: 380px; height: calc(100vh - 110px);
+    display: flex; flex-direction: column;
+    background: #fff; border-radius: 12px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    border: 1px solid #e2e8f0; z-index: 200; overflow: hidden;
+}
+.crm-panel-header {
+    padding: 8px 12px; border-bottom: 1px solid #e2e8f0;
+    display: flex; justify-content: space-between; align-items: center;
+    flex-shrink: 0;
+}
+.crm-panel-title  { font-size: 13px; font-weight: 600; color: #1E293B; }
+.crm-panel-close  { color: #9ca3af; font-size: 16px; background: none; border: none; cursor: pointer; line-height: 1; }
+.crm-panel-close:hover { color: #374151; }
+.crm-panel-body   { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }

@@ -218,10 +218,12 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
                 <td class="px-3 py-2 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
                 <td class="px-3 py-2 td-secondary">${phoneDisplay || nullDash}</td>
                 <td class="px-3 py-2 td-muted">${lastOrderDate || nullDash}</td>
-                <td class="px-3 py-2"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="px-3 py-2">
-                    <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                    <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                <td class="px-3 py-2 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="px-3 py-2 text-center">
+                    <div class="btn-group">
+                        <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                        <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                    </div>
                 </td>
             `;
             tr.addEventListener('click', (e) => {
@@ -677,8 +679,8 @@ async function showCustomerDetailInPanel(customer) {
             if (!panel) {
                 panel = document.createElement('div');
                 panel.id = '_dyn_detail_panel';
-                panel.style.cssText = 'position:fixed;top:80px;right:20px;width:380px;height:calc(100vh - 110px);display:flex;flex-direction:column;background:white;border-radius:12px;box-shadow:0 8px 32px rgba(0,0,0,0.18);border:1px solid #e2e8f0;z-index:200;overflow:hidden;';
-                panel.innerHTML = '<div style="padding:8px 12px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;flex-shrink:0;"><span style="font-size:13px;font-weight:600;">고객 상세</span><button onclick="document.getElementById(\'_dyn_detail_panel\').style.display=\'none\'" style="color:#9ca3af;font-size:16px;background:none;border:none;cursor:pointer;">✕</button></div><div id="customer-detail-content" style="flex:1;overflow-y:auto;padding:12px;min-height:0;"></div>';
+                panel.className = 'crm-panel';
+                panel.innerHTML = '<div class="crm-panel-header"><span class="crm-panel-title">고객 상세</span><button class="crm-panel-close" onclick="document.getElementById(\'_dyn_detail_panel\').style.display=\'none\'">✕</button></div><div id="customer-detail-content" class="crm-panel-body"></div>';
                 document.body.appendChild(panel);
             }
             detailContent = document.getElementById('customer-detail-content');

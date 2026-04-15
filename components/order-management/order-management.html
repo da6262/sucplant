@@ -112,23 +112,19 @@
 <div class="overflow-x-auto border-t border-gray-100">
     <table class="w-full table-auto order-list-compact">
         <thead>
-            <tr class="bg-gray-50 border-b border-gray-200">
-                <th class="px-2 py-2 text-center text-[11px] font-semibold text-gray-600 w-10">
+            <tr>
+                <th class="text-center w-10">
                     <input type="checkbox" id="select-all-orders" class="rounded text-green-600 focus:ring-green-500 focus:ring-1">
                 </th>
-                <th class="px-2 py-2 text-center text-[11px] font-semibold text-gray-600 w-12">D</th>
-                <th class="px-2 py-2 text-left text-[11px] font-semibold text-gray-700 min-w-[80px]" onclick="orderDataManager.sortOrders('customer_name')" style="cursor:pointer;">
-                    <i class="fas fa-user text-gray-400 mr-0.5"></i>고객명
-                </th>
-                <th class="px-2 py-2 text-left text-[11px] font-semibold text-gray-700 min-w-[140px]">상품 요약</th>
-                <th class="px-2 py-2 text-left text-[10px] text-gray-500 w-28">주문번호</th>
-                <th class="px-2 py-2 text-right text-[11px] font-semibold text-gray-700 w-20" onclick="orderDataManager.sortOrders('total_amount')" style="cursor:pointer;">
-                    <i class="fas fa-won-sign text-gray-400 mr-0.5"></i>금액
-                </th>
-                <th class="px-2 py-2 text-left text-[11px] font-semibold text-gray-700 w-20">상태</th>
-                <th class="px-2 py-2 text-center text-[11px] font-semibold text-gray-700 w-16">출력</th>
-                <th class="px-2 py-2 text-center text-[11px] font-semibold text-gray-700 w-16">SMS</th>
-                <th class="px-2 py-2 text-center text-[11px] font-semibold text-gray-700 w-14">관리</th>
+                <th class="text-center w-12">D</th>
+                <th class="text-left min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
+                <th class="text-left min-w-[140px]">상품 요약</th>
+                <th class="text-left w-28">주문번호</th>
+                <th class="text-right w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
+                <th class="text-center w-20">상태</th>
+                <th class="text-center w-16">출력</th>
+                <th class="text-center w-16">SMS</th>
+                <th class="text-center w-14">관리</th>
             </tr>
         </thead>
         <tbody id="orders-table-body" class="divide-y divide-gray-100 text-xs">

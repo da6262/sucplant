@@ -938,10 +938,10 @@ class OrderDataManager {
                     <td class="px-2 py-1.5 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
                     <td class="px-2 py-1.5 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
                     <td class="px-2 py-1.5 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
-                    <td class="px-2 py-1.5 td-amount">${totalAmount > 0 ? totalAmount.toLocaleString() + '원' : nullDash}</td>
-                    <td class="px-2 py-1.5 align-middle relative" onclick="event.stopPropagation()">
-                        <span class="badge ${statusColor}"
-                              onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경" style="cursor:pointer;">${orderStatus}</span>
+                    <td class="px-2 py-1.5 td-amount text-right text-numeric">${totalAmount > 0 ? '₩' + totalAmount.toLocaleString() : nullDash}</td>
+                    <td class="px-2 py-1.5 text-center align-middle relative" onclick="event.stopPropagation()">
+                        <span class="badge ${statusColor} cursor-pointer"
+                              onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
                         <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
                                 <button class="w-full text-left px-2 py-1.5 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
@@ -956,8 +956,10 @@ class OrderDataManager {
                         <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
                     <td class="px-2 py-1.5 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
-                        <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
-                        <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>
+                        <div class="btn-group">
+                            <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
+                            <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>
+                        </div>
                     </td>
                 </tr>
             `;
@@ -1209,9 +1211,8 @@ class OrderDataManager {
         if (statusElement) {
             const statusColor = this.getStatusColor(newStatus);
             statusElement.innerHTML = `
-                <span class="badge ${statusColor}"
+                <span class="badge ${statusColor} cursor-pointer"
                       onclick="toggleOrderStatusEdit('${orderId}', '${newStatus}')"
-                      style="cursor:pointer;"
                       title="클릭하여 주문상태 변경">
                     ${newStatus}
                 </span>

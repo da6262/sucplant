@@ -409,10 +409,10 @@ class ProductManagementComponent {
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <div class="flex items-center gap-2">
-                    <div class="shrink-0 w-7 h-7">
+                    <div class="shrink-0 w-10 h-10">
                         ${product.image_url
-                            ? `<img class="w-7 h-7 rounded object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
-                            : `<div class="w-7 h-7 rounded bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
+                            ? `<img class="w-10 h-10 rounded-lg object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
+                            : `<div class="w-10 h-10 rounded-lg bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
                         }
                     </div>
                     <div>
@@ -424,24 +424,23 @@ class ProductManagementComponent {
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <span class="badge badge-blue text-2xs">${product.category || '미분류'}</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
-                <div class="text-xs font-semibold text-gray-800">${this.formatCurrency(product.price)}</div>
+            <td class="px-2 py-1.5 whitespace-nowrap text-right text-numeric">
+                ${this.formatCurrency(product.price)}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500 text-11px">
+            <td class="px-2 py-1.5 whitespace-nowrap text-right text-gray-500 text-11px">
                 ${product.cost ? this.formatCurrency(product.cost) : '-'}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
-                <span class="text-xs font-medium ${stockColor}">${product.stock || 0}</span>
-                <span class="text-gray-400 text-2xs">개</span>
+            <td class="px-2 py-1.5 whitespace-nowrap text-right text-numeric">
+                <span class="${stockColor}">${product.stock || 0}개</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
+            <td class="px-2 py-1.5 whitespace-nowrap text-center">
                 <span class="${badgeClass} text-2xs">${this.getStockStatusText(stockStatus)}</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500 text-11px">
+            <td class="px-2 py-1.5 whitespace-nowrap td-muted">
                 ${this.formatDate(product.created_at)}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
-                <div class="flex gap-1">
+            <td class="px-2 py-1.5 whitespace-nowrap text-center">
+                <div class="btn-group">
                     <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
                         <i class="fas fa-pen"></i>
                     </button>
@@ -1585,8 +1584,9 @@ class ProductManagementComponent {
      */
     formatDate(dateString) {
         if (!dateString) return '-';
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
+        const d = new Date(dateString);
+        if (isNaN(d.getTime())) return '-';
+        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }
 
     /**
