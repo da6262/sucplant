@@ -1583,20 +1583,16 @@ class ProductManagementComponent {
      * 날짜 포맷팅
      */
     formatDate(dateString) {
-        if (!dateString) return '-';
-        const d = new Date(dateString);
-        if (isNaN(d.getTime())) return '-';
-        return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+        // 공통 포맷터 위임 (utils/formatters.js → window.formatDate)
+        return (window.fmt?.date ?? window.formatDate ?? ((v) => v ? v.slice(0,10) : '-'))(dateString);
     }
 
     /**
      * 통화 포맷팅
      */
     formatCurrency(amount) {
-        return new Intl.NumberFormat('ko-KR', {
-            style: 'currency',
-            currency: 'KRW'
-        }).format(amount);
+        // 공통 포맷터 위임 (utils/formatters.js → window.formatCurrency)
+        return (window.fmt?.currency ?? window.formatCurrency ?? ((v) => '₩' + Number(v).toLocaleString()))(amount);
     }
 
     /**

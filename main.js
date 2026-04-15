@@ -7,6 +7,32 @@ import './js/supabase-production-config.js';
 // 공통 유틸리티 함수들 import
 import { TABLE_MAP, mapTable, getSupabaseTableName } from './utils/helpers.js';
 
+// ── 공통 데이터 포맷터 (Single Source of Truth) ──────────────
+import {
+    formatDate, formatDateTime,
+    formatCurrency, formatWon,
+    formatPhone, formatQty,
+    nullDash, emptyDash
+} from './utils/formatters.js';
+
+// 전역 노출 — components/* 및 레거시 코드에서 window.fmt.date() 형태로 사용
+window.fmt = {
+    date:     formatDate,
+    dateTime: formatDateTime,
+    currency: formatCurrency,
+    won:      formatWon,
+    phone:    formatPhone,
+    qty:      formatQty,
+    nullDash,
+    emptyDash,
+};
+// 개별 전역 함수 (하위 호환 — 기존 코드에서 formatDate() 직접 호출 지원)
+window.formatDate     = formatDate;
+window.formatCurrency = formatCurrency;
+window.formatPhone    = formatPhone;
+window.formatQty      = formatQty;
+window.nullDash       = nullDash;
+
 // 고객 데이터 모듈 import
 import { 
     customerDataManager,

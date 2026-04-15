@@ -3,6 +3,7 @@
 
 import { customerDataManager } from './customerData.js';
 import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
+import { formatDate, formatPhone } from '../../utils/formatters.js';
 
 // ----------------------------
 // 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
@@ -212,7 +213,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             const tr = document.createElement('tr');
             tr.className = 'hover:bg-gray-50 cursor-pointer';
             tr.setAttribute('data-customer-id', customer.id);
-            const phoneDisplay = (customer.phone || '').replace(/(\d{3})(\d{3,4})(\d{4})/, '$1-$2-$3');
+            const phoneDisplay = formatPhone(customer.phone);
             const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
                 <td class="px-3 py-2 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
@@ -254,11 +255,8 @@ function escapeHtml(str) {
     const s = String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-function formatDisplayDate(val) {
-    if (!val) return '-';
-    const d = typeof val === 'string' ? new Date(val) : val;
-    return isNaN(d.getTime()) ? '-' : `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
-}
+// formatDisplayDate → utils/formatters.js의 formatDate()로 통합됨
+function formatDisplayDate(val) { return formatDate(val); }
 
 /** 고객 전화번호별 최근 주문일 맵 조회 (farm_orders 기준) */
 function normalizePhoneForOrder(phone) {

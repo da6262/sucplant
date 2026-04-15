@@ -928,13 +928,10 @@ class DashboardComponent {
     }
 
     /**
-     * 통화 포맷팅
+     * 통화 포맷팅 — utils/formatters.js의 formatCurrency()로 위임
      */
     formatCurrency(amount) {
-        return new Intl.NumberFormat('ko-KR', {
-            style: 'currency',
-            currency: 'KRW'
-        }).format(amount);
+        return (window.fmt?.currency ?? window.formatCurrency ?? ((v) => '₩' + Number(v).toLocaleString()))(amount);
     }
 
     /**

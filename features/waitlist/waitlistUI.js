@@ -2,6 +2,7 @@
 // 경산다육식물농장 관리시스템 - 대기자 UI 관리
 
 import { waitlistDataManager } from './waitlistData.js';
+import { formatDate, formatPhone, formatCurrency } from '../../utils/formatters.js';
 
 /**
  * 대기자관리 UI 클래스
@@ -265,30 +266,17 @@ export class WaitlistUI {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
         const nd = '<span class="td-null">—</span>';
-        const fmtDate = (v) => {
-            if (!v) return nd;
-            const d = new Date(v);
-            if (isNaN(d.getTime())) return nd;
-            return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-        };
-        const fmtPhone = (p) => {
-            if (!p) return nd;
-            const n = String(p).replace(/\D/g, '');
-            if (n.length === 11) return `${n.slice(0,3)}-${n.slice(3,7)}-${n.slice(7)}`;
-            if (n.length === 10) return `${n.slice(0,3)}-${n.slice(3,6)}-${n.slice(6)}`;
-            return p;
-        };
         row.innerHTML = `
             <td class="px-2.5 py-2 td-muted text-center">${index + 1}</td>
             <td class="px-2.5 py-2 td-primary td-link">${item.customer_name || nd}</td>
-            <td class="px-2.5 py-2 td-secondary">${fmtPhone(item.customer_phone)}</td>
+            <td class="px-2.5 py-2 td-secondary">${formatPhone(item.customer_phone)}</td>
             <td class="px-2.5 py-2 td-primary">${item.product_name || nd}</td>
             <td class="px-2.5 py-2 td-secondary">${item.product_category || nd}</td>
-            <td class="px-2.5 py-2 td-amount text-right text-numeric">${item.expected_price ? '₩' + item.expected_price.toLocaleString() : nd}</td>
+            <td class="px-2.5 py-2 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
             <td class="px-2.5 py-2 text-center">
                 <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
             </td>
-            <td class="px-2.5 py-2 td-muted">${fmtDate(item.register_date)}</td>
+            <td class="px-2.5 py-2 td-muted">${formatDate(item.register_date) || nd}</td>
             <td class="px-2.5 py-2 text-center">
                 <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
