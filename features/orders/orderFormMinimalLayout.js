@@ -132,7 +132,7 @@ window.generateOrderFormHTMLMinimal = function () {
                     </thead>
                     <tbody id="cart-items-body">
                         <tr>
-                            <td colspan="5" class="text-center text-gray-300 py-3 text-xs">
+                            <td colspan="5" class="text-center td-muted">
                                 장바구니가 비어있습니다
                             </td>
                         </tr>

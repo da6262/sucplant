@@ -276,7 +276,7 @@ async function loadBasicShippingData() {
                 </td>
                 <td class="px-4 td-secondary">${formatDate(order.order_date)}</td>
                 <td class="px-4 td-secondary">${order.tracking_number || '—'}</td>
-                <td class="px-4 py-2">
+                <td class="px-4">
                     <div class="flex items-center gap-2">
                         ${order.tracking_number ? `
                             <button onclick="trackOrder('${order.id}')" class="text-blue-500 hover:text-blue-700 text-xs" title="배송 추적">
@@ -1540,20 +1540,20 @@ async function showRozenExcelPreview() {
                         <!-- 본문 -->
                         <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
                             <div class="overflow-x-auto">
-                                <table class="min-w-full divide-y divide-gray-200 border border-gray-300">
+                                <table class="min-w-full table-ui border border-gray-300">
                                     <thead class="bg-blue-50">
                                         <tr>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인명</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300"></th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인주소</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인전화번호</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">수하인핸드폰번호</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">택배수량</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">택배운임</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">운임구분</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">품목명</th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300"></th>
-                                            <th class="px-3 py-2 text-xs font-bold text-gray-700 border border-gray-300">배송메세지</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인명</th>
+                                            <th class="px-3 font-bold border border-gray-300"></th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인주소</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인전화번호</th>
+                                            <th class="px-3 font-bold border border-gray-300">수하인핸드폰번호</th>
+                                            <th class="px-3 font-bold border border-gray-300">택배수량</th>
+                                            <th class="px-3 font-bold border border-gray-300">택배운임</th>
+                                            <th class="px-3 font-bold border border-gray-300">운임구분</th>
+                                            <th class="px-3 font-bold border border-gray-300">품목명</th>
+                                            <th class="px-3 font-bold border border-gray-300"></th>
+                                            <th class="px-3 font-bold border border-gray-300">배송메세지</th>
                                         </tr>
                                     </thead>
                                     <tbody class="bg-white divide-y divide-gray-200">
@@ -1564,17 +1564,17 @@ async function showRozenExcelPreview() {
                                             const message = order.memo || order.shipping_message || '';
                                             return `
                                                 <tr class="hover:bg-gray-50">
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300">${order.customer_name || ''}</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${address}</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300">${phone}</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">1</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">3800</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-900 border border-gray-300">010</td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${itemName}</td>
-                                                    <td class="px-3 py-2 text-xs text-center text-gray-500 border border-gray-300"></td>
-                                                    <td class="px-3 py-2 text-xs text-gray-900 border border-gray-300 max-w-xs truncate">${message}</td>
+                                                    <td class="px-3 td-primary border border-gray-300">${order.customer_name || ''}</td>
+                                                    <td class="px-3 td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${address}</td>
+                                                    <td class="px-3 td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300">${phone}</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">1</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">3800</td>
+                                                    <td class="px-3 text-center td-primary border border-gray-300">010</td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${itemName}</td>
+                                                    <td class="px-3 text-center td-secondary border border-gray-300"></td>
+                                                    <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${message}</td>
                                                 </tr>
                                             `;
                                         }).join('')}
@@ -2073,7 +2073,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                         
                         <!-- Excel 표 형태 편집 영역 -->
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                            <table class="min-w-full divide-y divide-gray-200" id="template-table">
+                            <table class="min-w-full table-ui" id="template-table">
                                 <thead class="bg-gray-100">
                                     <!-- Excel 컬럼 레터 (A, B, C...) -->
                                     <tr id="template-column-letters" class="border-b border-gray-300">
@@ -2137,7 +2137,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                     <div id="template-preview" class="hidden">
                         <h4 class="text-sm font-medium text-gray-700 mb-2">미리보기</h4>
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                            <table id="preview-table" class="min-w-full divide-y divide-gray-200">
+                            <table id="preview-table" class="min-w-full table-ui">
                                 <!-- 미리보기 테이블이 여기에 표시됩니다 -->
                             </table>
                         </div>
@@ -2237,15 +2237,15 @@ function addTemplateRowToTable(cells = [], columnCount = 6) {
     }
     
     row.innerHTML = cells.slice(0, columnCount).map((cell, index) => `
-        <td class="px-4 py-2 border-r border-gray-200">
-            <input type="text" 
-                   value="${(cell || '').trim()}" 
-                   class="data-input w-full px-2 py-1 border border-gray-200 rounded text-sm"
+        <td class="px-4 border-r border-gray-200">
+            <input type="text"
+                   value="${(cell || '').trim()}"
+                   class="data-input w-full px-2 py-1 border border-gray-200 rounded"
                    data-col-index="${index}"
                    placeholder="데이터">
         </td>
     `).join('') + `
-        <td class="px-4 py-2 text-center">
+        <td class="px-4 text-center">
             <button class="text-red-600 hover:text-red-800 text-sm" onclick="removeTemplateRow(this)">
                 <i class="fas fa-trash"></i>
             </button>
@@ -2444,7 +2444,7 @@ function previewTemplate(content) {
             const cells = lines[i].split(',');
             tableHTML += '<tr>';
             cells.forEach(cell => {
-                tableHTML += `<td class="px-4 py-2 text-sm text-gray-600">${cell.trim()}</td>`;
+                tableHTML += `<td class="px-4 td-secondary">${cell.trim()}</td>`;
             });
             tableHTML += '</tr>';
         }
@@ -3034,7 +3034,7 @@ async function openShippingTrackingPanel() {
     const tbody = document.getElementById('shipping-tracking-rows');
     if (!tbody || !window.supabaseClient) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" class="px-2 py-3 text-center text-amber-600">불러오는 중...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-amber-600">불러오는 중...</td></tr>`;
 
     try {
         const { data: orders, error } = await window.supabaseClient
@@ -3044,22 +3044,22 @@ async function openShippingTrackingPanel() {
             .order('order_date', { ascending: false });
 
         if (error || !orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="px-2 py-3 text-center text-amber-600">배송준비 상태의 주문이 없습니다</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-amber-600">배송준비 상태의 주문이 없습니다</td></tr>`;
             return;
         }
 
         tbody.innerHTML = orders.map(o => {
             const items = Array.isArray(o.order_items) ? o.order_items.map(i => i.product_name || i.name || '').filter(Boolean).join(', ') : '';
             return `<tr class="hover:bg-amber-50">
-                <td class="px-2 py-1.5 text-gray-700">${o.order_number || o.id.slice(0,8)}</td>
-                <td class="px-2 py-1.5 text-gray-700">${o.customer_name || ''}</td>
-                <td class="px-2 py-1.5 text-gray-500 max-w-[120px] truncate" title="${items}">${items}</td>
-                <td class="px-2 py-1.5 text-gray-700">${(o.total_amount||0).toLocaleString()}원</td>
-                <td class="px-2 py-1.5">
-                    <input type="text" class="shipping-tracking-input w-full border border-amber-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-amber-400"
+                <td class="px-2 td-primary">${o.order_number || o.id.slice(0,8)}</td>
+                <td class="px-2 td-primary">${o.customer_name || ''}</td>
+                <td class="px-2 td-secondary max-w-[120px] truncate" title="${items}">${items}</td>
+                <td class="px-2 td-primary">${(o.total_amount||0).toLocaleString()}원</td>
+                <td class="px-2">
+                    <input type="text" class="shipping-tracking-input w-full border border-amber-300 rounded px-2 py-1 focus:ring-1 focus:ring-amber-400"
                         placeholder="송장번호 입력" value="${o.tracking_number || ''}" data-order-id="${o.id}">
                 </td>
-                <td class="px-2 py-1.5">
+                <td class="px-2">
                     <button onclick="saveShippingOneTracking('${o.id}', this)" class="app-btn app-btn-soft text-[10px] px-2 py-0.5">저장</button>
                 </td>
             </tr>`;
@@ -3069,7 +3069,7 @@ async function openShippingTrackingPanel() {
         const saveAllBtn = document.getElementById('shipping-tracking-save-all-btn');
         if (saveAllBtn) saveAllBtn.onclick = saveAllShippingTrackings;
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="px-2 py-3 text-center text-red-500">오류: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-red-500">오류: ${e.message}</td></tr>`;
     }
 }
 

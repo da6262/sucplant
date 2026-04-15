@@ -223,8 +223,8 @@ function generateOrderFormHTML() {
                                     <tbody id="cart-items-body">
                                         <!-- 장바구니 아이템들이 여기에 표시됩니다 -->
                                         <tr>
-                                            <td colspan="5" class="text-center text-gray-500 py-4">
-                                                <p class="text-sm">장바구니가 비어있습니다</p>
+                                            <td colspan="5" class="text-center text-gray-500">
+                                                <p>장바구니가 비어있습니다</p>
                                             </td>
                                         </tr>
                                     </tbody>
@@ -616,14 +616,14 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-product-name', productName || '');
         const lineTotal = unitPrice * 1;
         tr.innerHTML = `
-            <td class="px-2 py-1 text-sm align-top">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-[12px] text-gray-500 align-top tabular-nums">${unitPrice.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center align-top whitespace-nowrap">
+            <td class="px-2 align-top">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="px-2 td-secondary align-top tabular-nums">${unitPrice.toLocaleString()}원</td>
+            <td class="px-2 text-center align-top whitespace-nowrap">
                 <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', -1)">−</button>
                 <input type="number" class="quantity-input w-12 text-center border rounded mx-0.5 text-sm" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
                 <button type="button" class="w-8 h-8 rounded bg-gray-200 hover:bg-gray-300 text-sm inline-flex items-center justify-center" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
-            <td class="cart-line-total px-2 py-1 text-right text-sm font-medium tabular-nums align-top">${lineTotal.toLocaleString()}원</td>
+            <td class="cart-line-total px-2 text-right font-medium tabular-nums align-top">${lineTotal.toLocaleString()}원</td>
         `;
         cartBody.appendChild(tr);
     }
@@ -2281,13 +2281,13 @@ function addProductToCart(productId, productName, price, stock, event) {
             const newRow = document.createElement('tr');
             newRow.setAttribute('data-product-id', productId);
             newRow.innerHTML = `
-                <td class="px-3 py-2">
-                    <div class="text-sm font-medium text-gray-900">${productName}</div>
+                <td class="px-3">
+                    <div class="font-medium td-primary">${productName}</div>
                 </td>
-                <td class="px-3 py-2">
-                    <span class="text-sm text-gray-600">${price.toLocaleString()}원</span>
+                <td class="px-3">
+                    <span class="td-secondary">${price.toLocaleString()}원</span>
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <div class="flex items-center justify-center space-x-1">
                         <button onclick="decreaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">-</button>
                         <input type="number" class="quantity-input w-12 text-center text-sm border border-gray-300 rounded" 
@@ -2295,10 +2295,10 @@ function addProductToCart(productId, productName, price, stock, event) {
                         <button onclick="increaseQuantity('${productId}')" class="w-6 h-6 bg-gray-200 hover:bg-gray-300 rounded text-xs">+</button>
                     </div>
                 </td>
-                <td class="px-3 py-2">
-                    <span class="text-sm font-semibold text-blue-600 cart-item-total">${price.toLocaleString()}원</span>
+                <td class="px-3">
+                    <span class="font-semibold text-blue-600 cart-item-total">${price.toLocaleString()}원</span>
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <button onclick="removeCartItem('${productId}')" class="text-red-500 hover:text-red-700 text-xs">
                         <i class="fas fa-trash"></i>
                     </button>
@@ -2848,15 +2848,15 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         row.setAttribute('data-shipping-option', shippingOption);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
-            <td class="px-2 py-1 text-xs">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums">${unitPrice.toLocaleString()}</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
+            <td class="px-2 text-center">
                 <input type="number" class="quantity-input w-12 text-xs text-center border rounded" 
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput(this); updateCartTotal()" onchange="updateCartTotal()">
             </td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
+            <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="text-red-600 hover:text-red-800 text-xs" title="삭제">
                     <i class="fas fa-trash"></i>
                 </button>
@@ -2903,8 +2903,8 @@ window.removeFromCart = function(buttonOrProductId) {
             if (cartItemsBody && cartItemsBody.children.length === 0) {
                 cartItemsBody.innerHTML = `
                     <tr>
-                        <td colspan="5" class="text-center text-gray-500 py-2">
-                            <p class="text-xs">장바구니가 비어있습니다</p>
+                        <td colspan="5" class="text-center text-gray-500">
+                            <p>장바구니가 비어있습니다</p>
                         </td>
                     </tr>
                 `;

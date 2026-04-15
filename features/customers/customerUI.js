@@ -252,7 +252,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <tr><td colspan="5" class="text-center py-8 text-red-500 text-sm"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
+                <tr><td colspan="5" class="text-center text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
             `;
         }
     }
@@ -600,17 +600,20 @@ function showDeleteWithOrdersModal(orders) {
 
         const fmt = (d) => d ? d.slice(0, 10) : '-';
         const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
-        const statusColor = (s) => ({ '입금대기': '#D97706', '배송완료': '#2563EB', '배송중': '#4F46E5', '취소': '#DC2626' }[s] || '#6B7280');
+        const statusBadge = (s) => {
+            const cls = { '입금대기': 'badge-warning', '배송완료': 'badge-info', '배송중': 'badge-purple', '취소': 'badge-danger' }[s] || 'badge-neutral';
+            return `<span class="badge ${cls}">${s || '-'}</span>`;
+        };
 
         const rows = orders.map((o, i) => `
-            <tr class="border-b border-gray-100 hover:bg-gray-50 text-sm" data-id="${o.id}">
-                <td class="py-2 px-2">
+            <tr data-id="${o.id}">
+                <td class="px-2">
                     <input type="checkbox" class="order-chk rounded border-gray-300 text-red-500 focus:ring-red-400" data-idx="${i}" checked>
                 </td>
-                <td class="py-2 px-2 text-gray-500 text-xs">${fmt(o.created_at || o.order_date)}</td>
-                <td class="py-2 px-2 text-gray-700 text-xs">${o.order_number || '-'}</td>
-                <td class="py-2 px-2 text-right font-medium text-xs">${fmtAmt(o.total_amount)}</td>
-                <td class="py-2 px-2 text-center text-xs font-medium" style="color:${statusColor(o.order_status)}">${o.order_status || '-'}</td>
+                <td class="px-2 td-secondary">${fmt(o.created_at || o.order_date)}</td>
+                <td class="px-2 td-primary">${o.order_number || '-'}</td>
+                <td class="px-2 text-right font-medium td-amount">${fmtAmt(o.total_amount)}</td>
+                <td class="px-2 text-center">${statusBadge(o.order_status)}</td>
             </tr>`).join('');
 
         const modal = document.createElement('div');
@@ -629,14 +632,14 @@ function showDeleteWithOrdersModal(orders) {
                 </div>
                 <div class="p-4">
                     <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
-                        <table class="w-full">
-                            <thead class="bg-gray-50 sticky top-0 text-xs text-gray-500">
+                        <table class="w-full table-ui">
+                            <thead class="bg-gray-50 sticky top-0">
                                 <tr>
-                                    <th class="py-2 px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
-                                    <th class="py-2 px-2 text-left">날짜</th>
-                                    <th class="py-2 px-2 text-left">주문번호</th>
-                                    <th class="py-2 px-2 text-right">금액</th>
-                                    <th class="py-2 px-2 text-center">상태</th>
+                                    <th class="px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
+                                    <th class="px-2 text-left">날짜</th>
+                                    <th class="px-2 text-left">주문번호</th>
+                                    <th class="px-2 text-right">금액</th>
+                                    <th class="px-2 text-center">상태</th>
                                 </tr>
                             </thead>
                             <tbody id="order-del-tbody">${rows}</tbody>
@@ -1090,12 +1093,12 @@ async function renderCustomerOrders(orders, container) {
             const orderId = order.id;
             const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 80) + (order.itemsInfo && order.itemsInfo.length > 80 ? '…' : '');
             return `
-                <tr class="hover:bg-gray-50 border-b border-gray-100">
-                    <td class="px-2 py-1.5 text-gray-700 whitespace-nowrap">${orderDate}</td>
-                    <td class="px-2 py-1.5 text-gray-900 max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
-                    <td class="px-2 py-1.5 text-gray-900 whitespace-nowrap">${totalAmount}원</td>
-                    <td class="px-2 py-1.5"><span class="px-1.5 py-0.5 text-[10px] font-medium rounded ${getOrderStatusBadgeClass(status)}">${status}</span></td>
-                    <td class="px-2 py-1.5 text-center whitespace-nowrap">
+                <tr>
+                    <td class="px-2 td-secondary whitespace-nowrap">${orderDate}</td>
+                    <td class="px-2 td-primary max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
+                    <td class="px-2 td-primary whitespace-nowrap">${totalAmount}원</td>
+                    <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
+                    <td class="px-2 text-center whitespace-nowrap">
                         <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-xs">보기</button>
                     </td>
                 </tr>
@@ -1103,7 +1106,7 @@ async function renderCustomerOrders(orders, container) {
         }).join('');
         
         container.innerHTML = `
-            <table class="tbl-ui">
+            <table class="table-ui">
                 <thead>
                     <tr>
                         <th>주문일</th>

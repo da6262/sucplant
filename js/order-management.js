@@ -464,10 +464,10 @@ function displayOrderDetail(modal, order) {
                     
                     return `
                         <tr class="hover:bg-gray-50">
-                            <td class="px-4 py-3 text-sm text-gray-900">${productName}</td>
-                            <td class="px-4 py-3 text-center text-sm text-gray-900">${quantity}개</td>
-                            <td class="px-4 py-3 text-right text-sm text-gray-900">${price.toLocaleString()}원</td>
-                            <td class="px-4 py-3 text-right text-sm font-medium text-gray-900">${total.toLocaleString()}원</td>
+                            <td class="px-4 td-primary">${productName}</td>
+                            <td class="px-4 text-center td-primary">${quantity}개</td>
+                            <td class="px-4 text-right td-primary">${price.toLocaleString()}원</td>
+                            <td class="px-4 text-right font-medium td-primary">${total.toLocaleString()}원</td>
                         </tr>
                     `;
                 }).join('');
@@ -475,7 +475,7 @@ function displayOrderDetail(modal, order) {
                 console.warn('⚠️ 주문 상품 데이터가 없습니다');
                 orderItemsEl.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-4 py-8 text-center text-gray-500">
+                        <td colspan="4" class="px-4 text-center text-gray-500">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
                                 <p class="text-sm font-medium text-gray-600">주문 상품이 없습니다</p>
@@ -1354,16 +1354,16 @@ function displayPickingData(modal, pickingData) {
                 console.log(`🔍 상품 ${index}:`, product);
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold bg-gray-50">${index + 1}</td>
-                        <td class="border border-gray-300 px-2 py-1 font-medium text-left">${product.name || '상품명 없음'}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center">
-                            <span class="inline-flex items-center px-1 py-0.5 rounded text-xs font-medium bg-blue-100 text-blue-800">
+                        <td class="border border-gray-300 px-2 text-center font-semibold bg-gray-50">${index + 1}</td>
+                        <td class="border border-gray-300 px-2 font-medium text-left td-primary">${product.name || '상품명 없음'}</td>
+                        <td class="border border-gray-300 px-2 text-center">
+                            <span class="badge badge-info">
                                 ${product.size || '기본'}
                             </span>
                         </td>
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold text-blue-600">${product.totalQuantity || 0}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center">${product.orders ? product.orders.length : 0}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-right font-semibold text-green-600">${(product.totalAmount || 0).toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${product.totalQuantity || 0}</td>
+                        <td class="border border-gray-300 px-2 text-center">${product.orders ? product.orders.length : 0}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${(product.totalAmount || 0).toLocaleString()}원</td>
                     </tr>
                 `;
             }).join('');
@@ -1384,11 +1384,11 @@ function displayPickingData(modal, pickingData) {
                 
                 return `
                     <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="border border-gray-300 px-2 py-1 font-medium text-left">${customer.name}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-left text-gray-600">${customer.phone}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-center font-semibold text-blue-600">${customer.orders.length}</td>
-                        <td class="border border-gray-300 px-2 py-1 text-right font-semibold text-green-600">${customer.total_amount.toLocaleString()}원</td>
-                        <td class="border border-gray-300 px-2 py-1 text-left text-xs text-gray-500">${productList}</td>
+                        <td class="border border-gray-300 px-2 font-medium td-primary">${customer.name}</td>
+                        <td class="border border-gray-300 px-2 td-secondary">${customer.phone}</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${customer.orders.length}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${customer.total_amount.toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 td-muted">${productList}</td>
                     </tr>
                 `;
             }).join('');
@@ -1857,21 +1857,21 @@ function createShippingSettingsSection() {
 
                     <!-- 배송비 규칙 목록 -->
                     <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
+                        <table class="min-w-full table-ui">
                             <thead class="bg-gray-50">
                                 <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">규칙명</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">적용 조건</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">배송비</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">우선순위</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">상태</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">작업</th>
+                                    <th class="px-6 text-left">규칙명</th>
+                                    <th class="px-6 text-left">적용 조건</th>
+                                    <th class="px-6 text-left">배송비</th>
+                                    <th class="px-6 text-left">우선순위</th>
+                                    <th class="px-6 text-left">상태</th>
+                                    <th class="px-6 text-left">작업</th>
                                 </tr>
                             </thead>
-                            <tbody id="shipping-rules-table-body" class="bg-white divide-y divide-gray-200">
+                            <tbody id="shipping-rules-table-body">
                                 <!-- 배송비 규칙들이 여기에 동적으로 추가됩니다 -->
                                 <tr>
-                                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="6" class="px-6 text-center text-gray-500">
                                         <div class="flex flex-col items-center space-y-2">
                                             <i class="fas fa-truck text-gray-400 text-2xl"></i>
                                             <p class="text-sm">등록된 배송비 규칙이 없습니다</p>
@@ -2320,7 +2320,7 @@ function updateShippingRulesTable(rules) {
     if (rules.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                <td colspan="5" class="px-6 text-center text-gray-500">
                     배송비 규칙이 없습니다.
                 </td>
             </tr>
@@ -2330,18 +2330,18 @@ function updateShippingRulesTable(rules) {
     
     tbody.innerHTML = rules.map(rule => `
         <tr>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${rule.name}</td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+            <td class="px-6 whitespace-nowrap font-medium td-primary">${rule.name}</td>
+            <td class="px-6 whitespace-nowrap td-secondary">
                 ${rule.min_amount > 0 ? rule.min_amount.toLocaleString() + '원 이상' : '제한없음'}
                 ${rule.max_amount > 0 ? ' ~ ' + rule.max_amount.toLocaleString() + '원' : ''}
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${rule.shipping_fee.toLocaleString()}원</td>
-            <td class="px-6 py-4 whitespace-nowrap">
-                <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${rule.is_active ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}">
+            <td class="px-6 whitespace-nowrap td-primary">${rule.shipping_fee.toLocaleString()}원</td>
+            <td class="px-6 whitespace-nowrap">
+                <span class="badge ${rule.is_active ? 'badge-success' : 'badge-danger'}">
                     ${rule.is_active ? '활성' : '비활성'}
                 </span>
             </td>
-            <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+            <td class="px-6 whitespace-nowrap font-medium">
                 <button onclick="toggleShippingRule('${rule.id}', ${!rule.is_active})" class="text-indigo-600 hover:text-indigo-900 mr-2">
                     ${rule.is_active ? '비활성화' : '활성화'}
                 </button>
@@ -2662,18 +2662,18 @@ function addShippingRuleToTable(ruleData) {
     const row = document.createElement('tr');
     row.className = 'hover:bg-gray-50';
     row.innerHTML = `
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${ruleData.name}</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+        <td class="px-6 whitespace-nowrap font-medium td-primary">${ruleData.name}</td>
+        <td class="px-6 whitespace-nowrap td-secondary">
             ${ruleData.region ? ruleData.region : '전체'} ${ruleData.minAmount ? ruleData.minAmount + '원 이상' : ''}
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${parseInt(ruleData.shippingFee).toLocaleString()}원</td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${ruleData.priority}</td>
-        <td class="px-6 py-4 whitespace-nowrap">
-            <span class="inline-flex px-2 py-1 text-xs font-semibold rounded-full ${ruleData.status === 'active' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+        <td class="px-6 whitespace-nowrap td-secondary">${parseInt(ruleData.shippingFee).toLocaleString()}원</td>
+        <td class="px-6 whitespace-nowrap td-secondary">${ruleData.priority}</td>
+        <td class="px-6 whitespace-nowrap">
+            <span class="badge ${ruleData.status === 'active' ? 'badge-success' : 'badge-neutral'}">
                 ${ruleData.status === 'active' ? '활성' : '비활성'}
             </span>
         </td>
-        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+        <td class="px-6 whitespace-nowrap font-medium">
             <button onclick="editShippingRule(this)" class="text-indigo-600 hover:text-indigo-900 mr-3">수정</button>
             <button onclick="deleteShippingRule(this)" class="text-red-600 hover:text-red-900">삭제</button>
         </td>
@@ -2712,11 +2712,11 @@ function deleteShippingRule(button) {
         if (tbody && tbody.children.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-6 py-4 text-center text-gray-500">
+                    <td colspan="6" class="px-6 text-center text-gray-500">
                         <div class="flex flex-col items-center space-y-2">
                             <i class="fas fa-truck text-gray-400 text-2xl"></i>
-                            <p class="text-sm">등록된 배송비 규칙이 없습니다</p>
-                            <p class="text-xs text-gray-400">새 배송비 규칙을 추가해보세요</p>
+                            <p>등록된 배송비 규칙이 없습니다</p>
+                            <p class="td-muted">새 배송비 규칙을 추가해보세요</p>
                         </div>
                     </td>
                 </tr>
@@ -2787,7 +2787,7 @@ async function loadTrackingPanelOrders() {
     const tbody = document.getElementById('tracking-input-rows');
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
 
     try {
         if (!window.supabaseClient) throw new Error('Supabase 미연결');
@@ -2815,7 +2815,7 @@ async function loadTrackingPanelOrders() {
         }
 
         if (!orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center py-8 text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
             return;
         }
 
@@ -2827,15 +2827,15 @@ async function loadTrackingPanelOrders() {
             const existingTracking = order.tracking_number || '';
             return `
             <tr class="hover:bg-amber-50" data-order-id="${order.id}">
-                <td class="px-3 py-2 font-mono text-gray-600 whitespace-nowrap">${order.order_number || '-'}</td>
-                <td class="px-3 py-2 font-medium text-gray-800 whitespace-nowrap">${order.customer_name || '-'}</td>
-                <td class="px-3 py-2 text-gray-500 max-w-[180px] truncate" title="${summary}">${summary}</td>
-                <td class="px-3 py-2">
-                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:border-amber-400"
+                <td class="px-3 font-mono td-secondary whitespace-nowrap">${order.order_number || '-'}</td>
+                <td class="px-3 font-medium td-primary whitespace-nowrap">${order.customer_name || '-'}</td>
+                <td class="px-3 td-muted max-w-[180px] truncate" title="${summary}">${summary}</td>
+                <td class="px-3">
+                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400"
                         placeholder="송장번호 입력" value="${existingTracking}"
                         onkeydown="if(event.key==='Enter'){saveOneTrackingNumber('${order.id}', this.closest('tr'))}">
                 </td>
-                <td class="px-3 py-2 text-center">
+                <td class="px-3 text-center">
                     <button onclick="saveOneTrackingNumber('${order.id}', this.closest('tr'))"
                         class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
                         저장
@@ -2846,7 +2846,7 @@ async function loadTrackingPanelOrders() {
 
     } catch (e) {
         console.error('송장번호 패널 로드 실패:', e);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center py-6 text-red-400">로드 실패: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400">로드 실패: ${e.message}</td></tr>`;
     }
 }
 

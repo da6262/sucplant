@@ -249,29 +249,29 @@ async function addToCart(productId, productName, price, quantity = 1) {
             console.log('🆕 새 상품 추가:', productName, price);
             // 새 상품 추가 (표 형식)
             const cartItemHTML = `
-                <tr class="border-b border-gray-100 hover:bg-gray-50" data-product-id="${productId}" data-price="${price}">
-                    <td class="px-2 py-1">
-                        <div class="text-xs font-medium text-gray-900">${productName}</div>
+                <tr data-product-id="${productId}" data-price="${price}">
+                    <td class="px-2">
+                        <div class="font-medium td-primary">${productName}</div>
                     </td>
-                    <td class="px-2 py-1">
-                        <div class="text-xs text-gray-600">${price.toLocaleString()}원</div>
+                    <td class="px-2">
+                        <div class="td-secondary">${price.toLocaleString()}원</div>
                     </td>
-                    <td class="px-2 py-1">
+                    <td class="px-2">
                         <div class="flex items-center space-x-1">
                             <button onclick="updateCartQuantity('${productId}', -1)" class="w-4 h-4 bg-gray-200 rounded flex items-center justify-center hover:bg-gray-300">
                                 <i class="fas fa-minus text-xs"></i>
                             </button>
-                            <input type="number" class="quantity-input w-8 text-center text-xs border border-gray-300 rounded px-1" 
+                            <input type="number" class="quantity-input w-8 text-center border border-gray-300 rounded px-1"
                                    value="${quantity}" min="1" onchange="updateCartItemTotal(this.closest('[data-product-id]')).catch(console.error)">
                             <button onclick="updateCartQuantity('${productId}', 1)" class="w-4 h-4 bg-gray-200 rounded flex items-center justify-center hover:bg-gray-300">
                                 <i class="fas fa-plus text-xs"></i>
                             </button>
                         </div>
                     </td>
-                    <td class="px-2 py-1">
-                        <div class="text-xs font-medium text-gray-900" id="total-${productId}">${(price * quantity).toLocaleString()}원</div>
+                    <td class="px-2">
+                        <div class="font-medium td-primary" id="total-${productId}">${(price * quantity).toLocaleString()}원</div>
                     </td>
-                    <td class="px-2 py-1">
+                    <td class="px-2">
                         <button onclick="removeFromCart('${productId}')" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300">
                             <i class="fas fa-trash text-xs text-red-600"></i>
                         </button>
@@ -437,8 +437,8 @@ function checkCartEmpty() {
     if (cartItemCount === 0) {
         cartItems.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-gray-500 py-2">
-                    <p class="text-xs">장바구니가 비어있습니다</p>
+                <td colspan="5" class="text-center text-gray-500">
+                    <p>장바구니가 비어있습니다</p>
                 </td>
             </tr>
         `;

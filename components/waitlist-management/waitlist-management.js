@@ -523,7 +523,7 @@ async function createFallbackWaitlistModules() {
                     if (tbody) {
                         tbody.innerHTML = `
                             <tr>
-                                <td colspan="8" class="text-center py-8 text-gray-500">
+                                <td colspan="8" class="text-center text-gray-500">
                                     <i class="fas fa-clock mr-2"></i>대기자 관리 기능이 준비 중입니다.
                                 </td>
                             </tr>

@@ -354,7 +354,7 @@ class ProductManagementComponent {
         if (pageProducts.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-4 py-8 text-center text-gray-500">
+                    <td colspan="8" class="px-4 text-center text-gray-500">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
                             <p class="text-sm font-medium text-gray-600">등록된 상품이 없습니다</p>
@@ -399,10 +399,10 @@ class ProductManagementComponent {
                          : 'badge badge-green';
 
         row.innerHTML = `
-            <td class="px-2 py-1.5">
+            <td class="px-2">
                 <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
+            <td class="px-2 whitespace-nowrap">
                 <div class="flex items-center gap-2">
                     <div class="shrink-0 w-7 h-7">
                         ${product.image_url
@@ -416,25 +416,25 @@ class ProductManagementComponent {
                     </div>
                 </div>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap">
+            <td class="px-2 whitespace-nowrap">
                 <span class="badge badge-blue text-2xs">${product.category || '미분류'}</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-right text-numeric">
+            <td class="px-2 whitespace-nowrap text-right text-numeric">
                 ${this.formatCurrency(product.price)}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-right text-gray-500 text-11px">
+            <td class="px-2 whitespace-nowrap text-right td-muted">
                 ${product.cost ? this.formatCurrency(product.cost) : '-'}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-right text-numeric">
+            <td class="px-2 whitespace-nowrap text-right text-numeric">
                 <span class="${stockColor}">${product.stock || 0}개</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-center">
+            <td class="px-2 whitespace-nowrap text-center">
                 <span class="${badgeClass} text-2xs">${this.getStockStatusText(stockStatus)}</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap td-muted">
+            <td class="px-2 whitespace-nowrap td-muted">
                 ${this.formatDate(product.created_at)}
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-center">
+            <td class="px-2 whitespace-nowrap text-center">
                 <div class="btn-group">
                     <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정">
                         <i class="fas fa-pen"></i>
@@ -1320,17 +1320,17 @@ class ProductManagementComponent {
         const keys = ['name','category','price','cost','stock','size','shipping_option','description'];
         if (countEl) countEl.textContent = `${products.length}개 상품 인식됨`;
         thead.innerHTML = cols.map(c =>
-            `<th class="px-3 py-2 text-left text-xs font-semibold text-gray-600 whitespace-nowrap border-b border-gray-200">${c}</th>`
+            `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
         ).join('');
         tbody.innerHTML = products.slice(0, 30).map((p, i) =>
             `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">` +
             keys.map(k => {
                 const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
-                return `<td class="px-3 py-1.5 text-xs text-gray-700 whitespace-nowrap">${v}</td>`;
+                return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
             }).join('') +
             '</tr>'
         ).join('') + (products.length > 30
-            ? `<tr><td colspan="8" class="px-3 py-2 text-center text-xs text-gray-400">... 외 ${products.length - 30}개</td></tr>`
+            ? `<tr><td colspan="8" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
             : '');
         section.classList.remove('hidden');
     }
@@ -1474,7 +1474,7 @@ class ProductManagementComponent {
         if (countEl) countEl.textContent = `총 ${products.length}개`;
         const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션'];
         const keys = ['name','category','price','cost','stock','size','shipping_option'];
-        let html = `<table class="tbl-ui"><thead><tr>` +
+        let html = `<table class="table-ui"><thead><tr>` +
             cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
             `</tr></thead><tbody>` +
             products.slice(0, 20).map(p =>
@@ -1482,7 +1482,7 @@ class ProductManagementComponent {
                 keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
                 `</tr>`
             ).join('') +
-            (products.length > 20 ? `<tr><td colspan="7" class="px-2 py-2 text-center text-gray-400">... 외 ${products.length-20}개</td></tr>` : '') +
+            (products.length > 20 ? `<tr><td colspan="7" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
             `</tbody></table>`;
         content.innerHTML = html;
         section.classList.remove('hidden');

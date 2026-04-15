@@ -399,8 +399,8 @@ async function loadOrderItemsToCart(items) {
         if (!items || items.length === 0) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500 py-2">
-                        <p class="text-xs">장바구니가 비어있습니다</p>
+                    <td colspan="5" class="text-center text-gray-500">
+                        <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
             `;
@@ -516,15 +516,15 @@ function addItemToCartDirectly(item) {
         row.setAttribute('data-price', unitPrice);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
-            <td class="px-2 py-1 text-xs">${(item.product_name || '상품명 없음').replace(/</g, '&lt;')}</td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums">${unitPrice.toLocaleString()}</td>
-            <td class="px-2 py-1 text-center">
-                <input type="number" class="quantity-input w-12 text-xs text-center border rounded" 
+            <td class="px-2">${(item.product_name || '상품명 없음').replace(/</g, '&lt;')}</td>
+            <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
+            <td class="px-2 text-center">
+                <input type="number" class="quantity-input w-12 text-center border rounded"
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput&&window.normalizeQuantityInput(this); if(window.updateCartTotal) updateCartTotal()" onchange="if(window.updateCartTotal) updateCartTotal()">
             </td>
-            <td class="px-2 py-1 text-xs text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
-            <td class="px-2 py-1 text-center">
+            <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
+            <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300" title="삭제">
                     <i class="fas fa-trash text-xs text-red-600"></i>
                 </button>
@@ -572,8 +572,8 @@ export function clearOrderForm() {
         if (cartItemsBody) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500 py-2">
-                        <p class="text-xs">장바구니가 비어있습니다</p>
+                    <td colspan="5" class="text-center text-gray-500">
+                        <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
             `;

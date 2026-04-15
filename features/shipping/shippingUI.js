@@ -240,8 +240,8 @@ export class ShippingUI {
                 const previewData = data.slice(0, 5);
                 tbody.innerHTML = previewData.map(item => `
                     <tr>
-                        <td class="px-3 py-2">${item.orderNumber}</td>
-                        <td class="px-3 py-2 font-mono">${item.trackingNumber}</td>
+                        <td class="px-3">${item.orderNumber}</td>
+                        <td class="px-3 font-mono">${item.trackingNumber}</td>
                     </tr>
                 `).join('');
             }

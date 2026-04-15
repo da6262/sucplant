@@ -703,7 +703,7 @@ class OrderDataManager {
                 const detail = this._loadErrorMessage ? `<p class="mt-1 text-red-600 text-[11px] max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="px-4 py-6 text-center text-gray-500 text-xs">
+                        <td colspan="10" class="px-4 text-center text-gray-500">
                             <i class="fas ${isEmpty ? 'fa-inbox' : 'fa-exclamation-triangle'} text-2xl ${isEmpty ? 'text-gray-300' : 'text-amber-400'} mb-1 block"></i>
                             <p>${message}</p>
                             ${detail}
@@ -723,7 +723,7 @@ class OrderDataManager {
                         console.error(`❌ 주문 ${order.id} 행 렌더링 실패:`, rowError);
                         return `
                             <tr>
-                                <td colspan="9" class="px-6 py-4 text-center text-red-500">
+                                <td colspan="9" class="px-6 text-center text-red-500">
                                     <i class="fas fa-exclamation-triangle mr-2"></i>
                                     주문 데이터 오류 (ID: ${order.id})
                                 </td>
@@ -992,7 +992,7 @@ class OrderDataManager {
         } catch (error) {
             const rid = order.order_id ?? order.id;
             console.error(`❌ 주문 ${rid} 행 렌더링 실패:`, error);
-            return `<tr><td colspan="10" class="px-4 py-2 text-center text-red-500 text-xs">주문 데이터 오류</td></tr>`;
+            return `<tr><td colspan="10" class="px-4 text-center text-red-500">주문 데이터 오류</td></tr>`;
         }
     }
     
