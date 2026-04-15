@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.81-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.84-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.84 | 상품관리 테이블 디자인 시스템 통일 — `#products-section` flex 레이아웃 래퍼 추가, thead 컬럼(8개)↔JS tbody(9개) 불일치 수정(상품코드·사이즈·배송옵션 컬럼 정렬), `td-primary/td-amount/td-num/td-muted/td-secondary` 셀 클래스 적용, `btn-icon-edit/btn-icon-delete` 버튼 통일, 일괄 등록 모달 `style="display:none;"` → `hidden` 수정 |
 | v3.2.81 | 상품 등록 모달 레이아웃 개선 — `modal-lg`(720px) → `modal-xl`(960px) 확대, 상품명 col-4→col-6 / 카테고리·사이즈 col-4→col-3으로 비율 조정, `modal-body .form-grid` gap 10px→16px 여백 확대 |
 | v3.2.80 | 상품 등록 모달 표시 버그 수정 — `style="display:none;"` → `hidden` 클래스로 통일, `modal-container`의 `scale-95 opacity-0 transition-all` 애니메이션 클래스 제거, `product-modal-content` 불필요한 margin 조작 코드 삭제 |
 | v3.2.79 | 대기자 등록 시 고객관리 자동 추가 — 새 대기자 등록 시 동일 전화번호 고객이 없으면 `farm_customers`에 자동 삽입, 중복 방지 로직 포함 |

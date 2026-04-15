@@ -1427,27 +1427,17 @@ export class ProductUI {
             
             // 상품 목록 렌더링
             tbody.innerHTML = products.map(product => `
-                <tr class="${COMMON_STYLES.table.row}" data-product-id="${product.id}">
+                <tr data-product-id="${product.id}">
                     ${PRODUCT_TABLE_COLUMNS.map(column => {
                         if (column.type === 'checkbox') {
-                            return `
-                                <td class="${COMMON_STYLES.table.cellCenter}">
-                                    <input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500" data-product-id="${product.id}">
-                                </td>
-                            `;
+                            return `<td class="text-center"><input type="checkbox" class="product-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500" data-product-id="${product.id}"></td>`;
                         }
-                        
+
                         if (column.type === 'actions') {
-                            return `
-                                <td class="${COMMON_STYLES.table.cellCenter}">
-                                    <button data-action="edit" data-product-id="${product.id}" class="${COMMON_STYLES.button.edit}">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button data-action="delete" data-product-id="${product.id}" class="${COMMON_STYLES.button.delete}">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            `;
+                            return `<td class="text-center" style="white-space:nowrap;">
+                                <button data-action="edit" data-product-id="${product.id}" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                                <button data-action="delete" data-product-id="${product.id}" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                            </td>`;
                         }
                         
                         const value = product[column.key];
@@ -1468,7 +1458,12 @@ export class ProductUI {
                             formattedValue = `${value}개`;
                         }
                         
-                        return `<td class="${COMMON_STYLES.table.cell}">${formattedValue}</td>`;
+                        const cellClass = column.key === 'name' ? 'td-primary'
+                            : column.format === 'currency' ? 'td-amount'
+                            : column.format === 'number'   ? 'td-num'
+                            : column.key === 'product_code' ? 'td-muted'
+                            : 'td-secondary';
+                        return `<td class="${cellClass}">${formattedValue}</td>`;
                     }).join('')}
                 </tr>
             `).join('');
@@ -1551,7 +1546,7 @@ export class ProductUI {
                 // 상품 목록 렌더링 (컬럼 정의 + 공통 스타일 사용)
                 console.log('🎨 상품 테이블 HTML 생성 중...');
             tbody.innerHTML = pagedProducts.map(product => `
-                    <tr class="${COMMON_STYLES.table.row}" data-product-id="${product.id}">
+                    <tr data-product-id="${product.id}">
                         ${PRODUCT_TABLE_COLUMNS.map(column => {
                             if (column.type === 'checkbox') {
                                 return `
@@ -1602,7 +1597,12 @@ export class ProductUI {
                                 formattedValue = new Date(value).toLocaleDateString();
                             }
                             
-                            return `<td class="${COMMON_STYLES.table.cell}">${formattedValue}</td>`;
+                            const cellClass = column.key === 'name' ? 'td-primary'
+                            : column.format === 'currency' ? 'td-amount'
+                            : column.format === 'number'   ? 'td-num'
+                            : column.key === 'product_code' ? 'td-muted'
+                            : 'td-secondary';
+                        return `<td class="${cellClass}">${formattedValue}</td>`;
                         }).join('')}
                 </tr>
             `).join('');
