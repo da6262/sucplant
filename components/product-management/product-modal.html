@@ -1,6 +1,6 @@
 <!-- 상품 등록/수정 모달 -->
 <div id="product-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-container modal-container-wide">
+    <div class="modal-container modal-lg">
 
         <!-- 헤더 -->
         <div class="modal-header">
@@ -12,124 +12,119 @@
 
         <!-- 바디 -->
         <div class="modal-body">
-            <form id="product-form">
+            <form id="product-form" class="form-grid">
                 <input type="hidden" id="product-form-id" name="product-id">
                 <input type="hidden" id="product-form-created-at" name="product-created-at">
 
-                <!-- 상품 기본 정보 -->
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <!-- 상품명 -->
-                    <div class="relative">
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            상품명 <span class="text-red-500">*</span>
-                        </label>
-                        <input type="text" id="product-form-name" placeholder="예: White Platter (대)" required
-                               class="input-ui" autocomplete="off">
+                <!-- 기본 정보 섹션 -->
+                <!-- 상품명 (col-4) | 카테고리 (col-4) | 사이즈 (col-4) -->
+                <div class="form-col-4">
+                    <label class="form-label">상품명 <span class="req">*</span></label>
+                    <div style="position:relative;">
+                        <input type="text" id="product-form-name"
+                               placeholder="예: White Platter (대)" required
+                               class="form-control" autocomplete="off">
                         <div id="product-name-suggestions"
-                             class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-48 overflow-y-auto"></div>
-                        <div id="product-code-display" class="text-xs text-gray-500 mt-1 hidden">
-                            <i class="fas fa-barcode mr-1"></i>코드: <span id="product-code-value">자동 생성</span>
-                        </div>
-                        <div id="product-name-duplicate-warning" class="text-xs text-orange-600 mt-1 hidden">
-                            <i class="fas fa-exclamation-triangle mr-1"></i>이미 등록된 상품명입니다
-                        </div>
+                             class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-48 overflow-y-auto"
+                             style="top:100%;left:0;"></div>
                     </div>
-
-                    <!-- 카테고리 -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            카테고리 <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <select id="product-form-category" required class="input-ui pr-8">
-                                <option value="">카테고리 선택</option>
-                                <option value="__ADD_NEW__" class="text-blue-600 font-medium">+ 새 카테고리 추가</option>
-                            </select>
-                            <button type="button" id="modal-quick-add-category-btn"
-                                    class="absolute right-2 top-1/2 -translate-y-1/2 text-blue-600 hover:text-blue-800"
-                                    title="새 카테고리 빠른 추가">
-                                <i class="fas fa-plus-circle text-sm"></i>
-                            </button>
-                        </div>
+                    <div id="product-code-display" class="form-helper hidden">
+                        <i class="fas fa-barcode mr-1"></i>코드: <span id="product-code-value">자동 생성</span>
                     </div>
+                    <div id="product-name-duplicate-warning" class="form-error hidden">
+                        <i class="fas fa-exclamation-triangle mr-1"></i>이미 등록된 상품명입니다
+                    </div>
+                </div>
 
-                    <!-- 사이즈 -->
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">사이즈</label>
-                        <select id="product-form-size-select" class="input-ui" onchange="handleSizeChange()">
-                            <option value="">사이즈 선택</option>
-                            <option value="SX">SX (초소형)</option>
-                            <option value="S">S (소형)</option>
-                            <option value="M">M (중형)</option>
-                            <option value="L">L (대형)</option>
-                            <option value="XL">XL (초대형)</option>
-                            <option value="custom">직접 기입</option>
+                <div class="form-col-4">
+                    <label class="form-label">카테고리 <span class="req">*</span></label>
+                    <div style="position:relative;">
+                        <select id="product-form-category" required class="form-control" style="padding-right:32px;">
+                            <option value="">카테고리 선택</option>
+                            <option value="__ADD_NEW__" class="text-blue-600 font-medium">+ 새 카테고리 추가</option>
                         </select>
-                        <input type="text" id="product-form-size-custom" placeholder="예: 3-5cm, 특대, 혼합 등"
-                               class="input-ui mt-2 hidden">
+                        <button type="button" id="modal-quick-add-category-btn"
+                                style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#2563eb;"
+                                title="새 카테고리 빠른 추가">
+                            <i class="fas fa-plus-circle text-sm"></i>
+                        </button>
                     </div>
                 </div>
 
-                <!-- 가격 / 재고 -->
-                <div class="mt-4 grid grid-cols-1 lg:grid-cols-3 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            판매가 <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="number" id="product-form-price" placeholder="0" min="0" step="1000" required
-                                   class="input-ui pr-7" oninput="calculateModalProfitMargin()">
-                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">원</span>
-                        </div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">매입가</label>
-                        <div class="relative">
-                            <input type="number" id="product-form-wholesale-price" placeholder="0" min="0" step="1000"
-                                   class="input-ui pr-7" oninput="calculateModalProfitMargin()">
-                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">원</span>
-                        </div>
-                        <div id="modal-profit-margin" class="text-xs text-gray-500 mt-1"></div>
-                    </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            재고수량 <span class="text-red-500">*</span>
-                        </label>
-                        <div class="relative">
-                            <input type="number" id="product-form-stock" placeholder="0" min="0" required
-                                   class="input-ui pr-7">
-                            <span class="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">개</span>
-                        </div>
+                <div class="form-col-4">
+                    <label class="form-label">사이즈</label>
+                    <select id="product-form-size-select" class="form-control" onchange="handleSizeChange()">
+                        <option value="">사이즈 선택</option>
+                        <option value="SX">SX (초소형)</option>
+                        <option value="S">S (소형)</option>
+                        <option value="M">M (중형)</option>
+                        <option value="L">L (대형)</option>
+                        <option value="XL">XL (초대형)</option>
+                        <option value="custom">직접 기입</option>
+                    </select>
+                    <input type="text" id="product-form-size-custom"
+                           placeholder="예: 3-5cm, 특대, 혼합 등"
+                           class="form-control hidden" style="margin-top:6px;">
+                </div>
+
+                <!-- 가격 / 재고 섹션 -->
+                <!-- 판매가 (col-4) | 매입가 (col-4) | 재고수량 (col-4) -->
+                <div class="form-col-4">
+                    <label class="form-label">판매가 <span class="req">*</span></label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="product-form-price"
+                               placeholder="0" min="0" step="1000" required
+                               class="form-control" oninput="calculateModalProfitMargin()">
+                        <span class="form-input-unit">원</span>
                     </div>
                 </div>
 
-                <!-- 배송 옵션 / 이미지 -->
-                <div class="mt-4 grid grid-cols-1 lg:grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">
-                            배송 옵션 <span class="text-red-500">*</span>
-                        </label>
-                        <select id="product-form-shipping" required class="input-ui">
-                            <option value="">배송 옵션 선택</option>
-                            <option value="일반배송" selected>일반배송 (조건부 무료)</option>
-                            <option value="무료배송">무료배송 (행사상품)</option>
-                            <option value="배송비포함">배송비포함 (단독배송)</option>
-                            <option value="직접배송">직접배송 (농장배송)</option>
-                        </select>
+                <div class="form-col-4">
+                    <label class="form-label">매입가</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="product-form-wholesale-price"
+                               placeholder="0" min="0" step="1000"
+                               class="form-control" oninput="calculateModalProfitMargin()">
+                        <span class="form-input-unit">원</span>
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">상품 이미지 URL</label>
-                        <input type="url" id="product-form-image" placeholder="https://example.com/image.jpg"
-                               class="input-ui">
+                    <div id="modal-profit-margin" class="form-helper"></div>
+                </div>
+
+                <div class="form-col-4">
+                    <label class="form-label">재고수량 <span class="req">*</span></label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="product-form-stock"
+                               placeholder="0" min="0" required
+                               class="form-control">
+                        <span class="form-input-unit">개</span>
                     </div>
                 </div>
 
-                <!-- 상품설명 -->
-                <div class="mt-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">상품설명</label>
+                <!-- 배송 옵션 (col-6) | 이미지 URL (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">배송 옵션 <span class="req">*</span></label>
+                    <select id="product-form-shipping" required class="form-control">
+                        <option value="">배송 옵션 선택</option>
+                        <option value="일반배송" selected>일반배송 (조건부 무료)</option>
+                        <option value="무료배송">무료배송 (행사상품)</option>
+                        <option value="배송비포함">배송비포함 (단독배송)</option>
+                        <option value="직접배송">직접배송 (농장배송)</option>
+                    </select>
+                </div>
+
+                <div class="form-col-6">
+                    <label class="form-label">상품 이미지 URL</label>
+                    <input type="url" id="product-form-image"
+                           placeholder="https://example.com/image.jpg"
+                           class="form-control">
+                </div>
+
+                <!-- 상품설명 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">상품설명</label>
                     <textarea id="product-form-description" rows="3"
                               placeholder="상품에 대한 자세한 설명을 입력하세요"
-                              class="input-ui resize-none"></textarea>
+                              class="form-control"></textarea>
                 </div>
 
             </form>
@@ -137,15 +132,12 @@
 
         <!-- 푸터 -->
         <div class="modal-footer">
-            <span></span>
-            <div class="flex gap-2">
-                <button type="button" id="close-product-modal-btn" onclick="window.closeProductModal()" class="btn-secondary">
-                    <i class="fas fa-times"></i>취소
-                </button>
-                <button type="button" id="save-product-btn" class="btn-primary">
-                    <i class="fas fa-save"></i>저장
-                </button>
-            </div>
+            <button type="button" id="close-product-modal-btn" onclick="window.closeProductModal()" class="btn-secondary">
+                <i class="fas fa-times"></i>취소
+            </button>
+            <button type="button" id="save-product-btn" class="btn-primary">
+                <i class="fas fa-save"></i>저장
+            </button>
         </div>
 
     </div>
