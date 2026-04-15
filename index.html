@@ -1176,27 +1176,6 @@
 
     </script>
     
-    <!-- 대기자관리 관계형 데이터베이스 개선 (웹 배포용 - 조건부 로드) -->
-    <script>
-        // 조건부 스크립트 로드 (MIME 타입 문제 해결)
-        function loadScriptConditionally(src, callback) {
-            const script = document.createElement('script');
-            script.src = src;
-            script.type = 'text/javascript';
-            script.onload = callback;
-            script.onerror = function() {
-                console.warn(`⚠️ 스크립트 로드 실패 (무시): ${src}`);
-                if (callback) callback();
-            };
-            document.head.appendChild(script);
-        }
-        
-        // 대기자관리 스크립트들 조건부 로드
-        loadScriptConditionally('auto-waitlist-improvement.js');
-        loadScriptConditionally('waitlist-data-migration.js');
-        loadScriptConditionally('waitlist-autocomplete-fix.js');
-        loadScriptConditionally('waitlist-data-cleanup.js');
-    </script>
     
     <!-- Supabase 설정은 동적으로 로드됨 -->
     
@@ -1204,10 +1183,6 @@
     <script src="features/orders/orderFormMinimalLayout.js"></script>
     <script src="features/orders/orderForm.js"></script>
     <script src="features/orders/orderSMS.js"></script>
-    <!-- 주문 데이터 수정 스크립트 (조건부 로드) -->
-    <script>
-        loadScriptConditionally('fix-order-data.js');
-    </script>
     <script type="module" src="features/orders/orderUI.js"></script>
     <script type="module" src="features/orders/orderData.js"></script>
     
@@ -1281,10 +1256,5 @@
         });
     </script>
     
-    <!-- 모듈 로딩 문제 해결 스크립트 -->
-    <script src="fix-module-loading.js"></script>
-    
-    <!-- 웹 배포용 강화된 폴백 시스템 -->
-    <script src="web-fallback-system.js"></script>
 </body>
 </html>
