@@ -24,7 +24,8 @@ class HeaderComponent {
         
         this.updateUserInfo(data.userInfo);
         this.updateApiStatus(data.apiStatus);
-        
+        this.updateVersionBadge();
+
         this.isInitialized = true;
         console.log('✅ Header 컴포넌트 초기화 완료');
     }
@@ -189,6 +190,17 @@ class HeaderComponent {
         } else {
             statusDot.className = 'w-2 h-2 rounded-full bg-yellow-400 animate-pulse';
             statusText.textContent = '로컬 모드';
+        }
+    }
+
+    /**
+     * 사이드바 버전 배지 업데이트
+     * window.APP_VERSION (js/config.js) 값을 읽어 표시
+     */
+    updateVersionBadge() {
+        const el = document.getElementById('app-version-number');
+        if (el) {
+            el.textContent = window.APP_VERSION || '—';
         }
     }
 
