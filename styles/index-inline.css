@@ -925,20 +925,28 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     .filter-bar { gap: 8px; padding: 8px 16px; }
 }
 
+/* Status tab bar 컨테이너 */
+.status-tab-bar {
+    padding: 4px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-white);
+    flex-shrink: 0;
+}
+
 /* Status tab */
 .status-tab-btn {
     padding: 5px 10px; font-size: 11px; font-weight: 500;
-    border-radius: 6px; color: #6B7280; background: transparent;
+    border-radius: var(--radius-md); color: var(--text-secondary); background: transparent;
     border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap;
 }
-.status-tab-btn:hover { background: #F3F4F6; color: var(--text-body); }
+.status-tab-btn:hover { background: var(--bg-light); color: var(--text-body); }
 .status-tab-btn.active { background: var(--primary); color: #fff; font-weight: 600; }
 .status-tab-btn.active .tab-count { background: rgba(255,255,255,0.25) !important; color: #fff !important; }
 .tab-count {
     display: inline-flex; align-items: center; justify-content: center;
     margin-left: 3px; padding: 0 5px; min-width: 18px; height: 16px;
-    border-radius: 9999px; font-size: 10px; font-weight: 600;
-    background: #E5E7EB; color: #6B7280; line-height: 1;
+    border-radius: var(--radius-full); font-size: 10px; font-weight: 600;
+    background: var(--border); color: var(--text-secondary); line-height: 1;
 }
 
 /* Table UI */
@@ -961,10 +969,11 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 
 /* Date filter */
 .order-date-quick-btn {
-    padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer;
-    border: 1px solid #E5E7EB; background: #fff; color: #6B7280; transition: all 0.1s;
+    padding: 3px 8px; font-size: 11px; border-radius: var(--radius-sm); cursor: pointer;
+    border: 1px solid var(--border); background: var(--bg-white);
+    color: var(--text-secondary); transition: all 0.1s;
 }
-.order-date-quick-btn:hover { background: var(--bg-light); border-color: #9CA3AF; }
+.order-date-quick-btn:hover { background: var(--bg-light); border-color: var(--text-muted); }
 .order-date-quick-btn.active-date { background: var(--primary); color: #fff; border-color: var(--primary); }
 
 /* =====================================================

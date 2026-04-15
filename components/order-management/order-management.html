@@ -20,7 +20,7 @@
 </div>
 
 <!-- 상태 필터 탭 -->
-<div class="shrink-0 px-3 py-1.5 border-b border-gray-100 bg-white">
+<div class="status-tab-bar">
     <nav class="flex flex-nowrap gap-0.5 overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none;" id="status-tab-nav">
         <button id="status-work_todo" class="status-tab-btn active" title="상품준비 + 배송준비">
             처리할 주문 <span class="tab-count" id="count-work_todo">0</span>
@@ -80,13 +80,13 @@
         </div>
         <div class="overflow-x-auto rounded-lg border border-gray-200 bg-white">
             <table class="w-full text-xs">
-                <thead class="bg-gray-50">
+                <thead>
                     <tr>
-                        <th class="px-2.5 py-1.5 text-left text-[11px] font-semibold text-gray-600 border-b border-gray-200 w-24">주문번호</th>
-                        <th class="px-2.5 py-1.5 text-left text-[11px] font-semibold text-gray-600 border-b border-gray-200 w-24">고객명</th>
-                        <th class="px-2.5 py-1.5 text-left text-[11px] font-semibold text-gray-600 border-b border-gray-200">상품요약</th>
-                        <th class="px-2.5 py-1.5 text-left text-[11px] font-semibold text-gray-600 border-b border-gray-200 w-48">송장번호</th>
-                        <th class="px-2.5 py-1.5 text-center text-[11px] font-semibold text-gray-600 border-b border-gray-200 w-16">저장</th>
+                        <th class="text-left w-24">주문번호</th>
+                        <th class="text-left w-24">고객명</th>
+                        <th class="text-left">상품요약</th>
+                        <th class="text-left w-48">송장번호</th>
+                        <th class="text-center w-16">저장</th>
                     </tr>
                 </thead>
                 <tbody id="tracking-input-rows" class="divide-y divide-gray-100">
