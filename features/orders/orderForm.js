@@ -2565,7 +2565,22 @@ async function handleOrderSubmit(event) {
         // 수정 모드인지 확인
         const isEditMode = window.currentEditingOrderId !== null && window.currentEditingOrderId !== undefined;
         console.log('🔍 주문 처리 모드:', isEditMode ? '수정' : '등록');
-        
+
+        // Fix #4: 수정 모드 재고 조정을 위해 저장 전에 기존 아이템 미리 조회
+        let oldOrderItems = [];
+        if (isEditMode && window.currentEditingOrderId && window.supabaseClient) {
+            try {
+                const { data: existingItems } = await window.supabaseClient
+                    .from('farm_order_items')
+                    .select('product_id, product_name, quantity')
+                    .eq('order_id', window.currentEditingOrderId);
+                oldOrderItems = existingItems || [];
+                console.log(`📦 수정 전 기존 아이템 ${oldOrderItems.length}개 조회 완료`);
+            } catch (e) {
+                console.warn('⚠️ 기존 아이템 조회 실패 (재고 조정 불가):', e);
+            }
+        }
+
         let supabaseOrderData;
         
         // 데이터 단일화: 품목은 farm_order_items만 SSOT. 트랜잭션 RPC 우선 사용.
@@ -2640,29 +2655,40 @@ async function handleOrderSubmit(event) {
         const savedOrder = data[0] || { id: orderId };
         orderId = savedOrder.id;
         
-        // 재고 감소 (신규 주문만, RPC/폴백 공통)
-        if (!isEditMode && orderId) {
-            console.log('📦 재고 감소 시작...');
+        // 재고 처리 (신규: 차감 / 수정: 기존 복원 후 신규 차감)
+        if (orderId) {
+            console.log('📦 재고 처리 시작...');
             try {
-                for (const item of orderData.items) {
-                    if (!item.product_id) continue;
-                    const { data: productData, error: fetchError } = await window.supabaseClient
-                        .from('farm_products')
-                        .select('stock, name')
-                        .eq('id', item.product_id)
-                        .single();
-                    if (fetchError) { console.error(`❌ 상품 조회 실패 (${item.product_name}):`, fetchError); continue; }
-                    const currentStock = productData?.stock ?? 0;
-                    const newStock = Math.max(0, currentStock - item.quantity);
-                    const { error: updateError } = await window.supabaseClient
-                        .from('farm_products')
-                        .update({ stock: newStock })
-                        .eq('id', item.product_id);
-                    if (updateError) console.error(`❌ 재고 감소 실패 (${item.product_name}):`, updateError);
-                    else console.log(`✅ ${item.product_name}: ${currentStock}개 → ${newStock}개`);
+                if (!isEditMode) {
+                    // 신규 주문: 재고 차감
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock, name').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        const newStock = Math.max(0, (p.stock ?? 0) - item.quantity);
+                        await window.supabaseClient.from('farm_products').update({ stock: newStock }).eq('id', item.product_id);
+                        console.log(`✅ 신규 재고 차감 ${item.product_name}: ${p.stock}개 → ${newStock}개`);
+                    }
+                } else if (oldOrderItems.length > 0) {
+                    // Fix #4: 수정 주문: 기존 아이템 재고 복원 → 신규 아이템 재고 차감
+                    for (const item of oldOrderItems) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        await window.supabaseClient.from('farm_products').update({ stock: (p.stock || 0) + item.quantity }).eq('id', item.product_id);
+                        console.log(`✅ 수정 재고 복원 ${item.product_name}: +${item.quantity}개`);
+                    }
+                    for (const item of orderData.items) {
+                        if (!item.product_id) continue;
+                        const { data: p } = await window.supabaseClient.from('farm_products').select('stock').eq('id', item.product_id).single();
+                        if (!p) continue;
+                        const newStock = Math.max(0, (p.stock || 0) - item.quantity);
+                        await window.supabaseClient.from('farm_products').update({ stock: newStock }).eq('id', item.product_id);
+                        console.log(`✅ 수정 재고 차감 ${item.product_name}: ${p.stock}개 → ${newStock}개`);
+                    }
                 }
             } catch (stockError) {
-                console.error('❌ 재고 감소 중 오류:', stockError);
+                console.error('❌ 재고 처리 중 오류:', stockError);
             }
         }
         
@@ -2748,14 +2774,15 @@ async function ensureCustomerFromOrderData(orderData) {
             console.log('📌 phone_normalized 기존 고객 연결:', existing.id);
             return existing.id;
         }
+        // Fix #3: orderData에서는 customer_address_base로 구분하지만
+        // farm_customers 테이블의 실제 컬럼명은 'address' — DB 저장 시 매핑
         const insertRow = {
             name,
             phone,
             address: orderData.customer_address_base != null ? orderData.customer_address_base : (orderData.customer_address || ''),
             address_detail: orderData.customer_address_detail || null,
-            grade: 'GENERAL',
-            youtube_order_count: 0,
-            live_order_count: 0
+            grade: 'BRONZE'
+            // Fix #9: youtube_order_count / live_order_count 컬럼은 farm_customers 테이블에 없으므로 제거
         };
         const { data: inserted, error } = await window.supabaseClient
             .from('farm_customers')

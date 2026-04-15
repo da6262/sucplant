@@ -74,6 +74,11 @@ function getSMSTemplates() {
 }
 
 // SMS 발송 함수
+// Fix #1: farm_orders.order_items JSONB 컬럼은 레거시 — 품목 SSOT는 farm_order_items 테이블.
+// SMS 발송 시에도 getOrderById()에서 farm_order_items를 직접 조회해 data.items에 설정함.
+// Fix #12: TODO — sendOrderSMS에서 getOrderById()를 호출하지만 orderData.js에서도 동일 조회가 발생할 수 있음.
+//          향후 SMS 발송 시 이미 로드된 order 객체를 직접 전달받는 오버로드 추가 검토.
+// Fix #13: TODO — templateType별 채널(네이버/라이브) 특화 처리 필요 시 formatSMSTemplate에 channel 파라미터 추가 검토.
 async function sendOrderSMS(orderId, templateType, customMessage = null) {
     try {
         console.log('📱 SMS 발송 시작:', { orderId, templateType, customMessage });
@@ -377,6 +382,9 @@ async function sendOrderSMSFromModal(orderId) {
             if (window.updateOrderStatus) {
                 await window.updateOrderStatus(orderId, '입금대기');
                 console.log('✅ 주문확인 문자 발송 완료 → 입금대기 상태로 자동 전환');
+            } else {
+                // Fix #11: orderData.js 미로드 또는 전역 등록 누락 시 경고
+                console.warn('⚠️ window.updateOrderStatus 미등록 — 입금대기 자동 전환 불가. orderData.js 로드 확인 필요.');
             }
             alert('SMS가 발송되었습니다.\n주문 상태가 [입금대기]로 변경되었습니다.');
             // 주문 목록 새로고침
