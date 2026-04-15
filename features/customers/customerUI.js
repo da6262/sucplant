@@ -102,11 +102,12 @@ async function handleCustomerSave(event) {
         }
 
         // 저장 (신규/수정)
+        let savedCustomer = null;
         if (customerId) {
-            await customerDataManager.updateCustomer(customerId, payload);
+            savedCustomer = await customerDataManager.updateCustomer(customerId, payload);
             if (window.showToast) window.showToast('✅ 고객 정보가 수정되었습니다.', 2500);
         } else {
-            await customerDataManager.addCustomer(payload);
+            savedCustomer = await customerDataManager.addCustomer(payload);
             if (window.showToast) window.showToast('✅ 고객이 등록되었습니다.', 2500);
         }
 
@@ -121,70 +122,15 @@ async function handleCustomerSave(event) {
             await window.updateCustomerGradeCounts();
         }
 
-        // 주문 폼에서 신규 등록 진입한 경우 → 주문 모달로 고객 정보 전달
-        const fromOrderFlow = !!window.tempCustomerName && !customerId;
-        let fullCustomer = null;
-        if (fromOrderFlow) {
-            try {
-                const list = customerDataManager?.getAllCustomers?.() || customerDataManager?.customers || [];
-                const saved = list.find(c => c?.phone === payload.phone) || null;
-                fullCustomer = {
-                    id:             saved?.id || null,
-                    name:           payload.name,
-                    phone:          payload.phone,
-                    address:        payload.address || '',
-                    address_detail: payload.address_detail || '',
-                    grade:          saved?.grade || 'GENERAL'
-                };
-            } catch (_) { /* noop */ }
+        // 저장 후 호출자 콜백 실행 (예: 주문 폼에서 신규 고객 등록 흐름 복귀)
+        const cb = window.customerModalCallback;
+        window.customerModalCallback = null;
+        if (typeof cb === 'function') {
+            try { cb(savedCustomer); } catch (cbErr) { console.error('❌ customerModalCallback 실행 오류:', cbErr); }
         }
 
         // 모달 닫기
         closeCustomerModal();
-
-        // 주문 폼으로 돌아가 고객 선택 상태 완전 동기화
-        if (fromOrderFlow && fullCustomer) {
-            // Daum 주소 검색 모달이 DOM 에 남아 있으면 제거 (주문 모달 레이아웃 간섭 방지)
-            document.getElementById('daum-address-modal')?.remove();
-            // 이전 모달이 덮어씌운 body overflow 복원 (스크롤바 폭 변동으로 인한 중앙 정렬 틀어짐 방지)
-            document.body.style.overflow = '';
-
-            const orderModal = document.getElementById('order-modal');
-            if (orderModal) {
-                // inline display 로 .hidden 을 덮어쓰지 말고 hidden 클래스만 제거
-                // (closeOrderModal 이 나중에 X 클릭으로 호출될 때 inline style 이 잔존해 안 닫히는 버그 방지)
-                orderModal.classList.remove('hidden');
-                orderModal.style.display = '';
-            }
-            setTimeout(() => {
-                if (typeof window.selectCustomerFromSearch === 'function') {
-                    try {
-                        window.selectCustomerFromSearch(
-                            fullCustomer.id,
-                            fullCustomer.name,
-                            fullCustomer.phone,
-                            fullCustomer.address,
-                            fullCustomer.grade,
-                            fullCustomer.address_detail
-                        );
-                    } catch (err) {
-                        console.error('❌ selectCustomerFromSearch 호출 실패:', err);
-                    }
-                } else {
-                    const nameEl  = document.getElementById('order-customer-name');
-                    const phoneEl = document.getElementById('order-customer-phone');
-                    const addrEl  = document.getElementById('order-customer-address');
-                    if (nameEl)  nameEl.value  = fullCustomer.name;
-                    if (phoneEl) phoneEl.value = fullCustomer.phone;
-                    if (addrEl)  addrEl.value  = fullCustomer.address;
-                }
-                if (window.customerModalCallback) {
-                    try { window.customerModalCallback(fullCustomer); } catch (_) {}
-                    window.customerModalCallback = null;
-                }
-                window.tempCustomerName = null;
-            }, 50);
-        }
     } catch (error) {
         console.error('❌ 고객 저장 실패:', error);
         if (window.showToast) {
@@ -780,7 +726,7 @@ function showDeleteWithOrdersModal(orders) {
                 </div>
                 <div class="modal-footer">
                     <button id="btn-cancel-del" class="btn-secondary">취소</button>
-                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:var(--danger);">선택 주문만 삭제</button>
+                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:#DC2626;">선택 주문만 삭제</button>
                     <button id="btn-del-all" class="btn-danger">주문 + 고객 삭제</button>
                 </div>
             </div>`;
@@ -974,7 +920,7 @@ async function showCustomerDetailInPanel(customer) {
                 <div style="display:flex;flex-direction:column;gap:12px;">
 
                     <!-- 프로필 카드 -->
-                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:var(--radius-lg);padding:16px;">
+                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
                             <div>
                                 <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px;">${escapeHtml(customer.name || '-')}</div>
@@ -994,15 +940,15 @@ async function showCustomerDetailInPanel(customer) {
 
                     <!-- 핵심 지표 3개 -->
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-                        <div style="background:white;border:1px solid #D1FAE5;border-radius:var(--radius-lg);padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #D1FAE5;border-radius:8px;padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#059669;" id="customer-total-purchase">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">총 구매액</div>
                         </div>
-                        <div style="background:white;border:1px solid #E5E7EB;border-radius:var(--radius-lg);padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#374151;" id="customer-order-count">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">주문 횟수</div>
                         </div>
-                        <div style="background:white;border:1px solid #FEF3C7;border-radius:var(--radius-lg);padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #FEF3C7;border-radius:8px;padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#D97706;" id="customer-loyalty-score">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">단골 점수</div>
                         </div>
@@ -1030,7 +976,7 @@ async function showCustomerDetailInPanel(customer) {
                 <div style="display:flex;flex-direction:column;gap:12px;min-width:0;">
 
                     <!-- 주문 이력 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:var(--radius-lg);overflow:hidden;flex:1;">
+                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;flex:1;">
                         <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
                             <i class="fas fa-receipt" style="color:#9CA3AF;margin-right:6px;"></i>주문 이력
                         </div>
@@ -1040,13 +986,13 @@ async function showCustomerDetailInPanel(customer) {
                     </div>
 
                     <!-- 상담 기록 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:var(--radius-lg);overflow:hidden;">
+                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
                         <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
                             <i class="fas fa-sticky-note" style="color:#9CA3AF;margin-right:6px;"></i>상담 기록
                         </div>
                         <div style="padding:12px;background:white;">
                             <textarea id="customer-detail-memo"
-                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:var(--radius-md);font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
+                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
                                 placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
                             <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}"
                                 class="btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
@@ -2254,7 +2200,7 @@ window.switchCustomerTab = function(tab) {
     const ordersBtn   = document.getElementById('customer-tab-orders');
     const footer      = document.getElementById('customer-modal-footer');
 
-    const activeStyle   = 'border-bottom:2px solid var(--primary);color:var(--primary);';
+    const activeStyle   = 'border-bottom:2px solid #16a34a;color:#16a34a;';
     const inactiveStyle = 'border-bottom:2px solid transparent;color:#6b7280;';
 
     if (tab === 'info') {
@@ -2353,16 +2299,14 @@ export function closeCustomerModal() {
             modalContentEl.classList.add('modal-sm');
         }
 
-        // 주문 폼에서 온 경우 주문 모달 다시 표시 (고객 모달 취소 경로 전용)
-        // ※ 저장 성공 경로는 handleCustomerSave 가 처리하므로 이 블록은 '취소 닫기' 에만 의미 있음
-        //   inline display 금지 — .hidden 클래스만 토글해 closeOrderModal X 버튼과 정합
+        // 주문 폼에서 온 경우 주문 모달 다시 표시
         if (window.tempCustomerName) {
             const orderModal = document.getElementById('order-modal');
             if (orderModal) {
-                orderModal.classList.remove('hidden');
-                orderModal.style.display = '';
+                orderModal.style.display = 'flex';
                 console.log('📦 주문 모달 다시 표시 (고객 모달 취소)');
             }
+            // 임시 저장된 고객명 초기화
             window.tempCustomerName = null;
         }
         
