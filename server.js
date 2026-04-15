@@ -104,10 +104,10 @@ const server = http.createServer((req, res) => {
             res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
             res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 
-            // 캐시 정책
-            if (ext === '.js' || ext === '.css') {
-                res.setHeader('Cache-Control', 'no-cache');
-            }
+            // 캐시 정책 — 로컬 파일 전체 no-cache (컴포넌트 HTML 포함)
+            res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+            res.setHeader('Pragma', 'no-cache');
+            res.setHeader('Expires', '0');
 
             // HTML: 버전 주입 후 서빙
             if (ext === '.html') {

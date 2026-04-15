@@ -1,6 +1,6 @@
 # 경산다육식물농장 관리시스템
 
-![버전](https://img.shields.io/badge/version-3.2.4-brightgreen)
+![버전](https://img.shields.io/badge/version-3.2.3-brightgreen)
 ![기술](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Supabase-blue)
 
 White Platter 전문 농장의 주문·재고·고객 통합 관리 웹앱입니다.
