@@ -9,9 +9,11 @@ async function loadCustomerManagementComponent() {
 
         const existingSection = document.getElementById('customers-section');
 
-        // ── 재방문: 이미 내용이 있으면 데이터만 새로고침 ──
+        // ── 재방문: 이미 내용이 있으면 데이터만 새로고침 + 이벤트 재연결 ──
         if (existingSection && existingSection.dataset.loaded === 'true') {
-            console.log('⚡ 고객관리 이미 로드됨 — 데이터만 갱신');
+            console.log('⚡ 고객관리 이미 로드됨 — 데이터 갱신 + 이벤트 재연결');
+            if (typeof attachCustomerEventListeners === 'function') attachCustomerEventListeners();
+            if (typeof attachCustomerGradesEventListeners === 'function') attachCustomerGradesEventListeners();
             if (window.renderCustomersTable) window.renderCustomersTable('all');
             if (window.customerDataManager) {
                 window.customerDataManager.loadCustomers().then(() => {
@@ -299,14 +301,14 @@ function attachCustomerGradesEventListeners() {
     // 등급 관리 → 환경설정 탭으로 이동
     const manageGradesBtn = document.getElementById('manage-customer-grades-btn');
     if (manageGradesBtn) {
-        manageGradesBtn.addEventListener('click', async () => {
+        manageGradesBtn.onclick = async () => {
             if (window.switchTab) {
                 await window.switchTab('settings');
                 if (window.showSettingsTab) {
                     window.showSettingsTab('customers');
                 }
             }
-        });
+        };
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
     
@@ -881,7 +883,7 @@ function attachCustomerEventListeners() {
         // 새 고객 등록 버튼
         const addCustomerBtn = document.getElementById('add-customer-btn');
         if (addCustomerBtn) {
-            addCustomerBtn.addEventListener('click', async function() {
+            addCustomerBtn.onclick = async function() {
                 console.log('➕ 새 고객 등록 버튼 클릭');
                 
                 // 고객 모달이 없으면 동적으로 로드
@@ -914,7 +916,7 @@ function attachCustomerEventListeners() {
                     console.warn('⚠️ openCustomerModal 함수를 찾을 수 없습니다');
                     console.log('🔍 window 객체 확인:', Object.keys(window).filter(key => key.includes('Customer')));
                 }
-            });
+            };
             console.log('✅ 새 고객 등록 버튼 이벤트 리스너 연결 완료');
         }
         
