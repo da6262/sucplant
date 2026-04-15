@@ -24,13 +24,13 @@
             <span class="text-[11px] text-gray-500">취소 <strong id="waitlist-cancelled-count" class="text-gray-800">0</strong></span>
         </div>
         <!-- 상태 탭 -->
-        <div class="shrink-0 px-3 py-1.5 border-b border-gray-100 bg-white">
-            <nav class="flex gap-0.5 flex-nowrap overflow-x-auto" style="scrollbar-width:none;">
-                <button id="farm_waitlist-status-all" class="status-tab-btn active">전체 <span class="tab-count" id="waitlist-count-all">0</span></button>
-                <button id="farm_waitlist-status-대기중" class="status-tab-btn">대기중 <span class="tab-count" id="waitlist-count-대기중">0</span></button>
-                <button id="farm_waitlist-status-연락완료" class="status-tab-btn">연락완료 <span class="tab-count" id="waitlist-count-연락완료">0</span></button>
-                <button id="farm_waitlist-status-주문전환" class="status-tab-btn">주문전환 <span class="tab-count" id="waitlist-count-주문전환">0</span></button>
-                <button id="farm_waitlist-status-취소" class="status-tab-btn">취소 <span class="tab-count" id="waitlist-count-취소">0</span></button>
+        <div class="status-tab-bar">
+            <nav class="flex gap-0.5 flex-nowrap overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none;">
+                <button id="farm_waitlist-status-all"    class="status-tab-btn waitlist-tab-btn active">전체    <span class="tab-count" id="waitlist-count-all">0</span></button>
+                <button id="farm_waitlist-status-대기중"  class="status-tab-btn waitlist-tab-btn">대기중  <span class="tab-count" id="waitlist-count-대기중">0</span></button>
+                <button id="farm_waitlist-status-연락완료" class="status-tab-btn waitlist-tab-btn">연락완료 <span class="tab-count" id="waitlist-count-연락완료">0</span></button>
+                <button id="farm_waitlist-status-주문전환" class="status-tab-btn waitlist-tab-btn">주문전환 <span class="tab-count" id="waitlist-count-주문전환">0</span></button>
+                <button id="farm_waitlist-status-취소"   class="status-tab-btn waitlist-tab-btn">취소    <span class="tab-count" id="waitlist-count-취소">0</span></button>
             </nav>
         </div>
         <!-- 검색 필터 바 -->

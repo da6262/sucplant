@@ -632,24 +632,11 @@ export class WaitlistUI {
      */
     updateFilterTabs(activeStatus) {
         try {
-            document.querySelectorAll('.farm_waitlist-tab-btn').forEach(tab => {
-                tab.classList.remove('active', 'border-orange-600', 'text-orange-600',
-                                   'border-blue-600', 'text-blue-600',
-                                   'border-green-600', 'text-green-600',
-                                   'border-red-600', 'text-red-600');
-                
+            document.querySelectorAll('.waitlist-tab-btn').forEach(tab => {
+                tab.classList.remove('active');
                 const status = tab.id.replace('farm_waitlist-status-', '');
                 if (status === activeStatus) {
                     tab.classList.add('active');
-                    if (status === 'all' || status === '대기중') {
-                        tab.classList.add('border-orange-600', 'text-orange-600');
-                    } else if (status === '연락완료') {
-                        tab.classList.add('border-blue-600', 'text-blue-600');
-                    } else if (status === '주문전환') {
-                        tab.classList.add('border-green-600', 'text-green-600');
-                    } else if (status === '취소') {
-                        tab.classList.add('border-red-600', 'text-red-600');
-                    }
                 }
             });
         } catch (error) {
