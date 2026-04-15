@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.88-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.92-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,10 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.92 | fix: 콘솔 오류 완전 제거 — `index.html` 존재하지 않는 스크립트 참조 7개 제거(`auto-waitlist-improvement.js` · `waitlist-data-migration.js` · `waitlist-autocomplete-fix.js` · `waitlist-data-cleanup.js` · `fix-order-data.js` · `fix-module-loading.js` · `web-fallback-system.js`), `loadScriptConditionally` 블록 삭제. fix: `main.js` `updateCategoryDropdown` import 오류 — `categoryUI.js`에서 함수명이 `updateProductCategoryDropdown`으로 변경됐으나 import 미갱신으로 발생한 `SyntaxError` 수정 (별칭 import `as updateCategoryDropdown` 적용) |
+| v3.2.91 | feat: 주소 입력 실시간 검색 — 주소 입력창 `readonly`+검색버튼 방식을 타이핑 자동완성으로 전환, 2글자 이상 입력 시 350ms 디바운스 후 Daum 우편번호 iframe 임베드, 주소 선택 시 닫히며 상세주소로 포커스, 외부 클릭 닫기. `onfocus` 핸들러 제거로 모달 열릴 때 빈 값으로 API 호출하는 콘솔 에러 원인 제거 |
+| v3.2.90 | feat: 고객 등록/관리 UX 개선 3종 — ①동명이인 허용(전화번호 다르면 등록 가능, 중복 시 confirm 다이얼로그로 전환) ②고객 삭제 FK 방어(주문 내역 있으면 삭제 차단·안내 메시지) ③고객 등록 모달 `form-grid` 컴팩트 디자인 통일 |
+| v3.2.89 | fix: 등급관리 버튼 → 환경설정 고객등급 탭 직접 이동 — `showSettingsTab` 셀렉터가 `.settings-tab`(미존재)을 참조해 탭 활성화 실패하던 문제 수정(`[id^="settings-tab-"]` 로 변경), `settings.html` 일반 탭 `active` 하드코딩 제거 |
 | v3.2.88 | fix: 상품관리 탭 재방문 시 blank 화면 — `loadProductManagementComponent`의 "이미 로드됨" 재초기화 경로 제거, 매 방문마다 HTML 신규 로드로 outer `display:block`↔inner `display:flex` context 충돌 방지 |
 | v3.2.87 | fix: 상품 등록 모달 카테고리 드롭다운 빈 문제 — `ProductManagementComponent.init()`에서 `this.productUI` 생성 후 `window.productUI`에도 할당. `window.updateProductCategoryDropdown`이 `window.productUI` 참조 실패로 카테고리가 표시 안 되던 문제 해결 |
 | v3.2.86 | fix: 상품 등록·수정 모달 저장 후 안 닫히고 먹통 — `removeEventListeners()`의 `product-modal` cloneNode 제거(모달은 document.body 소속이라 cloneNode 시 addEventListener 리스너 전부 날아가 저장 버튼 먹통 발생), 저장 버튼만 cloneNode 교체로 중복 리스너 방지. feat: 상품명 클릭 시 읽기전용 상세 패널 표시(이미지·판매가·매입가·마진율·재고·배송옵션·설명·등록일, 수정 버튼 포함) |
