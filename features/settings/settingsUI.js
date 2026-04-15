@@ -221,28 +221,6 @@ export function loadShippingSettings() {
     }
 }
 
-// 알림 설정 로드
-export function loadNotificationSettings() {
-    try {
-        console.log('🔔 알림 설정 로드');
-        
-        const settings = window.settingsDataManager.getAllSettings();
-        
-        const emailNotificationsToggle = document.getElementById('email-notifications');
-        const smsNotificationsToggle = document.getElementById('sms-notifications');
-        const orderAlertsToggle = document.getElementById('order-alerts');
-        const lowStockAlertsToggle = document.getElementById('low-stock-alerts');
-        
-        if (emailNotificationsToggle) emailNotificationsToggle.checked = settings.notifications.emailNotifications || false;
-        if (smsNotificationsToggle) smsNotificationsToggle.checked = settings.notifications.smsNotifications || false;
-        if (orderAlertsToggle) orderAlertsToggle.checked = settings.notifications.orderAlerts || false;
-        if (lowStockAlertsToggle) lowStockAlertsToggle.checked = settings.notifications.lowStockAlerts || false;
-        
-        console.log('✅ 알림 설정 로드 완료');
-    } catch (error) {
-        console.error('❌ 알림 설정 로드 실패:', error);
-    }
-}
 
 // 고객 등급 관리
 export async function loadCustomerGrades() {
@@ -503,17 +481,6 @@ export function saveSettings() {
         
         window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
         window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
-        
-        // 알림 설정 저장
-        const emailNotifications = document.getElementById('email-notifications')?.checked || false;
-        const smsNotifications = document.getElementById('sms-notifications')?.checked || false;
-        const orderAlerts = document.getElementById('order-alerts')?.checked || false;
-        const lowStockAlerts = document.getElementById('low-stock-alerts')?.checked || false;
-        
-        window.settingsDataManager.updateSetting('notifications', 'emailNotifications', emailNotifications);
-        window.settingsDataManager.updateSetting('notifications', 'smsNotifications', smsNotifications);
-        window.settingsDataManager.updateSetting('notifications', 'orderAlerts', orderAlerts);
-        window.settingsDataManager.updateSetting('notifications', 'lowStockAlerts', lowStockAlerts);
         
         console.log('✅ 설정 저장 완료');
         return true;
@@ -846,7 +813,6 @@ function initSettingsEventListeners() {
 window.showSettingsTab = showSettingsTab;
 window.loadGeneralSettings = loadGeneralSettings;
 window.loadShippingSettings = loadShippingSettings;
-window.loadNotificationSettings = loadNotificationSettings;
 window.loadCustomerGrades = loadCustomerGrades;
 window.loadSalesChannels = loadSalesChannels;
 window.loadOrderStatuses = loadOrderStatuses;

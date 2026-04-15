@@ -40,14 +40,6 @@ class SettingsDataManager {
                 shippingMethods: ['택배', '직접배송', '픽업']
             },
             
-            // 알림 설정
-            notifications: {
-                emailNotifications: true,
-                smsNotifications: true,
-                orderAlerts: true,
-                lowStockAlerts: true
-            },
-            
             // SMS 템플릿 설정
             smsTemplates: {
                 orderConfirm: '[경산다육식물농장] {customerName}님, 주문이 접수되었습니다.\n\n■ 주문번호 {orderNumber}\n\n■ 주문상세\n\n{orderDetails}\n\n■ 결제 정보\n{paymentInfo}\n\n■ 입금계좌 농협 010-9745-6245-08 (예금주: 경산식물원(배은희))\n\n감사합니다.',
