@@ -1,13 +1,25 @@
 # 경산다육식물농장 관리시스템
 
-![버전](https://img.shields.io/badge/version-3.2.7-brightgreen)
+![버전](https://img.shields.io/badge/version-3.2.10-brightgreen)
 ![기술](https://img.shields.io/badge/stack-Vanilla%20JS%20%2B%20Supabase-blue)
 
 White Platter 전문 농장의 주문·재고·고객 통합 관리 웹앱입니다.
 
 ---
 
-## 최근 변경사항 (v3.2.7)
+## 최근 변경사항 (v3.2.11)
+
+| 항목 | 내용 |
+|------|------|
+| 고객관리 등급관리 버튼 버그 수정 | 탭 재방문 시 등급관리 버튼 먹통 현상 수정 (cleanup 후 이벤트 리스너 미재연결 문제) |
+
+## 변경사항 (v3.2.10)
+
+| 항목 | 내용 |
+|------|------|
+| 버전 자동 증가 git hook | 커밋마다 패치 버전 자동 +1, setup-hooks.bat/sh로 설치 |
+
+## 변경사항 (v3.2.7)
 
 | 항목 | 내용 |
 |------|------|
