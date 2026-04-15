@@ -38,6 +38,7 @@ class ProductManagementComponent {
             const ProductUIClass = await loadProductUIModule();
             if (ProductUIClass) {
                 this.productUI = new ProductUIClass();
+                window.productUI = this.productUI; // 전역 참조 등록
                 console.log('✅ ProductUI 인스턴스 생성 완료');
             } else {
                 console.warn('⚠️ ProductUI 클래스를 로드할 수 없습니다');
@@ -2136,21 +2137,9 @@ async function loadProductManagementComponent() {
             return false;
         }
         
-        // 이미 로드되었는지 확인
-        if (productsContainer.innerHTML.trim() !== '' &&
-            !productsContainer.innerHTML.includes('여기에 로드됩니다')) {
-            console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
+        // 항상 HTML을 새로 로드 (재방문 시 flex context 깨짐 방지)
+        console.log('📋 상품 관리 HTML 로드 중...');
 
-            // 컴포넌트 재초기화 (이벤트 리스너 재연결)
-            if (window.ProductManagementComponent) {
-                const productManagementComponent = new window.ProductManagementComponent();
-                await productManagementComponent.init(productsContainer);
-                window.productManagementComponent = productManagementComponent;
-                console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
-            }
-            return true;
-        }
-        
         // HTML 로드
         const response = await fetch('components/product-management/product-management.html');
         if (!response.ok) {
