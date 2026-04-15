@@ -1,6 +1,6 @@
 <!-- 상품 등록/수정 모달 -->
 <div id="product-modal" class="modal-overlay hidden">
-    <div id="product-modal-content" class="modal-container modal-lg">
+    <div id="product-modal-content" class="modal-container modal-xl">
 
         <!-- 헤더 -->
         <div class="modal-header">
@@ -17,8 +17,8 @@
                 <input type="hidden" id="product-form-created-at" name="product-created-at">
 
                 <!-- 기본 정보 섹션 -->
-                <!-- 상품명 (col-4) | 카테고리 (col-4) | 사이즈 (col-4) -->
-                <div class="form-col-4">
+                <!-- 상품명 (col-6) | 카테고리 (col-3) | 사이즈 (col-3) -->
+                <div class="form-col-6">
                     <label class="form-label">상품명 <span class="req">*</span></label>
                     <div style="position:relative;">
                         <input type="text" id="product-form-name"
@@ -36,7 +36,7 @@
                     </div>
                 </div>
 
-                <div class="form-col-4">
+                <div class="form-col-3">
                     <label class="form-label">카테고리 <span class="req">*</span></label>
                     <div style="position:relative;">
                         <select id="product-form-category" required class="form-control" style="padding-right:32px;">
@@ -51,7 +51,7 @@
                     </div>
                 </div>
 
-                <div class="form-col-4">
+                <div class="form-col-3">
                     <label class="form-label">사이즈</label>
                     <select id="product-form-size-select" class="form-control" onchange="handleSizeChange()">
                         <option value="">사이즈 선택</option>

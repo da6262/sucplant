@@ -746,7 +746,7 @@ body {
 }
 /* modal-body 또는 xf-col 내부에서는 컨테이너가 패딩 제공 → form-grid 패딩 0 */
 .modal-body .form-grid,
-.xf-col .form-grid { padding: 0; gap: 10px; }
+.xf-col .form-grid { padding: 0; gap: 16px; }
 
 .form-col-12 { grid-column: span 12; }
 .form-col-8  { grid-column: span 8; }
