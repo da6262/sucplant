@@ -473,7 +473,7 @@ class ProductDataManager {
                 }
             }
             
-            // 새 상품 객체 생성
+            // 새 상품 객체 생성 (로컬 메모리용 — 모든 필드 포함)
             const newProduct = {
                 id: productData.id || crypto.randomUUID(),
                 product_code: productData.product_code || await this.generateSequentialProductCode(),
@@ -484,32 +484,51 @@ class ProductDataManager {
                 cost: parseInt(productData.cost) || 0,
                 stock: parseInt(productData.stock) || 0,
                 shipping_option: productData.shipping_option || '일반배송',
-                shipping: productData.shipping_option || '일반배송', // 테이블 표시용
                 description: productData.description || '',
-                tags: productData.tags || [],
                 image_url: productData.image_url || '',
-                status: 'active',
+                tags: productData.tags || [],
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
             };
-            
-            // 수익률 계산
-            if (newProduct.price > 0 && newProduct.cost > 0) {
-                newProduct.profit_margin = Math.round(((newProduct.price - newProduct.cost) / newProduct.price) * 100);
-            } else {
-                newProduct.profit_margin = 0;
-            }
-            
+
+            // 수익률 — 로컬에서만 계산 (DB 컬럼 존재 여부에 무관)
+            newProduct.profit_margin = (newProduct.price > 0 && newProduct.cost > 0)
+                ? Math.round(((newProduct.price - newProduct.cost) / newProduct.price) * 100)
+                : 0;
+
+            // ── DB 전송 객체: 확인된 컬럼만 포함 ──────────────────
+            // tags는 DB에서 TEXT이므로 JSON 문자열로 변환
+            // status, profit_margin, shipping(중복)은 제외 (컬럼 미확인)
+            const dbProduct = {
+                id:              newProduct.id,
+                product_code:    newProduct.product_code,
+                name:            newProduct.name,
+                category:        newProduct.category,
+                size:            newProduct.size,
+                price:           newProduct.price,
+                cost:            newProduct.cost,
+                stock:           newProduct.stock,
+                shipping_option: newProduct.shipping_option,
+                description:     newProduct.description,
+                image_url:       newProduct.image_url,
+                tags:            Array.isArray(newProduct.tags)
+                                     ? JSON.stringify(newProduct.tags)
+                                     : (newProduct.tags || '[]'),
+                created_at:      newProduct.created_at,
+                updated_at:      newProduct.updated_at
+            };
+            // ─────────────────────────────────────────────────────
+
             // Supabase에 직접 저장
             if (!window.supabaseClient) {
                 throw new Error('❌ Supabase 클라이언트가 없습니다.');
             }
-            
+
             console.log('🌐 Supabase에 상품 저장 중...');
-            
+
             const { data, error } = await window.supabaseClient
                 .from('farm_products')
-                .insert([newProduct])
+                .insert([dbProduct])
                 .select();
             
             if (error) {
@@ -558,16 +577,25 @@ class ProductDataManager {
                 throw new Error('❌ Supabase 클라이언트가 없습니다.');
             }
             
-            const updatedProductData = {
-                ...updateData,
-                updated_at: new Date().toISOString()
-            };
-            
+            // 확인된 컬럼만 Supabase에 전송 (미확인 필드 제거)
+            const ALLOWED_COLUMNS = new Set([
+                'product_code','name','category','size','price','cost','stock',
+                'shipping_option','description','image_url','tags','updated_at'
+            ]);
+            const cleanUpdate = { updated_at: new Date().toISOString() };
+            for (const [key, val] of Object.entries(updateData)) {
+                if (!ALLOWED_COLUMNS.has(key)) continue;
+                // tags 배열 → JSON 문자열
+                cleanUpdate[key] = (key === 'tags' && Array.isArray(val))
+                    ? JSON.stringify(val)
+                    : val;
+            }
+
             console.log('🌐 Supabase에서 상품 수정 중...');
-            
+
             const { data, error } = await window.supabaseClient
                 .from('farm_products')
-                .update(updatedProductData)
+                .update(cleanUpdate)
                 .eq('id', productId)
                 .select();
             
