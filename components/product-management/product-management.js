@@ -754,41 +754,11 @@ class ProductManagementComponent {
         try {
             console.log('📝 상품 등록 모달 열기:', productId);
             
-            // 모달이 이미 로드되어 있는지 확인
-            let modal = document.getElementById('product-modal');
+            // 모달은 product-management.html에 인라인으로 포함됨
+            const modal = document.getElementById('product-modal');
             if (!modal) {
-                console.log('📦 상품 모달 동적 로드 중...');
-                if (window.loadProductModal) {
-                    const modalLoaded = await window.loadProductModal();
-                    if (modalLoaded) {
-                        modal = document.getElementById('product-modal');
-                        console.log('✅ 상품 모달 로드 완료');
-                    } else {
-                        console.error('❌ 상품 모달 로드 실패');
-                        return;
-                    }
-                } else {
-                    console.error('❌ loadProductModal 함수를 찾을 수 없습니다');
-                    return;
-                }
-            }
-            
-            // 모달 로드 후 폼 요소 존재 여부 확인
-            if (modal) {
-                const requiredFormElements = [
-                    'product-form-name',
-                    'product-form-category',
-                    'product-form-price',
-                    'product-form-stock'
-                ];
-                
-                const missingElements = requiredFormElements.filter(id => !document.getElementById(id));
-                if (missingElements.length > 0) {
-                    console.error('❌ 모달 로드 후 필수 폼 요소를 찾을 수 없습니다:', missingElements);
-                    console.log('🔍 DOM에서 product-form 요소들 검색:', document.querySelectorAll('[id*="product-form"]'));
-                    alert('상품 등록 폼이 완전히 로드되지 않았습니다. 잠시 후 다시 시도해주세요.');
-                    return;
-                }
+                console.error('❌ product-modal을 찾을 수 없습니다');
+                return;
             }
             
             if (modal) {
