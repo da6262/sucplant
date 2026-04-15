@@ -487,6 +487,10 @@ function attachOrderDetailEventListeners(modal, order) {
                 console.log('✏️ 주문 수정 버튼 클릭:', order.id);
                 
                 try {
+                    // 상세 모달 먼저 닫기
+                    modal.classList.add('hidden');
+                    modal.style.display = 'none';
+
                     // 주문 수정 모달 열기 (새창이 아닌 모달로)
                     if (window.openOrderModal) {
                         console.log('📝 주문 수정 모달 열기 시도...');
