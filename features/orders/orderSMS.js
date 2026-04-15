@@ -443,8 +443,8 @@ window.sendWaitlistSMS = sendWaitlistSMS;
 
 // 기본 하드코딩 값 (환경설정 → SMS → API 인증정보에서 덮어씀)
 const SOLAPI_CONFIG_DEFAULT = {
-    apiKey: 'NCS4ZXQ1JWMUPQ3W',
-    apiSecret: 'MLER1HFO30FJGXMZLEN9P82TZL6ZWEM2',
+    apiKey: 'NCSMOXRMGQAODZLK',
+    apiSecret: '3KYQNOP16SZPKTBXFKPMB9UKTFRWI066',
     from: '01097456245'
 };
 
