@@ -1521,6 +1521,80 @@ async function openAddressSearch() {
     }
 }
 
+// 주소 입력 시 실시간 검색 (입력창에 직접 타이핑하면 Daum 검색 임베드)
+let _addressInputTimer = null;
+
+window.handleAddressInput = async function(value) {
+    const container = document.getElementById('address-embed-container');
+    if (!container) return;
+
+    // 2글자 미만이면 검색창 숨김
+    if (!value || value.trim().length < 2) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    // 이미 주소가 완성된 것처럼 보이면 (공백 포함 10자 이상이고 숫자 포함) 닫기
+    if (value.length >= 10 && /\d/.test(value) && value.includes(' ')) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+        return;
+    }
+
+    clearTimeout(_addressInputTimer);
+    _addressInputTimer = setTimeout(async () => {
+        try {
+            await loadDaumPostcodeService();
+        } catch (e) {
+            console.warn('Daum 우편번호 로드 실패:', e);
+            return;
+        }
+        if (typeof daum === 'undefined' || !daum.Postcode) return;
+
+        container.innerHTML = '';
+        container.classList.remove('hidden');
+
+        new daum.Postcode({
+            oncomplete: function(data) {
+                const addr = data.roadAddress || data.jibunAddress || '';
+                const addressField = document.getElementById('customer-form-address');
+                if (addressField) {
+                    addressField.value = addr;
+                    addressField.style.backgroundColor = '#f0f9ff';
+                    addressField.style.borderColor = '#3b82f6';
+                    setTimeout(() => {
+                        addressField.style.backgroundColor = '';
+                        addressField.style.borderColor = '';
+                    }, 2000);
+                }
+                container.classList.add('hidden');
+                container.innerHTML = '';
+                const detailField = document.getElementById('customer-form-address-detail');
+                if (detailField) {
+                    setTimeout(() => {
+                        detailField.focus();
+                        detailField.placeholder = '동, 호수 등 상세주소 입력';
+                    }, 50);
+                }
+            },
+            width: '100%',
+            height: '100%',
+        }).embed(container, { q: value, autoClose: false });
+    }, 350);
+};
+
+// 주소 검색창 외부 클릭 시 닫기
+document.addEventListener('click', function(e) {
+    const container = document.getElementById('address-embed-container');
+    const addressField = document.getElementById('customer-form-address');
+    if (container && !container.classList.contains('hidden') &&
+        !container.contains(e.target) && e.target !== addressField) {
+        container.classList.add('hidden');
+        container.innerHTML = '';
+    }
+});
+
 // 전역 함수로 등록 (강제로 덮어쓰기)
 window.loadCustomerManagementComponent = loadCustomerManagementComponent;
 window.saveCustomer = saveCustomer; // 🔥 이 함수가 실제로 고객을 저장합니다
