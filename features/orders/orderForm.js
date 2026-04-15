@@ -3070,6 +3070,7 @@ window.initOrderChannelFromSettings = initOrderChannelFromSettings;
 window._extraShippingCount = 0;
 
 function addExtraShipping() {
+    _preloadDaumPostcode(); // 버튼 클릭 시 미리 로드 → 이후 Enter 시 동기 호출 가능
     window._extraShippingCount = (window._extraShippingCount || 0) + 1;
     const idx = window._extraShippingCount;
     const container = document.getElementById('extra-shipping-list');
@@ -3160,37 +3161,36 @@ function resetExtraShipping() {
     _updateExtraShippingBadge();
 }
 
-// 추가 배송지용 Daum 주소 검색
-async function openExtraShippingAddressSearch(idx) {
-    try {
-        // Daum 우편번호 서비스 로드 (없으면 동적 로드)
-        if (typeof daum === 'undefined' || !daum.Postcode) {
-            await new Promise((resolve, reject) => {
-                const s = document.createElement('script');
-                s.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
-                s.onload = resolve;
-                s.onerror = () => reject(new Error('주소 검색 서비스 로드 실패'));
-                document.head.appendChild(s);
-            });
-        }
-        const currentInput = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
-        new daum.Postcode({
-            q: currentInput,          // 입력한 주소로 바로 검색 시작
-            oncomplete: function(data) {
-                const addr = data.roadAddress || data.jibunAddress || '';
-                const addrField = document.getElementById(`es-address-${idx}`);
-                const detailField = document.getElementById(`es-detail-${idx}`);
-                if (addrField) {
-                    addrField.value = addr;
-                    addrField.dispatchEvent(new Event('input', { bubbles: true }));
-                }
-                if (detailField) detailField.focus();
-            }
-        }).open();
-    } catch (e) {
-        console.error('주소 검색 오류:', e);
-        alert('주소 검색 서비스를 불러올 수 없습니다. 직접 입력해주세요.');
+// Daum 우편번호 스크립트 미리 로드 (팝업 차단 방지용 — 비동기 로드 후 open() 하면 차단됨)
+function _preloadDaumPostcode() {
+    if (typeof daum !== 'undefined' && daum.Postcode) return; // 이미 로드됨
+    if (document.querySelector('script[src*="postcode"]')) return; // 로드 중
+    const s = document.createElement('script');
+    s.src = '//t1.daumcdn.net/mapjsapi/bundle/postcode/prod/postcode.v2.js';
+    document.head.appendChild(s);
+}
+
+// 추가 배송지용 Daum 주소 검색 — 동기 호출로 팝업 차단 회피
+function openExtraShippingAddressSearch(idx) {
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+        alert('주소 검색 서비스 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        _preloadDaumPostcode();
+        return;
     }
+    const currentInput = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
+    new daum.Postcode({
+        q: currentInput,   // 입력한 주소로 바로 검색 결과 표시
+        oncomplete: function(data) {
+            const addr = data.roadAddress || data.jibunAddress || '';
+            const addrField = document.getElementById(`es-address-${idx}`);
+            const detailField = document.getElementById(`es-detail-${idx}`);
+            if (addrField) {
+                addrField.value = addr;
+                addrField.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if (detailField) detailField.focus();
+        }
+    }).open();
 }
 
 window.addExtraShipping    = addExtraShipping;
