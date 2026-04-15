@@ -53,6 +53,8 @@ export async function openOrderModal(orderId = null, customerData = null) {
         // 주문 폼 HTML 생성 (먼저 폼을 생성해야 함)
         const _genForm = window.generateOrderFormHTMLMinimal || window.generateOrderFormHTML;
         if (_genForm) {
+            // 폼 열릴 때 Daum 주소 검색 스크립트 미리 로드 (팝업 차단 방지)
+            if (window._preloadDaumPostcode) window._preloadDaumPostcode();
             const orderForm = document.getElementById('order-form');
             if (orderForm) {
                 const formHTML = _genForm();

@@ -45,8 +45,15 @@ window.generateOrderFormHTMLMinimal = function () {
                         <tr>
                             <th>주소 *</th>
                             <td colspan="3">
-                                <input type="text" id="order-customer-address" class="xf-inp"
-                                       placeholder="주소" required>
+                                <div style="display:flex;gap:4px">
+                                    <input type="text" id="order-customer-address" class="xf-inp" style="flex:1"
+                                           placeholder="주소 입력 후 엔터" required
+                                           onkeydown="if(event.key==='Enter'){event.preventDefault();openMainAddressSearch();}">
+                                    <button type="button" onclick="openMainAddressSearch()"
+                                            style="padding:2px 10px;font-size:11px;white-space:nowrap;background:#f3f4f6;border:1px solid #d1d5db;border-radius:4px;cursor:pointer">
+                                        주소검색
+                                    </button>
+                                </div>
                             </td>
                         </tr>
                         <tr>

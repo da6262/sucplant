@@ -3092,9 +3092,8 @@ function addExtraShipping() {
                    class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
         </div>
         <div class="flex gap-2 mb-2">
-            <input type="text" id="es-address-${idx}" placeholder="주소 입력 후 엔터 *"
-                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
-                   onkeydown="if(event.key==='Enter'){event.preventDefault();openExtraShippingAddressSearch(${idx});}">
+            <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
+                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
             <button type="button" onclick="openExtraShippingAddressSearch(${idx})"
                     class="px-2 py-1.5 bg-gray-100 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">
                 <i class="fas fa-search mr-1"></i>검색
@@ -3161,6 +3160,31 @@ function resetExtraShipping() {
     _updateExtraShippingBadge();
 }
 
+// 메인 주소 필드용 Daum 주소 검색
+function openMainAddressSearch() {
+    if (typeof daum === 'undefined' || !daum.Postcode) {
+        alert('주소 검색 서비스 로딩 중입니다. 잠시 후 다시 시도해주세요.');
+        _preloadDaumPostcode();
+        return;
+    }
+    const currentInput = document.getElementById('order-customer-address')?.value?.trim() || '';
+    new daum.Postcode({
+        q: currentInput,
+        oncomplete: function(data) {
+            const addr = data.roadAddress || data.jibunAddress || '';
+            const addrField = document.getElementById('order-customer-address');
+            const detailField = document.getElementById('order-customer-address-detail');
+            if (addrField) {
+                addrField.removeAttribute('readonly');
+                addrField.value = addr;
+                addrField.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+            if (detailField) detailField.focus();
+        }
+    }).open();
+}
+window.openMainAddressSearch = openMainAddressSearch;
+
 // Daum 우편번호 스크립트 미리 로드 (팝업 차단 방지용 — 비동기 로드 후 open() 하면 차단됨)
 function _preloadDaumPostcode() {
     if (typeof daum !== 'undefined' && daum.Postcode) return; // 이미 로드됨
@@ -3197,6 +3221,7 @@ window.addExtraShipping    = addExtraShipping;
 window.removeExtraShipping = removeExtraShipping;
 window.resetExtraShipping  = resetExtraShipping;
 window.openExtraShippingAddressSearch = openExtraShippingAddressSearch;
+window._preloadDaumPostcode = _preloadDaumPostcode;
 
 // ─────────────────────────────────────────────
 
