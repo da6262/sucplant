@@ -2073,7 +2073,7 @@ async function loadProductManagementComponent() {
     try {
         console.log('📋 상품 관리 컴포넌트 로드 시작...');
         
-        const productsContainer = document.getElementById('products-section');
+        let productsContainer = document.getElementById('products-section');
         if (!productsContainer) {
             console.error('❌ products-section 요소를 찾을 수 없습니다');
             return false;
@@ -2091,7 +2091,15 @@ async function loadProductManagementComponent() {
         const html = await response.text();
         productsContainer.innerHTML = html;
         console.log('📦 HTML 로드 완료');
-        
+
+        // 고객관리와 동일한 패턴: inner div를 outer와 교체 (ID 중복·display 충돌 방지)
+        const inner = productsContainer.querySelector('#products-section');
+        if (inner) {
+            productsContainer.replaceWith(inner);
+            productsContainer = inner;
+            console.log('🔄 products-section outer → inner replaceWith 완료');
+        }
+
         // 컴포넌트 초기화
         if (window.ProductManagementComponent) {
             const productManagementComponent = new window.ProductManagementComponent();
