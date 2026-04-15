@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.36-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.37-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -145,6 +145,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.37 | 주문관리 코드 정리 — ①일괄 액션 바에 "일괄 삭제" 버튼 추가(`showBulkDeleteModal`) ②orderData.js 디버그 전역 함수 7개 window 노출 제거(`logRenderedOrderRows`·`logOrderRowSpec`·`verifyOrderCountsMatch`·`debugBulkActions`·`forceShowBulkButtons`·`debugOrderTable`·`forceRenderOrders`) ③orderUI.js 테스트 함수 3개 제거(`testProductInfo`·`testOrderEdit`·`testProductQuery`) ④orderForm.js 테스트 함수 5개 및 `testSupabaseConnection` window 노출 제거 ⑤orderSearch.js 중복 cart 함수 window 등록 6개 제거(addToCart·removeFromCart 등 — orderForm.js 버전이 canonical) |
 | v3.2.36 | 다중 배송지 지원 — 주문 등록 폼에 "배송지 추가" 버튼 추가, 추가 배송지마다 동일 상품으로 주문 자동 분리 생성, 배송지별 재고 개별 차감, 저장 후 총 생성 건수 안내 |
 | v3.2.35 | 전역 테이블 CSS 완전 통일 — 전 파일 td `text-xs`·`text-sm`·`py-*` 제거, 모든 table에 `table-ui` 클래스 부여, td inline `style=` 완전 삭제, `tbl-ui`→`table-ui` 통일, 상태 inline 색상→`badge` 시맨틱 클래스 전환 (12개 파일 대상) |
 | v3.2.34 | 상품 모달 X버튼·취소버튼 작동 안 하는 버그 수정 — `window.closeProductModal` 폴백에도 존재하지 않는 `product-modal-content` ID 참조 → modal만 숨기도록 통일 |

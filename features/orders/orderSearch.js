@@ -568,16 +568,12 @@ function closeProductSearch() {
 }
 
 // 전역 스코프에 함수 등록
+// 참고: addToCart · removeFromCart · updateCartTotal · updateCartQuantity ·
+//       updateCartItemTotal · checkCartEmpty 는 orderForm.js에서 등록 (canonical)
 window.searchExistingCustomers = searchExistingCustomers;
 window.selectCustomerFromHTML = selectCustomerFromHTML;
 window.fillOrderFormFromCustomerId = fillOrderFormFromCustomerId;
 window.searchProducts = searchProducts;
 window.selectProductFromSearch = selectProductFromSearch;
-window.addToCart = addToCart;
-window.updateCartQuantity = updateCartQuantity;
-window.updateCartItemTotal = updateCartItemTotal;
-window.removeFromCart = removeFromCart;
-window.updateCartTotal = updateCartTotal;
-window.checkCartEmpty = checkCartEmpty;
 window.openNewCustomerRegistration = openNewCustomerRegistration;
 window.closeProductSearch = closeProductSearch;

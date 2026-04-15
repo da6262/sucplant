@@ -2086,69 +2086,6 @@ if (window._DEBUG_ORDER_ROWS) window.validateOrderRowSpec = function () {
     };
 };
 
-/**
- * 테스트용: 주문관리 테이블에 실제로 전달되는 "렌더링 직전 데이터"(filteredOrders)를 콘솔에 출력.
- * renderOrdersTable과 동일: farm_order_rows 우선(있으면) → filterOrdersByStatus(getCurrentFilterStatus()).
- * 개발자 콘솔에서 수동 호출. ORDER_ROW_DATA_SPEC / 10개 필드와 무관.
- */
-window.logRenderedOrderRows = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return;
-    }
-    var filterStatus = orderDataManager.getCurrentFilterStatus();
-    var filteredOrders = orderDataManager.filterOrdersByStatus(filterStatus);
-    var useRows = Array.isArray(orderDataManager.farm_order_rows) && orderDataManager.farm_order_rows.length > 0;
-    console.log('주문관리 테이블 렌더링 직전 데이터 (filteredOrders)');
-    console.log('filterStatus:', filterStatus, '| count:', filteredOrders.length);
-    console.log('data source:', useRows ? 'farm_order_rows → filterOrdersByStatus' : 'farm_orders → filterOrdersByStatus');
-    console.log(filteredOrders);
-    return filteredOrders;
-};
-
-/**
- * 현재 화면에 보이는 목록과 동일 건수의 ORDER_ROW_DATA_SPEC 10필드 JSON 출력.
- * getOrderRowSpecList() = 단일 소스(get_order_rows) 기반 필터 결과와 동일.
- */
-window.logOrderRowSpec = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return [];
-    }
-    var rows = orderDataManager.getOrderRowSpecList();
-    console.log('ORDER_ROW_DATA_SPEC (10 fields), 전체 건수:', rows.length);
-    console.table(rows);
-    console.log(JSON.stringify(rows, null, 2));
-    return rows;
-};
-
-/**
- * 검증: 목록 행 수와 탭 카운트(all) 일치 여부. 카운트는 get_order_rows rows 기반이므로 일치해야 함.
- */
-window.verifyOrderCountsMatch = function () {
-    if (!window.orderDataManager) {
-        console.warn('orderDataManager 없음');
-        return null;
-    }
-    var dm = window.orderDataManager;
-    var listLen = Array.isArray(dm.farm_order_rows) ? dm.farm_order_rows.length : 0;
-    var countRows = dm._lastCountRows || [];
-    var allRow = countRows.find(function (r) { return r.status_key === 'all'; });
-    var countAll = allRow != null ? Number(allRow.count) : NaN;
-    var statusKeys = ['주문접수','고객안내','입금대기','입금확인','상품준비','배송준비','배송중','배송완료','주문취소','환불완료'];
-    var sumByStatus = 0;
-    statusKeys.forEach(function (k) {
-        var r = countRows.find(function (x) { return x.status_key === k; });
-        if (r) sumByStatus += Number(r.count) || 0;
-    });
-    var ok = (listLen === countAll && sumByStatus === countAll);
-    console.log('verifyOrderCountsMatch — 목록 행 수 = 탭 카운트(all) 일치 여부');
-    console.log('  목록 행 수(farm_order_rows.length):', listLen);
-    console.log('  탭 카운트(status_key=all):', countAll);
-    console.log('  상태별 count 합계(주문접수~환불완료):', sumByStatus);
-    console.log('  일치:', ok ? '예' : '아니오');
-    return { listLen: listLen, countAll: countAll, sumByStatus: sumByStatus, ok: ok };
-};
 
 /**
  * 검증용: 상위 n건 샘플만 d_day / order_items_summary / items_subtotal 중심으로 콘솔 출력.
@@ -2179,38 +2116,6 @@ if (window._DEBUG_ORDER_ROWS) window.logOrderRowSpecSamples = function (n) {
     return samples;
 };
 
-// 디버깅용 전역 함수들
-window.debugBulkActions = function() {
-    console.log('🔍 일괄 작업 디버깅 시작');
-    
-    const selectedCount = orderDataManager.selectedOrders.size;
-    console.log('📊 선택된 주문 수:', selectedCount);
-    console.log('📊 선택된 주문 ID들:', Array.from(orderDataManager.selectedOrders));
-    
-    const bulkContainer = document.getElementById('bulk-action-container');
-    console.log('📦 일괄 작업 컨테이너:', bulkContainer);
-    
-    if (bulkContainer) {
-        console.log('📦 컨테이너 내용:', bulkContainer.innerHTML);
-    }
-    
-    // 강제로 일괄 작업 버튼 표시
-    if (selectedCount > 0) {
-        orderDataManager.forceShowBulkActionButtons();
-        console.log('✅ 일괄 작업 버튼 강제 표시 완료');
-    }
-    
-    return {
-        selectedCount: selectedCount,
-        bulkContainer: bulkContainer,
-        selectedOrders: Array.from(orderDataManager.selectedOrders)
-    };
-};
-
-window.forceShowBulkButtons = function() {
-    console.log('🔄 일괄 작업 버튼 강제 표시');
-    orderDataManager.forceShowBulkActionButtons();
-};
 
 // 고객 구매 금액 차감 함수 전역 등록
 window.deductCustomerPurchaseAmount = (customerPhone, deductAmount) => {
@@ -2275,44 +2180,6 @@ document.addEventListener('click', (e) => {
     }
 });
 
-// 디버깅 함수들
-window.debugOrderTable = function() {
-    console.log('🔍 주문 테이블 디버깅 시작');
-    
-    // 테이블 바디 요소 확인
-    const tableBody = document.getElementById('orders-table-body');
-    console.log('📋 테이블 바디:', tableBody);
-    
-    if (tableBody) {
-        console.log('📋 테이블 바디 부모:', tableBody.parentElement);
-        console.log('📋 테이블 바디 내용 길이:', tableBody.innerHTML.length);
-        console.log('📋 테이블 바디 자식 요소 수:', tableBody.children.length);
-        console.log('📋 테이블 바디 첫 번째 자식:', tableBody.firstElementChild);
-    }
-    
-    // 주문 데이터 확인
-    console.log('📊 전체 주문 수:', orderDataManager.farm_orders.length);
-    console.log('📊 필터링된 주문 수:', orderDataManager.filterOrdersByStatus('all').length);
-    
-    // 테이블 렌더링 강제 실행
-    console.log('🔄 테이블 렌더링 강제 실행');
-    orderDataManager.renderOrdersTable('all');
-    
-    return {
-        tableBody: tableBody,
-        orderCount: orderDataManager.farm_orders.length,
-        filteredCount: orderDataManager.filterOrdersByStatus('all').length
-    };
-};
-
-window.forceRenderOrders = function() {
-    console.log('🔄 주문 테이블 강제 렌더링');
-    if (window.orderDataManager) {
-        window.orderDataManager.renderOrdersTable('all');
-    } else {
-        console.error('❌ orderDataManager를 찾을 수 없습니다');
-    }
-};
 
 // 모듈 내보내기
 // renderOrdersTable 함수를 별도로 export
