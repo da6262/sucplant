@@ -347,22 +347,18 @@ function displayOrderDetail(modal, order) {
         if (orderNumberEl) orderNumberEl.textContent = order.order_number || order.id || '-';
         if (orderDateEl) orderDateEl.textContent = order.order_date ? new Date(order.order_date).toLocaleDateString('ko-KR') : '-';
         if (orderStatusEl) {
-            orderStatusEl.textContent = order.order_status || order.status || '-';
-            // 상태별 색상 적용
-            const statusColors = {
-                '주문접수': 'bg-blue-100 text-blue-800',
-                '고객안내': 'bg-yellow-100 text-yellow-800',
-                '입금대기': 'bg-orange-100 text-orange-800',
-                '입금확인': 'bg-green-100 text-green-800',
-                '상품준비': 'bg-purple-100 text-purple-800',
-                '배송준비': 'bg-indigo-100 text-indigo-800',
-                '배송중': 'bg-cyan-100 text-cyan-800',
-                '배송완료': 'bg-emerald-100 text-emerald-800',
-                '주문취소': 'bg-red-100 text-red-800',
-                '환불완료': 'bg-gray-100 text-gray-800'
+            // 통제실 badge 클래스 사용 — raw Tailwind 제거
+            const STATUS_BADGE = {
+                '주문접수': 'badge-info',    '고객안내': 'badge-warning',
+                '입금대기': 'badge-orange',  '입금확인': 'badge-success',
+                '상품준비': 'badge-purple',  '배송준비': 'badge-sky',
+                '배송중':   'badge-purple',  '배송완료': 'badge-success',
+                '주문취소': 'badge-danger',  '환불완료': 'badge-neutral',
             };
-            const statusClass = statusColors[order.order_status || order.status] || 'bg-gray-100 text-gray-800';
-            orderStatusEl.className = `ml-2 px-2 py-1 rounded-full text-xs font-semibold ${statusClass}`;
+            const st = order.order_status || order.status || '-';
+            const badgeVariant = STATUS_BADGE[st] || 'badge-neutral';
+            orderStatusEl.className = `badge ${badgeVariant}`;
+            orderStatusEl.textContent = st;
         }
         if (orderChannelEl) orderChannelEl.textContent = order.order_channel || order.order_source || '-';
         

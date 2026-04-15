@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.1-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.4.0-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -80,7 +80,7 @@ sucplant/
 │   └── supabase-config.js         # Supabase 연결 설정
 │
 ├── utils/
-│   ├── ui.js          # renderPageHeader · renderFilterBar · renderEmptyRow
+│   ├── ui.js          # Standard Form Renderer (16종) — renderModal · renderField · renderBadge · renderBtnIcon 등
 │   └── formatters.js  # formatDate · formatPhone · formatCurrency
 │
 └── styles/
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.0 | feat: UI 통제실 확립 — Standard Form Renderer 구축 및 전 파일 반란군 제거. ①`utils/ui.js`에 `renderModal`·`renderField`·`renderFormSection`·`renderFormGrid`·`renderBadge`·`renderOrderStatusBadge`·`renderGradeBadge`·`renderBtnIcon`·`renderBtnGroup`·`renderEditDeleteBtns`·`renderConfirmDialog`·`renderInfoRow` 16종 렌더러 추가 — 모든 팝업·폼·배지·버튼은 이 공장을 통해서만 생산 ②`styles/index-inline.css`에 시맨틱 유틸리티 클래스 추가(`.txt-*` 텍스트 계층 9종·`.bg-card/section`·`.flex-center/between`·`.p-xs/sm/md/lg`·`.r-sm/md/lg`·`.fw-*`) ③CSS 최종 안전망 확장 — raw Tailwind `text-gray-*`/`bg-gray-*`/`text-xs`/`text-sm` 클래스를 CSS 변수로 강제 오버라이드 ④`categoryUI.js` 반란군 전면 교체(빈 상태·카테고리 행·버튼) ⑤`productUI.js` `COMMON_STYLES` 상수 시맨틱 클래스로 교체·상세 패널 `renderModal()` 적용 ⑥`customerUI.js` 주문상태 배지 함수 `badge-*` 변형으로 교체 ⑦`js/order-management.js` 인라인 상태 배지 `badge-*` 교체 ⑧`js/shipping-management.js` `getStatusColor()` → `badge-*` 변형 반환으로 교체 |
 | v3.3.1 | 리듬이의주각오 — 고객 삭제 시 FK 제약 처리 방식 변경: 주문 차단 대신 관련 주문의 `customer_id`를 `null`로 초기화 후 고객 삭제 진행 |
 | v3.3.0 | refactor: 상품관리 7대 문제 전면 개선 — ①[고] `farm_products.category_id UUID FK` 컬럼 추가 + 기존 데이터 마이그레이션 + 인덱스, `addProduct`/`updateProduct` 동기화 ②[고] Supabase 클라이언트 대기 폴링(0.5s×20회) → `supabase-ready` CustomEvent 기반 교체 ③[중] `_productDataManagerInitializing`/`_categoryDataManagerInitializing` 플래그로 이중 초기화 방지 ④[중] Supabase Realtime `postgres_changes` 구독으로 다중 탭 실시간 동기화 ⑤[중] 상품코드 DB RPC `get_next_product_code()` 적용으로 race condition 해결 ⑥[저] `window.ProductMgmt`/`window.CategoryMgmt` 네임스페이스 추가 ⑦[저] 카테고리 변경 시 `farm_products` SW 캐시도 함께 무효화 |
 | v3.2.95 | fix: 주소검색 팝업 → embed 오버레이 전환 — `daum.Postcode().open()` 팝업 방식에서 `.embed()` 인페이지 오버레이 방식으로 변경, `q` 초기 쿼리가 새 창(about:blank)에 전달되지 않던 문제 해결. 주소 입력 후 엔터 시 오버레이가 해당 텍스트로 자동 검색, 배경 클릭·✕ 버튼으로 닫기. 주문 메인 주소·추가 배송지 모두 적용 |

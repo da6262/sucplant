@@ -1248,17 +1248,18 @@ async function renderCustomerOrders(orders, container) {
     }
 }
 
-// 주문 상태 배지 클래스 반환
+// 주문 상태 배지 — 통제실 renderOrderStatusBadge 사용
+// 이 함수는 legacy 호출 호환용으로만 유지 (클래스 반환 방식)
 function getOrderStatusBadgeClass(status) {
-    const statusClasses = {
-        '주문접수': 'bg-blue-100 text-blue-800',
-        '주문확인': 'bg-yellow-100 text-yellow-800',
-        '배송준비': 'bg-purple-100 text-purple-800',
-        '배송중': 'bg-orange-100 text-orange-800',
-        '배송완료': 'bg-green-100 text-green-800',
-        '주문취소': 'bg-red-100 text-red-800'
+    const MAP = {
+        '주문접수': 'badge-info',
+        '주문확인': 'badge-warning',
+        '배송준비': 'badge-purple',
+        '배송중':   'badge-orange',
+        '배송완료': 'badge-success',
+        '주문취소': 'badge-danger',
     };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    return MAP[status] || 'badge-neutral';
 }
 
 // 고객 기본 정보 업데이트
