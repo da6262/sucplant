@@ -998,10 +998,19 @@ class ProductManagementComponent {
      */
     closeProductModal() {
         const modal = document.getElementById('product-modal');
-        if (modal) {
+        if (!modal) return;
+
+        // 닫힘 애니메이션
+        const modalContent = document.getElementById('product-modal-content');
+        if (modalContent) {
+            modalContent.classList.remove('scale-100', 'opacity-100');
+            modalContent.classList.add('scale-95', 'opacity-0');
+        }
+
+        setTimeout(() => {
             modal.classList.add('hidden');
             modal.style.display = 'none';
-        }
+        }, 150);
     }
     
     /**
