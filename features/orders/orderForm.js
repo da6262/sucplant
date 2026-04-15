@@ -3091,11 +3091,12 @@ function addExtraShipping() {
                    class="px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
         </div>
         <div class="flex gap-2 mb-2">
-            <input type="text" id="es-address-${idx}" placeholder="기본주소 *"
-                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500">
+            <input type="text" id="es-address-${idx}" placeholder="주소 입력 후 엔터 *"
+                   class="flex-1 px-2 py-1.5 border border-gray-300 rounded text-sm focus:ring-1 focus:ring-blue-500"
+                   onkeydown="if(event.key==='Enter'){event.preventDefault();openExtraShippingAddressSearch(${idx});}">
             <button type="button" onclick="openExtraShippingAddressSearch(${idx})"
                     class="px-2 py-1.5 bg-gray-100 border border-gray-300 rounded text-xs text-gray-600 hover:bg-gray-200 whitespace-nowrap">
-                <i class="fas fa-search mr-1"></i>주소검색
+                <i class="fas fa-search mr-1"></i>검색
             </button>
         </div>
         <div class="mb-2">
@@ -3172,7 +3173,9 @@ async function openExtraShippingAddressSearch(idx) {
                 document.head.appendChild(s);
             });
         }
+        const currentInput = document.getElementById(`es-address-${idx}`)?.value?.trim() || '';
         new daum.Postcode({
+            q: currentInput,          // 입력한 주소로 바로 검색 시작
             oncomplete: function(data) {
                 const addr = data.roadAddress || data.jibunAddress || '';
                 const addrField = document.getElementById(`es-address-${idx}`);
