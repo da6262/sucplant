@@ -145,6 +145,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.42 | 주문관리 진입 시 기본 탭 전체로 변경 + 네비게이션 '처리할 주문' 뱃지 추가 — 진입 기본값 work_todo→all, nav-orders 옆에 빨간 숫자 뱃지(99+ 상한), 주문 등록 기본 상태 입금대기→주문접수 수정 |
 | v3.2.40 | 주문 재방문 시 새 주문·탭·체크박스 버튼 먹통 수정 — addEventListener → onclick/onchange 할당으로 교체 (add-order-btn, status-tab-btn 11개, select-all-orders, order-page-size, generate-picking-list-btn) |
 | v3.2.39 | 주문관리 상태 표시 정리 — ①미사용 복합 필터(work_deposit·work_ship_today·work_done) 제거 ②상태 배지 색상 단일 소스화(dashboard.js·customerUI.js의 하드코딩 색상 맵 제거, orderData.js `getStatusColor()` 위임) ③'취소' → '주문취소' 상태명 정규화 |
 | v3.2.37 | 주문관리 코드 정리 — ①일괄 액션 바에 "일괄 삭제" 버튼 추가(`showBulkDeleteModal`) ②orderData.js 디버그 전역 함수 7개 window 노출 제거(`logRenderedOrderRows`·`logOrderRowSpec`·`verifyOrderCountsMatch`·`debugBulkActions`·`forceShowBulkButtons`·`debugOrderTable`·`forceRenderOrders`) ③orderUI.js 테스트 함수 3개 제거(`testProductInfo`·`testOrderEdit`·`testProductQuery`) ④orderForm.js 테스트 함수 5개 및 `testSupabaseConnection` window 노출 제거 ⑤orderSearch.js 중복 cart 함수 window 등록 6개 제거(addToCart·removeFromCart 등 — orderForm.js 버전이 canonical) |
