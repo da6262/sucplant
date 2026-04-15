@@ -464,6 +464,35 @@ export async function loadSalesChannels() {
         console.error('❌ 판매 채널 관리 로드 실패:', error);
         container.innerHTML = '<div class="text-red-500 text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
     }
+
+    // 채널 추가 버튼 리스너 (1회만 등록)
+    const addChannelBtn = document.getElementById('add-channel-btn');
+    if (addChannelBtn && !addChannelBtn._channelBtnBound) {
+        addChannelBtn._channelBtnBound = true;
+        addChannelBtn.addEventListener('click', async function() {
+            const name = prompt('채널명을 입력하세요:');
+            if (!name || !name.trim()) return;
+            try {
+                if (!window.addSalesChannel) {
+                    alert('판매채널 모듈을 불러올 수 없습니다.');
+                    return;
+                }
+                await window.addSalesChannel({
+                    name: name.trim(),
+                    icon: 'store',
+                    color: 'green',
+                    description: '',
+                    sort_order: (window.salesChannelsDataManager?.channels?.length || 0),
+                    is_active: true
+                });
+                await loadSalesChannels();
+                console.log('✅ 판매채널 추가 완료:', name.trim());
+            } catch (error) {
+                console.error('❌ 판매채널 추가 실패:', error);
+                alert('채널 추가에 실패했습니다: ' + (error.message || error));
+            }
+        });
+    }
 }
 
 // 주문 상태 관리
