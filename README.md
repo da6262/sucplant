@@ -145,6 +145,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.51 | 폼 디자인 시스템 도입 — 12컬럼 그리드(`form-grid`) · 라벨 상단 고정(Top-Label) · 입력창 42px 높이 통일(`form-control`) · 필드 간격 `gap-y-4`(16px) · 컨테이너 패딩 24px 일원화. 적용: 고객 등록 모달·주문 등록 좌측 패널·판매채널 모달·환경설정 일반/배송/SMS. 신규 CSS: `form-col-6/12`·`form-input-group`·`form-input-unit`·`form-section`·`form-actions`. `modal-body` 패딩 24px 표준화 |
 | v3.2.50 | 레거시 DB 테이블 삭제 — `customer_grades`(farm_settings JSONB로 대체), `sales_channels`(farm_channels로 대체), `shipping_settings`(farm_settings로 대체), `device_info`(미사용) 4개 테이블 Supabase에서 완전 삭제. 현재 사용 테이블: farm_customers·orders·order_items·products·categories·waitlist·settings·channels·settings_kv·admin_users |
 | v3.2.49 | 환경설정 DB 정리 — 스키마에만 존재하고 앱에서 미사용인 `farm_order_statuses`·`farm_customer_grades` 테이블 식별, `drop-unused-settings-tables.sql` 제거 스크립트 추가. 환경설정 탭별 DB 연결 구조 정리: 일반·배송·주문상태·고객등급·SMS는 `farm_settings` JSONB, 판매채널은 `farm_channels` 전용 테이블로 관리 |
 | v3.2.48 | 팝업창 디자인 전면 통일 — 모든 모달을 `modal-overlay/container/header/body/footer` 표준 구조로 마이그레이션, `.modal-footer` `justify-content: flex-end; gap: 8px` 고정, 크기 변형 클래스(`.modal-sm/md/lg/xl`) 추가, 긍정 액션(저장/확인) `btn-primary`(우측 초록), 부정 액션(취소/닫기) `btn-secondary`(좌측 회색) 배치 통일, 인라인 `style="width:..."` 전면 제거, JS 동적 모달(환불·SMS·고객삭제) 포함 11개 파일 적용 |

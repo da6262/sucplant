@@ -1,6 +1,6 @@
 <!-- 판매 채널 관리 모달 -->
 <div id="channel-modal" class="modal-overlay" style="display:none;">
-    <div class="modal-container">
+    <div class="modal-container modal-sm">
 
         <!-- 헤더 -->
         <div class="modal-header">
@@ -12,26 +12,20 @@
 
         <!-- 바디 -->
         <div class="modal-body">
-            <form id="channel-form" class="space-y-4">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">
-                        채널명 <span class="text-red-500">*</span>
-                    </label>
+            <form id="channel-form" class="form-grid">
+
+                <!-- 채널명 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">채널명 <span class="req">*</span></label>
                     <input type="text" id="channel-name" required
-                           class="input-ui"
+                           class="form-control"
                            placeholder="예: 네이버 스마트스토어">
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">설명</label>
-                    <textarea id="channel-description" rows="3"
-                              class="input-ui resize-none"
-                              placeholder="채널에 대한 간단한 설명을 입력하세요"></textarea>
-                </div>
-
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">아이콘</label>
-                    <select id="channel-icon" class="input-ui">
+                <!-- 아이콘 (col-6) | 색상 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">아이콘</label>
+                    <select id="channel-icon" class="form-control">
                         <option value="fas fa-store">🏪 상점</option>
                         <option value="fas fa-shopping-cart">🛒 쇼핑몰</option>
                         <option value="fas fa-mobile-alt">📱 모바일</option>
@@ -43,9 +37,9 @@
                     </select>
                 </div>
 
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">색상</label>
-                    <select id="channel-color" class="input-ui">
+                <div class="form-col-6">
+                    <label class="form-label">색상</label>
+                    <select id="channel-color" class="form-control">
                         <option value="#10B981">🟢 초록색</option>
                         <option value="#3B82F6">🔵 파란색</option>
                         <option value="#F59E0B">🟡 노란색</option>
@@ -57,25 +51,34 @@
                     </select>
                 </div>
 
-                <div class="flex items-center gap-2">
-                    <input type="checkbox" id="channel-active" checked
-                           class="w-4 h-4 text-emerald-600 border-gray-300 rounded">
-                    <label for="channel-active" class="text-sm text-gray-700">활성 상태</label>
+                <!-- 설명 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">설명</label>
+                    <textarea id="channel-description" rows="3"
+                              class="form-control"
+                              placeholder="채널에 대한 간단한 설명을 입력하세요"></textarea>
                 </div>
+
+                <!-- 활성 상태 (col-12) -->
+                <div class="form-col-12">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="channel-active" checked
+                               class="w-4 h-4 text-emerald-600 border-gray-300 rounded">
+                        <span class="form-label" style="margin-bottom:0;">활성 상태</span>
+                    </label>
+                </div>
+
             </form>
         </div>
 
         <!-- 푸터 -->
         <div class="modal-footer">
-            <span></span>
-            <div class="flex gap-2">
-                <button id="cancel-channel" class="btn-secondary">
-                    <i class="fas fa-times"></i>취소
-                </button>
-                <button id="save-channel" class="btn-primary">
-                    <i class="fas fa-save"></i>저장
-                </button>
-            </div>
+            <button id="cancel-channel" class="btn-secondary">
+                <i class="fas fa-times"></i>취소
+            </button>
+            <button id="save-channel" class="btn-primary">
+                <i class="fas fa-save"></i>저장
+            </button>
         </div>
 
     </div>

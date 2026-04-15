@@ -30,69 +30,88 @@
 
         <!-- 일반 설정 -->
         <div id="settings-general-section" class="settings-content">
-            <div class="divide-y divide-gray-100">
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">농장명</label>
-                    <input type="text" id="farm-name" class="input-ui flex-1" placeholder="경산다육식물농장">
+            <div class="form-grid">
+
+                <!-- 농장명 (col-6) | 대표자명 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">농장명</label>
+                    <input type="text" id="farm-name" class="form-control" placeholder="경산다육식물농장">
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">대표자명</label>
-                    <input type="text" id="farm-owner" class="input-ui flex-1" placeholder="대표자명">
+                <div class="form-col-6">
+                    <label class="form-label">대표자명</label>
+                    <input type="text" id="farm-owner" class="form-control" placeholder="대표자명">
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">연락처</label>
-                    <input type="tel" id="farm-phone" class="input-ui flex-1" placeholder="010-0000-0000">
+
+                <!-- 연락처 (col-6) | (빈 col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">연락처</label>
+                    <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000">
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">주소</label>
-                    <input type="text" id="farm-address" class="input-ui flex-1" placeholder="농장 주소">
+                <div class="form-col-6"></div>
+
+                <!-- 주소 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">주소</label>
+                    <input type="text" id="farm-address" class="form-control" placeholder="농장 주소">
                 </div>
-                <div class="flex justify-end gap-2 px-3 py-2 bg-gray-50">
+
+                <!-- 버튼 영역 -->
+                <div class="form-actions">
                     <button id="cancel-general-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
                     <button id="save-general-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
                 </div>
+
             </div>
         </div>
 
         <!-- 배송 설정 -->
         <div id="settings-shipping-section" class="settings-content hidden">
-            <div class="divide-y divide-gray-100">
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">기본 배송비</label>
-                    <div class="flex items-center gap-2 flex-1">
-                        <input type="number" id="default-shipping-fee" class="input-ui flex-1" placeholder="3000">
-                        <span class="text-xs text-gray-500 shrink-0">원</span>
+            <div class="form-grid">
+
+                <!-- 기본 배송비 (col-6) | 당일배송 배송비 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">기본 배송비</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="default-shipping-fee" class="form-control" placeholder="3000">
+                        <span class="form-input-unit">원</span>
                     </div>
                 </div>
-                <div class="flex items-start px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0 pt-0.5">무료배송 기준</label>
-                    <div class="flex-1 space-y-1">
+                <div class="form-col-6">
+                    <label class="form-label">당일배송 배송비</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="express-shipping-fee" class="form-control" placeholder="5000">
+                        <span class="form-input-unit">원</span>
+                    </div>
+                </div>
+
+                <!-- 무료배송 기준 (form-section, col-12) -->
+                <div class="form-section">
+                    <div class="form-section-title">무료배송 기준</div>
+                    <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="free-shipping-type" value="total-order" class="text-emerald-600 focus:ring-emerald-500" checked>
+                            <input type="radio" name="free-shipping-type" value="total-order"
+                                   class="text-emerald-600 focus:ring-emerald-500" checked>
                             <span class="text-xs text-gray-700">전체 주문금액 기준</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
-                            <input type="radio" name="free-shipping-type" value="single-item" class="text-emerald-600 focus:ring-emerald-500">
+                            <input type="radio" name="free-shipping-type" value="single-item"
+                                   class="text-emerald-600 focus:ring-emerald-500">
                             <span class="text-xs text-gray-700">단일 상품금액 기준</span>
                         </label>
-                        <div class="flex items-center gap-2 pt-1">
-                            <input type="number" id="free-shipping-threshold" class="input-ui flex-1" placeholder="50000">
-                            <span class="text-xs text-gray-500 shrink-0">원 이상</span>
+                        <div class="form-input-group with-unit" style="max-width:240px;margin-top:6px;">
+                            <input type="number" id="free-shipping-threshold" class="form-control" placeholder="50000">
+                            <span class="form-input-unit">원 이상</span>
                         </div>
-                        <p class="text-[11px] text-gray-400"><span id="free-shipping-description">전체 주문금액이 설정된 금액 이상일 때 무료배송</span></p>
+                        <p class="form-helper"><span id="free-shipping-description">전체 주문금액이 설정된 금액 이상일 때 무료배송</span></p>
                     </div>
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">당일배송 배송비</label>
-                    <div class="flex items-center gap-2 flex-1">
-                        <input type="number" id="express-shipping-fee" class="input-ui flex-1" placeholder="5000">
-                        <span class="text-xs text-gray-500 shrink-0">원</span>
-                    </div>
-                </div>
-                <div class="flex justify-end gap-2 px-3 py-2 bg-gray-50">
+
+                <!-- 버튼 영역 -->
+                <div class="form-actions">
                     <button id="cancel-shipping-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
                     <button type="button" id="save-shipping-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
                 </div>
+
             </div>
         </div>
 
@@ -142,23 +161,24 @@
         <!-- SMS 설정 -->
         <div id="settings-sms-section" class="settings-content hidden">
             <!-- 솔라피 API 인증정보 -->
-            <div class="divide-y divide-gray-100 border-b border-gray-200 mb-0">
-                <div class="flex items-center px-3 py-2 bg-gray-50">
-                    <span class="text-xs font-semibold text-gray-600 w-full">솔라피 API 인증정보</span>
+            <div class="form-grid" style="border-bottom:1px solid #E5E7EB;">
+                <div class="form-col-12">
+                    <span class="form-section-title" style="margin-bottom:0;">솔라피 API 인증정보</span>
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">API Key</label>
-                    <input type="text" id="sms-api-key" class="input-ui flex-1 font-mono text-xs" placeholder="솔라피 API Key">
+                <div class="form-col-12">
+                    <label class="form-label">API Key</label>
+                    <input type="text" id="sms-api-key" class="form-control font-mono" placeholder="솔라피 API Key">
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">API Secret</label>
-                    <input type="password" id="sms-api-secret" class="input-ui flex-1 font-mono text-xs" placeholder="솔라피 API Secret">
+                <div class="form-col-12">
+                    <label class="form-label">API Secret</label>
+                    <input type="password" id="sms-api-secret" class="form-control font-mono" placeholder="솔라피 API Secret">
                 </div>
-                <div class="flex items-center px-3 py-2">
-                    <label class="text-xs text-gray-500 w-28 shrink-0">발신번호</label>
-                    <input type="tel" id="sms-from-number" class="input-ui flex-1" placeholder="01012345678 (- 없이)">
+                <div class="form-col-12">
+                    <label class="form-label">발신번호</label>
+                    <input type="tel" id="sms-from-number" class="form-control" placeholder="01012345678 (- 없이)">
+                    <p class="form-helper">하이픈(-) 없이 숫자만 입력하세요</p>
                 </div>
-                <div class="flex justify-end gap-2 px-3 py-2">
+                <div class="form-actions">
                     <button id="save-sms-config-btn" class="btn-primary"><i class="fas fa-save"></i>인증정보 저장</button>
                 </div>
             </div>
