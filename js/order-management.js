@@ -611,139 +611,41 @@ window.initializeOrderManagement = initializeOrderManagement;
 function attachOrderEventListeners() {
     try {
         console.log('🔗 주문관리 이벤트 리스너 연결 시작...');
-        
-        // 이미 이벤트 리스너가 연결되었는지 확인
-        if (window.orderEventListenersAttached) {
-            console.log('⚠️ 주문관리 이벤트 리스너가 이미 연결되어 있습니다. 건너뜁니다.');
-            return;
-        }
-        
-        // 이벤트 리스너 추적 배열 초기화
-        if (!window.orderEventListeners) {
-            window.orderEventListeners = [];
-        }
-        
-        // 주문관리 섹션이 존재하는지 확인
-        const ordersSection = document.getElementById('orders-section');
-        if (!ordersSection) {
-            console.warn('⚠️ 주문관리 섹션을 찾을 수 없습니다. 이벤트 리스너 연결을 건너뜁니다.');
-            return;
-        }
-        
-        // 주문 데이터 매니저 초기화 확인
-        if (!window.orderDataManager) {
-            console.warn('⚠️ orderDataManager가 초기화되지 않았습니다.');
-            return;
-        }
-        
-        // 새 주문 등록 버튼
+
+        // 새 주문 등록 버튼 — onclick 할당(재방문 시에도 덮어쓰기로 중복 방지)
         const addOrderBtn = document.getElementById('add-order-btn');
-        console.log('🔍 새 주문 등록 버튼 찾기:', addOrderBtn);
-        
         if (addOrderBtn) {
-            console.log('✅ 새 주문 등록 버튼 발견, 이벤트 리스너 추가');
-            
-            const addOrderHandler = async function(event) {
-                console.log('➕ 새 주문 등록 버튼 클릭됨!');
-                
-                // 이벤트 전파 방지
-                if (event) {
-                    event.preventDefault();
-                    event.stopPropagation();
-                }
-                
+            addOrderBtn.onclick = async () => {
                 try {
-                    // 주문 모달이 없으면 동적으로 로드
-                    let modal = document.getElementById('order-modal');
-                    console.log('🔍 현재 모달 상태:', modal);
-                    
-                    if (!modal) {
-                        console.log('📦 주문 모달이 없습니다. 동적 로드 시작...');
-                        try {
-                            await loadOrderModal();
-                            modal = document.getElementById('order-modal');
-                            console.log('🔍 로드된 모달 요소:', modal);
-                            
-                            if (!modal) {
-                                console.error('❌ 주문 모달 로드 실패');
-                                alert('주문 등록 모달을 로드할 수 없습니다. 페이지를 새로고침해주세요.');
-                                return;
-                            }
-                        } catch (loadError) {
-                            console.error('❌ 주문 모달 로드 중 오류:', loadError);
-                            alert('주문 등록 모달을 로드하는 중 오류가 발생했습니다: ' + loadError.message);
-                            return;
-                        }
+                    if (!document.getElementById('order-modal')) {
+                        await loadOrderModal();
                     }
-                    
-                    // 주문 모달 열기
-                    console.log('🔍 openOrderModal 함수 확인:', window.openOrderModal);
-                    if (window.openOrderModal) {
-                        console.log('✅ openOrderModal 함수 호출');
-                        await window.openOrderModal();
-                    } else {
-                        console.warn('⚠️ openOrderModal 함수를 찾을 수 없습니다');
-                        alert('주문 모달을 열 수 없습니다. 페이지를 새로고침해주세요.');
-                    }
+                    if (window.openOrderModal) await window.openOrderModal();
                 } catch (error) {
-                    console.error('❌ 주문 등록 버튼 클릭 처리 중 오류:', error);
-                    alert('주문 등록 중 오류가 발생했습니다: ' + error.message);
+                    console.error('❌ 새 주문 등록 오류:', error);
                 }
             };
-            
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            addOrderBtn.removeEventListener('click', addOrderHandler);
-            
-            // 새 이벤트 리스너 추가
-            addOrderBtn.addEventListener('click', addOrderHandler);
-            console.log('✅ 새 주문 등록 버튼 이벤트 리스너 추가 완료');
-            
-            // 이벤트 리스너 추적
-            window.orderEventListeners.push({
-                element: addOrderBtn,
-                event: 'click',
-                handler: addOrderHandler
-            });
-            
-            console.log('✅ 새 주문 등록 버튼 이벤트 리스너 연결 완료');
         }
-        
-        // 주문 상태별 필터 탭
+
+        // 주문 상태별 필터 탭 — onclick 할당
         const statusTabs = document.querySelectorAll('.status-tab-btn');
         statusTabs.forEach(tab => {
-            const statusTabHandler = async function() {
+            tab.onclick = async function() {
                 const status = this.id.replace('status-', '');
-                console.log('🏷️ 주문 상태 필터:', status);
-                
-                // 활성 탭 표시
                 statusTabs.forEach(t => t.classList.remove('active'));
                 this.classList.add('active');
-                
                 if (window.orderDataManager) {
                     try {
                         await window.orderDataManager.loadOrders();
                         if (window.orderDataManager.renderOrdersTable) {
                             window.orderDataManager.renderOrdersTable(status);
-                            console.log('✅ 주문 테이블 필터링 완료:', status);
                         }
                     } catch (error) {
                         console.error('❌ 주문 테이블 필터링 실패:', error);
                     }
-                } else {
-                    console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
                 }
             };
-            
-            tab.addEventListener('click', statusTabHandler);
-            
-            // 이벤트 리스너 추적
-            window.orderEventListeners.push({
-                element: tab,
-                event: 'click',
-                handler: statusTabHandler
-            });
         });
-        console.log('✅ 주문 상태 필터 이벤트 리스너 연결 완료');
         
         // 일괄 처리 버튼들
         const bulkStatusChangeBtn = document.getElementById('bulk-status-change-btn');
@@ -775,14 +677,6 @@ function attachOrderEventListeners() {
                 saveAllTrackingNumbers();
             }
         });
-        
-        const generatePickingListBtn = document.getElementById('generate-picking-list-btn');
-        if (generatePickingListBtn) {
-            generatePickingListBtn.addEventListener('click', async function() {
-                console.log('📋 피킹 리스트 생성 버튼 클릭');
-                await generatePickingList();
-            });
-        }
         
         const generatePackagingLabelsBtn = document.getElementById('generate-packaging-labels-btn');
         if (generatePackagingLabelsBtn) {
@@ -877,32 +771,29 @@ function attachOrderEventListeners() {
             console.warn('⚠️ 배송비 설정 버튼을 찾을 수 없습니다');
         }
         
-        // 전체 선택 체크박스
+        // 전체 선택 체크박스 — onchange 할당
         const selectAllOrders = document.getElementById('select-all-orders');
         if (selectAllOrders) {
-            selectAllOrders.addEventListener('change', function() {
-                console.log('☑️ 전체 선택 체크박스 변경:', this.checked);
-                // 전체 선택 로직
+            selectAllOrders.onchange = function() {
                 const orderCheckboxes = document.querySelectorAll('input[type="checkbox"][data-order-id]');
-                orderCheckboxes.forEach(checkbox => {
-                    checkbox.checked = this.checked;
-                });
-            });
-        }
-        
-        // 페이지당 표시 수 선택
-        const orderPageSize = document.getElementById('order-page-size');
-        if (orderPageSize) {
-            orderPageSize.addEventListener('change', function() {
-                if (window.orderDataManager) {
-                    window.orderDataManager.renderOrdersTable();
-                }
-            });
-            console.log('✅ 주문 페이지 크기 선택 이벤트 리스너 연결 완료');
+                orderCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
+            };
         }
 
-        // 이벤트 리스너 연결 완료 플래그 설정
-        window.orderEventListenersAttached = true;
+        // 페이지당 표시 수 선택 — onchange 할당
+        const orderPageSize = document.getElementById('order-page-size');
+        if (orderPageSize) {
+            orderPageSize.onchange = function() {
+                if (window.orderDataManager) window.orderDataManager.renderOrdersTable();
+            };
+        }
+
+        // 피킹 리스트 버튼 — onclick 할당
+        const generatePickingListBtn = document.getElementById('generate-picking-list-btn');
+        if (generatePickingListBtn) {
+            generatePickingListBtn.onclick = async () => { await generatePickingList(); };
+        }
+
         console.log('🔗 주문관리 이벤트 리스너 연결 완료');
 
     } catch (error) {
