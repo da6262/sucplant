@@ -174,44 +174,31 @@ function formatSMSTemplate(template, order) {
     return formattedTemplate;
 }
 
-// SMS 발송 (실제 API 호출)
+// SMS 발송 (실제 API 호출) — sendSolapiSMS 직접 사용
 async function sendSMS(phoneNumber, message, templateType = 'custom') {
     try {
         console.log('📱 SMS API 호출:', { phoneNumber, message, templateType });
-        
-        let result;
-        
-        // SOLAPI 또는 다른 SMS 서비스 연동
-        if (window.solapi) {
-            result = await window.solapi.send({
-                to: phoneNumber,
-                from: '01012345678', // 발신번호
-                text: message
-            });
-            
-            console.log('✅ SOLAPI SMS 발송 성공:', result);
-        } else {
-            // 개발 환경에서는 콘솔에만 출력
-            console.log('📱 SMS 발송 (개발 모드):', { phoneNumber, message });
-            result = { success: true, messageId: 'dev_' + Date.now() };
-        }
-        
+
+        const result = await sendSolapiSMS(phoneNumber, message);
+
+        console.log('✅ SMS 발송 성공:', result);
+
         // SMS 발송 이력 저장
         if (window.saveSMSHistory) {
             window.saveSMSHistory({
-                customerName: '고객', // 실제로는 주문 정보에서 가져와야 함
+                customerName: '고객',
                 phone: phoneNumber,
                 message: message,
                 type: templateType,
-                success: result.success !== false
+                success: true
             });
         }
-        
+
         return result;
-        
+
     } catch (error) {
         console.error('❌ SMS API 호출 실패:', error);
-        
+
         // 실패한 SMS도 이력에 저장
         if (window.saveSMSHistory) {
             window.saveSMSHistory({
@@ -222,7 +209,7 @@ async function sendSMS(phoneNumber, message, templateType = 'custom') {
                 success: false
             });
         }
-        
+
         throw error;
     }
 }
@@ -424,17 +411,32 @@ window.sendWaitlistSMS = sendWaitlistSMS;
 // Solapi API 직접 연동 (고객 문자 발송)
 // =============================================
 
-const SOLAPI_CONFIG = {
+// 기본 하드코딩 값 (환경설정 → SMS → API 인증정보에서 덮어씀)
+const SOLAPI_CONFIG_DEFAULT = {
     apiKey: 'NCS4ZXQ1JWMUPQ3W',
     apiSecret: 'MLER1HFO30FJGXMZLEN9P82TZL6ZWEM2',
     from: '01097456245'
 };
 
+// 런타임에 환경설정 값 우선 사용
+function getSolapiConfig() {
+    try {
+        const saved = window.settingsDataManager?.getAllSettings()?.smsConfig || {};
+        return {
+            apiKey:    saved.apiKey    || SOLAPI_CONFIG_DEFAULT.apiKey,
+            apiSecret: saved.apiSecret || SOLAPI_CONFIG_DEFAULT.apiSecret,
+            from:      saved.from      || SOLAPI_CONFIG_DEFAULT.from
+        };
+    } catch (e) {
+        return SOLAPI_CONFIG_DEFAULT;
+    }
+}
+
 // Web Crypto API로 HMAC-SHA256 서명 생성
-async function _createSolapiSignature(date, salt) {
+async function _createSolapiSignature(date, salt, apiSecret) {
     const enc = new TextEncoder();
     const key = await crypto.subtle.importKey(
-        'raw', enc.encode(SOLAPI_CONFIG.apiSecret),
+        'raw', enc.encode(apiSecret),
         { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']
     );
     const sig = await crypto.subtle.sign('HMAC', key, enc.encode(`${date}${salt}`));
@@ -452,15 +454,16 @@ async function sendSolapiSMS(phoneNumber, message) {
     const normalizedPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
     if (!normalizedPhone) throw new Error('전화번호가 없습니다.');
 
+    const cfg = getSolapiConfig();
     const date = new Date().toISOString();
     const salt = _randomHex(16);
-    const signature = await _createSolapiSignature(date, salt);
-    const authHeader = `HMAC-SHA256 apiKey=${SOLAPI_CONFIG.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+    const signature = await _createSolapiSignature(date, salt, cfg.apiSecret);
+    const authHeader = `HMAC-SHA256 apiKey=${cfg.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
 
     const response = await fetch('https://api.solapi.com/messages/v4/send', {
         method: 'POST',
         headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: { to: normalizedPhone, from: SOLAPI_CONFIG.from, text: message } })
+        body: JSON.stringify({ message: { to: normalizedPhone, from: cfg.from, text: message } })
     });
 
     if (!response.ok) {

@@ -269,6 +269,16 @@ function syncFormToSettings() {
         if (smsComplete) m.settings.smsTemplates.shippingComplete = smsComplete.value || '';
         if (smsWait) m.settings.smsTemplates.waitlistNotify = smsWait.value || '';
     }
+    // API 인증정보
+    const smsApiKey = val('sms-api-key');
+    const smsApiSecret = get('sms-api-secret') ? get('sms-api-secret').value.trim() : '';
+    const smsFromNumber = val('sms-from-number');
+    if (smsApiKey || smsApiSecret || smsFromNumber) {
+        m.settings.smsConfig = m.settings.smsConfig || {};
+        if (smsApiKey) m.settings.smsConfig.apiKey = smsApiKey;
+        if (smsApiSecret) m.settings.smsConfig.apiSecret = smsApiSecret;
+        if (smsFromNumber) m.settings.smsConfig.from = smsFromNumber;
+    }
 }
 
 // 모든 설정 저장
@@ -371,6 +381,24 @@ async function loadSMSSettings() {
     try {
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
+        // API 인증정보 필드 채우기
+        const smsConfig = settings?.smsConfig || {};
+        const apiKeyEl = document.getElementById('sms-api-key');
+        const apiSecretEl = document.getElementById('sms-api-secret');
+        const fromEl = document.getElementById('sms-from-number');
+        if (apiKeyEl) apiKeyEl.value = smsConfig.apiKey || '';
+        if (apiSecretEl) apiSecretEl.value = smsConfig.apiSecret || '';
+        if (fromEl) fromEl.value = smsConfig.from || '';
+        // 인증정보 저장 버튼
+        const saveCfgBtn = document.getElementById('save-sms-config-btn');
+        if (saveCfgBtn && !saveCfgBtn._smsCfgBound) {
+            saveCfgBtn._smsCfgBound = true;
+            saveCfgBtn.addEventListener('click', async () => {
+                syncFormToSettings();
+                await window.settingsDataManager.saveSettings();
+                alert('API 인증정보가 저장되었습니다.');
+            });
+        }
         const container = document.getElementById('sms-templates-list');
         if (!container) return;
         container.innerHTML = '';
