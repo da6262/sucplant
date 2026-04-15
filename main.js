@@ -256,6 +256,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     config.anonKey
                 );
                 console.log('✅ Supabase 클라이언트 초기화 완료');
+                // [고2] 이벤트 기반 초기화 — productData/categoryData가 폴링 없이 대기 중인 Promise를 resolve
+                window.dispatchEvent(new CustomEvent('supabase-ready'));
             } catch (clientError) {
                 console.error('❌ Supabase 클라이언트 생성 실패:', clientError);
                 throw new Error('Supabase 클라이언트 생성 실패: ' + clientError.message);

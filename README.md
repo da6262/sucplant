@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.94-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.0-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.0 | refactor: 상품관리 7대 문제 전면 개선 — ①[고] `farm_products.category_id UUID FK` 컬럼 추가 + 기존 데이터 마이그레이션 + 인덱스, `addProduct`/`updateProduct` 동기화 ②[고] Supabase 클라이언트 대기 폴링(0.5s×20회) → `supabase-ready` CustomEvent 기반 교체 ③[중] `_productDataManagerInitializing`/`_categoryDataManagerInitializing` 플래그로 이중 초기화 방지 ④[중] Supabase Realtime `postgres_changes` 구독으로 다중 탭 실시간 동기화 ⑤[중] 상품코드 DB RPC `get_next_product_code()` 적용으로 race condition 해결 ⑥[저] `window.ProductMgmt`/`window.CategoryMgmt` 네임스페이스 추가 ⑦[저] 카테고리 변경 시 `farm_products` SW 캐시도 함께 무효화 |
 | v3.2.94 | fix: 주소검색 팝업 → embed 오버레이 전환 — `daum.Postcode().open()` 팝업 방식에서 `.embed()` 인페이지 오버레이 방식으로 변경, `q` 초기 쿼리가 새 창(about:blank)에 전달되지 않던 문제 해결. 주소 입력 후 엔터 시 오버레이가 해당 텍스트로 자동 검색, 배경 클릭·✕ 버튼으로 닫기. 주문 메인 주소·추가 배송지 모두 적용 |
 | v3.2.93 | refactor: 상품관리 테이블 셀 클래스 시맨틱 통일 — `createProductRow()`의 인라인 Tailwind 클래스(`px-2 whitespace-nowrap text-xs font-medium text-gray-800` 등)를 `td-primary`·`td-secondary`·`td-muted`·`td-amount`·`td-num` 시맨틱 클래스로 교체, 고객관리·주문관리와 디자인 시스템 통일 |
 | v3.2.92 | fix: 콘솔 오류 완전 제거 — `index.html` 존재하지 않는 스크립트 참조 7개 제거(`auto-waitlist-improvement.js` · `waitlist-data-migration.js` · `waitlist-autocomplete-fix.js` · `waitlist-data-cleanup.js` · `fix-order-data.js` · `fix-module-loading.js` · `web-fallback-system.js`), `loadScriptConditionally` 블록 삭제. fix: `main.js` `updateCategoryDropdown` import 오류 — `categoryUI.js`에서 함수명이 `updateProductCategoryDropdown`으로 변경됐으나 import 미갱신으로 발생한 `SyntaxError` 수정 (별칭 import `as updateCategoryDropdown` 적용) |
