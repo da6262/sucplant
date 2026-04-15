@@ -18,7 +18,7 @@
  *  - table-ui 적용: waitlist · customer · product · shipping(메인+추적)
  *  - order-list-compact 적용: 주문관리
  *  - 전 테이블 th 하드코딩 제거 → .table-ui thead th CSS 변수 단일 제어
- *  - 전 데이터 td py-*/text-sm/text-xs 제거 → CSS 변수 상속
+ *  - 전 데이터 td py-* / text-sm / text-xs 제거 → CSS 변수 상속
  * ────────────────────────────────────────────────────────────────────
  *
  * 사용 예:
