@@ -28,7 +28,7 @@ export async function openOrderModal(orderId = null, customerData = null) {
         }
         
         // 기존 모달이 열려있다면 닫기
-        if (modal.style.display === 'block') {
+        if (!modal.classList.contains('hidden')) {
             console.log('🔄 기존 모달이 열려있어서 닫습니다...');
             closeOrderModal();
             // 잠시 대기 후 다시 열기
@@ -37,12 +37,11 @@ export async function openOrderModal(orderId = null, customerData = null) {
             }, 100);
             return;
         }
-        
+
         const modalTitle = document.getElementById('modal-title');
-        
+
         // 주문 등록 팝업 표시
         modal.classList.remove('hidden');
-        modal.style.display = 'block';
 
         // ESC 키로 닫기
         document.removeEventListener('keydown', _orderModalEscHandler);
@@ -246,7 +245,6 @@ export function closeOrderModal() {
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
-            modal.style.display = 'none';
         }
 
         // ESC 리스너 제거

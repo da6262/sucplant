@@ -90,6 +90,31 @@
     --tbl-hover-bg:         #F0FDF4;
     --tbl-zebra-bg:         #FAFAFA;
     --status-badge-h:       20px;
+
+    /* ══════════════════════════════════════════════
+       SIDEBAR — 다크 그라데이션 팔레트
+       ══════════════════════════════════════════════ */
+    --sidebar-dark:          #0f172a;
+    --sidebar-mid:           #1a2744;
+
+    /* ══════════════════════════════════════════════
+       BADGE — 시맨틱 배지 색상 쌍 (배경 / 텍스트)
+       ══════════════════════════════════════════════ */
+    --badge-neutral-bg:      #F3F4F6;
+    --badge-neutral-txt:     #4B5563;
+    --badge-warning-bg:      #FEF3C7;
+    --badge-warning-txt:     #B45309;
+    --badge-info-bg:         #DBEAFE;
+    --badge-info-txt:        #1D4ED8;
+    --badge-danger-bg:       #FEE2E2;
+    --badge-purple-bg:       #F3E8FF;
+    --badge-purple-txt:      #7C3AED;
+    --badge-sky-bg:          #E0F2FE;
+    --badge-sky-txt:         #0369A1;
+    --badge-orange-bg:       #FFF7ED;
+    --badge-orange-txt:      #C2410C;
+    --badge-green-bg:        #F0FDF4;
+    --badge-gray-txt:        #475569;
 }
 
 /* =====================
@@ -159,7 +184,7 @@ body {
    ===================== */
 
 .sidebar {
-    background: linear-gradient(180deg, #0f172a 0%, #1a2744 100%);
+    background: linear-gradient(180deg, var(--sidebar-dark) 0%, var(--sidebar-mid) 100%);
     border-right: 1px solid rgba(255,255,255,0.05);
     position: fixed;
     top: 0;
@@ -771,16 +796,16 @@ body {
     white-space: nowrap; line-height: 1;
 }
 /* 시맨틱 컬러 — 연한 배경 + 진한 텍스트 (Spec: 8번 가독성) */
-.badge-neutral { background: #F3F4F6; color: #4B5563; }
-.badge-success { background: #DCFCE7; color: var(--primary-hover); }
-.badge-warning { background: #FEF3C7; color: #B45309; }
-.badge-info    { background: #DBEAFE; color: #1D4ED8; }
-.badge-danger  { background: #FEE2E2; color: var(--danger); }
-.badge-purple  { background: #F3E8FF; color: #7C3AED; }
-.badge-sky     { background: #E0F2FE; color: #0369A1; }
-.badge-orange  { background: #FFF7ED; color: #C2410C; }
-.badge-green   { background: #F0FDF4; color: var(--primary-hover); }
-.badge-gray    { background: var(--bg-lighter); color: #475569; }
+.badge-neutral { background: var(--badge-neutral-bg);  color: var(--badge-neutral-txt); }
+.badge-success { background: #DCFCE7;                  color: var(--primary-hover); }
+.badge-warning { background: var(--badge-warning-bg);  color: var(--badge-warning-txt); }
+.badge-info    { background: var(--badge-info-bg);     color: var(--badge-info-txt); }
+.badge-danger  { background: var(--badge-danger-bg);   color: var(--danger); }
+.badge-purple  { background: var(--badge-purple-bg);   color: var(--badge-purple-txt); }
+.badge-sky     { background: var(--badge-sky-bg);      color: var(--badge-sky-txt); }
+.badge-orange  { background: var(--badge-orange-bg);   color: var(--badge-orange-txt); }
+.badge-green   { background: var(--badge-green-bg);    color: var(--primary-hover); }
+.badge-gray    { background: var(--bg-lighter);        color: var(--badge-gray-txt); }
 /* Rich 배지 — 진한 배경 + 흰 텍스트 (Spec: 8번 고대비) */
 .badge-rich-black  { background: #1E293B; color: #fff; }
 .badge-rich-purple { background: #7C3AED; color: #fff; }
@@ -1043,16 +1068,18 @@ table thead th {
     position: fixed; top: 80px; right: 20px;
     width: 380px; height: calc(100vh - 110px);
     display: flex; flex-direction: column;
-    background: #fff; border-radius: 12px;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.18);
-    border: 1px solid #e2e8f0; z-index: 200; overflow: hidden;
+    background: var(--bg-white); border-radius: var(--radius-xl);
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border); z-index: 200; overflow: hidden;
 }
+/* .hidden이 flex display를 이기도록 명시적 오버라이드 */
+.crm-panel.hidden { display: none !important; }
 .crm-panel-header {
-    padding: 8px 12px; border-bottom: 1px solid #e2e8f0;
+    padding: 8px 12px; border-bottom: 1px solid var(--border);
     display: flex; justify-content: space-between; align-items: center;
     flex-shrink: 0;
 }
-.crm-panel-title  { font-size: 13px; font-weight: 600; color: #1E293B; }
-.crm-panel-close  { color: #9ca3af; font-size: 16px; background: none; border: none; cursor: pointer; line-height: 1; }
+.crm-panel-title  { font-size: 13px; font-weight: 600; color: var(--text-primary); }
+.crm-panel-close  { color: var(--text-muted); font-size: 16px; background: none; border: none; cursor: pointer; line-height: 1; }
 .crm-panel-close:hover { color: var(--text-body); }
 .crm-panel-body   { flex: 1; overflow-y: auto; padding: 12px; min-height: 0; }

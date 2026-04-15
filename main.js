@@ -15,6 +15,9 @@ import {
     nullDash, emptyDash
 } from './utils/formatters.js';
 
+// ── 공통 UI 렌더러 ────────────────────────────────────────────
+import { renderPageHeader, renderFilterBar, renderEmptyRow } from './utils/ui.js';
+
 // 전역 노출 — components/* 및 레거시 코드에서 window.fmt.date() 형태로 사용
 window.fmt = {
     date:     formatDate,

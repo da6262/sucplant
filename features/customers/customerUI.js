@@ -678,13 +678,13 @@ async function showCustomerDetailInPanel(customer) {
                 panel = document.createElement('div');
                 panel.id = '_dyn_detail_panel';
                 panel.className = 'crm-panel';
-                panel.innerHTML = '<div class="crm-panel-header"><span class="crm-panel-title">고객 상세</span><button class="crm-panel-close" onclick="document.getElementById(\'_dyn_detail_panel\').style.display=\'none\'">✕</button></div><div id="customer-detail-content" class="crm-panel-body"></div>';
+                panel.innerHTML = '<div class="crm-panel-header"><span class="crm-panel-title">고객 상세</span><button class="crm-panel-close" onclick="document.getElementById(\'_dyn_detail_panel\').classList.add(\'hidden\')">✕</button></div><div id="customer-detail-content" class="crm-panel-body"></div>';
                 document.body.appendChild(panel);
             }
             detailContent = document.getElementById('customer-detail-content');
         }
         // 패널이 숨겨져 있으면 다시 표시
-        if (panel) panel.style.display = 'flex';
+        if (panel) panel.classList.remove('hidden');
 
         console.log('✅ 고객 상세 정보 컨테이너 찾음:', detailContent);
         
@@ -711,7 +711,7 @@ async function showCustomerDetailInPanel(customer) {
                             <h3 class="text-lg font-semibold text-gray-900">${escapeHtml(customer.name || '-')}</h3>
                             <p class="text-sm text-gray-600 mt-0.5"><i class="fas fa-phone-alt text-gray-400 mr-1"></i>${escapeHtml(customer.phone || '-')}</p>
                             <p class="text-sm text-gray-600 break-words"><i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>${escapeHtml(addressFull)}</p>
-                            <p class="text-xs text-gray-500 mt-1">등급 <span class="px-1.5 py-0.5 text-xs font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span> · 등록일 ${customer.registration_date || '-'}</p>
+                            <p class="text-xs text-gray-500 mt-1">등급 <span class="px-1.5 py-0.5 text-xs font-medium rounded ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span> · 등록일 ${formatDate(customer.registration_date)}</p>
                         </div>
                         <div class="flex gap-6 shrink-0">
                             <div class="text-center">
@@ -1083,7 +1083,7 @@ async function updateCustomerBasicInfo(customer) {
     
     const registrationDateElement = document.getElementById('customer-detail-registration-date');
     if (registrationDateElement) {
-        registrationDateElement.textContent = customer.registration_date || '등록일 없음';
+        registrationDateElement.textContent = formatDate(customer.registration_date) || '등록일 없음';
     }
 }
 

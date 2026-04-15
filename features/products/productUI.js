@@ -405,8 +405,7 @@ export class ProductUI {
             // 모달 표시
             console.log('📦 모달 표시 중...');
             modal.classList.remove('hidden');
-            modal.style.display = 'flex';
-            
+
             // 카테고리 드롭다운 초기화
             console.log('🔄 카테고리 드롭다운 초기화 중...');
             await this.initCategoryOptions();
@@ -630,13 +629,11 @@ export class ProductUI {
             if (sizeSelect.value === 'custom') {
                 console.log('🔧 직접 기입 모드 활성화 중...');
                 sizeCustom.classList.remove('hidden');
-                sizeCustom.style.display = 'block';
                 sizeCustom.focus();
                 console.log('✅ 직접 기입 모드 활성화 완료');
             } else {
                 console.log('🔧 직접 기입 모드 비활성화 중...');
                 sizeCustom.classList.add('hidden');
-                sizeCustom.style.display = 'none';
                 sizeCustom.value = '';
                 console.log('✅ 직접 기입 모드 비활성화 완료');
             }
@@ -747,8 +744,7 @@ export class ProductUI {
             const modal = document.getElementById('product-modal');
             if (modal) {
                 modal.classList.add('hidden');
-                modal.style.display = 'none';
-                
+
             // 폼 초기화
                 this.resetProductForm();
                 
@@ -809,7 +805,6 @@ export class ProductUI {
             }
             
             if (sizeCustomElement) {
-                sizeCustomElement.style.display = 'none';
                 sizeCustomElement.classList.add('hidden');
                 sizeCustomElement.value = '';
             } else {
@@ -926,18 +921,18 @@ export class ProductUI {
                     if (standardSizes.includes(productSize)) {
                         // 표준 사이즈인 경우
                         sizeSelect.value = productSize;
-                        sizeCustom.style.display = 'none';
+                        sizeCustom.classList.add('hidden');
                         console.log(`✅ 표준 사이즈 설정: ${productSize}`);
                     } else if (productSize) {
                         // 직접 입력된 사이즈인 경우
                         sizeSelect.value = 'custom';
                         sizeCustom.value = productSize;
-                        sizeCustom.style.display = 'block';
+                        sizeCustom.classList.remove('hidden');
                         console.log(`✅ 커스텀 사이즈 설정: ${productSize}`);
                     } else {
                         // 사이즈가 없는 경우
                         sizeSelect.value = '';
-                        sizeCustom.style.display = 'none';
+                        sizeCustom.classList.add('hidden');
                         console.log('✅ 사이즈 없음');
                     }
                 } else {
@@ -1970,22 +1965,22 @@ export class ProductUI {
             // 상품 모달 숨기기
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                productModal.style.display = 'none';
+                productModal.classList.add('hidden');
                 console.log('✅ 상품 모달 숨김');
             }
-            
+
             // 카테고리 관리 모달 열기
             if (window.openCategoryModal) {
                 await window.openCategoryModal();
                 console.log('✅ 카테고리 관리 모달 열림');
-                
+
                 // 카테고리 모달이 닫힐 때를 감지하기 위한 옵저버 설정
                 this.setupCategoryModalObserver();
             } else {
                 console.error('❌ openCategoryModal 함수를 찾을 수 없습니다');
                 // 상품 모달 다시 표시
                 if (productModal) {
-                    productModal.style.display = 'flex';
+                    productModal.classList.remove('hidden');
                 }
             }
             
@@ -1994,7 +1989,7 @@ export class ProductUI {
             // 오류 발생 시 상품 모달 다시 표시
             const productModal = document.getElementById('product-modal');
             if (productModal) {
-                productModal.style.display = 'flex';
+                productModal.classList.remove('hidden');
             }
         }
     }
