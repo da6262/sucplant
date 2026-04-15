@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.69-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.71-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,12 +148,12 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.70 | 고객 상세 중앙 팝업 모달 전환 — 고객 클릭 시 860px 중앙 팝업(modal-overlay)으로 표시, 좌(프로필·지표·액션)/우(주문이력·메모) 2컬럼 레이아웃, 바깥 클릭·X 닫기, 스플릿뷰 방식 제거 |
 | v3.2.69 | 주문 상세 모달 수정 버튼 클릭 시 상세 모달 미닫힘 수정 — 수정 폼 열기 전 상세 모달 hidden 처리 |
 | v3.2.68 | 새 주문 버튼 재방문 먹통 근본 원인 제거 — cleanupOrderEventListeners를 플래그 리셋만 하도록 단순화(cloneNode 제거), initializeOrderManagement 중복 cleanup 제거, loadOrderDetailModal 중복 방지 guard 추가 |
 | v3.2.67 | 주문 기본 진입 탭 변경 — 주문관리 열 때 `work_todo`(처리할 주문) 대신 `all`(전체) 탭으로 진입 |
 | v3.2.66 | 주문관리 사이드바 배지 추가 — nav 주문관리 버튼 옆에 처리할 주문 건수 실시간 표시, 새 주문 기본 상태 `입금대기` → `주문접수` 변경 |
 | v3.2.65 | 환경설정 배송 전체 연결 — ①`shippingMethods` 목록 편집 UI 추가(환경설정 배송 탭), ②주문 등록 배송방법 드롭다운 `settings.shipping.shippingMethods` 동적 로드, ③픽업·방문·수령 포함 방법은 자동 배송비 0원 처리, ④배송방법 목록이 기본값(택배·직접배송·픽업)으로 통일 |
-| v3.2.63 | 고객관리 CRM 패널 스플릿 뷰 전환 — `position:fixed` 플로팅 오버레이 → 좌(목록)/우(상세) flex 인라인 스플릿 레이아웃, 고객 클릭 시 패널이 옆에 열리며 목록 너비 자동 축소, 지표 카드 3분할(총구매액·주문횟수·단골점수), 액션버튼 역할별 분리(문자/전화=secondary, 주문추가=primary) |
 | v3.2.60 | 환경설정 SMS 인증정보 저장 연결 — `save-sms-config-btn` 이벤트 연결, API Key/Secret/발신번호 저장·불러오기 |
 | v3.2.59 | 고객 수정 모달 주문이력 탭 복원 — 수정 모달 열 때 주문 내역 탭이 사라지던 문제 수정 |
 | v3.2.58 | 상품 등록 모달 애니메이션 복구 — `panelSlideIn` 키프레임 flexbox 기준으로 재작성(`translateY` 방식) |
