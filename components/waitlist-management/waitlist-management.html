@@ -23,17 +23,20 @@
             <span class="text-[11px] text-gray-500">주문전환 <strong id="waitlist-converted-count" class="text-gray-800">0</strong></span>
             <span class="text-[11px] text-gray-500">취소 <strong id="waitlist-cancelled-count" class="text-gray-800">0</strong></span>
         </div>
-        <!-- 상태 탭 + 검색 한 줄 -->
-        <div class="flex items-center gap-2 px-3 py-1.5">
-            <nav class="flex gap-0.5 flex-shrink-0">
+        <!-- 상태 탭 -->
+        <div class="shrink-0 px-3 py-1.5 border-b border-gray-100 bg-white">
+            <nav class="flex gap-0.5 flex-nowrap overflow-x-auto" style="scrollbar-width:none;">
                 <button id="farm_waitlist-status-all" class="status-tab-btn active">전체 <span class="tab-count" id="waitlist-count-all">0</span></button>
                 <button id="farm_waitlist-status-대기중" class="status-tab-btn">대기중 <span class="tab-count" id="waitlist-count-대기중">0</span></button>
                 <button id="farm_waitlist-status-연락완료" class="status-tab-btn">연락완료 <span class="tab-count" id="waitlist-count-연락완료">0</span></button>
                 <button id="farm_waitlist-status-주문전환" class="status-tab-btn">주문전환 <span class="tab-count" id="waitlist-count-주문전환">0</span></button>
                 <button id="farm_waitlist-status-취소" class="status-tab-btn">취소 <span class="tab-count" id="waitlist-count-취소">0</span></button>
             </nav>
-            <input type="text" id="waitlist-search" placeholder="고객명, 전화번호, 상품명 검색..." class="input-ui flex-1">
-            <button id="reset-waitlist-search" class="btn-secondary flex-shrink-0"><i class="fas fa-times"></i></button>
+        </div>
+        <!-- 검색 필터 바 -->
+        <div class="filter-bar">
+            <input type="text" id="waitlist-search" placeholder="고객명, 전화번호, 상품명 검색..." class="input-ui" style="max-width:240px;">
+            <button id="reset-waitlist-search" class="btn-secondary"><i class="fas fa-times"></i>초기화</button>
         </div>
     </div>
 

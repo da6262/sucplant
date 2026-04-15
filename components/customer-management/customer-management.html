@@ -12,21 +12,21 @@
     </div>
 
     <!-- 검색 + 필터 한 줄 -->
-    <div class="flex flex-wrap items-center gap-1.5 px-3 py-1.5 border-b border-gray-100 shrink-0">
+    <div class="filter-bar">
         <div class="relative">
             <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
-                   class="input-ui py-1 pl-2 pr-7 w-44" autocomplete="off">
+                   class="input-ui" style="max-width:240px;padding-right:28px;" autocomplete="off">
             <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 text-xs pointer-events-none"></i>
             <div id="customer-search-suggestions" class="absolute left-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden" style="min-width:200px;"></div>
         </div>
-        <select id="customer-sort" class="input-ui py-1 w-28">
+        <select id="customer-sort" class="input-ui" style="max-width:140px;">
             <option value="newest">최근등록순</option>
             <option value="name_asc">이름↑</option>
             <option value="name_desc">이름↓</option>
             <option value="grade_high">등급순</option>
         </select>
-        <button id="apply-customer-sort" class="btn-primary py-1 px-2 text-xs">적용</button>
-        <button id="reset-customer-search" class="btn-secondary py-1 px-2 text-xs"><i class="fas fa-refresh"></i></button>
+        <button id="apply-customer-sort" class="btn-search">적용</button>
+        <button id="reset-customer-search" class="btn-secondary"><i class="fas fa-refresh"></i></button>
         <span class="text-gray-300">|</span>
         <span class="text-xs text-gray-500">등급:</span>
         <button id="customer-grade-all"           class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-gray-700 hover:bg-emerald-50 hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>

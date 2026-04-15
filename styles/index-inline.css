@@ -735,6 +735,39 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 .page-title { font-size: 15px; font-weight: 700; color: #111827; }
 .page-desc  { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
 
+/* =====================
+   Filter Bar — 검색/필터 영역 표준화 (8대 스펙)
+   ===================== */
+.filter-bar {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 8px 24px;
+    border-bottom: 1px solid #E2E8F0;
+    background-color: #ffffff;
+    flex-shrink: 0;
+}
+/* 검색 텍스트 입력창 최대 폭 제한 */
+.filter-bar input[type="text"],
+.filter-bar input[type="search"] {
+    max-width: 240px;
+}
+/* 검색 버튼 — 브랜드 컬러 #22C55E (Primary Action) */
+.btn-search {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: #22C55E; color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s; flex-shrink: 0;
+}
+.btn-search:hover { background: #16A34A; }
+.btn-search i, .btn-search .fas { font-size: 11px; }
+/* 반응형 */
+@media (max-width: 768px) {
+    .filter-bar { gap: 8px; padding: 8px 16px; }
+}
+
 /* Status tab */
 .status-tab-btn {
     padding: 5px 10px; font-size: 11px; font-weight: 500;

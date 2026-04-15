@@ -42,7 +42,7 @@
 </div>
 
 <!-- 날짜 필터 바 -->
-<div id="order-date-filter-bar" class="shrink-0 flex items-center gap-2 px-3 py-1.5 border-b border-gray-100 bg-white flex-wrap">
+<div id="order-date-filter-bar" class="filter-bar">
     <span class="text-[11px] font-medium text-gray-500 shrink-0">기간</span>
     <div class="flex items-center gap-1 flex-wrap">
         <button onclick="setOrderDateFilter('today')" id="date-btn-today" class="order-date-quick-btn">오늘</button>
@@ -55,10 +55,10 @@
         </button>
     </div>
     <div id="order-date-picker-wrap" class="hidden flex items-center gap-1.5">
-        <input type="date" id="order-date-from" class="input-ui" style="padding:3px 8px;font-size:11px;width:auto;">
+        <input type="date" id="order-date-from" class="input-ui" style="font-size:11px;width:auto;">
         <span class="text-[11px] text-gray-400">~</span>
-        <input type="date" id="order-date-to" class="input-ui" style="padding:3px 8px;font-size:11px;width:auto;">
-        <button onclick="applyOrderDateRange()"     class="btn-primary"   style="padding:3px 10px;font-size:11px;">적용</button>
+        <input type="date" id="order-date-to" class="input-ui" style="font-size:11px;width:auto;">
+        <button onclick="applyOrderDateRange()"     class="btn-search"   style="padding:3px 10px;font-size:11px;">적용</button>
         <button onclick="setOrderDateFilter('all')" class="btn-secondary" style="padding:3px 8px;font-size:11px;">초기화</button>
     </div>
     <span id="order-date-label" class="text-[11px] text-green-600 font-medium ml-auto hidden"></span>

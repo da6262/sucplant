@@ -10,29 +10,29 @@
     </div>
 </div>
 
-<!-- 검색 및 필터 (카드 없이 한 줄) -->
-<div class="flex gap-2 px-3 py-1.5 border-b border-gray-100">
-    <input type="text" id="product-search" placeholder="상품명 검색..." class="input-ui" style="flex:2; min-width:0;">
-    <select id="product-category-filter" class="input-ui" style="flex:1; min-width:0;">
+<!-- 검색 및 필터 -->
+<div class="filter-bar">
+    <input type="text" id="product-search" placeholder="상품명 검색..." class="input-ui" style="max-width:240px;">
+    <select id="product-category-filter" class="input-ui" style="max-width:150px;">
         <option value="">전체 카테고리</option>
         <option value="다육식물">다육식물</option>
         <option value="화분">화분</option>
         <option value="용품">용품</option>
     </select>
-    <select id="product-stock-filter" class="input-ui" style="flex:1; min-width:0;">
+    <select id="product-stock-filter" class="input-ui" style="max-width:120px;">
         <option value="">재고 전체</option>
         <option value="in-stock">재고 있음</option>
         <option value="low-stock">재고 부족</option>
         <option value="out-of-stock">품절</option>
     </select>
-    <select id="product-price-filter" class="input-ui" style="flex:1; min-width:0;">
+    <select id="product-price-filter" class="input-ui" style="max-width:120px;">
         <option value="">가격 전체</option>
         <option value="0-10000">1만원 이하</option>
         <option value="10000-30000">1-3만원</option>
         <option value="30000-50000">3-5만원</option>
         <option value="50000+">5만원 이상</option>
     </select>
-    <button id="product-filter-btn" class="btn-secondary flex-shrink-0">
+    <button id="product-filter-btn" class="btn-search">
         <i class="fas fa-search"></i>검색
     </button>
 </div>
