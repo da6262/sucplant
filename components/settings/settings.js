@@ -260,14 +260,15 @@ function syncFormToSettings() {
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('express-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.expressShippingFee = num('express-shipping-fee'); }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
-    const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify');
-    if (smsOrder || smsPay || smsStart || smsComplete || smsWait) {
+    const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
+    if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {
         m.settings.smsTemplates = m.settings.smsTemplates || {};
         if (smsOrder) m.settings.smsTemplates.orderConfirm = smsOrder.value || '';
         if (smsPay) m.settings.smsTemplates.paymentConfirm = smsPay.value || '';
         if (smsStart) m.settings.smsTemplates.shippingStart = smsStart.value || '';
         if (smsComplete) m.settings.smsTemplates.shippingComplete = smsComplete.value || '';
         if (smsWait) m.settings.smsTemplates.waitlistNotify = smsWait.value || '';
+        if (smsOos) m.settings.smsTemplates.outOfStock = smsOos.value || '';
     }
     // API 인증정보
     const smsApiKey = val('sms-api-key');
@@ -408,6 +409,7 @@ async function loadSMSSettings() {
             { key: 'shippingStart',   label: '배송시작',  fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
             { key: 'shippingComplete',label: '배송완료',  fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
             { key: 'waitlistNotify',  label: '대기품목',  fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+            { key: 'outOfStock',      label: '품절안내',  fieldId: 'sms-out-of-stock',      vars: '{customerName} {orderNumber}' },
         ];
         templates.forEach(tpl => {
             const value = smsSettings[tpl.key] || '';

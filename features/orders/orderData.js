@@ -933,13 +933,18 @@ class OrderDataManager {
                 ddayText = dday.text;
                 ddayWarn = dday.warn;
             }
+            // 장기 미입금 강조: 입금대기 상태 + 3일 이상 경과
+            const dNum = isRowSpec ? order.d_day : (ddayText !== '-' ? parseInt(ddayText.replace('D+','')) : null);
+            const isOverdue = orderStatus === '입금대기' && dNum != null && dNum >= 3;
+
             const smsStatus = isRowSpec ? { label: '미발송', tip: '클릭하여 SMS 발송' } : this.getSmsStatus(order);
             const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
             const nullDash = '<span class="td-null">—</span>';
+            const rowBg = isSelected ? 'bg-indigo-50' : (isOverdue ? 'bg-red-50 hover:bg-red-100' : 'hover:bg-gray-50');
             return `
-                <tr class="hover:bg-gray-50 transition-colors border-b border-gray-100 ${isSelected ? 'bg-indigo-50' : ''} cursor-pointer py-0"
+                <tr class="${rowBg} transition-colors border-b border-gray-100 cursor-pointer py-0"
                     onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
                     <td class="px-2 py-1.5 text-center align-middle" onclick="event.stopPropagation()">
@@ -947,7 +952,7 @@ class OrderDataManager {
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 py-1.5 text-center td-num ${ddayWarn ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}</td>
+                    <td class="px-2 py-1.5 text-center td-num ${(ddayWarn || isOverdue) ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
                     <td class="px-2 py-1.5 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
                     <td class="px-2 py-1.5 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
                     <td class="px-2 py-1.5 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
@@ -1151,10 +1156,16 @@ class OrderDataManager {
     }
     
     // 주문상태 변경
-    async changeOrderStatus(orderId, newStatus) {
+    async changeOrderStatus(orderId, newStatus, refundReason = null) {
+        // 환불완료 시 사유 입력 모달 먼저 표시
+        if (newStatus === '환불완료' && refundReason === null) {
+            this._showRefundReasonModal(orderId);
+            return;
+        }
+
         try {
             console.log('주문상태 변경:', { orderId, newStatus });
-            
+
             // 로딩 상태 표시
             const statusElement = document.querySelector(`[onclick*="toggleOrderStatusEdit('${orderId}'"]`);
             if (statusElement) {
@@ -1165,37 +1176,49 @@ class OrderDataManager {
                     </div>
                 `;
             }
-            
+
             // Supabase 클라이언트 확인
             if (!window.supabaseClient) {
                 console.error('❌ Supabase 클라이언트가 연결되지 않았습니다');
                 alert('데이터베이스 연결이 필요합니다.');
                 return;
             }
-            
+
+            // 업데이트 데이터 구성 (환불 사유 있으면 memo에 추가)
+            const updateData = {
+                order_status: newStatus,
+                updated_at: new Date().toISOString()
+            };
+            if (refundReason) {
+                const { data: ord } = await window.supabaseClient
+                    .from('farm_orders').select('memo').eq('id', orderId).single();
+                const prevMemo = ord?.memo || '';
+                const dateStr = new Date().toLocaleDateString('ko-KR');
+                updateData.memo = prevMemo
+                    ? `${prevMemo}\n[환불사유 ${dateStr}] ${refundReason}`
+                    : `[환불사유 ${dateStr}] ${refundReason}`;
+            }
+
             // Supabase 업데이트
             const { error } = await window.supabaseClient
                 .from('farm_orders')
-                .update({ 
-                    order_status: newStatus,
-                    updated_at: new Date().toISOString()
-                })
+                .update(updateData)
                 .eq('id', orderId);
-            
+
             if (error) {
                 console.error('❌ 주문상태 업데이트 실패:', error);
                 alert('주문상태 업데이트에 실패했습니다: ' + error.message);
                 return;
             }
-            
+
             console.log('✅ 주문상태 업데이트 완료');
-            
+
             // 주문 취소/환불 시 고객 구매 금액 차감 및 재고 복원 처리
             if (newStatus === '주문취소' || newStatus === '환불완료') {
                 await this.handleOrderCancellation(orderId);
                 await this.restoreProductStock(orderId);
             }
-            
+
             const orderIndex = (this.farm_orders || []).findIndex(order => order.id === orderId);
             if (orderIndex !== -1) {
                 this.farm_orders[orderIndex].order_status = newStatus;
@@ -1207,14 +1230,68 @@ class OrderDataManager {
             await this.loadOrders();
             this.renderOrdersTable();
             this.updateFilterCounts();
-            
+
             // 성공 메시지
             this.showStatusChangeSuccess(orderId, newStatus);
-            
+
+            // 입금확인 시 SMS 발송 옵션 제공
+            if (newStatus === '입금확인') {
+                setTimeout(() => {
+                    if (confirm('입금확인 문자를 발송할까요?')) {
+                        if (window.showSMSTemplateModal) {
+                            window.showSMSTemplateModal(orderId);
+                            setTimeout(() => {
+                                const sel = document.getElementById('sms-template-select');
+                                if (sel) { sel.value = 'paymentConfirm'; sel.dispatchEvent(new Event('change')); }
+                            }, 150);
+                        }
+                    }
+                }, 300);
+            }
+
         } catch (error) {
             console.error('❌ 주문상태 변경 실패:', error);
             alert('주문상태 변경에 실패했습니다: ' + error.message);
         }
+    }
+
+    // 환불 사유 입력 모달
+    _showRefundReasonModal(orderId) {
+        const existing = document.getElementById('refund-reason-modal');
+        if (existing) existing.remove();
+
+        const modal = document.createElement('div');
+        modal.id = 'refund-reason-modal';
+        modal.className = 'fixed inset-0 z-[600] flex items-center justify-center';
+        modal.innerHTML = `
+            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
+            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
+                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
+                    <span class="font-semibold text-gray-800 text-sm"><i class="fas fa-undo text-red-500 mr-2"></i>환불 사유 입력</span>
+                    <button id="refund-modal-close" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-sm"></i></button>
+                </div>
+                <div class="px-4 py-3">
+                    <textarea id="refund-reason-input" rows="3"
+                        class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
+                        placeholder="환불 사유를 입력하세요 (예: 상품 불량, 단순 변심 등)"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
+                    <button id="refund-modal-cancel" class="btn-secondary">취소</button>
+                    <button id="refund-modal-confirm" class="btn-primary"><i class="fas fa-check mr-1"></i>환불완료 처리</button>
+                </div>
+            </div>
+        `;
+        document.body.appendChild(modal);
+
+        const close = () => modal.remove();
+        modal.querySelector('#refund-modal-close').addEventListener('click', close);
+        modal.querySelector('#refund-modal-cancel').addEventListener('click', close);
+        modal.querySelector('#refund-modal-confirm').addEventListener('click', async () => {
+            const reason = modal.querySelector('#refund-reason-input').value.trim();
+            modal.remove();
+            await this.changeOrderStatus(orderId, '환불완료', reason || '사유 없음');
+        });
+        modal.querySelector('#refund-reason-input').focus();
     }
     
     // 상태 변경 성공 메시지 표시

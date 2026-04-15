@@ -13,7 +13,7 @@ const DEFAULT_SMS_TEMPLATES = {
     },
     shippingStart: {
         name: '배송시작',
-        template: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}'
+        template: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}\n배송조회: https://trace.cjlogistics.com/web/detail.jsp?slipno={trackingNumber}'
     },
     shippingComplete: {
         name: '배송완료',
@@ -22,6 +22,10 @@ const DEFAULT_SMS_TEMPLATES = {
     waitlistNotify: {
         name: '대기품목안내',
         template: '[경산다육식물농장] {customerName}님, 대기하신 상품이 입고되었습니다.\n상품명: {productName}\n수량: {quantity}개\n주문 가능합니다.'
+    },
+    outOfStock: {
+        name: '품절안내',
+        template: '[경산다육식물농장] {customerName}님, 죄송합니다.\n주문하신 상품이 품절되어 배송이 어렵습니다.\n주문번호: {orderNumber}\n빠른 시일 내 재입고 예정이오니 양해 부탁드립니다.\n문의: 010-9745-6245'
     }
 };
 
@@ -53,6 +57,10 @@ function getSMSTemplates() {
                 waitlistNotify: {
                     name: '대기품목안내',
                     template: smsTemplates.waitlistNotify || DEFAULT_SMS_TEMPLATES.waitlistNotify.template
+                },
+                outOfStock: {
+                    name: '품절안내',
+                    template: smsTemplates.outOfStock || DEFAULT_SMS_TEMPLATES.outOfStock.template
                 }
             };
         }
@@ -287,6 +295,7 @@ function showSMSTemplateModal(orderId) {
                                         <option value="paymentConfirm">입금확인</option>
                                         <option value="shippingStart">배송시작</option>
                                         <option value="shippingComplete">배송완료</option>
+                                        <option value="outOfStock">품절안내</option>
                                     </select>
                                 </div>
                                 
@@ -351,20 +360,33 @@ async function sendOrderSMSFromModal(orderId) {
     try {
         const templateSelect = document.getElementById('sms-template-select');
         const messageTextarea = document.getElementById('sms-message');
-        
+
         const templateType = templateSelect.value;
         const customMessage = messageTextarea.value.trim();
-        
+
         if (!customMessage) {
             alert('메시지를 입력해주세요.');
             return;
         }
-        
+
         await sendOrderSMS(orderId, templateType, customMessage);
-        
-        alert('SMS가 발송되었습니다.');
         closeSMSTemplateModal();
-        
+
+        // 주문확인 문자 발송 완료 → 자동으로 입금대기 상태로 전환
+        if (templateType === 'orderConfirm') {
+            if (window.updateOrderStatus) {
+                await window.updateOrderStatus(orderId, '입금대기');
+                console.log('✅ 주문확인 문자 발송 완료 → 입금대기 상태로 자동 전환');
+            }
+            alert('SMS가 발송되었습니다.\n주문 상태가 [입금대기]로 변경되었습니다.');
+            // 주문 목록 새로고침
+            if (window.orderDataManager?.renderOrdersTable) {
+                window.orderDataManager.renderOrdersTable();
+            }
+        } else {
+            alert('SMS가 발송되었습니다.');
+        }
+
     } catch (error) {
         console.error('❌ SMS 발송 실패:', error);
         alert('SMS 발송에 실패했습니다: ' + error.message);
