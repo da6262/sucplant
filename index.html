@@ -1236,8 +1236,7 @@
                         console.error('❌ Supabase 클라이언트 초기화 실패:', error);
                     }
                 } else {
-                    console.warn('⚠️ Supabase 또는 설정이 로드되지 않았습니다');
-                    console.log('🔍 사용 가능한 객체들:', Object.keys(window).filter(key => key.includes('supabase')));
+                    // Supabase는 main.js 모듈에서 초기화됨 — 이 경로는 fallback
                 }
             }, 1000);
             

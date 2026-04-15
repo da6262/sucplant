@@ -63,14 +63,12 @@ export class ProductUI {
      */
     setupProductNameAutocomplete() {
         try {
-            console.log('🔍 상품명 자동완성 기능 설정 중...');
-            
             const nameInput = document.getElementById('product-form-name');
             const suggestionsContainer = document.getElementById('product-name-suggestions');
             const duplicateWarning = document.getElementById('product-name-duplicate-warning');
-            
+
+            // 모달이 아직 로드되지 않은 경우 조용히 종료 (동적 로드 후 재호출됨)
             if (!nameInput || !suggestionsContainer) {
-                console.warn('⚠️ 상품명 자동완성 요소를 찾을 수 없습니다');
                 return;
             }
             

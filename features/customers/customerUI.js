@@ -633,6 +633,10 @@ window.showCustomerDetail = async function(customerId) {
             el.classList.toggle('ring-emerald-500', el.getAttribute('data-customer-id') === customerId);
         });
         
+        // 패널 열기 (detail-open 클래스 추가)
+        const layout = document.querySelector('.customer-admin-layout');
+        if (layout) layout.classList.add('detail-open');
+
         // 1. 오른쪽 패널에 상세 정보 표시
         await showCustomerDetailInPanel(customer);
         
@@ -2158,27 +2162,14 @@ function initCustomerSortListener() {
     // 정렬 버튼 클릭 이벤트
     if (applySortBtn) {
         applySortBtn.addEventListener('click', applySort);
-        console.log('✅ 고객 정렬 버튼 이벤트 리스너 등록 완료');
-    } else {
-        console.warn('⚠️ apply-customer-sort 버튼을 찾을 수 없습니다');
     }
-    
-    // Select 변경 시에도 바로 적용 (선택적)
+
+    // Select 변경 시에도 바로 적용
     if (sortSelect) {
         sortSelect.addEventListener('change', applySort);
-        console.log('✅ 고객 정렬 select 이벤트 리스너 등록 완료');
-    } else {
-        console.warn('⚠️ customer-sort 요소를 찾을 수 없습니다');
     }
+    // 요소가 없으면 조용히 종료 (고객관리 컴포넌트 동적 로드 후 재호출됨)
 }
 
-// 페이지 로드 시 이벤트 리스너 설정
+// 전역 등록 — 고객관리 컴포넌트 로드 완료 시점에 호출됨
 window.initCustomerSortListener = initCustomerSortListener;
-
-// DOM 로드 완료 후 자동 초기화
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initCustomerSortListener);
-} else {
-    // 이미 로드된 경우 즉시 실행
-    setTimeout(initCustomerSortListener, 100);
-}
