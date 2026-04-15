@@ -414,15 +414,6 @@ export class ProductUI {
             // 카테고리 이벤트 리스너 설정 (모달을 열 때마다 재설정)
             this.setupCategoryEventListeners();
             
-            // 완전한 중앙 정렬을 위한 추가 스타일
-            const modalContent = document.getElementById('product-modal-content');
-            if (modalContent) {
-                modalContent.style.marginLeft = 'auto';
-                modalContent.style.marginRight = 'auto';
-                modalContent.style.marginTop = '0';
-                modalContent.style.marginBottom = '0';
-            }
-            
             // 모달 제목 설정
             const modalTitle = document.getElementById('product-modal-title');
             if (modalTitle) {

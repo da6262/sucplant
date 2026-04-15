@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.79-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.80-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.80 | 상품 등록 모달 표시 버그 수정 — `style="display:none;"` → `hidden` 클래스로 통일, `modal-container`의 `scale-95 opacity-0 transition-all` 애니메이션 클래스 제거, `product-modal-content` 불필요한 margin 조작 코드 삭제 |
 | v3.2.79 | 대기자 등록 시 고객관리 자동 추가 — 새 대기자 등록 시 동일 전화번호 고객이 없으면 `farm_customers`에 자동 삽입, 중복 방지 로직 포함 |
 | v3.2.77 | 대기자 등록 모달 디자인 시스템 적용 — `modal-overlay/container/header/body/footer` 표준 구조, `form-grid` 12컬럼(고객명·연락처·희망상품명·카테고리·희망가격+원·우선순위·메모), `form-control` 42px 통일, `btn-secondary/primary` 버튼, 바깥 클릭 닫기 |
 | v3.2.75 | fix: main.js 삭제된 `loadNotificationSettings` import 제거 |
