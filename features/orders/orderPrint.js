@@ -5,10 +5,11 @@
 function getFarmInfo() {
     const farm = window.settingsDataManager?.settings?.farm || {};
     return {
-        name:    farm.name    || '경산다육식물농장',
-        owner:   farm.owner   || '',
-        phone:   farm.phone   || '',
-        address: farm.address || '',
+        name:           farm.name           || '경산다육식물농장',
+        owner:          farm.owner          || '',
+        phone:          farm.phone          || '',
+        address:        farm.address        || '',
+        businessNumber: farm.businessNumber || '',
     };
 }
 
@@ -271,6 +272,7 @@ function generateOrderPrintHTML(order) {
                 <div class="footer">
                     <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
                     ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
+                    ${farm.businessNumber ? `<p>사업자등록번호: ${farm.businessNumber}</p>` : ''}
                     <p>이 주문서는 컴퓨터로 자동 생성되었습니다.</p>
                 </div>
             </div>
@@ -415,6 +417,7 @@ function _pickingFooter(farm) {
         <div class="footer">
             <p>${farm.name}${farm.owner ? ' | 대표: ' + farm.owner : ''}</p>
             ${farm.address || farm.phone ? `<p>${[farm.address, farm.phone].filter(Boolean).join(' | ')}</p>` : ''}
+            ${farm.businessNumber ? `<p>사업자등록번호: ${farm.businessNumber}</p>` : ''}
             <p>생성일: ${new Date().toLocaleString('ko-KR')}</p>
             <p>이 문서는 컴퓨터로 자동 생성되었습니다.</p>
         </div>`;

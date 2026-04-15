@@ -44,6 +44,7 @@ export class LabelGenerator {
                     <div>농장명: ${orderData.farm_name || window.settingsDataManager?.settings?.farm?.name || '경산다육식물농장'}</div>
                     <div>주소: ${orderData.farm_address || window.settingsDataManager?.settings?.farm?.address || ''}</div>
                     <div>연락처: ${orderData.farm_phone || window.settingsDataManager?.settings?.farm?.phone || ''}</div>
+                    ${(window.settingsDataManager?.settings?.farm?.businessNumber) ? `<div>사업자: ${window.settingsDataManager.settings.farm.businessNumber}</div>` : ''}
                 </div>
 
                 <!-- 수취인 정보 -->
