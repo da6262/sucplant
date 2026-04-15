@@ -44,55 +44,51 @@
         </label>
     </div>
 
-    <!-- 메인 콘텐츠: 고객 목록(좌) + 상세 패널(우) -->
-    <div class="flex flex-1 min-h-0">
+    <!-- 고객 목록 -->
+    <div class="flex-1 overflow-auto">
+        <table class="table-ui min-w-full">
+            <thead class="sticky top-0 z-10">
+                <tr>
+                    <th class="text-left">고객명</th>
+                    <th class="text-left">전화번호</th>
+                    <th class="text-left">최근주문</th>
+                    <th class="text-center">등급</th>
+                    <th class="text-center">관리</th>
+                </tr>
+            </thead>
+            <tbody id="customer-list-container" class="bg-white divide-y divide-gray-100">
+                <!-- JS로 채워짐 -->
+            </tbody>
+        </table>
+    </div>
 
-        <!-- 왼쪽: 고객 목록 -->
-        <div class="flex flex-col flex-1 min-w-0 overflow-hidden">
-            <div class="flex-1 overflow-auto">
-                <table class="table-ui min-w-full">
-                    <thead class="sticky top-0 z-10">
-                        <tr>
-                            <th class="text-left">고객명</th>
-                            <th class="text-left">전화번호</th>
-                            <th class="text-left">최근주문</th>
-                            <th class="text-center">등급</th>
-                            <th class="text-center">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody id="customer-list-container" class="bg-white divide-y divide-gray-100">
-                        <!-- JS로 채워짐 -->
-                    </tbody>
-                </table>
-            </div>
-
-            <!-- 하단 상태 바 -->
-            <footer id="customer-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
-                <span>총 <strong id="customer-status-total">0</strong>명 · <span id="customer-list-count">0명 표시</span></span>
-                <div class="flex items-center gap-2">
-                    <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
-                    <span class="text-gray-300">|</span>
-                    <label class="flex items-center gap-1 text-gray-500">표시
-                        <select id="customer-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
-                            <option value="10">10명</option>
-                            <option value="20" selected>20명</option>
-                            <option value="50">50명</option>
-                            <option value="0">전체</option>
-                        </select>
-                    </label>
-                </div>
-            </footer>
+    <!-- 하단 상태 바 -->
+    <footer id="customer-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
+        <span>총 <strong id="customer-status-total">0</strong>명 · <span id="customer-list-count">0명 표시</span></span>
+        <div class="flex items-center gap-2">
+            <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
+            <span class="text-gray-300">|</span>
+            <label class="flex items-center gap-1 text-gray-500">표시
+                <select id="customer-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                    <option value="10">10명</option>
+                    <option value="20" selected>20명</option>
+                    <option value="50">50명</option>
+                    <option value="0">전체</option>
+                </select>
+            </label>
         </div>
+    </footer>
 
-        <!-- 오른쪽: 고객 상세 패널 (고객 클릭 시 나타남) -->
-        <div id="customer-detail-panel" class="crm-panel hidden">
-            <div class="crm-panel-header">
-                <span class="crm-panel-title">고객 상세</span>
-                <button id="close-crm-panel" class="crm-panel-close" title="닫기">✕</button>
-            </div>
-            <div id="customer-detail-content" class="crm-panel-body"></div>
+</div>
+
+<!-- 고객 상세 팝업 모달 -->
+<div id="customer-detail-panel" class="modal-overlay hidden" style="z-index:450;">
+    <div class="modal-container" style="max-width:860px;width:92vw;max-height:88vh;display:flex;flex-direction:column;">
+        <div class="modal-header">
+            <span id="crm-modal-title" class="modal-title">고객 상세</span>
+            <button id="close-crm-panel" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
         </div>
-
+        <div id="customer-detail-content" class="modal-body" style="overflow-y:auto;flex:1;min-height:0;"></div>
     </div>
 </div>
 
