@@ -380,9 +380,9 @@ class OrderDataManager {
         if (navBadge) {
             if (todoCount > 0) {
                 navBadge.textContent = todoCount > 99 ? '99+' : todoCount;
-                navBadge.classList.remove('hidden');
+                navBadge.style.display = 'flex';
             } else {
-                navBadge.classList.add('hidden');
+                navBadge.style.display = 'none';
             }
         }
     }
