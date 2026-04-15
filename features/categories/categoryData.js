@@ -28,6 +28,7 @@ class CategoryDataManager {
                 }
             }
             
+            this.setupRealtimeSubscription(); // [중4]
             console.log('✅ CategoryDataManager 초기화 완료');
             console.log(`📊 로드된 카테고리 수: ${this.categories.length}`);
         } catch (error) {
@@ -35,51 +36,34 @@ class CategoryDataManager {
         }
     }
     
-    // Supabase 클라이언트 확인 및 초기화
+    // [고2] Supabase 클라이언트 확인 — 이벤트 기반 (폴링 제거)
     async ensureSupabaseClient() {
-        try {
-            // 이미 초기화된 클라이언트가 있는지 확인
-            if (window.supabaseClient) {
-                console.log('✅ Supabase 클라이언트 이미 초기화됨');
-                return true;
-            }
-            
-            // window.supabase가 있는지 확인하고 클라이언트 생성
-            if (window.supabase && window.supabase.createClient && window.SUPABASE_CONFIG) {
-                console.log('🔄 Supabase 클라이언트 초기화 시도...');
-                window.supabaseClient = window.supabase.createClient(
-                    window.SUPABASE_CONFIG.url,
-                    window.SUPABASE_CONFIG.anonKey
-                );
-                console.log('✅ Supabase 클라이언트 초기화 완료');
-                return true;
-            }
-            
-            // Supabase가 로드될 때까지 대기
-            console.log('⏳ Supabase 라이브러리 로드 대기 중...');
-            let retryCount = 0;
-            const maxRetries = 20;
-            
-            while (retryCount < maxRetries) {
-                if (window.supabase && window.supabase.createClient && window.SUPABASE_CONFIG) {
-                    window.supabaseClient = window.supabase.createClient(
-                        window.SUPABASE_CONFIG.url,
-                        window.SUPABASE_CONFIG.anonKey
-                    );
-                    console.log('✅ Supabase 클라이언트 초기화 완료 (대기 후)');
-                    return true;
+        if (window.supabaseClient) return;
+        await new Promise(resolve => {
+            if (window.supabaseClient) { resolve(); return; }
+            window.addEventListener('supabase-ready', resolve, { once: true });
+        });
+        if (!window.supabaseClient) throw new Error('Supabase 클라이언트가 초기화되지 않았습니다.');
+    }
+
+    // [중4] Supabase Realtime 구독
+    setupRealtimeSubscription() {
+        if (!window.supabaseClient) return;
+        window.supabaseClient
+            .channel('cat_categories_rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'farm_categories' }, payload => {
+                const { eventType, new: rec, old: oldRec } = payload;
+                if (eventType === 'INSERT') {
+                    if (!this.categories.find(c => c.id === rec.id)) this.categories.push(rec);
+                } else if (eventType === 'UPDATE') {
+                    const i = this.categories.findIndex(c => c.id === rec.id);
+                    if (i !== -1) this.categories[i] = { ...this.categories[i], ...rec };
+                } else if (eventType === 'DELETE') {
+                    this.categories = this.categories.filter(c => c.id !== oldRec.id);
                 }
-                
-                await new Promise(resolve => setTimeout(resolve, 500));
-                retryCount++;
-            }
-            
-            console.error('❌ Supabase 클라이언트 초기화 실패 - 최대 재시도 횟수 초과');
-            throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-        } catch (error) {
-            console.error('❌ Supabase 클라이언트 초기화 실패:', error);
-            throw error;
-        }
+                window.dispatchEvent(new CustomEvent('categories-changed', { detail: { eventType, rec } }));
+            })
+            .subscribe();
     }
     
     // 기본 카테고리 생성
@@ -174,35 +158,23 @@ class CategoryDataManager {
      * 카테고리 캐시 무효화
      * Service Worker의 캐시를 삭제하여 최신 데이터를 가져오도록 함
      */
+    // [저7] 카테고리 변경 시 관련 캐시 전부 무효화 (farm_categories + farm_products)
     async invalidateCategoryCache() {
+        if (!('caches' in self || 'caches' in window)) return;
         try {
-            console.log('🗑️ 카테고리 캐시 무효화 시작...');
-            
-            // Service Worker가 있는 경우에만 실행
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                // 캐시 API를 직접 사용하여 Supabase 카테고리 관련 캐시 삭제
-                const cacheNames = await caches.keys();
-                
-                for (const cacheName of cacheNames) {
-                    const cache = await caches.open(cacheName);
-                    const requests = await cache.keys();
-                    
-                    for (const request of requests) {
-                        // Supabase farm_categories 관련 캐시만 삭제
-                        if (request.url.includes('supabase.co') && request.url.includes('farm_categories')) {
-                            await cache.delete(request);
-                            console.log('🗑️ 캐시 삭제됨:', request.url);
-                        }
+            const tables = ['farm_categories', 'farm_products'];
+            const cacheNames = await caches.keys();
+            for (const name of cacheNames) {
+                const cache = await caches.open(name);
+                for (const req of await cache.keys()) {
+                    if (req.url.includes('supabase.co') &&
+                        tables.some(t => req.url.includes(t))) {
+                        await cache.delete(req);
                     }
                 }
-                
-                console.log('✅ 카테고리 캐시 무효화 완료');
-            } else {
-                console.log('ℹ️ Service Worker가 없습니다. 캐시 무효화 생략');
             }
-        } catch (error) {
-            console.error('❌ 캐시 무효화 실패:', error);
-            // 캐시 무효화 실패는 치명적이지 않으므로 에러를 던지지 않음
+        } catch (e) {
+            // 캐시 무효화 실패는 치명적이지 않음
         }
     }
 
@@ -417,38 +389,34 @@ class CategoryDataManager {
 
 // 카테고리 데이터 매니저 인스턴스 생성 (지연 초기화)
 let categoryDataManager = null;
+let _categoryDataManagerInitializing = false; // [중3] 이중 초기화 방지
 
 // 전역 인스턴스 생성 함수
 async function initializeCategoryDataManager() {
-    if (!categoryDataManager) {
-        categoryDataManager = new CategoryDataManager();
-        window.categoryDataManager = categoryDataManager;
-        console.log('✅ CategoryDataManager 전역 인스턴스 생성 완료');
-        
-        // 데이터 초기화
-        await categoryDataManager.initializeData();
+    if (categoryDataManager) return categoryDataManager;
+    if (_categoryDataManagerInitializing) {
+        await new Promise(resolve => {
+            const check = setInterval(() => {
+                if (categoryDataManager) { clearInterval(check); resolve(); }
+            }, 50);
+        });
+        return categoryDataManager;
     }
+    _categoryDataManagerInitializing = true;
+    categoryDataManager = new CategoryDataManager();
+    window.categoryDataManager = categoryDataManager;
+    await categoryDataManager.initializeData();
+    console.log('✅ CategoryDataManager 전역 인스턴스 생성 완료');
     return categoryDataManager;
 }
 
-// DOMContentLoaded 이벤트에서 초기화
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        await initializeCategoryDataManager();
-    } catch (error) {
-        console.error('❌ CategoryDataManager 초기화 실패:', error);
-    }
-});
+// [중3] 자동 초기화 블록 제거 — main.js 단일 진입점에서 초기화
 
-// 즉시 사용 가능한 경우를 위한 폴백
-if (document.readyState === 'loading') {
-    // 문서가 아직 로딩 중이면 위의 이벤트 리스너가 처리
-} else {
-    // 문서가 이미 로드된 경우 즉시 초기화
-    initializeCategoryDataManager().catch(error => {
-        console.error('❌ CategoryDataManager 즉시 초기화 실패:', error);
-    });
-}
+// [저6] 네임스페이스
+window.CategoryMgmt = {
+    get manager() { return categoryDataManager; },
+    init: initializeCategoryDataManager,
+};
 
 // 전역으로 내보내기
 export { CategoryDataManager, initializeCategoryDataManager };

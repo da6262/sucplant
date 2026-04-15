@@ -21,18 +21,14 @@ class ProductDataManager {
     async initializeData() {
         try {
             console.log('🔄 ProductDataManager 초기화 시작...');
-            
-            // Supabase 클라이언트 초기화 시도
-            const supabaseInitialized = await this.ensureSupabaseClient();
-            
-            if (supabaseInitialized) {
-                console.log('🌐 Supabase 모드로 데이터 로드...');
-                await this.loadProducts();
-                await this.loadCategories();
-            } else {
-                throw new Error('❌ Supabase 초기화 실패. Supabase 연결이 필요합니다.');
-            }
-            
+
+            await this.ensureSupabaseClient();
+
+            console.log('🌐 Supabase 모드로 데이터 로드...');
+            // 카테고리 먼저 로드 → 상품 category_id 보완에 사용
+            await this.loadCategories();
+            await this.loadProducts();
+
             // 카테고리가 없으면 기본 카테고리 생성 (인증된 경우에만)
             if (this.categories.length === 0) {
                 const { data: { user } } = await window.supabaseClient.auth.getUser().catch(() => ({ data: { user: null } }));
@@ -43,85 +39,79 @@ class ProductDataManager {
                     console.log('⚠️ 미인증 상태 — 기본 카테고리 생성 건너뜀');
                 }
             }
-            
+
+            // Realtime 구독 시작 (다중 탭 동기화)
+            this.setupRealtimeSubscription();
+
             console.log('✅ ProductDataManager 초기화 완료');
             console.log(`📊 로드된 상품 수: ${this.farm_products.length}`);
             console.log(`📊 로드된 카테고리 수: ${this.categories.length}`);
         } catch (error) {
             console.error('❌ ProductDataManager 초기화 실패:', error);
-            // 최종 폴백: 빈 데이터로 초기화
             this.farm_products = [];
             this.categories = [];
         }
     }
 
-    // Supabase 클라이언트 확인 및 초기화
+    // [고2] Supabase 클라이언트 확인 — 이벤트 기반 (폴링 제거)
     async ensureSupabaseClient() {
-        try {
-            // 이미 초기화된 클라이언트가 있는지 확인
-            if (window.supabaseClient) {
-                console.log('✅ Supabase 클라이언트 이미 초기화됨');
-                return true;
-            }
-            
-            // window.supabase가 있는지 확인하고 클라이언트 생성
-            if (window.supabase && window.supabase.createClient && window.SUPABASE_CONFIG) {
-                console.log('🔄 Supabase 클라이언트 초기화 시도...');
-                window.supabaseClient = window.supabase.createClient(
-                    window.SUPABASE_CONFIG.url,
-                    window.SUPABASE_CONFIG.anonKey
-                );
-                console.log('✅ Supabase 클라이언트 초기화 완료');
-                return true;
-            }
-            
-            // Supabase가 로드될 때까지 대기
-            console.log('⏳ Supabase 라이브러리 로드 대기 중...');
-            let retryCount = 0;
-            const maxRetries = 20; // 재시도 횟수 조정
-            
-            while (retryCount < maxRetries) {
-                // Supabase 라이브러리와 설정이 모두 있는지 확인
-                if (window.supabase && window.supabase.createClient && window.SUPABASE_CONFIG) {
-                    try {
-                        window.supabaseClient = window.supabase.createClient(
-                            window.SUPABASE_CONFIG.url,
-                            window.SUPABASE_CONFIG.anonKey
-                        );
-                        console.log('✅ Supabase 클라이언트 초기화 완료 (대기 후)');
-                        return true;
-                    } catch (initError) {
-                        console.warn('⚠️ Supabase 클라이언트 생성 실패, 재시도 중...', initError);
-                    }
-                }
-                
-                // 더 자세한 디버깅 정보
-                console.log(`🔄 재시도 ${retryCount + 1}/${maxRetries}:`, {
-                    'window.supabase': typeof window.supabase,
-                    'window.SUPABASE_CONFIG': !!window.SUPABASE_CONFIG,
-                    'window.supabaseClient': !!window.supabaseClient
-                });
-                
-                await new Promise(resolve => setTimeout(resolve, 500)); // 대기 시간 조정
-                retryCount++;
-            }
-            
-            console.error('❌ Supabase 클라이언트 초기화 실패 - 최대 재시도 횟수 초과');
-            console.error('🔍 최종 상태:', {
-                'window.supabase': typeof window.supabase,
-                'window.SUPABASE_CONFIG': !!window.SUPABASE_CONFIG,
-                'window.supabaseClient': !!window.supabaseClient
-            });
-            
+        if (window.supabaseClient) return;
+
+        // main.js가 'supabase-ready' 이벤트를 dispatch 한 경우 즉시 resolve
+        await new Promise(resolve => {
+            if (window.supabaseClient) { resolve(); return; }
+            window.addEventListener('supabase-ready', resolve, { once: true });
+        });
+
+        if (!window.supabaseClient) {
+            console.error('❌ Supabase 클라이언트 초기화 실패');
             // Supabase 전용 모드 - 로컬 폴백 제거
             console.error('❌ Supabase 연결 실패. Supabase 연결이 필요합니다.');
-            return false;
-        } catch (error) {
-            console.error('❌ Supabase 클라이언트 초기화 실패:', error);
-            // Supabase 전용 모드 - 로컬 폴백 제거
-            console.error('❌ Supabase 연결 실패. Supabase 연결이 필요합니다.');
-            return false;
+            throw new Error('Supabase 클라이언트가 초기화되지 않았습니다.');
         }
+    }
+
+    // [중4] Supabase Realtime 구독 — 다중 탭/사용자 간 실시간 동기화
+    setupRealtimeSubscription() {
+        if (!window.supabaseClient) return;
+
+        window.supabaseClient
+            .channel('farm_products_rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'farm_products' }, payload => {
+                this._onProductChange(payload);
+            })
+            .subscribe();
+
+        window.supabaseClient
+            .channel('farm_categories_rt')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'farm_categories' }, payload => {
+                this._onCategoryChange(payload);
+            })
+            .subscribe();
+    }
+
+    _onProductChange({ eventType, new: rec, old: oldRec }) {
+        if (eventType === 'INSERT') {
+            if (!this.farm_products.find(p => p.id === rec.id)) this.farm_products.unshift(rec);
+        } else if (eventType === 'UPDATE') {
+            const i = this.farm_products.findIndex(p => p.id === rec.id);
+            if (i !== -1) this.farm_products[i] = { ...this.farm_products[i], ...rec };
+        } else if (eventType === 'DELETE') {
+            this.farm_products = this.farm_products.filter(p => p.id !== oldRec.id);
+        }
+        window.dispatchEvent(new CustomEvent('products-changed', { detail: { eventType, rec } }));
+    }
+
+    _onCategoryChange({ eventType, new: rec, old: oldRec }) {
+        if (eventType === 'INSERT') {
+            if (!this.categories.find(c => c.id === rec.id)) this.categories.push(rec);
+        } else if (eventType === 'UPDATE') {
+            const i = this.categories.findIndex(c => c.id === rec.id);
+            if (i !== -1) this.categories[i] = { ...this.categories[i], ...rec };
+        } else if (eventType === 'DELETE') {
+            this.categories = this.categories.filter(c => c.id !== oldRec.id);
+        }
+        window.dispatchEvent(new CustomEvent('categories-changed', { detail: { eventType, rec } }));
     }
 
     // 기본 카테고리 생성
@@ -344,35 +334,23 @@ class ProductDataManager {
      * 상품 캐시 무효화
      * Service Worker의 캐시를 삭제하여 최신 데이터를 가져오도록 함
      */
+    // [저7] 상품 캐시 무효화 — SW DYNAMIC_CACHE에서 Supabase URL만 삭제
     async invalidateProductCache() {
+        if (!('caches' in self || 'caches' in window)) return;
         try {
-            console.log('🗑️ 상품 캐시 무효화 시작...');
-            
-            // Service Worker가 있는 경우에만 실행
-            if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
-                // 캐시 API를 직접 사용하여 Supabase 상품 관련 캐시 삭제
-                const cacheNames = await caches.keys();
-                
-                for (const cacheName of cacheNames) {
-                    const cache = await caches.open(cacheName);
-                    const requests = await cache.keys();
-                    
-                    for (const request of requests) {
-                        // Supabase farm_products 관련 캐시만 삭제
-                        if (request.url.includes('supabase.co') && request.url.includes('farm_products')) {
-                            await cache.delete(request);
-                            console.log('🗑️ 캐시 삭제됨:', request.url);
-                        }
+            const tables = ['farm_products', 'farm_categories'];
+            const cacheNames = await caches.keys();
+            for (const name of cacheNames) {
+                const cache = await caches.open(name);
+                for (const req of await cache.keys()) {
+                    if (req.url.includes('supabase.co') &&
+                        tables.some(t => req.url.includes(t))) {
+                        await cache.delete(req);
                     }
                 }
-                
-                console.log('✅ 상품 캐시 무효화 완료');
-            } else {
-                console.log('ℹ️ Service Worker가 없습니다. 캐시 무효화 생략');
             }
-        } catch (error) {
-            console.error('❌ 캐시 무효화 실패:', error);
-            // 캐시 무효화 실패는 치명적이지 않으므로 에러를 던지지 않음
+        } catch (e) {
+            // 캐시 무효화 실패는 치명적이지 않음
         }
     }
 
@@ -478,6 +456,7 @@ class ProductDataManager {
                 product_code: productData.product_code || await this.generateSequentialProductCode(),
                 name: productData.name.trim(),
                 category: productData.category || '',
+                category_id: this.categories.find(c => c.name === (productData.category || ''))?.id || null,
                 size: productData.size || '',
                 price: parseInt(productData.price) || 0,
                 cost: parseInt(productData.cost) || 0,
@@ -503,6 +482,7 @@ class ProductDataManager {
                 product_code:    newProduct.product_code,
                 name:            newProduct.name,
                 category:        newProduct.category,
+                category_id:     newProduct.category_id,
                 size:            newProduct.size,
                 price:           newProduct.price,
                 cost:            newProduct.cost,
@@ -578,16 +558,19 @@ class ProductDataManager {
             
             // 확인된 컬럼만 Supabase에 전송 (미확인 필드 제거)
             const ALLOWED_COLUMNS = new Set([
-                'product_code','name','category','size','price','cost','stock',
+                'product_code','name','category','category_id','size','price','cost','stock',
                 'shipping_option','description','image_url','tags','updated_at'
             ]);
             const cleanUpdate = { updated_at: new Date().toISOString() };
             for (const [key, val] of Object.entries(updateData)) {
                 if (!ALLOWED_COLUMNS.has(key)) continue;
-                // tags 배열 → JSON 문자열
                 cleanUpdate[key] = (key === 'tags' && Array.isArray(val))
                     ? JSON.stringify(val)
                     : val;
+            }
+            // category 이름이 바뀌면 category_id도 동기화
+            if (updateData.category !== undefined && !updateData.category_id) {
+                cleanUpdate.category_id = this.categories.find(c => c.name === updateData.category)?.id || null;
             }
 
             console.log('🌐 Supabase에서 상품 수정 중...');
@@ -732,39 +715,23 @@ class ProductDataManager {
         }
     }
 
-    // 순차적 상품 코드 생성 (P001, P002, P003...)
+    // [중5] 순차적 상품 코드 생성 — DB RPC로 race condition 방지
     async generateSequentialProductCode() {
         try {
-            console.log('🔢 순차적 상품 코드 생성 시작');
-            
-            // 기존 상품들의 코드를 가져와서 다음 번호 계산
-            const products = this.farm_products;
-            console.log('📊 기존 상품 수:', products.length);
-            
-            // 기존 상품 코드들에서 숫자 추출
-            const existingCodes = products
-                .map(product => product.product_code)
-                .filter(code => {
-                    // 타입 검사: 문자열이고 'P'로 시작하는지 확인
-                    return code && typeof code === 'string' && code.startsWith('P');
-                })
-                .map(code => {
-                    const match = code.match(/P(\d+)/);
-                    return match ? parseInt(match[1]) : 0;
-                })
-                .filter(num => num > 0);
-            
-            // 다음 번호 계산
-            console.log('🔍 기존 코드들:', existingCodes);
-            const nextNumber = existingCodes.length > 0 ? Math.max(...existingCodes) + 1 : 1;
-            const productCode = `P${nextNumber.toString().padStart(3, '0')}`;
-            
-            console.log('✅ 순차적 상품 코드 생성 완료:', productCode, '(기존 코드 수:', existingCodes.length, ')');
-            return productCode;
-            
+            // DB 함수 get_next_product_code()가 MAX+1을 원자적으로 반환
+            const { data, error } = await window.supabaseClient.rpc('get_next_product_code');
+            if (error) throw error;
+            console.log('✅ 상품 코드 생성 (RPC):', data);
+            return data;
         } catch (error) {
-            console.error('❌ 순차적 상품 코드 생성 실패:', error);
-            return 'P001';
+            console.warn('⚠️ RPC 실패, 로컬 폴백:', error.message);
+            // 폴백: 메모리 기반 계산
+            const nums = this.farm_products
+                .map(p => p.product_code)
+                .filter(c => c && /^P\d+$/.test(c))
+                .map(c => parseInt(c.slice(1)));
+            const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
+            return `P${String(next).padStart(3, '0')}`;
         }
     }
 
@@ -960,14 +927,23 @@ class ProductDataManager {
 
 // 인스턴스 생성 (지연 초기화)
 let productDataManager = null;
+let _productDataManagerInitializing = false; // [중3] 이중 초기화 방지
 
 // 전역 인스턴스 생성 함수
 async function initializeProductDataManager() {
-    if (!productDataManager) {
-        productDataManager = new ProductDataManager();
-        window.productDataManager = productDataManager;
-        console.log('✅ ProductDataManager 전역 인스턴스 생성 완료');
+    if (productDataManager) return productDataManager;         // 이미 생성됨
+    if (_productDataManagerInitializing) {                     // 초기화 중 — 완료까지 대기
+        await new Promise(resolve => {
+            const check = setInterval(() => {
+                if (productDataManager) { clearInterval(check); resolve(); }
+            }, 50);
+        });
+        return productDataManager;
     }
+    _productDataManagerInitializing = true;
+    productDataManager = new ProductDataManager();
+    window.productDataManager = productDataManager;
+    console.log('✅ ProductDataManager 전역 인스턴스 생성 완료');
     return productDataManager;
 }
 
@@ -997,54 +973,15 @@ async function waitForSupabase(maxWaitTime = 10000) {
     return false;
 }
 
-// DOMContentLoaded 이벤트에서 초기화
-document.addEventListener('DOMContentLoaded', async () => {
-    try {
-        console.log('🔄 ProductDataManager 초기화 시작...');
-        
-        // Supabase 초기화 대기
-        const supabaseReady = await waitForSupabase();
-        if (!supabaseReady) {
-            throw new Error('❌ Supabase가 준비되지 않았습니다. Supabase 연결이 필요합니다.');
-        }
-        console.log('✅ Supabase 준비됨, ProductDataManager 초기화 진행');
-        
-        await initializeProductDataManager();
-    } catch (error) {
-        console.error('❌ ProductDataManager 초기화 실패:', error);
-    }
-});
+// [중3] 자동 초기화 블록 제거 — main.js DOMContentLoaded에서 단일 진입점으로 초기화
+// initializeProductDataManager()는 _productDataManagerInitializing 플래그로 이중 실행 방지
 
-// 즉시 사용 가능한 경우를 위한 폴백
-if (document.readyState === 'loading') {
-    // 문서가 아직 로딩 중이면 위의 이벤트 리스너가 처리
-} else {
-    // 문서가 이미 로드된 경우 즉시 초기화
-    (async () => {
-        try {
-            console.log('🔄 ProductDataManager 즉시 초기화 시작...');
-            
-            // Supabase 초기화 대기
-            const supabaseReady = await waitForSupabase();
-            if (!supabaseReady) {
-                throw new Error('❌ Supabase가 준비되지 않았습니다. Supabase 연결이 필요합니다.');
-            }
-            console.log('✅ Supabase 준비됨, ProductDataManager 즉시 초기화 진행');
-            
-            await initializeProductDataManager();
-        } catch (error) {
-            console.error('❌ ProductDataManager 즉시 초기화 실패:', error);
-        }
-    })();
-}
-
-// 모듈 내보내기 (ES6 모듈 지원시)
-if (typeof module !== 'undefined' && module.exports) {
-    module.exports = ProductDataManager;
-}
+// [저6] 네임스페이스 — window.ProductMgmt로 접근 가능 (기존 window.productDataManager 호환 유지)
+window.ProductMgmt = {
+    get manager() { return productDataManager; },
+    init:     initializeProductDataManager,
+    getManager: getProductDataManager,
+};
 
 // ES6 모듈 export
 export { ProductDataManager, initializeProductDataManager, getProductDataManager };
-
-// productDataManager를 기본 export로도 제공
-export default productDataManager;
