@@ -1,20 +1,15 @@
 <!-- Dashboard main -->
 <div id="dashboard-section" class="section-content active app-section-frame flex flex-col" style="height:calc(100vh - 131px); overflow:hidden;">
 
-    <div class="app-section-header flex-shrink-0">
-        <div class="app-section-heading">
-            <div class="app-section-icon">
-                <i class="fas fa-seedling text-sm"></i>
-            </div>
-            <div>
-                <div class="app-section-title">오늘 현황</div>
-                <div class="app-section-subtitle">오늘 업무 흐름을 한눈에 확인합니다 <span class="ml-2" id="last-updated"></span></div>
-            </div>
+    <div class="page-header">
+        <div>
+            <h2>오늘 현황</h2>
+            <p class="page-subtitle">오늘 업무 흐름을 한눈에 확인합니다 <span id="last-updated"></span></p>
         </div>
-        <div class="app-toolbar">
+        <div class="action-group">
             <span class="text-xs text-gray-500 tabular-nums" id="current-time"></span>
-            <button id="refresh-realtime" class="app-btn app-btn-primary px-3">
-                <i class="fas fa-sync-alt text-[10px]"></i>
+            <button id="refresh-realtime" class="btn-secondary">
+                <i class="fas fa-sync-alt"></i>
             </button>
         </div>
     </div>
