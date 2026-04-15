@@ -235,11 +235,13 @@ export class WaitlistUI {
             // 모달 생성
             const modal = document.createElement('div');
             modal.id = 'waitlist-modal';
-            modal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+            modal.className = 'modal-overlay';
             modal.innerHTML = this.createWaitlistModalHTML(waitlistId);
             
             document.body.appendChild(modal);
-            
+            // 바깥 클릭으로 닫기
+            modal.addEventListener('click', (e) => { if (e.target === modal) this.closeWaitlistModal(); });
+
             // 이벤트 리스너 등록
             this.setupWaitlistModalEvents(waitlistId);
             
@@ -257,86 +259,94 @@ export class WaitlistUI {
         const waitlist = isEdit ? waitlistDataManager.getWaitlistById(waitlistId) : null;
         
         return `
-            <div class="bg-white rounded-lg shadow-xl w-[90%] max-w-2xl max-h-[90vh] overflow-y-auto">
-                <div class="p-6 border-b border-gray-200">
-                    <div class="flex justify-between items-center">
-                        <h3 class="text-lg font-semibold text-gray-800">
-                            <i class="fas fa-clock mr-2 text-orange-600"></i>
-                            ${isEdit ? '대기자 정보 수정' : '새 대기자 등록'}
-                        </h3>
-                        <button onclick="waitlistUI.closeWaitlistModal()" class="text-gray-400 hover:text-gray-600">
-                            <i class="fas fa-times text-xl"></i>
-                        </button>
-                    </div>
+            <div class="modal-container modal-md">
+                <div class="modal-header">
+                    <span class="modal-title">
+                        <i class="fas fa-clock" style="color:#EA580C;margin-right:6px;"></i>
+                        ${isEdit ? '대기자 정보 수정' : '새 대기자 등록'}
+                    </span>
+                    <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="modal-close-btn">
+                        <i class="fas fa-times"></i>
+                    </button>
                 </div>
-                <div class="p-6">
-                    <form id="waitlist-form">
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">고객명 *</label>
-                                <div class="relative">
-                                    <input type="text" id="waitlist-customer-name" 
-                                           value="${waitlist?.customer_name || ''}"
-                                           placeholder="고객명을 입력하세요 (자동완성 지원)"
-                                           class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" 
-                                           autocomplete="off"
-                                           required>
-                                    <div id="waitlist-customer-suggestions" class="absolute top-full left-0 right-0 bg-white border border-gray-300 rounded-b-lg shadow-lg z-10 max-h-48 overflow-y-auto hidden">
-                                        <!-- 고객 자동완성 목록이 여기에 표시됩니다 -->
-                                    </div>
-                                </div>
+                <div class="modal-body">
+                    <form id="waitlist-form" class="form-grid">
+
+                        <!-- 고객명 (col-6) | 연락처 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">고객명 <span class="req">*</span></label>
+                            <div style="position:relative;">
+                                <input type="text" id="waitlist-customer-name"
+                                       value="${waitlist?.customer_name || ''}"
+                                       placeholder="고객명 입력 (자동완성 지원)"
+                                       class="form-control" autocomplete="off" required>
+                                <div id="waitlist-customer-suggestions"
+                                     class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg hidden max-h-48 overflow-y-auto"
+                                     style="top:100%;left:0;"></div>
                             </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">연락처</label>
-                                <input type="tel" id="waitlist-customer-phone" 
-                                       value="${waitlist?.customer_phone || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">희망상품명 *</label>
-                                <input type="text" id="waitlist-product-name" 
-                                       value="${waitlist?.product_name || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500" 
-                                       required>
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">상품카테고리</label>
-                                <input type="text" id="waitlist-product-category" 
-                                       value="${waitlist?.product_category || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">희망가격</label>
-                                <input type="number" id="waitlist-expected-price" 
+                        </div>
+                        <div class="form-col-6">
+                            <label class="form-label">연락처</label>
+                            <input type="tel" id="waitlist-customer-phone"
+                                   value="${waitlist?.customer_phone || ''}"
+                                   placeholder="010-0000-0000"
+                                   class="form-control">
+                            <p class="form-helper">고객명 입력 시 자동으로 채워집니다</p>
+                        </div>
+
+                        <!-- 희망상품명 (col-6) | 상품카테고리 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">희망상품명 <span class="req">*</span></label>
+                            <input type="text" id="waitlist-product-name"
+                                   value="${waitlist?.product_name || ''}"
+                                   placeholder="예: White Platter 대형"
+                                   class="form-control" required>
+                        </div>
+                        <div class="form-col-6">
+                            <label class="form-label">상품카테고리</label>
+                            <input type="text" id="waitlist-product-category"
+                                   value="${waitlist?.product_category || ''}"
+                                   placeholder="예: 다육식물"
+                                   class="form-control">
+                        </div>
+
+                        <!-- 희망가격 (col-6) | 우선순위 (col-6) -->
+                        <div class="form-col-6">
+                            <label class="form-label">희망가격</label>
+                            <div class="form-input-group with-unit">
+                                <input type="number" id="waitlist-expected-price"
                                        value="${waitlist?.expected_price || ''}"
-                                       class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                            </div>
-                            <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
-                                <select id="waitlist-priority" 
-                                        class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">
-                                    <option value="1" ${waitlist?.priority === 1 ? 'selected' : ''}>높음</option>
-                                    <option value="2" ${waitlist?.priority === 2 ? 'selected' : ''}>보통</option>
-                                    <option value="3" ${waitlist?.priority === 3 ? 'selected' : ''}>낮음</option>
-                                </select>
+                                       placeholder="0" min="0" step="1000"
+                                       class="form-control">
+                                <span class="form-input-unit">원</span>
                             </div>
                         </div>
-                        <div class="mt-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-2">메모</label>
-                            <textarea id="waitlist-memo" rows="3" 
-                                      class="w-full border border-gray-300 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500">${waitlist?.memo || ''}</textarea>
+                        <div class="form-col-6">
+                            <label class="form-label">우선순위</label>
+                            <select id="waitlist-priority" class="form-control">
+                                <option value="1" ${waitlist?.priority === 1 ? 'selected' : ''}>높음</option>
+                                <option value="2" ${(!waitlist || waitlist?.priority === 2) ? 'selected' : ''}>보통</option>
+                                <option value="3" ${waitlist?.priority === 3 ? 'selected' : ''}>낮음</option>
+                            </select>
                         </div>
-                        <div class="flex justify-end space-x-3 mt-6">
-                            <button type="button" onclick="waitlistUI.closeWaitlistModal()" 
-                                    class="px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white rounded-lg transition-colors">
-                                취소
-                            </button>
-                            <button type="submit" 
-                                    class="px-4 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors">
-                                ${isEdit ? '수정' : '등록'}
-                            </button>
+
+                        <!-- 메모 (col-12) -->
+                        <div class="form-col-12">
+                            <label class="form-label">메모</label>
+                            <textarea id="waitlist-memo" rows="3"
+                                      placeholder="고객 요구사항, 특이사항 등"
+                                      class="form-control" style="height:auto;">${waitlist?.memo || ''}</textarea>
                         </div>
+
                     </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" onclick="waitlistUI.closeWaitlistModal()" class="btn-secondary">
+                        <i class="fas fa-times"></i>취소
+                    </button>
+                    <button type="submit" form="waitlist-form" class="btn-primary">
+                        <i class="fas fa-save"></i>${isEdit ? '수정' : '등록'}
+                    </button>
                 </div>
             </div>
         `;
