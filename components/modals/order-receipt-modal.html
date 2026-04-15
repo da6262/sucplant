@@ -1,54 +1,55 @@
 <!-- 주문서 출력 모달 -->
-<div id="order-receipt-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-md w-full">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="text-xl font-bold text-gray-800">
-                        <i class="fas fa-receipt mr-2 text-purple-600"></i>주문서 출력 설정
-                    </h3>
-                    <button id="close-order-receipt-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+<div id="order-receipt-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-sm">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-receipt mr-2 text-purple-600"></i>주문서 출력 설정
+            </span>
+            <button id="close-order-receipt-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 본문 -->
+        <div class="modal-body">
+            <div class="space-y-4">
+                <!-- QR코드 포함 여부 -->
+                <div>
+                    <label class="flex items-center">
+                        <input type="checkbox" id="include-qr-code" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" checked>
+                        <span class="ml-2 text-sm font-medium text-gray-700">QR코드 포함</span>
+                    </label>
                 </div>
-                
-                <div class="space-y-4">
-                    <!-- QR코드 포함 여부 -->
-                    <div>
-                        <label class="flex items-center">
-                            <input type="checkbox" id="include-qr-code" class="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500" checked>
-                            <span class="ml-2 text-sm font-medium text-gray-700">QR코드 포함</span>
-                        </label>
-                    </div>
-                    
-                    <!-- QR코드 URL 입력 -->
-                    <div id="qr-code-section">
-                        <label class="block text-sm font-medium text-gray-700 mb-2">QR코드 연결 URL</label>
-                        <input type="url" id="qr-code-url" 
-                               class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
-                               placeholder="https://youtube.com/@경산다육TV"
-                               value="https://youtube.com/@경산다육TV">
-                        <p class="text-xs text-gray-500 mt-1">키우는 법 영상, 유튜브 채널 등 URL 입력</p>
-                    </div>
-                    
-                    <!-- 미리보기 QR코드 -->
-                    <div id="qr-preview-section" class="text-center">
-                        <p class="text-sm text-gray-600 mb-2">QR코드 미리보기:</p>
-                        <div id="qr-code-preview" class="flex justify-center">
-                            <!-- QR코드가 여기에 생성됩니다 -->
-                        </div>
-                    </div>
+
+                <!-- QR코드 URL 입력 -->
+                <div id="qr-code-section">
+                    <label class="block text-sm font-medium text-gray-700 mb-2">QR코드 연결 URL</label>
+                    <input type="url" id="qr-code-url"
+                           class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                           placeholder="https://youtube.com/@경산다육TV"
+                           value="https://youtube.com/@경산다육TV">
+                    <p class="text-xs text-gray-500 mt-1">키우는 법 영상, 유튜브 채널 등 URL 입력</p>
                 </div>
-                
-                <div class="flex justify-end space-x-3 mt-6">
-                    <button id="print-order-receipt" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-print mr-2"></i>주문서 출력
-                    </button>
-                    <button id="close-order-receipt-modal-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                        닫기
-                    </button>
+
+                <!-- 미리보기 QR코드 -->
+                <div id="qr-preview-section" class="text-center">
+                    <p class="text-sm text-gray-600 mb-2">QR코드 미리보기:</p>
+                    <div id="qr-code-preview" class="flex justify-center">
+                        <!-- QR코드가 여기에 생성됩니다 -->
+                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="close-order-receipt-modal-btn" class="btn-secondary">닫기</button>
+            <button id="print-order-receipt" class="btn-primary">
+                <i class="fas fa-print mr-1"></i>주문서 출력
+            </button>
+        </div>
+
     </div>
 </div>

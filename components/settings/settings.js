@@ -23,10 +23,15 @@ window.addEventListener('load', function() {
 
 // 스크립트 로드 완료 후 즉시 이벤트 리스너 설정 + 초기 데이터 로드
 console.log('🔄 환경설정 스크립트 로드 완료, 이벤트 리스너 설정...');
-setTimeout(() => {
+setTimeout(async () => {
     setupSettingsTabListeners();
     setupSettingsButtonListeners();
-    // 첫 진입 시 일반 설정 데이터 표시
+    // 첫 진입 시 Supabase에서 최신 설정을 받아온 뒤 폼에 표시
+    try {
+        if (window.settingsDataManager) {
+            await window.settingsDataManager.loadSettings();
+        }
+    } catch(e) { /* 오프라인 등 실패 시 캐시 사용 */ }
     if (window.loadGeneralSettings) {
         window.loadGeneralSettings();
     }
@@ -364,27 +369,37 @@ if (!window.showSettingsTab) {
                     targetTabButton.classList.add('active');
                 }
                 
-                // 탭별 데이터 로드
-                switch (tabName) {
-                    case 'general':
-                        if (window.loadGeneralSettings) window.loadGeneralSettings();
-                        break;
-                    case 'shipping':
-                        if (window.loadShippingSettings) window.loadShippingSettings();
-                        break;
-                    case 'channels':
-                        if (window.loadSalesChannels) window.loadSalesChannels();
-                        break;
-                    case 'orders':
-                        if (window.loadOrderStatuses) window.loadOrderStatuses();
-                        break;
-                    case 'customers':
-                        if (window.loadCustomerGrades) window.loadCustomerGrades();
-                        break;
-                    case 'sms':
-                        loadSMSSettings();
-                        break;
-                }
+                // 탭별 데이터 로드 (설정 캐시가 비어있으면 DB에서 먼저 읽음)
+                const ensureSettings = async () => {
+                    const s = window.settingsDataManager?.getAllSettings();
+                    const isEmpty = !s || (!s.farm?.name && !s.shipping?.defaultShippingFee);
+                    if (isEmpty && window.settingsDataManager) {
+                        await window.settingsDataManager.loadSettings();
+                    }
+                };
+                (async () => {
+                    await ensureSettings();
+                    switch (tabName) {
+                        case 'general':
+                            if (window.loadGeneralSettings) window.loadGeneralSettings();
+                            break;
+                        case 'shipping':
+                            if (window.loadShippingSettings) window.loadShippingSettings();
+                            break;
+                        case 'channels':
+                            if (window.loadSalesChannels) window.loadSalesChannels();
+                            break;
+                        case 'orders':
+                            if (window.loadOrderStatuses) window.loadOrderStatuses();
+                            break;
+                        case 'customers':
+                            if (window.loadCustomerGrades) window.loadCustomerGrades();
+                            break;
+                        case 'sms':
+                            loadSMSSettings();
+                            break;
+                    }
+                })();
             } else {
                 console.warn('⚠️ 환경설정 탭을 찾을 수 없습니다:', tabName);
             }

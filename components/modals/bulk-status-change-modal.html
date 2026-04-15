@@ -1,49 +1,47 @@
 <!-- 일괄 상태변경 모달 -->
-<div id="bulk-status-change-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
-            <div class="flex items-center justify-between p-6 border-b">
-                <h3 class="text-lg font-semibold text-gray-800">
-                    <i class="fas fa-edit mr-2 text-green-600"></i>일괄 상태변경
-                </h3>
-                <button id="close-bulk-status-modal" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
+<div id="bulk-status-change-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-sm">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-edit mr-2 text-green-600"></i>일괄 상태변경
+            </span>
+            <button id="close-bulk-status-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 본문 -->
+        <div class="modal-body">
+            <div class="mb-4">
+                <p class="text-sm text-gray-600 mb-2">
+                    선택된 <span id="selected-orders-count" class="font-bold text-green-600">0</span>개 주문의 상태를 변경합니다.
+                </p>
             </div>
-            
-            <div class="p-6">
-                <div class="mb-4">
-                    <p class="text-sm text-gray-600 mb-2">
-                        선택된 <span id="selected-orders-count" class="font-bold text-green-600">0</span>개 주문의 상태를 변경합니다.
-                    </p>
-                </div>
-                
-                <div class="mb-6">
-                    <label class="block text-sm font-medium text-gray-700 mb-2">변경할 상태 선택</label>
-                    <select id="bulk-status-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
-                        <option value="">상태를 선택하세요</option>
-                        <option value="주문접수">📝 주문접수</option>
-                        <option value="입금확인">💰 입금확인</option>
-                        <option value="배송준비">📦 배송준비</option>
-                        <option value="배송시작">🚚 배송시작</option>
-                        <option value="배송완료">✅ 배송완료</option>
-                        <option value="주문취소">❌ 주문취소</option>
-                        <option value="환불처리">🔄 환불처리</option>
-                    </select>
-                </div>
-                
-                <div class="flex justify-end space-x-3">
-                    <button id="cancel-bulk-status" class="px-6 py-3 text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
-                        취소
-                    </button>
-                    <button id="confirm-bulk-status" class="btn-primary" style="padding: 12px 24px;">
-                        <i class="fas fa-check mr-2"></i>변경 확인
-                    </button>
-                </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">변경할 상태 선택</label>
+                <select id="bulk-status-select" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+                    <option value="">상태를 선택하세요</option>
+                    <option value="주문접수">📝 주문접수</option>
+                    <option value="입금확인">💰 입금확인</option>
+                    <option value="배송준비">📦 배송준비</option>
+                    <option value="배송시작">🚚 배송시작</option>
+                    <option value="배송완료">✅ 배송완료</option>
+                    <option value="주문취소">❌ 주문취소</option>
+                    <option value="환불처리">🔄 환불처리</option>
+                </select>
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="cancel-bulk-status" class="btn-secondary">취소</button>
+            <button id="confirm-bulk-status" class="btn-primary">
+                <i class="fas fa-check mr-1"></i>변경 확인
+            </button>
+        </div>
+
     </div>
 </div>
-
-
-

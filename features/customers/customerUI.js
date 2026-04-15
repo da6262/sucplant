@@ -618,19 +618,22 @@ function showDeleteWithOrdersModal(orders) {
 
         const modal = document.createElement('div');
         modal.id = 'delete-with-orders-modal';
-        modal.className = 'fixed inset-0 bg-black bg-opacity-50 z-[9999] flex items-center justify-center p-4';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '9999';
         modal.innerHTML = `
-            <div class="bg-white rounded-xl shadow-xl w-full max-w-lg">
-                <div class="p-4 border-b border-gray-200 flex items-center gap-2">
-                    <div class="w-8 h-8 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                        <i class="fas fa-trash text-red-500 text-sm"></i>
-                    </div>
-                    <div>
-                        <div class="font-semibold text-gray-900">고객 삭제</div>
-                        <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
+            <div class="modal-container modal-md">
+                <div class="modal-header">
+                    <div class="flex items-center gap-2">
+                        <div class="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fas fa-trash text-red-500 text-sm"></i>
+                        </div>
+                        <div>
+                            <div class="modal-title">고객 삭제</div>
+                            <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
+                        </div>
                     </div>
                 </div>
-                <div class="p-4">
+                <div class="modal-body">
                     <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
                         <table class="w-full table-ui">
                             <thead class="bg-gray-50 sticky top-0">
@@ -647,10 +650,10 @@ function showDeleteWithOrdersModal(orders) {
                     </div>
                     <p class="mt-2.5 text-xs text-red-500">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
                 </div>
-                <div class="flex gap-2 p-4 border-t border-gray-200">
-                    <button id="btn-cancel-del" class="flex-1 py-2 px-3 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">취소</button>
-                    <button id="btn-del-orders-only" class="flex-1 py-2 px-3 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50">선택 주문만 삭제</button>
-                    <button id="btn-del-all" class="flex-1 py-2 px-3 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600">주문 + 고객 삭제</button>
+                <div class="modal-footer">
+                    <button id="btn-cancel-del" class="btn-secondary">취소</button>
+                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:#DC2626;">선택 주문만 삭제</button>
+                    <button id="btn-del-all" class="btn-danger">주문 + 고객 삭제</button>
                 </div>
             </div>`;
 

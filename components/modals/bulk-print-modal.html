@@ -1,74 +1,73 @@
 <!-- 대량 QR코드 프린트 모달 -->
-<div id="bulk-print-modal" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50">
-    <div class="flex items-center justify-center min-h-screen p-4">
-        <div class="bg-white rounded-lg max-w-4xl w-full max-h-screen overflow-auto">
-            <div class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">
-                        <i class="fas fa-print mr-2 text-purple-600"></i>대량 QR코드 프린트
-                    </h2>
-                    <button id="close-bulk-print-modal" class="text-gray-400 hover:text-gray-600">
-                        <i class="fas fa-times text-xl"></i>
-                    </button>
+<div id="bulk-print-modal" class="modal-overlay hidden">
+    <div class="modal-container modal-xl">
+
+        <!-- 헤더 -->
+        <div class="modal-header">
+            <span class="modal-title">
+                <i class="fas fa-print mr-2 text-purple-600"></i>대량 QR코드 프린트
+            </span>
+            <button id="close-bulk-print-modal" class="modal-close-btn">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- 본문 -->
+        <div class="modal-body">
+            <p class="text-gray-600 mb-4">🏷️ 프린트할 상품을 선택하고 각각의 수량을 입력하세요.</p>
+
+            <!-- 전체 선택/해제 -->
+            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+                <label class="flex items-center">
+                    <input type="checkbox" id="select-all-products" class="mr-2">
+                    <span class="font-medium text-gray-700">전체 선택</span>
+                </label>
+                <div class="text-sm text-gray-600">
+                    선택된 상품: <span id="selected-count">0</span>개 |
+                    총 라벨 수: <span id="total-labels">0</span>장
                 </div>
+            </div>
 
-                <div class="mb-4">
-                    <p class="text-gray-600 mb-4">🏷️ 프린트할 상품을 선택하고 각각의 수량을 입력하세요.</p>
-                    
-                    <!-- 전체 선택/해제 -->
-                    <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
-                        <label class="flex items-center">
-                            <input type="checkbox" id="select-all-products" class="mr-2">
-                            <span class="font-medium text-gray-700">전체 선택</span>
-                        </label>
-                        <div class="text-sm text-gray-600">
-                            선택된 상품: <span id="selected-count">0</span>개 | 
-                            총 라벨 수: <span id="total-labels">0</span>장
-                        </div>
+            <!-- 상품 목록 -->
+            <div id="bulk-print-products" class="space-y-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4 mb-4">
+                <!-- 상품 목록이 여기에 동적으로 생성됩니다 -->
+            </div>
+
+            <!-- 라벨 설정 -->
+            <div class="p-4 bg-blue-50 rounded-lg">
+                <h3 class="font-medium text-blue-800 mb-3">
+                    <i class="fas fa-cog mr-2"></i>라벨 설정
+                </h3>
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">페이지당 열 수</label>
+                        <select id="labels-per-row" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="8">8열</option>
+                            <option value="10" selected>10열</option>
+                            <option value="12">12열</option>
+                        </select>
                     </div>
-
-                    <!-- 상품 목록 -->
-                    <div id="bulk-print-products" class="space-y-3 max-h-96 overflow-y-auto border border-gray-200 rounded-lg p-4">
-                        <!-- 상품 목록이 여기에 동적으로 생성됩니다 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">용지 크기</label>
+                        <select id="paper-size" class="w-full p-2 border border-gray-300 rounded">
+                            <option value="a4" selected>A4</option>
+                            <option value="letter">Letter</option>
+                        </select>
                     </div>
-                </div>
-
-                <!-- 라벨 설정 -->
-                <div class="mb-6 p-4 bg-blue-50 rounded-lg">
-                    <h3 class="font-medium text-blue-800 mb-3">
-                        <i class="fas fa-cog mr-2"></i>라벨 설정
-                    </h3>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">페이지당 열 수</label>
-                            <select id="labels-per-row" class="w-full p-2 border border-gray-300 rounded">
-                                <option value="8">8열</option>
-                                <option value="10" selected>10열</option>
-                                <option value="12">12열</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">용지 크기</label>
-                            <select id="paper-size" class="w-full p-2 border border-gray-300 rounded">
-                                <option value="a4" selected>A4</option>
-                                <option value="letter">Letter</option>
-                            </select>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="flex justify-end space-x-3">
-                    <button id="preview-bulk-print" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-eye mr-2"></i>미리보기
-                    </button>
-                    <button id="start-bulk-print" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg transition-colors">
-                        <i class="fas fa-print mr-2"></i>프린트 시작
-                    </button>
-                    <button id="close-bulk-print-modal-btn" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg transition-colors">
-                        닫기
-                    </button>
                 </div>
             </div>
         </div>
+
+        <!-- 푸터 -->
+        <div class="modal-footer">
+            <button id="close-bulk-print-modal-btn" class="btn-secondary">닫기</button>
+            <button id="preview-bulk-print" class="btn-secondary">
+                <i class="fas fa-eye mr-1"></i>미리보기
+            </button>
+            <button id="start-bulk-print" class="btn-primary">
+                <i class="fas fa-print mr-1"></i>프린트 시작
+            </button>
+        </div>
+
     </div>
 </div>

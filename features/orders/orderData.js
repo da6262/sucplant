@@ -1282,20 +1282,20 @@ class OrderDataManager {
 
         const modal = document.createElement('div');
         modal.id = 'refund-reason-modal';
-        modal.className = 'fixed inset-0 z-[600] flex items-center justify-center';
+        modal.className = 'modal-overlay';
+        modal.style.zIndex = '600';
         modal.innerHTML = `
-            <div class="absolute inset-0 bg-black bg-opacity-50"></div>
-            <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
-                <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                    <span class="font-semibold text-gray-800 text-sm"><i class="fas fa-undo text-red-500 mr-2"></i>환불 사유 입력</span>
-                    <button id="refund-modal-close" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-sm"></i></button>
+            <div class="modal-container modal-sm">
+                <div class="modal-header">
+                    <span class="modal-title"><i class="fas fa-undo text-red-500 mr-2"></i>환불 사유 입력</span>
+                    <button id="refund-modal-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
                 </div>
-                <div class="px-4 py-3">
+                <div class="modal-body">
                     <textarea id="refund-reason-input" rows="3"
                         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
                         placeholder="환불 사유를 입력하세요 (예: 상품 불량, 단순 변심 등)"></textarea>
                 </div>
-                <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
+                <div class="modal-footer">
                     <button id="refund-modal-cancel" class="btn-secondary">취소</button>
                     <button id="refund-modal-confirm" class="btn-primary"><i class="fas fa-check mr-1"></i>환불완료 처리</button>
                 </div>

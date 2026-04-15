@@ -512,18 +512,15 @@ function openCustomerSMSModal(phone, customerName) {
 
     const modal = document.createElement('div');
     modal.id = 'customer-sms-modal';
-    modal.className = 'fixed inset-0 z-[600] flex items-center justify-center';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '600';
     modal.innerHTML = `
-        <div class="absolute inset-0 bg-black bg-opacity-50" id="customer-sms-backdrop"></div>
-        <div class="relative bg-white rounded-xl shadow-2xl w-full max-w-sm mx-4">
-            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-100">
-                <div class="flex items-center gap-2">
-                    <i class="fas fa-sms text-emerald-500"></i>
-                    <span class="font-semibold text-gray-800 text-sm">문자 발송</span>
-                </div>
-                <button id="customer-sms-close" class="text-gray-400 hover:text-gray-600 p-1"><i class="fas fa-times text-sm"></i></button>
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-sms text-emerald-500 mr-2"></i>문자 발송</span>
+                <button id="customer-sms-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
             </div>
-            <div class="px-4 py-3 space-y-2">
+            <div class="modal-body space-y-2">
                 <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded px-3 py-2">
                     <i class="fas fa-user text-gray-400"></i>
                     <span class="font-medium">${escapeHtmlBasic(customerName || '')}</span>
@@ -537,8 +534,8 @@ function openCustomerSMSModal(phone, customerName) {
                     <div class="text-right text-xs text-gray-400 mt-0.5"><span id="customer-sms-count">0</span>자</div>
                 </div>
             </div>
-            <div class="flex justify-end gap-2 px-4 py-3 border-t border-gray-100">
-                <button id="customer-sms-cancel" class="text-xs px-3 py-1.5 rounded-lg bg-gray-100 text-gray-600 hover:bg-gray-200 font-medium">취소</button>
+            <div class="modal-footer">
+                <button id="customer-sms-cancel" class="btn-secondary">취소</button>
                 <button id="customer-sms-send" class="btn-primary">
                     <i class="fas fa-paper-plane mr-1"></i>발송
                 </button>
@@ -552,7 +549,7 @@ function openCustomerSMSModal(phone, customerName) {
     const sendBtn = modal.querySelector('#customer-sms-send');
     const close = () => modal.remove();
 
-    modal.querySelector('#customer-sms-backdrop').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     modal.querySelector('#customer-sms-close').addEventListener('click', close);
     modal.querySelector('#customer-sms-cancel').addEventListener('click', close);
     msgArea.addEventListener('input', () => { countEl.textContent = msgArea.value.length; });
