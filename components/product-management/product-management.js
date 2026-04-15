@@ -679,7 +679,12 @@ class ProductManagementComponent {
         const sel = document.getElementById('product-category-filter');
         if (!sel) return;
         const current = sel.value;
-        const cats = [...new Set(this.products.map(p => p.category).filter(Boolean))].sort();
+
+        // 상품에 쓰인 카테고리 + DB 카테고리 전부 합산
+        const fromProducts = this.products.map(p => p.category).filter(Boolean);
+        const fromDB = (window.categoryDataManager?.getAllCategories() || []).map(c => c.name);
+        const cats = [...new Set([...fromProducts, ...fromDB])].sort();
+
         sel.innerHTML = '<option value="">전체 카테고리</option>' +
             cats.map(c => `<option value="${c}"${c === current ? ' selected' : ''}>${c}</option>`).join('');
     }

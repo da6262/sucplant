@@ -1,447 +1,311 @@
 // 카테고리 UI 관리 모듈
 // features/categories/categoryUI.js
 
-// 카테고리 관리 모달 열기
+/* ─────────────────────────────────────────────
+   공통 헬퍼: 카테고리 변경 후 전체 드롭다운 동기화
+   ───────────────────────────────────────────── */
+async function syncAllCategoryDropdowns() {
+    // 1) 상품 등록 모달의 카테고리 select
+    if (window.updateProductCategoryDropdown) {
+        await window.updateProductCategoryDropdown();
+    }
+    // 2) 상품 목록 페이지의 필터 select
+    if (window.productManagementComponent?.updateCategoryFilter) {
+        window.productManagementComponent.updateCategoryFilter();
+    }
+}
+
+/* ─────────────────────────────────────────────
+   모달 열기 / 닫기
+   ───────────────────────────────────────────── */
 export async function openCategoryModal() {
-    console.log('카테고리 관리 모달 열기');
-    
     let modal = document.getElementById('category-modal');
-    
-    // 모달이 없으면 동적으로 로드
+
     if (!modal) {
-        console.log('📦 카테고리 모달이 없습니다. 동적 로드 시작...');
         try {
             await loadCategoryModal();
             modal = document.getElementById('category-modal');
-            console.log('🔍 로드된 모달 요소:', modal);
-            
             if (!modal) {
-                console.error('❌ 카테고리 모달 로드 실패 - 모달 요소를 찾을 수 없습니다');
                 alert('카테고리 모달을 로드할 수 없습니다. 페이지를 새로고침해주세요.');
                 return;
             }
-        } catch (loadError) {
-            console.error('❌ 카테고리 모달 로드 중 오류:', loadError);
-            alert('카테고리 모달을 로드하는 중 오류가 발생했습니다: ' + loadError.message);
+        } catch (err) {
+            alert('카테고리 모달을 로드하는 중 오류가 발생했습니다: ' + err.message);
             return;
         }
     }
-    
-    // 모달 표시
-    modal.classList.remove('hidden');
+
     modal.style.display = 'flex';
-    
-    // 카테고리 목록 로드 및 표시
+    modal.classList.remove('hidden');
     await loadCategoriesList();
 }
 
-// 카테고리 모달 동적 로드
-export async function loadCategoryModal() {
-    try {
-        console.log('📦 카테고리 모달 컴포넌트 로드 중...');
-        
-        // 카테고리 모달 컴포넌트 동적 로드
-        const response = await fetch('components/modals/category-modal.html');
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        const modalHTML = await response.text();
-        console.log('📦 모달 HTML 로드 완료, 길이:', modalHTML.length);
-        
-        // 모달을 body에 추가
-        document.body.insertAdjacentHTML('beforeend', modalHTML);
-        console.log('✅ 카테고리 모달 컴포넌트 로드 완료');
-        
-        // 모달이 제대로 추가되었는지 확인
-        const modal = document.getElementById('category-modal');
-        if (!modal) {
-            throw new Error('모달이 DOM에 추가되지 않았습니다.');
-        }
-        console.log('✅ 모달 DOM 확인 완료');
-        
-        // 카테고리 목록 로드
-        await loadCategoriesList();
-        
-        console.log('🎯 카테고리 모달 이벤트 리스너 설정 완료');
-        
-        // 닫기 버튼 이벤트 리스너 추가
-        const closeCategoryBtn = document.getElementById('close-category-modal');
-        if (closeCategoryBtn) {
-            closeCategoryBtn.addEventListener('click', () => {
-                console.log('❌ 카테고리 모달 닫기 버튼 클릭');
-                closeCategoryModal();
-            });
-            console.log('✅ 카테고리 모달 닫기 버튼 이벤트 리스너 추가 완료');
-        } else {
-            console.warn('⚠️ 닫기 버튼을 찾을 수 없습니다.');
-        }
-        
-        // 모달 배경 클릭 시 닫기
-        if (modal) {
-            modal.addEventListener('click', (e) => {
-                if (e.target === modal) {
-                    console.log('🖱️ 모달 배경 클릭 - 모달 닫기');
-                    closeCategoryModal();
-                }
-            });
-            console.log('✅ 모달 배경 클릭 이벤트 리스너 추가 완료');
-        }
-        
-        // 저장 완료 버튼 이벤트 리스너 추가
-        const saveBtn = document.getElementById('category-modal-save');
-        if (saveBtn) {
-            saveBtn.addEventListener('click', () => {
-                console.log('💾 카테고리 모달 저장 완료 버튼 클릭');
-                closeCategoryModal();
-            });
-            console.log('✅ 저장 완료 버튼 이벤트 리스너 추가 완료');
-        } else {
-            console.warn('⚠️ 저장 완료 버튼을 찾을 수 없습니다.');
-        }
-        
-        // 취소 버튼 이벤트 리스너 추가
-        const cancelBtn = document.getElementById('category-modal-cancel');
-        if (cancelBtn) {
-            cancelBtn.addEventListener('click', () => {
-                console.log('❌ 카테고리 모달 취소 버튼 클릭');
-                closeCategoryModal();
-            });
-            console.log('✅ 취소 버튼 이벤트 리스너 추가 완료');
-        } else {
-            console.warn('⚠️ 취소 버튼을 찾을 수 없습니다.');
-        }
-        
-        // 카테고리 추가 버튼 이벤트 리스너 추가
-        const addCategoryBtn = document.getElementById('add-category-btn');
-        if (addCategoryBtn) {
-            addCategoryBtn.addEventListener('click', async () => {
-                console.log('➕ 카테고리 추가 버튼 클릭');
-                try {
-                    await addCategory();
-                } catch (error) {
-                    console.error('❌ 카테고리 추가 실패:', error);
-                }
-            });
-            console.log('✅ 카테고리 추가 버튼 이벤트 리스너 추가 완료');
-        } else {
-            console.warn('⚠️ 카테고리 추가 버튼을 찾을 수 없습니다.');
-        }
-        
-    } catch (error) {
-        console.error('❌ 카테고리 모달 로드 실패:', error);
-        throw error;
-    }
-}
-
-// 카테고리 관리 모달 닫기
 export function closeCategoryModal() {
-    console.log('카테고리 관리 모달 닫기');
-    
     const modal = document.getElementById('category-modal');
     if (modal) {
-        modal.classList.add('hidden');
         modal.style.display = 'none';
+        modal.classList.add('hidden');
     }
+    // 닫을 때도 드롭다운 동기화 (모달에서 변경사항 반영)
+    syncAllCategoryDropdowns();
 }
 
-// 카테고리 목록 로드 및 표시
-export async function loadCategoriesList() {
+/* ─────────────────────────────────────────────
+   모달 HTML 동적 로드 (최초 1회)
+   ───────────────────────────────────────────── */
+export async function loadCategoryModal() {
     try {
-        console.log('📥 카테고리 목록 로드 시작...');
-        
-        if (window.categoryDataManager) {
-            console.log('✅ categoryDataManager 발견');
-            await window.categoryDataManager.loadCategories();
-            const categories = window.categoryDataManager.getAllCategories();
-            console.log(`📊 로드된 카테고리 수: ${categories.length}`);
-            renderCategoriesList(categories);
-        } else {
-            console.error('❌ categoryDataManager를 찾을 수 없습니다!');
-        }
-        
-    } catch (error) {
-        console.error('❌ 카테고리 목록 로드 실패:', error);
+        const response = await fetch('components/modals/category-modal.html');
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const html = await response.text();
+        document.body.insertAdjacentHTML('beforeend', html);
+
+        const modal = document.getElementById('category-modal');
+        if (!modal) throw new Error('모달이 DOM에 추가되지 않았습니다.');
+
+        // 이벤트 리스너 (한 번만 등록)
+        modal.addEventListener('click', e => { if (e.target === modal) closeCategoryModal(); });
+
+        const addBtn = document.getElementById('add-category-btn');
+        if (addBtn) addBtn.addEventListener('click', () => addCategory());
+
+        // 로드 직후 목록 표시
+        await loadCategoriesList();
+    } catch (err) {
+        console.error('❌ 카테고리 모달 로드 실패:', err);
+        throw err;
     }
 }
 
-// 카테고리 목록 렌더링
+/* ─────────────────────────────────────────────
+   카테고리 목록 로드 & 렌더링
+   ───────────────────────────────────────────── */
+export async function loadCategoriesList() {
+    if (!window.categoryDataManager) {
+        console.error('❌ categoryDataManager 없음');
+        return;
+    }
+    await window.categoryDataManager.loadCategories();
+    renderCategoriesList(window.categoryDataManager.getAllCategories());
+}
+
 export function renderCategoriesList(categories) {
-    console.log('📋 카테고리 목록 렌더링 시작, 카테고리 수:', categories.length);
-    console.log('📋 카테고리 목록:', categories);
-    
     const container = document.getElementById('categories-list');
-    console.log('🔍 categories-list 컨테이너:', container);
-    
-    if (!container) {
-        console.error('❌ categories-list 컨테이너를 찾을 수 없습니다!');
-        console.log('🔍 현재 DOM에 있는 모든 ID:', 
-            Array.from(document.querySelectorAll('[id]')).map(el => el.id));
-        return;
-    }
-    
-    if (categories.length === 0) {
+    if (!container) return;
+
+    if (!categories || categories.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
-                <i class="fas fa-tag text-4xl mb-4 text-gray-300"></i>
-                <p class="text-lg font-medium">등록된 카테고리가 없습니다</p>
-                <p class="text-sm">새 카테고리를 추가해보세요</p>
-            </div>
-        `;
+            <div class="text-center py-8 text-gray-400">
+                <i class="fas fa-tag text-3xl mb-3"></i>
+                <p class="text-sm">등록된 카테고리가 없습니다. 위에서 추가해보세요.</p>
+            </div>`;
         return;
     }
-    
-    container.innerHTML = categories.map(category => `
-        <div class="flex items-center justify-between p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
-            <div class="flex items-center space-x-3">
-                <span class="px-2 py-1 text-xs font-medium rounded-full bg-${category.color}-100 text-${category.color}-800">
-                    ${category.name}
+
+    const COLOR_MAP = {
+        green: '#16a34a', blue: '#2563eb', red: '#dc2626', yellow: '#ca8a04',
+        purple: '#9333ea', pink: '#db2777', indigo: '#4338ca', gray: '#6b7280',
+        brown: '#92400e', orange: '#ea580c'
+    };
+
+    container.innerHTML = categories.map(cat => `
+        <div id="cat-row-${cat.id}" class="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+            <!-- 보기 모드 -->
+            <div class="cat-view flex items-center gap-3 flex-1 min-w-0">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
+                      style="background:${COLOR_MAP[cat.color] || '#6b7280'}">
+                    ${cat.name}
                 </span>
-                ${category.description ? `<span class="text-sm text-gray-600">${category.description}</span>` : ''}
+                <span class="text-xs text-gray-500 truncate">${cat.description || ''}</span>
             </div>
-            <div class="flex items-center space-x-2">
-                <button onclick="editCategory('${category.id}')" 
-                        class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+            <!-- 수정 모드 (기본 hidden) -->
+            <div class="cat-edit hidden flex-1 flex items-center gap-2 mr-2">
+                <input type="text" id="edit-name-${cat.id}" value="${cat.name}"
+                       class="input-ui text-xs" style="max-width:130px;" placeholder="카테고리명">
+                <select id="edit-color-${cat.id}" class="input-ui text-xs" style="max-width:90px;">
+                    ${['green','blue','red','yellow','purple','pink','indigo','gray','brown','orange']
+                        .map(c => `<option value="${c}"${c === cat.color ? ' selected' : ''}>${c}</option>`).join('')}
+                </select>
+            </div>
+            <!-- 버튼 -->
+            <div class="cat-view-btns flex items-center gap-2 ml-2 shrink-0">
+                <button onclick="window.startEditCategory('${cat.id}')"
+                        class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50">
                     <i class="fas fa-edit mr-1"></i>수정
                 </button>
-                <button onclick="deleteCategory('${category.id}')" 
-                        class="text-red-600 hover:text-red-800 font-medium text-sm">
+                <button onclick="window.deleteCategory('${cat.id}')"
+                        class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">
                     <i class="fas fa-trash mr-1"></i>삭제
+                </button>
+            </div>
+            <div class="cat-edit-btns hidden flex items-center gap-2 ml-2 shrink-0">
+                <button onclick="window.confirmEditCategory('${cat.id}')"
+                        class="text-xs text-green-600 hover:text-green-800 px-2 py-1 rounded hover:bg-green-50">
+                    <i class="fas fa-check mr-1"></i>저장
+                </button>
+                <button onclick="window.cancelEditCategory('${cat.id}')"
+                        class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100">
+                    <i class="fas fa-times mr-1"></i>취소
                 </button>
             </div>
         </div>
     `).join('');
 }
 
-// 새 카테고리 추가
+/* ─────────────────────────────────────────────
+   인라인 수정 (수정/저장/취소)
+   ───────────────────────────────────────────── */
+export function startEditCategory(categoryId) {
+    const row = document.getElementById(`cat-row-${categoryId}`);
+    if (!row) return;
+    row.querySelector('.cat-view').classList.add('hidden');
+    row.querySelector('.cat-view-btns').classList.add('hidden');
+    row.querySelector('.cat-edit').classList.remove('hidden');
+    row.querySelector('.cat-edit-btns').classList.remove('hidden');
+    row.querySelector(`#edit-name-${categoryId}`)?.focus();
+}
+
+export function cancelEditCategory(categoryId) {
+    const row = document.getElementById(`cat-row-${categoryId}`);
+    if (!row) return;
+    row.querySelector('.cat-view').classList.remove('hidden');
+    row.querySelector('.cat-view-btns').classList.remove('hidden');
+    row.querySelector('.cat-edit').classList.add('hidden');
+    row.querySelector('.cat-edit-btns').classList.add('hidden');
+}
+
+export async function confirmEditCategory(categoryId) {
+    try {
+        const nameInput  = document.getElementById(`edit-name-${categoryId}`);
+        const colorInput = document.getElementById(`edit-color-${categoryId}`);
+        const newName  = nameInput?.value.trim();
+        const newColor = colorInput?.value || 'gray';
+
+        if (!newName) { alert('카테고리명을 입력해주세요.'); nameInput?.focus(); return; }
+
+        if (!window.categoryDataManager) throw new Error('categoryDataManager 없음');
+        await window.categoryDataManager.updateCategory(categoryId, { name: newName, color: newColor });
+
+        await loadCategoriesList();
+        await syncAllCategoryDropdowns();
+    } catch (err) {
+        console.error('❌ 카테고리 수정 실패:', err);
+        alert('카테고리 수정 실패: ' + err.message);
+    }
+}
+
+/* ─────────────────────────────────────────────
+   새 카테고리 추가
+   ───────────────────────────────────────────── */
 export async function addCategory() {
     try {
-        console.log('새 카테고리 추가 시작...');
-        
-        const nameInput = document.getElementById('new-category-name');
-        const colorSelect = document.getElementById('new-category-color');
-        const descriptionInput = document.getElementById('new-category-description');
-        
-        if (!nameInput || !colorSelect) {
-            console.error('카테고리 입력 필드를 찾을 수 없습니다.');
+        const nameInput  = document.getElementById('new-category-name');
+        const colorInput = document.getElementById('new-category-color');
+        const descInput  = document.getElementById('new-category-description');
+
+        if (!nameInput || !colorInput) {
+            console.error('카테고리 입력 필드 없음');
             return;
         }
-        
-        const categoryData = {
-            name: nameInput.value.trim(),
-            color: colorSelect.value,
-            description: descriptionInput ? descriptionInput.value.trim() : ''
-        };
-        
-        // 유효성 검사
-        if (!categoryData.name) {
-            alert('카테고리명을 입력해주세요.');
-            nameInput.focus();
-            return;
-        }
-        
-        if (window.categoryDataManager) {
-            await window.categoryDataManager.addCategory(categoryData);
-            
-            // 입력 필드 초기화
-            nameInput.value = '';
-            colorSelect.value = 'gray';
-            if (descriptionInput) descriptionInput.value = '';
-            
-            // 카테고리 목록 새로고침
-            await loadCategoriesList();
-            
-            // 상품 모달의 카테고리 드롭다운도 업데이트
-            if (window.updateProductCategoryDropdown) {
-                await window.updateProductCategoryDropdown();
-            }
-            
-            // 성공 메시지
-            alert('✅ 카테고리가 추가되었습니다!');
-            
-        } else {
-            console.error('categoryDataManager를 찾을 수 없습니다.');
-        }
-        
-    } catch (error) {
-        console.error('카테고리 추가 실패:', error);
-        alert(`❌ 카테고리 추가 실패: ${error.message}`);
+
+        const name  = nameInput.value.trim();
+        const color = colorInput.value || 'gray';
+        const desc  = descInput?.value.trim() || '';
+
+        if (!name) { alert('카테고리명을 입력해주세요.'); nameInput.focus(); return; }
+
+        if (!window.categoryDataManager) throw new Error('categoryDataManager 없음');
+        await window.categoryDataManager.addCategory({ name, color, description: desc });
+
+        // 입력 필드 초기화
+        nameInput.value = '';
+        colorInput.value = 'gray';
+        if (descInput) descInput.value = '';
+
+        await loadCategoriesList();
+        await syncAllCategoryDropdowns();
+
+    } catch (err) {
+        console.error('❌ 카테고리 추가 실패:', err);
+        alert('카테고리 추가 실패: ' + err.message);
     }
 }
 
-// 카테고리 수정
-export async function editCategory(categoryId) {
-    try {
-        console.log('카테고리 수정:', categoryId);
-        
-        if (window.categoryDataManager) {
-            const category = window.categoryDataManager.getCategoryById(categoryId);
-            if (category) {
-                const newName = prompt('카테고리명을 수정하세요:', category.name);
-                if (newName && newName.trim() !== category.name) {
-                    await window.categoryDataManager.updateCategory(categoryId, { name: newName.trim() });
-                    await loadCategoriesList();
-                    
-                    // 상품 모달의 카테고리 드롭다운도 업데이트
-                    if (window.updateProductCategoryDropdown) {
-                        await window.updateProductCategoryDropdown();
-                    }
-                    
-                    alert('✅ 카테고리가 수정되었습니다!');
-                }
-            }
-        }
-        
-    } catch (error) {
-        console.error('카테고리 수정 실패:', error);
-        alert(`❌ 카테고리 수정 실패: ${error.message}`);
-    }
-}
-
-// 카테고리 삭제
+/* ─────────────────────────────────────────────
+   카테고리 삭제
+   ───────────────────────────────────────────── */
 export async function deleteCategory(categoryId) {
     try {
-        console.log('카테고리 삭제:', categoryId);
-        
-        if (window.categoryDataManager) {
-            const category = window.categoryDataManager.getCategoryById(categoryId);
-            if (category) {
-                if (confirm(`'${category.name}' 카테고리를 삭제하시겠습니까?`)) {
-                    await window.categoryDataManager.deleteCategory(categoryId);
-                    await loadCategoriesList();
-                    
-                    // 상품 모달의 카테고리 드롭다운도 업데이트
-                    if (window.updateProductCategoryDropdown) {
-                        await window.updateProductCategoryDropdown();
-                    }
-                    
-                    alert('✅ 카테고리가 삭제되었습니다!');
-                }
-            }
-        }
-        
-    } catch (error) {
-        console.error('카테고리 삭제 실패:', error);
-        alert(`❌ 카테고리 삭제 실패: ${error.message}`);
+        if (!window.categoryDataManager) throw new Error('categoryDataManager 없음');
+
+        const cat = window.categoryDataManager.getCategoryById(categoryId);
+        if (!cat) return;
+        if (!confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?`)) return;
+
+        await window.categoryDataManager.deleteCategory(categoryId);
+        await loadCategoriesList();
+        await syncAllCategoryDropdowns();
+
+    } catch (err) {
+        console.error('❌ 카테고리 삭제 실패:', err);
+        alert('카테고리 삭제 실패: ' + err.message);
     }
 }
 
-// 카테고리 드롭다운 업데이트
-export function updateCategoryDropdown() {
-    const categorySelect = document.getElementById('product-form-category');
-    if (!categorySelect) return;
-    
-    // 기존 옵션 제거 (첫 번째와 마지막 옵션 제외)
-    while (categorySelect.children.length > 2) {
-        categorySelect.removeChild(categorySelect.children[1]);
-    }
-    
-    if (window.categoryDataManager) {
-        const categories = window.categoryDataManager.getAllCategories();
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.name;
-            option.textContent = category.name;
-            option.className = `bg-${category.color}-100 text-${category.color}-800`;
-            categorySelect.insertBefore(option, categorySelect.lastElementChild);
-        });
-    }
-}
-
-// 상품 모달용 카테고리 드롭다운 업데이트 함수
+/* ─────────────────────────────────────────────
+   상품 모달용 카테고리 드롭다운 업데이트
+   ───────────────────────────────────────────── */
 export async function updateProductCategoryDropdown() {
     try {
-        console.log('🔄 상품 모달 카테고리 드롭다운 업데이트 시작...');
-        console.trace('🔍 호출 스택:'); // 호출 위치 추적
-        
-        const categorySelect = document.getElementById('product-form-category');
-        if (!categorySelect) {
-            console.warn('⚠️ product-form-category 요소를 찾을 수 없습니다');
-            return;
-        }
-        
-        console.log('🔍 업데이트 전 옵션 수:', categorySelect.children.length);
-        
-        // 카테고리 데이터 매니저가 없으면 초기화
+        const sel = document.getElementById('product-form-category');
+        if (!sel) return;
+
         if (!window.categoryDataManager) {
-            console.log('🔄 CategoryDataManager 초기화 중...');
             if (window.initializeCategoryDataManager) {
                 await window.initializeCategoryDataManager();
             } else {
-                console.error('❌ initializeCategoryDataManager 함수를 찾을 수 없습니다');
                 return;
             }
         }
-        
-        // 카테고리 데이터 로드
-        if (window.categoryDataManager) {
-            await window.categoryDataManager.loadCategories();
-            const categories = window.categoryDataManager.getAllCategories();
-            
-            console.log(`📊 로드된 카테고리 수: ${categories.length}`);
-            
-            // ✅ 개선: 모든 옵션을 완전히 초기화
-            categorySelect.innerHTML = '';
-            
-            // 첫 번째 옵션 추가 (카테고리 선택)
-            const defaultOption = document.createElement('option');
-            defaultOption.value = '';
-            defaultOption.textContent = '카테고리 선택';
-            categorySelect.appendChild(defaultOption);
-            
-            // 카테고리 옵션 추가 (중복 체크)
-            const addedCategories = new Set();
-            categories.forEach(category => {
-                // 중복 방지
-                if (!addedCategories.has(category.name)) {
-                    const option = document.createElement('option');
-                    option.value = category.name;
-                    option.textContent = category.name;
-                    option.className = `text-${category.color}-800`;
-                    categorySelect.appendChild(option);
-                    addedCategories.add(category.name);
-                }
-            });
-            
-            // 마지막 옵션 추가 (새 카테고리 추가)
-            const addNewOption = document.createElement('option');
-            addNewOption.value = '__ADD_NEW__';
-            addNewOption.textContent = '+ 새 카테고리 추가';
-            addNewOption.className = 'text-blue-600 font-medium';
-            categorySelect.appendChild(addNewOption);
-            
-            console.log(`✅ 상품 모달 카테고리 드롭다운 업데이트 완료 (${addedCategories.size}개)`);
-            console.log('🔍 업데이트 후 옵션 수:', categorySelect.children.length);
-        } else {
-            console.error('❌ categoryDataManager를 찾을 수 없습니다');
-        }
-        
-    } catch (error) {
-        console.error('❌ 상품 모달 카테고리 드롭다운 업데이트 실패:', error);
+
+        await window.categoryDataManager.loadCategories();
+        const categories = window.categoryDataManager.getAllCategories();
+
+        sel.innerHTML = '<option value="">카테고리 선택</option>';
+
+        const seen = new Set();
+        categories.forEach(cat => {
+            if (!seen.has(cat.name)) {
+                const opt = document.createElement('option');
+                opt.value = cat.name;
+                opt.textContent = cat.name;
+                sel.appendChild(opt);
+                seen.add(cat.name);
+            }
+        });
+
+        // 마지막 옵션: 새 카테고리 추가
+        const addOpt = document.createElement('option');
+        addOpt.value = '__ADD_NEW__';
+        addOpt.textContent = '+ 새 카테고리 추가';
+        addOpt.className = 'text-blue-600 font-medium';
+        sel.appendChild(addOpt);
+
+    } catch (err) {
+        console.error('❌ 카테고리 드롭다운 업데이트 실패:', err);
     }
 }
 
-// 전역 함수로 등록
-window.openCategoryModal = openCategoryModal;
-window.closeCategoryModal = closeCategoryModal;
-window.addCategory = addCategory;
-window.editCategory = editCategory;
-window.deleteCategory = deleteCategory;
+/* ─────────────────────────────────────────────
+   전역 등록
+   ───────────────────────────────────────────── */
+window.openCategoryModal          = openCategoryModal;
+window.closeCategoryModal         = closeCategoryModal;
+window.addCategory                = addCategory;
+window.deleteCategory             = deleteCategory;
+window.startEditCategory          = startEditCategory;
+window.cancelEditCategory         = cancelEditCategory;
+window.confirmEditCategory        = confirmEditCategory;
 window.updateProductCategoryDropdown = updateProductCategoryDropdown;
-
-// 카테고리 추가 함수를 전역으로도 등록 (onclick 이벤트용)
-window.addCategory = addCategory;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+// 구버전 호환
+window.editCategory               = startEditCategory;
