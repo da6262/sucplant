@@ -809,9 +809,21 @@ window.editCustomer = async function(customerId) {
         } else {
             console.warn('⚠️ openCustomerModal 함수를 찾을 수 없습니다');
         }
-        
-        // 잠시 후 폼에 데이터 채우기 (DOM이 완전히 렌더링되도록)
+
+        // 수정 모드: 탭 표시 + 모달 확장
         setTimeout(() => {
+            // 탭 노출
+            const tabs = document.getElementById('customer-modal-tabs');
+            if (tabs) { tabs.style.display = ''; tabs.classList.remove('hidden'); }
+            // 모달 폭 확장 (modal-sm → modal-md)
+            const modalContent = document.getElementById('customer-modal-content');
+            if (modalContent) {
+                modalContent.classList.remove('modal-sm');
+                modalContent.classList.add('modal-md');
+            }
+            // 정보 탭 활성 상태 유지
+            window.switchCustomerTab?.('info');
+            // 폼 데이터 채우기
             window.fillCustomerForm(customer);
         }, 100);
         
@@ -1581,6 +1593,17 @@ export async function openCustomerModal(customerId = null, tempName = null, call
         // 모달 콘텐츠는 이미 올바른 상태로 설정되어 있음
         console.log('✅ 모달 표시 완료');
         
+        // 새 고객 모드: 탭 숨기기 + 모달 크기 원복
+        const tabsEl = document.getElementById('customer-modal-tabs');
+        if (tabsEl) { tabsEl.style.display = 'none'; tabsEl.classList.add('hidden'); }
+        const modalContentEl = document.getElementById('customer-modal-content');
+        if (modalContentEl) {
+            modalContentEl.classList.remove('modal-md');
+            modalContentEl.classList.add('modal-sm');
+        }
+        // 정보 탭 활성화 (주문이력 패널 숨김)
+        window.switchCustomerTab?.('info');
+
         // 모달 내용 초기화
         document.getElementById('customer-modal-title').textContent = '새 고객 등록';
         document.getElementById('customer-form').reset();
@@ -2157,6 +2180,90 @@ function resetCustomerForm() {
 }
 
 // 고객 모달 닫기 함수
+// ── 고객 모달 탭 전환 ──────────────────────────────────────
+window.switchCustomerTab = function(tab) {
+    const infoForm    = document.getElementById('customer-form');
+    const ordersPane  = document.getElementById('customer-orders-tab-content');
+    const infoBtn     = document.getElementById('customer-tab-info');
+    const ordersBtn   = document.getElementById('customer-tab-orders');
+    const footer      = document.getElementById('customer-modal-footer');
+
+    const activeStyle   = 'border-bottom:2px solid #16a34a;color:#16a34a;';
+    const inactiveStyle = 'border-bottom:2px solid transparent;color:#6b7280;';
+
+    if (tab === 'info') {
+        infoForm   && (infoForm.style.display   = '');
+        ordersPane && (ordersPane.style.display = 'none');
+        footer     && (footer.style.display     = '');
+        if (infoBtn)   infoBtn.style.cssText   += activeStyle;
+        if (ordersBtn) ordersBtn.style.cssText += inactiveStyle;
+    } else {
+        infoForm   && (infoForm.style.display   = 'none');
+        ordersPane && (ordersPane.style.display = '');
+        footer     && (footer.style.display     = 'none');
+        if (infoBtn)   infoBtn.style.cssText   += inactiveStyle;
+        if (ordersBtn) ordersBtn.style.cssText += activeStyle;
+        // 주문이력 로드
+        const customerId = document.getElementById('customer-id')?.value;
+        if (customerId) _loadCustomerOrdersForModal(customerId);
+    }
+};
+
+async function _loadCustomerOrdersForModal(customerId) {
+    const tbody = document.getElementById('cmod-orders-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="4" class="text-center td-muted" style="padding:16px;">불러오는 중...</td></tr>';
+
+    try {
+        const customer = window.customerDataManager?.getCustomerById(customerId);
+        if (!customer || !window.supabaseClient) throw new Error('데이터 없음');
+
+        const normalizedPhone = (customer.phone || '').replace(/\D/g, '');
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('order_date, total_amount, order_status, farm_order_items(product_name, quantity)')
+            .or(`customer_phone.eq.${customer.phone},customer_phone.eq.${normalizedPhone}`)
+            .order('order_date', { ascending: false })
+            .limit(100);
+        if (error) throw error;
+
+        const list = orders || [];
+        const total = list.reduce((s, o) => s + (Number(o.total_amount) || 0), 0);
+        const count = list.length;
+        const avg   = count > 0 ? Math.round(total / count) : 0;
+        const last  = list[0]?.order_date?.slice(0, 10) || '-';
+
+        const fmt = n => n > 0 ? n.toLocaleString() + '원' : '—';
+        const el = id => document.getElementById(id);
+        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmt(total);
+        if (el('cmod-stat-count')) el('cmod-stat-count').textContent = count > 0 ? count + '회' : '—';
+        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmt(avg);
+        if (el('cmod-stat-last'))  el('cmod-stat-last').textContent  = last;
+
+        if (list.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="4" class="text-center td-muted" style="padding:16px;">주문 내역이 없습니다</td></tr>';
+            return;
+        }
+
+        tbody.innerHTML = list.map(o => {
+            const items = o.farm_order_items || [];
+            const names = items.length > 0
+                ? items.slice(0, 2).map(i => i.product_name || '').join(', ') + (items.length > 2 ? ` 외 ${items.length - 2}` : '')
+                : '-';
+            const statusCls = window.orderDataManager?.getStatusColor?.(o.order_status) || 'badge-neutral';
+            return `<tr>
+                <td class="td-secondary">${(o.order_date || '').slice(0, 10)}</td>
+                <td class="td-primary" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(names)}">${escapeHtml(names)}</td>
+                <td class="td-amount text-right">${o.total_amount ? Number(o.total_amount).toLocaleString() + '원' : '-'}</td>
+                <td class="text-center"><span class="badge ${statusCls}">${o.order_status || '-'}</span></td>
+            </tr>`;
+        }).join('');
+    } catch (e) {
+        console.error('주문이력 로드 실패:', e);
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500" style="padding:16px;">불러오기 실패</td></tr>';
+    }
+}
+
 export function closeCustomerModal() {
     try {
         console.log('🔄 고객 모달 닫기');
@@ -2171,6 +2278,15 @@ export function closeCustomerModal() {
             console.warn('⚠️ 고객 모달을 찾을 수 없습니다');
         }
         
+        // 탭 숨기기 + 모달 크기 원복
+        const tabsEl = document.getElementById('customer-modal-tabs');
+        if (tabsEl) { tabsEl.style.display = 'none'; tabsEl.classList.add('hidden'); }
+        const modalContentEl = document.getElementById('customer-modal-content');
+        if (modalContentEl) {
+            modalContentEl.classList.remove('modal-md');
+            modalContentEl.classList.add('modal-sm');
+        }
+
         // 주문 폼에서 온 경우 주문 모달 다시 표시
         if (window.tempCustomerName) {
             const orderModal = document.getElementById('order-modal');

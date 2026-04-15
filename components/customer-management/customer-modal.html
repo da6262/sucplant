@@ -10,6 +10,22 @@
             </button>
         </div>
 
+        <!-- 탭 네비게이션 (수정 모드에서만 표시) -->
+        <div id="customer-modal-tabs" class="hidden" style="display:none;border-bottom:1px solid #e5e7eb;">
+            <div style="display:flex;padding:0 16px;">
+                <button type="button" id="customer-tab-info"
+                        onclick="window.switchCustomerTab('info')"
+                        style="padding:8px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid #16a34a;color:#16a34a;">
+                    <i class="fas fa-user mr-1"></i>정보
+                </button>
+                <button type="button" id="customer-tab-orders"
+                        onclick="window.switchCustomerTab('orders')"
+                        style="padding:8px 14px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#6b7280;">
+                    <i class="fas fa-shopping-bag mr-1"></i>주문이력
+                </button>
+            </div>
+        </div>
+
         <!-- 폼 본문 -->
         <div class="modal-body overflow-y-auto" style="flex:1;">
             <form id="customer-form" class="form-grid">
@@ -136,8 +152,49 @@
             </form>
         </div>
 
+        <!-- 주문이력 탭 콘텐츠 -->
+        <div id="customer-orders-tab-content" style="display:none;" class="overflow-y-auto" style="flex:1;">
+            <div style="padding:12px;">
+                <!-- 통계 4칸 -->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
+                    <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:11px;color:#6b7280;">총 구매액</div>
+                        <div id="cmod-stat-total" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+                    </div>
+                    <div style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:11px;color:#6b7280;">구매 횟수</div>
+                        <div id="cmod-stat-count" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+                    </div>
+                    <div style="background:#fffbeb;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:11px;color:#6b7280;">평균 구매액</div>
+                        <div id="cmod-stat-avg" style="font-size:15px;font-weight:700;color:#d97706;">—</div>
+                    </div>
+                    <div style="background:#f9fafb;border-radius:8px;padding:10px;text-align:center;">
+                        <div style="font-size:11px;color:#6b7280;">마지막 구매</div>
+                        <div id="cmod-stat-last" style="font-size:13px;font-weight:600;color:#374151;">—</div>
+                    </div>
+                </div>
+                <!-- 주문 목록 테이블 -->
+                <div style="overflow:auto;max-height:320px;border:1px solid #e5e7eb;border-radius:6px;">
+                    <table class="table-ui" style="width:100%;min-width:360px;">
+                        <thead>
+                            <tr>
+                                <th class="text-left" style="width:72px;">날짜</th>
+                                <th class="text-left">상품</th>
+                                <th class="text-right" style="width:80px;">금액</th>
+                                <th class="text-center" style="width:68px;">상태</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cmod-orders-tbody">
+                            <tr><td colspan="4" class="text-center td-muted" style="padding:16px;">불러오는 중...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
         <!-- 푸터 -->
-        <div class="modal-footer">
+        <div class="modal-footer" id="customer-modal-footer">
             <button type="button" onclick="window.closeCustomerModal()" class="btn-secondary">취소</button>
             <button type="button" id="customer-save-btn" class="btn-primary">
                 <i class="fas fa-save mr-1"></i>저장
