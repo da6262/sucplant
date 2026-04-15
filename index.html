@@ -788,9 +788,12 @@
                     return false;
                 }
 
-                // 재방문 시 재로드 건너뜀
+                // 재방문 시 HTML 재로드 건너뜀 (단, 이벤트 재연결은 항상 실행)
                 if (customersContainer.dataset.loaded === 'true') {
-                    console.log('🔄 고객관리 이미 로드됨 — 재로드 건너뜀');
+                    console.log('🔄 고객관리 이미 로드됨 — 이벤트 리스너만 재연결');
+                    if (typeof window.initCustomerManagementSection === 'function') {
+                        await window.initCustomerManagementSection();
+                    }
                     return true;
                 }
 
