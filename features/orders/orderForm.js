@@ -2223,18 +2223,18 @@ function searchProducts(query) {
 
                     if (data && data.length > 0) {
                         resultsDiv.innerHTML = data.map(product => `
-                            <div style="padding:6px 10px;display:flex;align-items:center;gap:8px;cursor:pointer;border-bottom:1px solid #f0f0f0;"
+                            <div class="search-result-item"
                                  onmousedown="event.preventDefault();"
                                  onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
-                                <span style="flex:1;font-size:12px;font-weight:500;color:#222;">${product.name}</span>
-                                <span style="font-size:11px;color:#888;">${(product.category||'')}</span>
-                                <span style="font-size:12px;font-weight:600;color:#059669;white-space:nowrap;">${product.price.toLocaleString()}원</span>
-                                <span style="font-size:11px;color:#bbb;white-space:nowrap;">재고 ${product.stock}</span>
+                                <span class="search-result-name">${product.name}</span>
+                                <span class="search-result-cat">${(product.category||'')}</span>
+                                <span class="search-result-price">${product.price.toLocaleString()}원</span>
+                                <span class="search-result-stock">재고 ${product.stock}</span>
                             </div>
                         `).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
-                        resultsDiv.innerHTML = `<div style="padding:10px;text-align:center;color:#999;font-size:12px;">검색 결과가 없습니다</div>`;
+                        resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
                         resultsDiv.classList.remove('hidden');
                     }
                 });

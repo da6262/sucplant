@@ -126,16 +126,16 @@ window.generateOrderFormHTMLMinimal = function () {
                 <table class="xf-tbl xf-cart">
                     <thead>
                         <tr>
-                            <th style="text-align:left">상품명</th>
-                            <th style="width:60px;text-align:right">단가</th>
-                            <th style="width:82px;text-align:center">수량</th>
-                            <th style="width:68px;text-align:right">소계</th>
+                            <th class="text-left">상품명</th>
+                            <th class="text-right" style="width:60px">단가</th>
+                            <th class="text-center" style="width:82px">수량</th>
+                            <th class="text-right" style="width:68px">소계</th>
                             <th style="width:20px"></th>
                         </tr>
                     </thead>
                     <tbody id="cart-items-body">
                         <tr>
-                            <td colspan="5" style="text-align:center;color:#aaa;padding:14px 0;font-size:12px">
+                            <td colspan="5" class="text-center text-gray-300 py-3 text-xs">
                                 장바구니가 비어있습니다
                             </td>
                         </tr>
@@ -163,9 +163,8 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr class="xf-total-row">
-                            <td colspan="3" style="text-align:right;font-weight:700;font-size:13px;padding:5px 6px">총금액</td>
-                            <td colspan="2" style="text-align:right;font-weight:700;font-size:15px;color:#16a34a;padding:5px 6px"
-                                id="final-total-amount">0원</td>
+                            <td colspan="3" class="xf-total-label">총금액</td>
+                            <td colspan="2" class="xf-total-amount" id="final-total-amount">0원</td>
                         </tr>
                     </tfoot>
                 </table>

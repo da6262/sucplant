@@ -921,13 +921,22 @@ function attachCustomerEventListeners() {
         // 고객 검색
         const customerSearch = document.getElementById('customer-search');
         if (customerSearch) {
-            customerSearch.addEventListener('input', function(e) {
-                const searchTerm = e.target.value.trim();
+            let isComposing = false;
+            const doSearch = function() {
+                const searchTerm = customerSearch.value.trim();
                 const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
                 const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
                 if (window.renderCustomersTable) {
                     window.renderCustomersTable(gradeFilter, searchTerm);
                 }
+            };
+            customerSearch.addEventListener('compositionstart', () => { isComposing = true; });
+            customerSearch.addEventListener('compositionend', () => {
+                isComposing = false;
+                doSearch();
+            });
+            customerSearch.addEventListener('input', function() {
+                if (!isComposing) doSearch();
             });
             console.log('✅ 고객 검색 이벤트 리스너 연결 완료');
         }

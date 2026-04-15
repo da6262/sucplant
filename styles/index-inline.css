@@ -876,3 +876,44 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 }
 .order-date-quick-btn:hover { background: #F9FAFB; border-color: #9CA3AF; }
 .order-date-quick-btn.active-date { background: #16A34A; color: #fff; border-color: #16A34A; }
+
+/* =====================================================
+   Product Search Dropdown
+   ===================================================== */
+.search-result-item {
+    padding: 6px 10px; display: flex; align-items: center; gap: 8px;
+    cursor: pointer; border-bottom: 1px solid #f0f0f0;
+}
+.search-result-item:hover { background: #f9fafb; }
+.search-result-name {
+    flex: 1; font-size: 12px; font-weight: 500; color: var(--text-primary);
+}
+.search-result-cat {
+    font-size: 11px; color: var(--text-secondary);
+}
+.search-result-price {
+    font-size: 12px; font-weight: 600; color: #059669; white-space: nowrap;
+}
+.search-result-stock {
+    font-size: 11px; color: var(--text-muted); white-space: nowrap;
+}
+.search-result-empty {
+    padding: 10px; text-align: center; color: #999; font-size: 12px;
+}
+
+/* =====================================================
+   Order Form — Total Row
+   ===================================================== */
+.xf-total-label {
+    text-align: right; font-weight: 700; font-size: 13px; padding: 5px 6px;
+}
+.xf-total-amount {
+    text-align: right; font-weight: 700; font-size: 15px;
+    color: #16a34a; padding: 5px 6px;
+}
+
+/* =====================================================
+   Product Table — Micro Typography
+   ===================================================== */
+.text-2xs  { font-size: 10px; }
+.text-11px { font-size: 11px; }

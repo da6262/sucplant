@@ -412,32 +412,32 @@ class ProductManagementComponent {
                     <div class="shrink-0 w-7 h-7">
                         ${product.image_url
                             ? `<img class="w-7 h-7 rounded object-cover border border-gray-200" src="${product.image_url}" alt="${product.name}">`
-                            : `<div class="w-7 h-7 rounded bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300" style="font-size:10px;"></i></div>`
+                            : `<div class="w-7 h-7 rounded bg-gray-100 border border-gray-200 flex items-center justify-center"><i class="fas fa-image text-gray-300 text-2xs"></i></div>`
                         }
                     </div>
                     <div>
                         <div class="text-xs font-medium text-gray-800">${product.name}</div>
-                        ${product.description ? `<div class="text-gray-400" style="font-size:10px;">${product.description}</div>` : ''}
+                        ${product.description ? `<div class="text-gray-400 text-2xs">${product.description}</div>` : ''}
                     </div>
                 </div>
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
-                <span class="badge badge-blue" style="font-size:10px;">${product.category || '미분류'}</span>
+                <span class="badge badge-blue text-2xs">${product.category || '미분류'}</span>
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <div class="text-xs font-semibold text-gray-800">${this.formatCurrency(product.price)}</div>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500" style="font-size:11px;">
+            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500 text-11px">
                 ${product.cost ? this.formatCurrency(product.cost) : '-'}
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
                 <span class="text-xs font-medium ${stockColor}">${product.stock || 0}</span>
-                <span class="text-gray-400" style="font-size:10px;">개</span>
+                <span class="text-gray-400 text-2xs">개</span>
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
-                <span class="${badgeClass}" style="font-size:10px;">${this.getStockStatusText(stockStatus)}</span>
+                <span class="${badgeClass} text-2xs">${this.getStockStatusText(stockStatus)}</span>
             </td>
-            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500" style="font-size:11px;">
+            <td class="px-2 py-1.5 whitespace-nowrap text-gray-500 text-11px">
                 ${this.formatDate(product.created_at)}
             </td>
             <td class="px-2 py-1.5 whitespace-nowrap">
