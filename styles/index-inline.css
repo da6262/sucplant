@@ -1256,6 +1256,7 @@ table tbody td [class*="shrink-0"] {
 .text-warn        { color: var(--warn); }
 .text-heading     { color: var(--text-heading); }
 .text-body        { color: var(--text-body); }
+.text-secondary   { color: var(--text-secondary); }
 .text-muted       { color: var(--text-muted); }
 .text-amount      { color: var(--text-amount); }
 .text-null-soft   { color: var(--text-null); }

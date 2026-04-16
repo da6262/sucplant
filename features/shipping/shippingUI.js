@@ -380,14 +380,14 @@ export class ShippingUI {
 
     getStatusColor(status) {
         const colors = {
-            '주문접수': 'bg-yellow-100 text-yellow-800',
-            '입금확인': 'bg-green-100 text-green-800',
-            '배송준비': 'bg-orange-100 text-orange-800',
-            '배송시작': 'bg-purple-100 text-purple-800',
-            '배송완료': 'bg-emerald-100 text-emerald-800',
-            '주문취소': 'bg-gray-100 text-gray-800'
+            '주문접수': 'badge-warning',
+            '입금확인': 'badge-success',
+            '배송준비': 'badge-orange',
+            '배송시작': 'badge-purple',
+            '배송완료': 'badge-sky',
+            '주문취소': 'badge-neutral'
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || 'badge-neutral';
     }
 }
 

@@ -200,10 +200,10 @@ export class ProductUI {
             item.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-medium text-gray-900">${suggestion.name}</div>
-                        <div class="text-xs text-gray-500">${suggestion.category}</div>
+                        <div class="font-medium text-heading">${suggestion.name}</div>
+                        <div class="text-xs text-secondary">${suggestion.category}</div>
                     </div>
-                    <div class="text-sm text-gray-600">${suggestion.price.toLocaleString()}원</div>
+                    <div class="text-sm text-secondary">${suggestion.price.toLocaleString()}원</div>
                 </div>
             `;
             
@@ -577,14 +577,14 @@ export class ProductUI {
                 const margin = (profit / price) * 100;
                 
                 marginDisplay.innerHTML = `
-                    <span class="text-green-600 font-medium">
+                    <span class="text-brand font-medium">
                         💰 수익: ${profit.toLocaleString()}원 (${margin.toFixed(1)}%)
                     </span>
                 `;
                 console.log('✅ 수익률 계산 완료:', { profit, margin });
             } else if (price > 0) {
                 marginDisplay.innerHTML = `
-                    <span class="text-gray-500">
+                    <span class="text-secondary">
                         💰 매입가를 입력하면 수익률을 계산합니다
                     </span>
                 `;

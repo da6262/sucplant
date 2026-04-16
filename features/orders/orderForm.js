@@ -1563,10 +1563,10 @@ function selectCustomerFromSearch(customerId, name, phone, address, grade, addre
         const addressInput = document.getElementById('order-customer-address');
         const detailInput = document.getElementById('order-customer-address-detail');
         const searchInput = document.getElementById('order-customer-search');
-        if (nameInput) { nameInput.value = name || ''; nameInput.readOnly = true; nameInput.classList.add('bg-gray-100'); }
-        if (phoneInput) { phoneInput.value = phone || ''; phoneInput.readOnly = true; phoneInput.classList.add('bg-gray-100'); }
-        if (addressInput) { addressInput.value = address || ''; addressInput.readOnly = true; addressInput.classList.add('bg-gray-100'); }
-        if (detailInput) { detailInput.value = addressDetail || ''; detailInput.readOnly = true; detailInput.classList.add('bg-gray-100'); }
+        if (nameInput) { nameInput.value = name || ''; nameInput.readOnly = true; nameInput.classList.add('bg-page'); }
+        if (phoneInput) { phoneInput.value = phone || ''; phoneInput.readOnly = true; phoneInput.classList.add('bg-page'); }
+        if (addressInput) { addressInput.value = address || ''; addressInput.readOnly = true; addressInput.classList.add('bg-page'); }
+        if (detailInput) { detailInput.value = addressDetail || ''; detailInput.readOnly = true; detailInput.classList.add('bg-page'); }
         if (searchInput) { searchInput.value = name || ''; searchInput.blur(); }
         let customerIdInput = document.getElementById('order-customer-id');
         if (!customerIdInput && document.getElementById('order-form')) {
