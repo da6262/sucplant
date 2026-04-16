@@ -206,7 +206,7 @@ class NavigationComponent {
      */
     setActiveTab(tabId) {
         document.querySelectorAll('.nav-btn, .mobile-nav-btn').forEach(btn => {
-            btn.classList.remove('active', 'bg-emerald-600', 'text-white', 'rounded-lg', 'text-gray-800', 'text-gray-700');
+            btn.classList.remove('active', 'bg-emerald-600', 'text-white', 'rounded-lg', 'text-heading', 'text-body');
         });
 
         const activeButton = document.getElementById(`nav-${tabId}`);

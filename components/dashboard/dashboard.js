@@ -196,20 +196,20 @@ class DashboardComponent {
         
         // 오류 메시지 표시
         const errorDiv = document.createElement('div');
-        errorDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-4';
+        errorDiv.className = 'bg-danger border border-red-200 rounded-lg p-4 mb-4';
         errorDiv.innerHTML = `
             <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-500 mr-3"></i>
+                <i class="fas fa-exclamation-triangle text-danger mr-3"></i>
                 <div>
                     <h3 class="text-red-800 font-semibold">데이터베이스 연결 오류</h3>
-                    <p class="text-red-600 text-sm mt-1">Supabase 연결에 문제가 있습니다. 페이지를 새로고침하거나 관리자에게 문의하세요.</p>
+                    <p class="text-danger text-sm mt-1">Supabase 연결에 문제가 있습니다. 페이지를 새로고침하거나 관리자에게 문의하세요.</p>
                     ${detail ? `<p class="text-red-700 text-xs mt-2 break-all">상세: ${detail}</p>` : ''}
                 </div>
             </div>
         `;
         
         // 기존 오류 메시지 제거
-        const existingError = dashboardContainer.querySelector('.bg-red-50');
+        const existingError = dashboardContainer.querySelector('.bg-danger');
         if (existingError) {
             existingError.remove();
         }
@@ -398,7 +398,7 @@ class DashboardComponent {
         container.innerHTML = '';
 
         if (recentOrders.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">최근 주문이 없습니다.</p>';
+            container.innerHTML = '<p class="text-muted text-sm">최근 주문이 없습니다.</p>';
             return;
         }
 
@@ -408,18 +408,18 @@ class DashboardComponent {
 
         recentOrders.forEach(order => {
             const orderItem = document.createElement('div');
-            orderItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+            orderItem.className = 'flex items-center justify-between p-3 bg-section rounded-lg';
             const orderLabel = order.order_id ? String(order.order_id).slice(0, 8) + '…' : '주문';
             const status = order.order_status || '주문접수';
             const statusClass = getStatusBadge(status);
             orderItem.innerHTML = `
                 <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-900">${orderLabel}</div>
-                    <div class="text-xs text-gray-500">${(order.customer_name || '').replace(/</g, '&lt;')}</div>
+                    <div class="text-sm font-medium text-heading">${orderLabel}</div>
+                    <div class="text-xs text-muted">${(order.customer_name || '').replace(/</g, '&lt;')}</div>
                 </div>
                 <div class="flex items-center space-x-2">
                     <span class="badge ${statusClass}">${status}</span>
-                    <span class="text-xs text-gray-500">${this.formatCurrency(order.total_amount || 0)}</span>
+                    <span class="text-xs text-muted">${this.formatCurrency(order.total_amount || 0)}</span>
                 </div>
             `;
             container.appendChild(orderItem);
@@ -439,20 +439,20 @@ class DashboardComponent {
         container.innerHTML = '';
 
         if (lowStockProducts.length === 0 && outOfStockProducts.length === 0) {
-            container.innerHTML = '<p class="text-gray-500 text-sm">재고 알림이 없습니다.</p>';
+            container.innerHTML = '<p class="text-muted text-sm">재고 알림이 없습니다.</p>';
             return;
         }
 
         // 품절 상품
         outOfStockProducts.forEach(product => {
             const alertItem = document.createElement('div');
-            alertItem.className = 'flex items-center justify-between p-3 bg-red-50 border border-red-200 rounded-lg';
+            alertItem.className = 'flex items-center justify-between p-3 bg-danger border border-red-200 rounded-lg';
             alertItem.innerHTML = `
                 <div class="flex-1">
                     <div class="text-sm font-medium text-red-900">${product.name}</div>
-                    <div class="text-xs text-red-600">품절</div>
+                    <div class="text-xs text-danger">품절</div>
                 </div>
-                <div class="text-red-600">
+                <div class="text-danger">
                     <i class="fas fa-exclamation-triangle"></i>
                 </div>
             `;
@@ -462,13 +462,13 @@ class DashboardComponent {
         // 재고 부족 상품
         lowStockProducts.forEach(product => {
             const alertItem = document.createElement('div');
-            alertItem.className = 'flex items-center justify-between p-3 bg-yellow-50 border border-yellow-200 rounded-lg';
+            alertItem.className = 'flex items-center justify-between p-3 bg-warn border border-yellow-200 rounded-lg';
             alertItem.innerHTML = `
                 <div class="flex-1">
                     <div class="text-sm font-medium text-yellow-900">${product.name}</div>
-                    <div class="text-xs text-yellow-600">재고: ${product.stock}개</div>
+                    <div class="text-xs text-warn">재고: ${product.stock}개</div>
                 </div>
-                <div class="text-yellow-600">
+                <div class="text-warn">
                     <i class="fas fa-exclamation-circle"></i>
                 </div>
             `;
@@ -487,25 +487,25 @@ class DashboardComponent {
             {
                 label: '데이터베이스',
                 status: '정상',
-                color: 'text-green-600',
+                color: 'text-brand',
                 icon: 'fas fa-database'
             },
             {
                 label: 'API 연결',
                 status: '로컬 모드',
-                color: 'text-yellow-600',
+                color: 'text-warn',
                 icon: 'fas fa-cloud'
             },
             {
                 label: '백업 상태',
                 status: '최근 백업: 오늘',
-                color: 'text-green-600',
+                color: 'text-brand',
                 icon: 'fas fa-save'
             },
             {
                 label: '시스템 메모리',
                 status: '정상',
-                color: 'text-green-600',
+                color: 'text-brand',
                 icon: 'fas fa-memory'
             }
         ];
@@ -514,13 +514,13 @@ class DashboardComponent {
 
         statusItems.forEach(item => {
             const statusItem = document.createElement('div');
-            statusItem.className = 'flex items-center justify-between p-3 bg-gray-50 rounded-lg';
+            statusItem.className = 'flex items-center justify-between p-3 bg-section rounded-lg';
             statusItem.innerHTML = `
                 <div class="flex items-center space-x-3">
                     <i class="${item.icon} ${item.color}"></i>
                     <div>
-                        <div class="text-sm font-medium text-gray-900">${item.label}</div>
-                        <div class="text-xs text-gray-500">${item.status}</div>
+                        <div class="text-sm font-medium text-heading">${item.label}</div>
+                        <div class="text-xs text-muted">${item.status}</div>
                     </div>
                 </div>
                 <div class="${item.color}">
@@ -715,7 +715,7 @@ class DashboardComponent {
     handleChartPeriodChange(buttonId) {
         // 모든 버튼 비활성화
         document.querySelectorAll('[id^="chart-"]').forEach(btn => {
-            btn.className = 'px-3 py-1 text-xs bg-gray-100 text-gray-800 rounded-full hover:bg-gray-200';
+            btn.className = 'px-3 py-1 text-xs bg-page text-heading rounded-full hover:bg-gray-200';
         });
         
         // 선택된 버튼 활성화

@@ -16,8 +16,8 @@
 const PRODUCT_COLUMNS = [
     {
         key: 'checkbox',
-        headerCell: '<th class="text-center w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-green-600 focus:ring-green-500"></th>',
-        render: (p) => `<td class="px-2 text-center align-middle"><input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
+        headerCell: '<th class="text-center w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
+        render: (p) => `<td class="px-2 text-center align-middle"><input type="checkbox" class="product-checkbox rounded text-brand focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
     },
     {
         key: 'product_code',
@@ -451,11 +451,11 @@ class ProductManagementComponent {
         if (pageProducts.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-4 text-center text-gray-500">
+                    <td colspan="8" class="px-4 text-center text-muted">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
-                            <p class="text-sm font-medium text-gray-600">등록된 상품이 없습니다</p>
-                            <p class="text-xs text-gray-500 mt-1">새 상품을 등록해보세요</p>
+                            <p class="text-sm font-medium text-body">등록된 상품이 없습니다</p>
+                            <p class="text-xs text-muted mt-1">새 상품을 등록해보세요</p>
                         </div>
                     </td>
                 </tr>
@@ -484,7 +484,7 @@ class ProductManagementComponent {
      */
     createProductRow(product) {
         const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
+        row.className = 'hover:bg-section transition-colors cursor-pointer';
         row.dataset.productId = product.id;
 
         // PRODUCT_COLUMNS 단일 스키마에서 모든 셀 생성 — 헤더와 무조건 정합
@@ -555,11 +555,11 @@ class ProductManagementComponent {
      */
     getStockColor(status) {
         const colors = {
-            'in-stock': 'text-green-600',
-            'low-stock': 'text-yellow-600',
-            'out-of-stock': 'text-red-600'
+            'in-stock': 'text-brand',
+            'low-stock': 'text-warn',
+            'out-of-stock': 'text-danger'
         };
-        return colors[status] || 'text-gray-600';
+        return colors[status] || 'text-body';
     }
 
     /**
@@ -692,7 +692,7 @@ class ProductManagementComponent {
             pageBtn.className = `px-2 py-1 text-xs border rounded transition-colors ${
                 i === this.currentPage
                     ? 'status-tab-btn active'
-                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    : 'bg-white border-gray-200 text-body hover:bg-section'
             }`;
             pageBtn.textContent = i;
             pageBtn.addEventListener('click', () => {
@@ -924,9 +924,9 @@ class ProductManagementComponent {
 
         const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
         const status   = statusMap[product.status] || product.status || '-';
-        const statusColor = product.status === 'active'   ? 'text-green-600 bg-green-50'
-                          : product.status === 'soldout'  ? 'text-red-500 bg-red-50'
-                          : 'text-gray-500 bg-gray-100';
+        const statusColor = product.status === 'active'   ? 'text-brand bg-success'
+                          : product.status === 'soldout'  ? 'text-danger bg-danger'
+                          : 'text-muted bg-page';
 
         const profitMargin = product.profit_margin
             ? product.profit_margin + '%'
@@ -936,7 +936,7 @@ class ProductManagementComponent {
 
         const imageHtml = product.image_url
             ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
-            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+            : `<div class="w-full h-40 bg-page rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
 
         const panel = document.createElement('div');
         panel.id = 'product-detail-panel';
@@ -945,12 +945,12 @@ class ProductManagementComponent {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col" style="max-height:90vh;">
                 <!-- 헤더 -->
                 <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
-                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
+                    <span class="text-base font-semibold text-heading">상품 상세</span>
                     <div class="flex items-center gap-2">
                         <button id="pd-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
                             <i class="fas fa-edit mr-1"></i>수정
                         </button>
-                        <button id="pd-close-btn" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                        <button id="pd-close-btn" class="text-muted hover:text-body p-1 rounded hover:bg-page">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -960,47 +960,47 @@ class ProductManagementComponent {
                     ${imageHtml}
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-1">
-                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
+                            <h2 class="text-lg font-bold text-heading leading-tight">${fmt(product.name)}</h2>
                             <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
                         </div>
-                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
+                        ${product.product_code ? `<p class="text-xs text-muted font-mono">${product.product_code}</p>` : ''}
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">카테고리</p>
-                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">카테고리</p>
+                            <p class="font-medium text-heading">${fmt(product.category)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">사이즈</p>
-                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">사이즈</p>
+                            <p class="font-medium text-heading">${fmt(product.size)}</p>
                         </div>
-                        <div class="bg-green-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">판매가</p>
+                        <div class="bg-success rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">판매가</p>
                             <p class="font-semibold text-green-700 text-base">${fmtP(product.price)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">매입가</p>
-                            <p class="font-medium text-gray-800">${fmtP(product.cost)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">매입가</p>
+                            <p class="font-medium text-heading">${fmtP(product.cost)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">재고</p>
-                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">재고</p>
+                            <p class="font-semibold text-heading">${product.stock != null ? product.stock + '개' : '-'}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-xs text-gray-400 mb-0.5">마진율</p>
-                            <p class="font-medium text-gray-800">${profitMargin}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">마진율</p>
+                            <p class="font-medium text-heading">${profitMargin}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
-                            <p class="text-xs text-gray-400 mb-0.5">배송 옵션</p>
-                            <p class="font-medium text-gray-800">${shipping}</p>
+                        <div class="bg-section rounded-lg p-3 col-span-2">
+                            <p class="text-xs text-muted mb-0.5">배송 옵션</p>
+                            <p class="font-medium text-heading">${shipping}</p>
                         </div>
                     </div>
                     ${product.description ? `
-                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
-                        <p class="text-xs text-gray-400 mb-1">상품 설명</p>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
+                    <div class="bg-section rounded-lg p-3 text-sm">
+                        <p class="text-xs text-muted mb-1">상품 설명</p>
+                        <p class="text-body leading-relaxed whitespace-pre-wrap">${product.description}</p>
                     </div>` : ''}
-                    <div class="flex gap-4 text-xs text-gray-400 pt-1 border-t border-gray-100">
+                    <div class="flex gap-4 text-xs text-muted pt-1 border-t border-gray-100">
                         <span>등록일 ${fmtD(product.created_at)}</span>
                         <span>수정일 ${fmtD(product.updated_at)}</span>
                     </div>
@@ -1401,13 +1401,13 @@ class ProductManagementComponent {
         const fileSec   = document.getElementById('product-excel-upload-section');
         const isManual  = tab === 'manual';
         manualBtn?.classList.toggle('border-green-500', isManual);
-        manualBtn?.classList.toggle('text-green-600',   isManual);
+        manualBtn?.classList.toggle('text-brand',   isManual);
         manualBtn?.classList.toggle('border-transparent', !isManual);
-        manualBtn?.classList.toggle('text-gray-400',    !isManual);
+        manualBtn?.classList.toggle('text-muted',    !isManual);
         fileBtn?.classList.toggle('border-green-500',   !isManual);
-        fileBtn?.classList.toggle('text-green-600',     !isManual);
+        fileBtn?.classList.toggle('text-brand',     !isManual);
         fileBtn?.classList.toggle('border-transparent',  isManual);
-        fileBtn?.classList.toggle('text-gray-400',       isManual);
+        fileBtn?.classList.toggle('text-muted',       isManual);
         manualSec?.classList.toggle('hidden', !isManual);
         fileSec?.classList.toggle('hidden',    isManual);
         this._refreshImportCount();
@@ -1468,7 +1468,7 @@ class ProductManagementComponent {
             `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
         ).join('');
         tbody.innerHTML = products.slice(0, 30).map((p, i) =>
-            `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">` +
+            `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-section'}">` +
             keys.map(k => {
                 const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
                 return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
@@ -1486,7 +1486,7 @@ class ProductManagementComponent {
         const countEl = document.getElementById('import-row-count');
         if (countEl) {
             countEl.textContent  = count > 0 ? `${count}개 등록 예정` : '0개';
-            countEl.className    = count > 0 ? 'text-sm font-semibold text-green-600' : 'text-sm text-gray-400';
+            countEl.className    = count > 0 ? 'text-sm font-semibold text-brand' : 'text-sm text-muted';
         }
         const btn = document.getElementById('product-import-start');
         if (btn) btn.disabled = count === 0;
@@ -1516,11 +1516,11 @@ class ProductManagementComponent {
         fileInput?.addEventListener('change', (e) => {
             if (e.target.files[0]) this._handleFileUpload(e.target.files[0]);
         });
-        dropZone?.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('border-green-400','bg-green-50'); });
-        dropZone?.addEventListener('dragleave', ()  => { dropZone.classList.remove('border-green-400','bg-green-50'); });
+        dropZone?.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('border-green-400','bg-success'); });
+        dropZone?.addEventListener('dragleave', ()  => { dropZone.classList.remove('border-green-400','bg-success'); });
         dropZone?.addEventListener('drop',      (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-green-400','bg-green-50');
+            dropZone.classList.remove('border-green-400','bg-success');
             const f = e.dataTransfer.files[0];
             if (f) this._handleFileUpload(f);
         });
@@ -1909,10 +1909,10 @@ class ProductManagementComponent {
         if (!suggestionsContainer) return;
         
         const html = suggestions.map(suggestion => `
-            <div class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
+            <div class="px-3 py-2 hover:bg-page cursor-pointer border-b border-gray-100 last:border-b-0" 
                  onclick="selectProductNameSuggestion('${suggestion.name}')">
-                <div class="text-sm font-medium text-gray-900">${suggestion.name}</div>
-                <div class="text-xs text-gray-500">${suggestion.category} • ${this.formatCurrency(suggestion.price)}</div>
+                <div class="text-sm font-medium text-heading">${suggestion.name}</div>
+                <div class="text-xs text-muted">${suggestion.category} • ${this.formatCurrency(suggestion.price)}</div>
             </div>
         `).join('');
         

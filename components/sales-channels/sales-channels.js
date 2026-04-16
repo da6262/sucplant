@@ -145,7 +145,7 @@ class SalesChannelsComponent {
 
             if (channels.length === 0) {
                 channelsList.innerHTML = `
-                    <div class="text-center py-8 text-gray-500">
+                    <div class="text-center py-8 text-muted">
                         <i class="fas fa-store text-4xl mb-4"></i>
                         <p>등록된 판매채널이 없습니다.</p>
                         <p class="text-sm">새 채널을 추가해보세요.</p>
@@ -155,28 +155,28 @@ class SalesChannelsComponent {
             }
 
             channelsList.innerHTML = channels.map(channel => `
-                <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg border border-gray-200">
+                <div class="flex items-center justify-between p-4 bg-section rounded-lg border border-gray-200">
                     <div class="flex items-center space-x-4">
                         <div class="w-10 h-10 rounded-full flex items-center justify-center text-white text-lg"
                              style="background-color: ${this.getColorValue(channel.color)}">
                             <i class="fas fa-${channel.icon}"></i>
                         </div>
                         <div>
-                            <div class="font-medium text-gray-900">${channel.name}</div>
-                            <div class="text-sm text-gray-600">${channel.description || '설명 없음'}</div>
+                            <div class="font-medium text-heading">${channel.name}</div>
+                            <div class="text-sm text-body">${channel.description || '설명 없음'}</div>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${channel.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${channel.is_active ? 'bg-green-100 text-green-800' : 'bg-page text-heading'}">
                             <i class="fas fa-${channel.is_active ? 'check' : 'pause'} mr-1"></i>
                             ${channel.is_active ? '활성' : '비활성'}
                         </span>
                         <button onclick="salesChannelsComponent.editChannel('${channel.id}')" 
-                                class="text-blue-600 hover:text-blue-800 p-2 rounded-lg hover:bg-blue-50 transition-colors">
+                                class="text-info hover:text-blue-800 p-2 rounded-lg hover:bg-info transition-colors">
                             <i class="fas fa-edit"></i>
                         </button>
                         <button onclick="salesChannelsComponent.deleteChannel('${channel.id}')" 
-                                class="text-red-600 hover:text-red-800 p-2 rounded-lg hover:bg-red-50 transition-colors">
+                                class="text-danger hover:text-red-800 p-2 rounded-lg hover:bg-danger transition-colors">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
