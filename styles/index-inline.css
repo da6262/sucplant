@@ -1248,6 +1248,15 @@ table tbody td [class*="shrink-0"] {
 .bg-warn    { background-color: var(--warn-bg); }
 .bg-success { background-color: #F0FDF4; }
 
+/* Accent backgrounds — 아이콘 박스용 진한 톤 (Tailwind bg-*-100 대체) */
+.bg-info-accent    { background-color: var(--badge-info-bg); }     /* #DBEAFE */
+.bg-success-accent { background-color: #DCFCE7; }                 /* green-100 */
+.bg-warn-accent    { background-color: var(--badge-warning-bg); }  /* #FEF3C7 */
+.bg-danger-accent  { background-color: var(--badge-danger-bg); }   /* #FEE2E2 */
+.bg-purple-accent  { background-color: var(--badge-purple-bg); }   /* #F3E8FF */
+.bg-orange-accent  { background-color: var(--badge-orange-bg); }   /* #FFF7ED */
+.bg-sky-accent     { background-color: var(--badge-sky-bg); }      /* #E0F2FE */
+
 /* Semantic text color utilities — Tailwind text-{color}-NNN 대체 */
 .text-brand       { color: var(--primary); }
 .text-brand-hover { color: var(--primary-hover); }

@@ -721,7 +721,7 @@ class DashboardComponent {
         // 선택된 버튼 활성화
         const selectedBtn = document.getElementById(buttonId);
         if (selectedBtn) {
-            selectedBtn.className = 'px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full hover:bg-blue-200';
+            selectedBtn.className = 'px-3 py-1 text-xs bg-info-accent text-blue-800 rounded-full hover:bg-blue-200';
         }
         
         // 차트 업데이트

@@ -698,7 +698,7 @@ function showDeleteWithOrdersModal(orders) {
             <div class="modal-container modal-md">
                 <div class="modal-header">
                     <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
+                        <div class="w-7 h-7 bg-danger-accent rounded-lg flex items-center justify-center shrink-0">
                             <i class="fas fa-trash text-danger text-sm"></i>
                         </div>
                         <div>
@@ -1172,7 +1172,7 @@ async function loadCustomerOrders(customerId) {
         if (ordersList) {
             ordersList.innerHTML = `
                 <div class="text-center py-8 text-danger">
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                    <div class="w-12 h-12 bg-danger-accent rounded-full flex items-center justify-center mx-auto mb-3">
                         <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                     </div>
                     <p class="text-sm">주문내역을 불러올 수 없습니다.</p>
@@ -1247,7 +1247,7 @@ async function renderCustomerOrders(orders, container) {
         console.error('❌ 고객 주문내역 렌더링 실패:', error);
         container.innerHTML = `
             <div class="text-center py-8 text-danger">
-                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                <div class="w-12 h-12 bg-danger-accent rounded-full flex items-center justify-center mx-auto mb-3">
                     <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                 </div>
                 <p class="text-sm">주문내역을 표시할 수 없습니다.</p>

@@ -167,7 +167,7 @@ class SalesChannelsComponent {
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${channel.is_active ? 'bg-green-100 text-green-800' : 'bg-page text-heading'}">
+                        <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${channel.is_active ? 'bg-success-accent text-green-800' : 'bg-page text-heading'}">
                             <i class="fas fa-${channel.is_active ? 'check' : 'pause'} mr-1"></i>
                             ${channel.is_active ? '활성' : '비활성'}
                         </span>

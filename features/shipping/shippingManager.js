@@ -85,7 +85,7 @@ export class ShippingManager {
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
                                     <div class="bg-info p-6 rounded-lg">
                                         <div class="flex items-center">
-                                            <div class="p-3 bg-blue-100 rounded-lg">
+                                            <div class="p-3 bg-info-accent rounded-lg">
                                                 <i class="fas fa-truck text-info text-xl"></i>
                                             </div>
                                             <div class="ml-4">
@@ -97,7 +97,7 @@ export class ShippingManager {
                                     
                                     <div class="bg-success p-6 rounded-lg">
                                         <div class="flex items-center">
-                                            <div class="p-3 bg-green-100 rounded-lg">
+                                            <div class="p-3 bg-success-accent rounded-lg">
                                                 <i class="fas fa-check-circle text-brand text-xl"></i>
                                             </div>
                                             <div class="ml-4">
@@ -109,7 +109,7 @@ export class ShippingManager {
                                     
                                     <div class="bg-warn p-6 rounded-lg">
                                         <div class="flex items-center">
-                                            <div class="p-3 bg-yellow-100 rounded-lg">
+                                            <div class="p-3 bg-warn-accent rounded-lg">
                                                 <i class="fas fa-clock text-warn text-xl"></i>
                                             </div>
                                             <div class="ml-4">
@@ -425,7 +425,7 @@ export class ShippingManager {
                     <div class="space-y-3">
                         ${trackingData.history.map((item, index) => `
                             <div class="flex items-start space-x-3 p-3 bg-white border rounded-lg">
-                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-info">
+                                <div class="w-8 h-8 bg-info-accent rounded-full flex items-center justify-center text-sm font-bold text-info">
                                     ${index + 1}
                                 </div>
                                 <div class="flex-1">
@@ -758,10 +758,10 @@ export class ShippingManager {
     // 상태별 색상 반환
     getStatusColor(status) {
         const colors = {
-            '배송준비': 'bg-orange-100 text-orange-800',
-            '배송중': 'bg-blue-100 text-blue-800',
-            '배송완료': 'bg-green-100 text-green-800',
-            '배송지연': 'bg-red-100 text-red-800'
+            '배송준비': 'bg-orange-accent text-orange-800',
+            '배송중': 'bg-info-accent text-blue-800',
+            '배송완료': 'bg-success-accent text-green-800',
+            '배송지연': 'bg-danger-accent text-red-800'
         };
         return colors[status] || 'bg-gray-100 text-heading';
     }
@@ -949,7 +949,7 @@ export class ShippingManager {
                             <div class="flex items-center space-x-3">
                                 <span class="text-sm font-medium text-heading">${record.customerName}</span>
                                 <span class="text-xs text-muted">${record.phone}</span>
-                                <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">${record.type}</span>
+                                <span class="text-xs px-2 py-1 bg-info-accent text-blue-700 rounded">${record.type}</span>
                             </div>
                             <p class="text-sm text-body mt-1">${record.message.substring(0, 50)}...</p>
                         </div>

@@ -521,7 +521,7 @@ function displayTrackingResult(trackingData) {
                 <div class="space-y-3">
                     ${trackingData.history.map((item, index) => `
                         <div class="flex items-start space-x-3 p-3 bg-white border rounded-lg">
-                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-info">
+                            <div class="w-8 h-8 bg-info-accent rounded-full flex items-center justify-center text-sm font-bold text-info">
                                 ${index + 1}
                             </div>
                             <div class="flex-1">

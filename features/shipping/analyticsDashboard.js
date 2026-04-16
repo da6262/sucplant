@@ -184,7 +184,7 @@ export class ShippingAnalytics {
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
                     <div class="bg-info p-4 rounded-lg">
                         <div class="flex items-center">
-                            <div class="p-2 bg-blue-100 rounded-lg">
+                            <div class="p-2 bg-info-accent rounded-lg">
                                 <i class="fas fa-truck text-info"></i>
                             </div>
                             <div class="ml-3">
@@ -196,7 +196,7 @@ export class ShippingAnalytics {
 
                     <div class="bg-success p-4 rounded-lg">
                         <div class="flex items-center">
-                            <div class="p-2 bg-green-100 rounded-lg">
+                            <div class="p-2 bg-success-accent rounded-lg">
                                 <i class="fas fa-check-circle text-brand"></i>
                             </div>
                             <div class="ml-3">
@@ -208,7 +208,7 @@ export class ShippingAnalytics {
 
                     <div class="bg-warn p-4 rounded-lg">
                         <div class="flex items-center">
-                            <div class="p-2 bg-yellow-100 rounded-lg">
+                            <div class="p-2 bg-warn-accent rounded-lg">
                                 <i class="fas fa-clock text-warn"></i>
                             </div>
                             <div class="ml-3">
@@ -220,7 +220,7 @@ export class ShippingAnalytics {
 
                     <div class="bg-danger p-4 rounded-lg">
                         <div class="flex items-center">
-                            <div class="p-2 bg-red-100 rounded-lg">
+                            <div class="p-2 bg-danger-accent rounded-lg">
                                 <i class="fas fa-exclamation-triangle text-danger"></i>
                             </div>
                             <div class="ml-3">

@@ -119,9 +119,10 @@ class SettingsDataManager {
     
     // 설정 로드
     async loadSettings() {
-        // 이미 로드된 값 있으면 캐시 반환 — 명시적 새로고침은 forceReloadSettings() 사용
-        // (새 주문 모달 매번 DB 왕복하던 지연 제거)
-        if (this.settings) {
+        // 캐시: 실제로 로드된 값이 있을 때만 재사용. 빈 객체 {} 는 truthy 라서
+        // 단순 `if (this.settings)` 체크로는 DB 조회를 건너뛰는 버그 발생(v3.3.19~v3.3.23).
+        // 반드시 key 개수까지 확인해야 생성자 `this.settings = {}` 초기 상태와 구분 가능.
+        if (this.settings && Object.keys(this.settings).length > 0) {
             return this.settings;
         }
         try {
@@ -281,6 +282,7 @@ class SettingsDataManager {
     async forceReloadSettings() {
         try {
             console.log('🔄 Supabase에서 설정 강제 재로드');
+            this.settings = {};                          // 캐시 무효화 — loadSettings 의 조기 반환 우회
             this.settings = await this.loadSettings();
             console.log('✅ 설정 강제 재로드 완료');
             return true;

@@ -68,7 +68,7 @@ async function runCustomerManagementInit() {
     console.log('🔄 고객관리 초기화 시작');
     const customerListContainer = document.getElementById('customer-list-container');
     if (customerListContainer) {
-        customerListContainer.innerHTML = '<div class="text-center py-8 text-muted"><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-info text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
+        customerListContainer.innerHTML = '<div class="text-center py-8 text-muted"><div class="w-12 h-12 bg-info-accent rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-info text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
     }
     if (window.customerDataManager) {
         try {

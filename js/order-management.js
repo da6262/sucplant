@@ -2269,7 +2269,7 @@ function createShippingRuleModal() {
                     <!-- 모달 헤더 -->
                     <div class="flex items-center justify-between p-6 border-b border-gray-200">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <div class="w-10 h-10 bg-purple-accent rounded-lg flex items-center justify-center">
                                 <i class="fas fa-plus text-purple-600"></i>
                             </div>
                             <div>
