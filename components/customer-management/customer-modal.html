@@ -80,7 +80,7 @@
                 <!-- 추가 정보 토글 (col-12) -->
                 <div class="form-col-12">
                     <button type="button" onclick="window.toggleCustomerExtraInfo()"
-                            class="w-full flex items-center justify-between py-1.5 text-xs text-gray-400 hover:text-gray-600 border-t border-gray-100 pt-3">
+                            class="w-full flex items-center justify-between py-1.5 text-xs text-muted hover:text-body border-t border-gray-100 pt-3">
                         <span>추가 정보 <span class="text-gray-300">(이메일 · 등급 · 상태 · 메모)</span></span>
                         <i id="toggle-extra-info-icon" class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
@@ -122,13 +122,13 @@
                                 <div class="flex gap-2">
                                     <button type="button" data-status="ACTIVE"
                                             onclick="window.setCustomerStatus('ACTIVE')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-green-500 bg-green-50 text-green-700">활성</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-green-500 bg-success text-green-700">활성</button>
                                     <button type="button" data-status="INACTIVE"
                                             onclick="window.setCustomerStatus('INACTIVE')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-gray-500">비활성</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-muted">비활성</button>
                                     <button type="button" data-status="SUSPENDED"
                                             onclick="window.setCustomerStatus('SUSPENDED')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-gray-500">정지</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-muted">정지</button>
                                 </div>
                                 <input type="hidden" id="customer-form-status" value="ACTIVE">
                             </div>
@@ -137,7 +137,7 @@
                             <div class="form-col-12">
                                 <label class="form-label">
                                     메모
-                                    <span id="memo-char-count" class="text-gray-400 font-normal ml-2">0 / 200</span>
+                                    <span id="memo-char-count" class="text-muted font-normal ml-2">0 / 200</span>
                                 </label>
                                 <textarea id="customer-form-memo" rows="3"
                                           placeholder="특이사항, 선호도 등" maxlength="200"

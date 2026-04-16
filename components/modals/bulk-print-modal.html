@@ -14,15 +14,15 @@
 
         <!-- 본문 -->
         <div class="modal-body">
-            <p class="text-gray-600 mb-4">🏷️ 프린트할 상품을 선택하고 각각의 수량을 입력하세요.</p>
+            <p class="text-body mb-4">🏷️ 프린트할 상품을 선택하고 각각의 수량을 입력하세요.</p>
 
             <!-- 전체 선택/해제 -->
-            <div class="flex items-center justify-between mb-4 p-3 bg-gray-50 rounded-lg">
+            <div class="flex items-center justify-between mb-4 p-3 bg-section rounded-lg">
                 <label class="flex items-center">
                     <input type="checkbox" id="select-all-products" class="mr-2">
-                    <span class="font-medium text-gray-700">전체 선택</span>
+                    <span class="font-medium text-body">전체 선택</span>
                 </label>
-                <div class="text-sm text-gray-600">
+                <div class="text-sm text-body">
                     선택된 상품: <span id="selected-count">0</span>개 |
                     총 라벨 수: <span id="total-labels">0</span>장
                 </div>
@@ -34,13 +34,13 @@
             </div>
 
             <!-- 라벨 설정 -->
-            <div class="p-4 bg-blue-50 rounded-lg">
+            <div class="p-4 bg-info rounded-lg">
                 <h3 class="font-medium text-blue-800 mb-3">
                     <i class="fas fa-cog mr-2"></i>라벨 설정
                 </h3>
                 <div class="grid grid-cols-2 gap-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">페이지당 열 수</label>
+                        <label class="block text-sm font-medium text-body mb-1">페이지당 열 수</label>
                         <select id="labels-per-row" class="w-full p-2 border border-gray-300 rounded">
                             <option value="8">8열</option>
                             <option value="10" selected>10열</option>
@@ -48,7 +48,7 @@
                         </select>
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-1">용지 크기</label>
+                        <label class="block text-sm font-medium text-body mb-1">용지 크기</label>
                         <select id="paper-size" class="w-full p-2 border border-gray-300 rounded">
                             <option value="a4" selected>A4</option>
                             <option value="letter">Letter</option>

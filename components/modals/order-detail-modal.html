@@ -5,9 +5,9 @@
         <!-- 헤더 -->
         <div class="modal-header">
             <div class="flex items-center gap-2">
-                <i class="fas fa-receipt text-blue-500 text-sm"></i>
+                <i class="fas fa-receipt text-info text-sm"></i>
                 <span class="modal-title">주문 상세</span>
-                <span id="detail-order-status" class="px-1.5 py-0.5 rounded text-2xs font-semibold bg-gray-100 text-gray-700"></span>
+                <span id="detail-order-status" class="px-1.5 py-0.5 rounded text-2xs font-semibold bg-page text-body"></span>
             </div>
             <button id="close-order-detail-modal" class="modal-close-btn">
                 <i class="fas fa-times text-sm"></i>
@@ -18,30 +18,30 @@
         <div class="modal-body space-y-3">
 
             <!-- 주문 + 고객 기본 정보 -->
-            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-gray-700">
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">주문번호</span><span id="detail-order-number" class="font-medium truncate">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">주문일</span><span id="detail-order-date" class="font-medium">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">채널</span><span id="detail-order-channel" class="font-medium">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">고객명</span><span id="detail-customer-name" class="font-medium">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">연락처</span><span id="detail-customer-phone" class="font-medium">-</span></div>
-                <div class="col-span-2 flex gap-1"><span class="text-gray-400 shrink-0">배송지</span><span id="detail-customer-address" class="font-medium break-all">-</span></div>
+            <div class="grid grid-cols-2 gap-x-4 gap-y-1.5 text-xs text-body">
+                <div class="flex gap-1"><span class="text-muted shrink-0">주문번호</span><span id="detail-order-number" class="font-medium truncate">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">주문일</span><span id="detail-order-date" class="font-medium">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">채널</span><span id="detail-order-channel" class="font-medium">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">고객명</span><span id="detail-customer-name" class="font-medium">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">연락처</span><span id="detail-customer-phone" class="font-medium">-</span></div>
+                <div class="col-span-2 flex gap-1"><span class="text-muted shrink-0">배송지</span><span id="detail-customer-address" class="font-medium break-all">-</span></div>
             </div>
 
             <hr class="border-gray-100">
 
             <!-- 주문 상품 -->
             <div>
-                <p class="text-xs font-semibold text-gray-500 uppercase mb-1.5">주문 상품</p>
+                <p class="text-xs font-semibold text-muted uppercase mb-1.5">주문 상품</p>
                 <table class="w-full table-ui">
                     <thead>
-                        <tr class="text-gray-400 border-b border-gray-100">
+                        <tr class="text-muted border-b border-gray-100">
                             <th class="text-left pb-1 font-medium">상품명</th>
                             <th class="text-center pb-1 font-medium w-10">수량</th>
                             <th class="text-right pb-1 font-medium w-16">단가</th>
                             <th class="text-right pb-1 font-medium w-16">금액</th>
                         </tr>
                     </thead>
-                    <tbody id="detail-order-items" class="divide-y divide-gray-50 text-gray-700">
+                    <tbody id="detail-order-items" class="divide-y divide-gray-50 text-body">
                     </tbody>
                 </table>
             </div>
@@ -50,25 +50,25 @@
 
             <!-- 금액 요약 -->
             <div class="text-xs space-y-1">
-                <div class="flex justify-between text-gray-500">
+                <div class="flex justify-between text-muted">
                     <span>상품금액</span><span id="detail-product-amount">0원</span>
                 </div>
-                <div class="flex justify-between text-gray-500">
+                <div class="flex justify-between text-muted">
                     <span>배송비</span><span id="detail-shipping-fee">0원</span>
                 </div>
-                <div class="flex justify-between text-red-500">
+                <div class="flex justify-between text-danger">
                     <span>할인</span><span id="detail-discount-amount">-0원</span>
                 </div>
                 <div class="flex justify-between font-bold text-sm pt-1 border-t border-gray-200">
-                    <span>총 결제금액</span><span id="detail-total-amount" class="text-blue-600">0원</span>
+                    <span>총 결제금액</span><span id="detail-total-amount" class="text-info">0원</span>
                 </div>
             </div>
 
             <!-- 배송 + 메모 -->
-            <div class="text-xs space-y-1 text-gray-700">
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">송장번호</span><span id="detail-tracking-number" class="font-medium">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">배송상태</span><span id="detail-shipping-status" class="font-medium">-</span></div>
-                <div class="flex gap-1"><span class="text-gray-400 shrink-0">메모</span><span id="detail-order-memo" class="font-medium break-all">-</span></div>
+            <div class="text-xs space-y-1 text-body">
+                <div class="flex gap-1"><span class="text-muted shrink-0">송장번호</span><span id="detail-tracking-number" class="font-medium">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">배송상태</span><span id="detail-shipping-status" class="font-medium">-</span></div>
+                <div class="flex gap-1"><span class="text-muted shrink-0">메모</span><span id="detail-order-memo" class="font-medium break-all">-</span></div>
             </div>
 
         </div>

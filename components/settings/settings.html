@@ -90,13 +90,13 @@
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="free-shipping-type" value="total-order"
-                                   class="text-emerald-600 focus:ring-emerald-500" checked>
-                            <span class="text-xs text-gray-700">전체 주문금액 기준</span>
+                                   class="text-brand focus:ring-emerald-500" checked>
+                            <span class="text-xs text-body">전체 주문금액 기준</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="free-shipping-type" value="single-item"
-                                   class="text-emerald-600 focus:ring-emerald-500">
-                            <span class="text-xs text-gray-700">단일 상품금액 기준</span>
+                                   class="text-brand focus:ring-emerald-500">
+                            <span class="text-xs text-body">단일 상품금액 기준</span>
                         </label>
                         <div class="form-input-group with-unit" style="max-width:240px;margin-top:6px;">
                             <input type="number" id="free-shipping-threshold" class="form-control" placeholder="50000">
@@ -125,8 +125,8 @@
 
         <!-- 판매 채널 -->
         <div id="settings-channels-section" class="settings-content hidden">
-            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-                <span class="text-xs font-medium text-gray-600">판매 채널</span>
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-section">
+                <span class="text-xs font-medium text-body">판매 채널</span>
                 <button id="add-channel-btn" class="btn-primary"><i class="fas fa-plus"></i>채널 추가</button>
             </div>
             <div id="channels-list" class="divide-y divide-gray-100"></div>
@@ -134,8 +134,8 @@
 
         <!-- 주문 상태 -->
         <div id="settings-orders-section" class="settings-content hidden">
-            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-                <span class="text-xs font-medium text-gray-600">주문 상태</span>
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-section">
+                <span class="text-xs font-medium text-body">주문 상태</span>
                 <button id="add-order-status-btn" class="btn-primary"><i class="fas fa-plus"></i>상태 추가</button>
             </div>
             <div id="order-statuses-list" class="divide-y divide-gray-100"></div>
@@ -143,15 +143,15 @@
 
         <!-- 고객등급 -->
         <div id="settings-customers-section" class="settings-content hidden">
-            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-gray-50">
-                <span class="text-xs font-medium text-gray-600">고객등급</span>
+            <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 bg-section">
+                <span class="text-xs font-medium text-body">고객등급</span>
                 <div class="flex gap-1.5">
                     <button id="force-update-grades-btn" class="btn-secondary"><i class="fas fa-sync"></i>5단계 업데이트</button>
                     <button id="add-customer-grade-btn" class="btn-primary"><i class="fas fa-plus"></i>등급 추가</button>
                 </div>
             </div>
             <div class="flex items-center px-3 py-2 border-b border-gray-100">
-                <label class="text-xs text-gray-500 w-28 shrink-0"><i class="fas fa-calendar-alt mr-1"></i>등급 적용 기간</label>
+                <label class="text-xs text-muted w-28 shrink-0"><i class="fas fa-calendar-alt mr-1"></i>등급 적용 기간</label>
                 <div class="flex items-center gap-2 flex-1">
                     <select id="grade-period-select" class="input-ui flex-1">
                         <option value="all">전체 기간 (누적)</option>
@@ -191,8 +191,8 @@
                 </div>
             </div>
             <!-- SMS 문자 템플릿 -->
-            <div class="flex items-center px-3 py-2 bg-gray-50 border-b border-gray-200">
-                <span class="text-xs font-semibold text-gray-600">문자 템플릿</span>
+            <div class="flex items-center px-3 py-2 bg-section border-b border-gray-200">
+                <span class="text-xs font-semibold text-body">문자 템플릿</span>
             </div>
             <div id="sms-templates-list" class="divide-y divide-gray-100"></div>
         </div>
