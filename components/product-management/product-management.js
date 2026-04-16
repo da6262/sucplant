@@ -222,8 +222,8 @@ class ProductManagementComponent {
             });
         }
 
-        // 페이지당 표시 개수 선택
-        const itemsPerPageSel = document.getElementById('product-items-per-page');
+        // 페이지당 표시 개수 선택 (HTML id: product-page-size)
+        const itemsPerPageSel = document.getElementById('product-page-size');
         if (itemsPerPageSel) {
             itemsPerPageSel.value = String(this.itemsPerPage === 0 ? 0 : this.itemsPerPage);
             itemsPerPageSel.addEventListener('change', () => {
@@ -282,25 +282,10 @@ class ProductManagementComponent {
         try {
             console.log('📊 상품 데이터 로드 중...');
             
-            // productDataManager가 초기화될 때까지 대기
-            if (!window.productDataManager) {
-                console.log('⏳ productDataManager 초기화 대기 중...');
-                let retryCount = 0;
-                const maxRetries = 30; // 3초 대기
-                
-                while (retryCount < maxRetries && !window.productDataManager) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    retryCount++;
-                }
-                
-                if (!window.productDataManager) {
-                    console.error('❌ productDataManager 초기화 타임아웃');
-                    // productDataManager 강제 초기화 시도
-                    if (window.initializeProductDataManager) {
-                        console.log('🔄 productDataManager 강제 초기화 시도...');
-                        await window.initializeProductDataManager();
-                    }
-                }
+            // productDataManager 가 없으면 즉시 강제 초기화 — polling 제거 (응답성 개선)
+            if (!window.productDataManager && window.initializeProductDataManager) {
+                console.log('🔄 productDataManager 즉시 초기화...');
+                await window.initializeProductDataManager();
             }
             
             // Supabase에서 상품 데이터 로드
@@ -389,32 +374,30 @@ class ProductManagementComponent {
      */
     createProductRow(product) {
         const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50 transition-colors duration-150';
+        row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
         row.dataset.productId = product.id;
 
-        // 재고 상태에 따른 색상
-        const stockStatus = this.getStockStatus(product.stock);
-        const stockColor = this.getStockColor(stockStatus);
-
-        const badgeClass = stockStatus === 'out-of-stock' ? 'badge badge-red'
-                         : stockStatus === 'low-stock'   ? 'badge badge-yellow'
-                         : 'badge badge-green';
+        const nullDash = '<span class="td-null">—</span>';
+        const productCode = product.product_code ? String(product.product_code).replace(/</g, '&lt;') : null;
+        const productName = (product.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const category    = product.category ? String(product.category).replace(/</g, '&lt;') : null;
+        const size        = product.size ? String(product.size).replace(/</g, '&lt;') : null;
+        const shipping    = product.shipping_option ? String(product.shipping_option).replace(/</g, '&lt;') : null;
+        const price       = Number(product.price) || 0;
+        const stock       = Number(product.stock) || 0;
 
         row.innerHTML = `
-            <td class="text-center">
-                <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
+            <td class="px-2 text-center align-middle">
+                <input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" data-product-id="${product.id}">
             </td>
-            <td class="td-muted">${product.product_code || '-'}</td>
-            <td class="td-primary">
-                <div class="product-name-link" data-product-id="${product.id}">${product.name}</div>
-                ${product.description ? `<div class="td-muted truncate" style="max-width:160px">${product.description}</div>` : ''}
-            </td>
-            <td><span class="badge badge-info">${product.category || '미분류'}</span></td>
-            <td class="td-secondary">${product.size || '-'}</td>
-            <td class="td-amount">${this.formatCurrency(product.price)}</td>
-            <td class="td-num"><span class="${stockColor}">${product.stock || 0}개</span></td>
-            <td class="td-secondary">${product.shipping_option || '-'}</td>
-            <td class="text-center">
+            <td class="px-2 td-muted align-middle whitespace-nowrap">${productCode || nullDash}</td>
+            <td class="px-2 td-primary td-link align-middle"><span class="product-name-link">${productName || nullDash}</span></td>
+            <td class="px-2 align-middle">${category ? `<span class="badge badge-info">${category}</span>` : nullDash}</td>
+            <td class="px-2 td-secondary align-middle">${size || nullDash}</td>
+            <td class="px-2 td-amount text-right text-numeric align-middle">${price > 0 ? '₩' + price.toLocaleString() : nullDash}</td>
+            <td class="px-2 td-num text-right align-middle">${stock > 0 ? stock + '개' : nullDash}</td>
+            <td class="px-2 td-secondary align-middle">${shipping || nullDash}</td>
+            <td class="px-2 text-center align-middle whitespace-nowrap">
                 <div class="btn-group">
                     <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정"><i class="fas fa-pen"></i></button>
                     <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제"><i class="fas fa-copy"></i></button>
@@ -423,7 +406,6 @@ class ProductManagementComponent {
             </td>
         `;
 
-        // 행 이벤트 리스너 추가
         this.addRowEventListeners(row, product);
 
         return row;

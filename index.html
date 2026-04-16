@@ -33,6 +33,29 @@
 
     <!-- 앱 버전 설정 — 가장 먼저 로드 (다른 스크립트보다 앞에 위치해야 함) -->
     <script src="js/config.js"></script>
+
+    <!-- 좀비 Service Worker 자동 해제 — 과거에 등록된 sw.js 가 캐시 덮는 문제 방지 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                if (regs.length > 0) {
+                    console.log(`🧹 기존 Service Worker ${regs.length}개 해제 중...`);
+                    Promise.all(regs.map(r => r.unregister())).then(() => {
+                        // 캐시 API 도 같이 비움
+                        if ('caches' in window) {
+                            caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
+                                .then(() => {
+                                    console.log('✅ SW·캐시 해제 완료, 페이지 리로드');
+                                    location.reload();
+                                });
+                        } else {
+                            location.reload();
+                        }
+                    });
+                }
+            }).catch(() => {});
+        }
+    </script>
 </head>
 <body class="bg-slate-100 min-h-screen">
     <!-- 로그인 모달 -->

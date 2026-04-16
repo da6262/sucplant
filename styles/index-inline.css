@@ -88,6 +88,7 @@
     --tbl-header-fw:        600;
     --tbl-font-size:        13px;
     --tbl-border-color:     var(--border);
+    --tbl-grid-color:       #CBD5E1;          /* 엑셀 격자용 중간 톤 slate-300 */
     --tbl-hover-bg:         #F0FDF4;
     --tbl-zebra-bg:         #FAFAFA;
     --status-badge-h:       20px;
@@ -162,9 +163,8 @@ body {
     vertical-align: middle;
 }
 
-/* Spec ⑦ — 링크/액션 텍스트 */
+/* Spec ⑦ — 링크/액션 텍스트 (기본 색상은 상위 td-primary 등 상속, 호버 시에만 파란색) */
 .td-link {
-    color: var(--text-link);
     cursor: pointer;
     transition: color 0.15s;
 }
@@ -1115,20 +1115,28 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     background: var(--border); color: var(--text-secondary); line-height: 1;
 }
 
-/* Table UI */
+/* Table UI — 엑셀 스타일 격자선(전역 표준) */
+/* 격자선은 일반 border 색(--border: slate-200)보다 진한 slate-300 사용 — 시인성 확보 */
 .table-ui {
     width: 100%; border-collapse: collapse; font-size: var(--tbl-font-size);
+    border: 1px solid var(--tbl-grid-color);
 }
 .table-ui thead th {
     background: var(--tbl-header-bg); color: var(--text-body); font-size: 11px; font-weight: var(--tbl-header-fw);
     padding: var(--tbl-cell-py) 10px; text-align: left; position: sticky; top: 0;
-    border-bottom: 1px solid var(--tbl-border-color); white-space: nowrap; z-index: 1;
+    border-right: 1px solid var(--tbl-grid-color);
+    border-bottom: 1px solid var(--tbl-grid-color); white-space: nowrap; z-index: 1;
 }
-.table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-border-color); transition: background 0.1s; }
+.table-ui thead th:last-child { border-right: none; }
+.table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-grid-color); transition: background 0.1s; }
 .table-ui tbody tr:nth-child(even) { background: var(--tbl-zebra-bg); }
 .table-ui tbody tr:hover { background: var(--tbl-hover-bg); }
 /* spec 12: py-*/px-*/text-* Tailwind 클래스(spec 10)를 이겨 CSS 변수가 최우선 제어 */
-.table-ui tbody td { padding: var(--tbl-cell-py) 8px; font-size: var(--tbl-font-size); vertical-align: middle; }
+.table-ui tbody td {
+    padding: var(--tbl-cell-py) 8px; font-size: var(--tbl-font-size); vertical-align: middle;
+    border-right: 1px solid var(--tbl-grid-color);
+}
+.table-ui tbody td:last-child { border-right: none; }
 
 /* Order list compact — 주문/대기자 공용 compact 테이블 */
 .order-list-compact tbody tr { border-bottom: 1px solid var(--tbl-border-color); }
@@ -1226,7 +1234,8 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
    thead: 한번만 수정하면 모든 테이블 헤더 적용
    tbody: 한번만 수정하면 모든 테이블 데이터 행 적용
    ===================================================== */
-table thead th {
+/* .table-ui 는 엑셀 격자 전용 규칙(1120~)을 사용하므로 전역 기본에서 제외 */
+table:not(.table-ui) thead th {
     background-color: var(--bg-lighter) !important;
     border-top:   none !important;
     border-left:  none !important;
@@ -1237,9 +1246,10 @@ table thead th {
 }
 
 /* ── 전역 fallback (spec 3): table-ui 미지정 테이블 최소값
-   padding/font-size는 Tailwind(spec 10)에 밀리므로 생략 → .table-ui 클래스로 해결 ── */
-table tbody td { vertical-align: middle; border-bottom: 1px solid var(--tbl-border-color); }
-table tbody tr:hover td { background: var(--tbl-hover-bg); }
+   padding/font-size는 Tailwind(spec 10)에 밀리므로 생략 → .table-ui 클래스로 해결
+   .table-ui 는 엑셀 격자 규칙(1120~) 사용하므로 제외 ── */
+table:not(.table-ui) tbody td { vertical-align: middle; border-bottom: 1px solid var(--tbl-border-color); }
+table:not(.table-ui) tbody tr:hover td { background: var(--tbl-hover-bg); }
 
 /* ── 테이블 내 이미지/썸네일 크기 통합 제어 ── */
 table tbody td img {
@@ -1254,10 +1264,10 @@ table tbody td [class*="shrink-0"] {
     min-width:  var(--tbl-thumb-size, 28px) !important;
     min-height: var(--tbl-thumb-size, 28px) !important;
 }
-/* .table-ui thead th — override: keep sticky, add 2px bottom */
+/* .table-ui thead th — override: keep sticky, add 2px bottom (엑셀 격자와 톤 일치) */
 .table-ui thead th {
     position: sticky; top: 0; z-index: 1;
-    border-bottom: 2px solid var(--tbl-border-color) !important;
+    border-bottom: 2px solid var(--tbl-grid-color) !important;
 }
 /* 정렬 가능 컬럼 */
 .th-sortable { cursor: pointer; }

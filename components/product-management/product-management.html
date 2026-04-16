@@ -44,30 +44,19 @@
     <!-- 상품 목록 테이블 -->
     <div class="flex-1 overflow-auto">
         <table class="table-ui min-w-full">
-            <colgroup>
-                <col style="width:36px">
-                <col style="width:80px">
-                <col style="width:auto">
-                <col style="width:100px">
-                <col style="width:70px">
-                <col style="width:90px">
-                <col style="width:70px">
-                <col style="width:100px">
-                <col style="width:88px">
-            </colgroup>
             <thead class="sticky top-0 z-10">
                 <tr>
-                    <th class="text-center" style="padding:5px 8px">
+                    <th class="text-center w-10">
                         <input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-green-600 focus:ring-green-500">
                     </th>
-                    <th class="text-left" style="padding:5px 8px">상품코드</th>
-                    <th class="text-left" style="padding:5px 8px">상품명</th>
-                    <th class="text-left" style="padding:5px 8px">카테고리</th>
-                    <th class="text-left" style="padding:5px 8px">사이즈</th>
-                    <th class="text-right" style="padding:5px 8px">판매가</th>
-                    <th class="text-right" style="padding:5px 8px">재고</th>
-                    <th class="text-left" style="padding:5px 8px">배송옵션</th>
-                    <th class="text-center" style="padding:5px 8px">관리</th>
+                    <th class="text-left w-20">상품코드</th>
+                    <th class="text-left min-w-[200px]">상품명</th>
+                    <th class="text-left w-24">카테고리</th>
+                    <th class="text-left w-16">사이즈</th>
+                    <th class="text-right w-24">판매가</th>
+                    <th class="text-right w-20">재고</th>
+                    <th class="text-left w-24">배송옵션</th>
+                    <th class="text-center w-20">관리</th>
                 </tr>
             </thead>
             <tbody id="products-table-body" class="bg-white divide-y divide-gray-100">
