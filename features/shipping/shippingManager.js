@@ -258,11 +258,11 @@ export class ShippingManager {
                             <label class="block text-sm font-medium text-body mb-2">송장번호</label>
                             <input type="text" id="tracking-number-input" 
                                    placeholder="송장번호를 입력하세요 (예: 1234567890)" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                                   class="input-ui">
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-body mb-2">택배사 (선택사항)</label>
-                            <select id="carrier-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                            <select id="carrier-select" class="input-ui">
                                 <option value="">자동 감지</option>
                                 <option value="cj">CJ대한통운</option>
                                 <option value="hanjin">한진택배</option>

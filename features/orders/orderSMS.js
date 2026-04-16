@@ -294,7 +294,7 @@ function showSMSTemplateModal(orderId) {
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-body mb-2">템플릿 선택</label>
-                                    <select id="sms-template-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <select id="sms-template-select" class="input-ui">
                                         <option value="">직접 입력</option>
                                         <option value="orderConfirm">주문확인</option>
                                         <option value="paymentConfirm">입금확인</option>
@@ -307,7 +307,7 @@ function showSMSTemplateModal(orderId) {
                                 <div>
                                     <label class="block text-sm font-medium text-body mb-2">메시지 내용</label>
                                     <textarea id="sms-message" rows="4" 
-                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                              class="input-ui resize-none"
                                               placeholder="SMS 메시지를 입력하세요..."></textarea>
                                 </div>
                                 

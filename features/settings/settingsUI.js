@@ -1054,26 +1054,26 @@ window.editCustomerGrade = async function(index) {
                         <div>
                             <label class="block text-xs font-medium text-body mb-1">등급명</label>
                             <input type="text" id="edit-grade-name" value="${currentGrade.name}" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                   class="input-ui">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-body mb-1">최소 구매금액 (원)</label>
                             <input type="number" id="edit-grade-min-amount" value="${currentGrade.minAmount}" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                   class="input-ui">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-body mb-1">할인율 (%)</label>
                             <input type="number" id="edit-grade-discount" value="${currentGrade.discount}" min="0" max="100"
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                   class="input-ui">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-body mb-1">색상</label>
                             <input type="color" id="edit-grade-color" value="${currentGrade.color}" 
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                                   class="input-ui">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-body mb-1">아이콘</label>
-                            <select id="edit-grade-icon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
+                            <select id="edit-grade-icon" class="input-ui">
                                 <option value="fas fa-circle" ${currentGrade.icon === 'fas fa-circle' ? 'selected' : ''}>원형</option>
                                 <option value="fas fa-hexagon" ${currentGrade.icon === 'fas fa-hexagon' ? 'selected' : ''}>육각형</option>
                                 <option value="fas fa-octagon" ${currentGrade.icon === 'fas fa-octagon' ? 'selected' : ''}>팔각형</option>

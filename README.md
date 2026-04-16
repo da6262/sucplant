@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.36-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.37-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -189,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.37 | refactor(Phase 1D): input 복합 Tailwind → `.input-ui` 통합 9건 교체 — Python 정규식 bulk. ①`features/orders/orderSMS.js`(2건) SMS 모달 템플릿 select + 메시지 textarea (textarea 는 `input-ui resize-none` 조합). ②`features/shipping/shippingManager.js`(2건) 송장번호 input + 택배사 select. ③`features/settings/settingsUI.js`(5건) 고객등급 편집 모달 입력 5종(등급명·최소금액·할인율·색상·아이콘). 결과: `w-full px-3 py-2 border border-gray-300 rounded-lg/md focus:ring-2 focus:ring-blue-500 focus:border-transparent` 장문 Tailwind 조합 → 단일 `.input-ui` 클래스. focus 색 blue → green 전환(브랜드 primary 일관성). 남은 input Tailwind 복합은 대부분 루트의 테스트/디버그 HTML 파일(allowed-users-management.html·white-platter-registration-final.html 등 12건) 으로 범위 외 |
 | v3.3.36 | docs: `CLAUDE.md` Layer 2 시맨틱 클래스 테이블을 Phase 1B/C 결과로 확장 — 버튼 행에 `.btn-danger/.btn-info/.btn-warn/.btn-neutral/.btn-purple/.btn-orange/.btn-xs` 추가, **텍스트 컬러 유틸**(11종 `.text-brand/-hover/-info/-danger/-warn/-heading/-body/-secondary/-muted/-amount/-null-soft`)·**배경 액센트 유틸**(7종 `.bg-{info/success/warn/danger/purple/orange/sky}-accent`)·**폰트 크기 스케일**(7단계) 행 신설. 신규 유틸 정책 조항 명시: raw Tailwind 색상/진한 버튼 조합/bg-*-100 금지, 오버라이드 레이어는 구형 코드 안전망일 뿐 신규 코드는 시맨틱 유틸 직접 사용 원칙. 향후 세션·다른 AI 편집기가 CLAUDE.md 참조 시 Phase 1B/C 결과를 그대로 활용 가능 |
 | v3.3.35 | refactor(Phase 1C 마감): `.btn-purple`·`.btn-orange` 유틸 2종 신설 + 잔여 특수 색상 버튼 4건 교체 + `bg-gray-700/800` 오버라이드 확장 — ①`styles/index-inline.css` 에 `.btn-purple`(bg `var(--badge-purple-txt)`#7C3AED → hover #6D28D9)·`.btn-orange`(bg `var(--badge-orange-txt)`#C2410C → hover #9A3412) 추가. ②버튼 교체: `components/modals/picking-list-modal.html` 피킹 고객별 미리보기(`btn-purple`), `js/order-management.js` 배송사 추가(`btn-purple`)·배송 규칙 저장(`btn-purple`), `js/shipping-management.js` 로젠 엑셀 다운로드(`btn-orange`). ③오버라이드 확장: `.bg-gray-700/.bg-gray-800` → `var(--text-body)` — `order-management.js` classList 동적 탭 토글(활성 `bg-emerald-600` / 비활성 `bg-gray-700`)에서 비활성 톤 브랜드화. Phase 1C 누적 28건(v3.3.33) + 12건(v3.3.34) + 4건(이번) = **44건** 진한 버튼 시맨틱화 + 유틸 5종(`.btn-info/.btn-warn/.btn-neutral/.btn-purple/.btn-orange`) 신설. 브랜드 팔레트 전환 시 `:root` 변수 수정으로 전 버튼 반영 기반 완료 |
 | v3.3.34 | refactor(Phase 1C 확대): 레거시 JS 진한 버튼 12건 시맨틱 교체 — Python 정규식 bulk. ①`js/shipping-management.js`(10건): 추적링크 복사(`btn-warn`)·배송 추가/확정/벌크 확정/템플릿 저장/내보내기 확정(`btn-info`×5)·엑셀 파일 선택(`btn-primary`)·템플릿 컬럼·행 추가·행 삭제(`btn-info btn-xs`/`btn-primary btn-xs`/`btn-danger btn-xs`)·수동 행 추가(`btn-info btn-xs`)·`disabled` 속성 유지. ②`js/order-management.js`(1건): 배송 설정 저장 → `btn-info`. ③`js/customer-management.js`(1건): 오류 시 새로고침 → `btn-danger btn-xs mt-3`. 보류 패턴: purple-600(배송 라벨 추가·규칙 저장·피킹 미리보기 2곳)·orange-600(로젠 엑셀 다운로드) — `.btn-purple/.btn-orange` 유틸 미정의, 추후 신설 시 일괄. classList 동적 bg-emerald-600/bg-gray-700 토글(`order-management.js:2762/2764`)도 구조적 리팩 필요로 보류 |
