@@ -1675,7 +1675,7 @@ function createShippingSettingsSection() {
                                 <i class="fas fa-truck mr-2 text-purple-600"></i>
                                 <h2 class="text-xl font-semibold text-heading">배송비 관리</h2>
                             </div>
-                            <button id="add-shipping-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                            <button id="add-shipping-btn" class="btn-purple">
                                 <i class="fas fa-plus mr-2"></i>새 배송비 규칙 추가
                             </button>
                         </div>
@@ -2377,7 +2377,7 @@ function createShippingRuleModal() {
                         <button id="cancel-shipping-rule" class="px-4 py-2 text-body bg-white border border-gray-300 rounded-lg hover:bg-section transition-colors">
                             취소
                         </button>
-                        <button id="save-shipping-rule" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <button id="save-shipping-rule" class="btn-purple">
                             저장
                         </button>
                     </div>

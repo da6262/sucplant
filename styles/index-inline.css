@@ -839,6 +839,26 @@ select.form-control {
 .btn-neutral:hover { background: var(--text-body); }
 .btn-neutral i, .btn-neutral .fas { font-size: 11px; }
 
+.btn-purple {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: var(--badge-purple-txt); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-purple:hover { background: #6D28D9; }
+.btn-purple i, .btn-purple .fas { font-size: 11px; }
+
+.btn-orange {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: var(--badge-orange-txt); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-orange:hover { background: #9A3412; }
+.btn-orange i, .btn-orange .fas { font-size: 11px; }
+
 /* =====================
    아이콘 버튼 — 테이블 행 액션 (수정·삭제·복제)   [Spec ⑤: 30×30px, 8px gap]
    ===================== */
@@ -910,6 +930,7 @@ select.form-control {
 .bg-red-600,  .bg-red-500     { background-color: var(--danger) !important; }
 .bg-yellow-600,.bg-yellow-500 { background-color: var(--warn) !important; }
 .bg-gray-500, .bg-gray-600    { background-color: var(--text-secondary) !important; }
+.bg-gray-700, .bg-gray-800    { background-color: var(--text-body) !important; }
 
 /* 연한 붉은 톤 — mini-trash 버튼·low-stock 필터 */
 .bg-red-100                    { background-color: var(--badge-danger-bg) !important; }  /* #FEE2E2 */

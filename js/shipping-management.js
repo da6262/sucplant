@@ -1601,7 +1601,7 @@ async function showRozenExcelPreview() {
                             <button onclick="closeRozenExcelPreview()" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-body rounded-lg transition-colors">
                                 취소
                             </button>
-                            <button onclick="downloadRozenExcel()" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-semibold">
+                            <button onclick="downloadRozenExcel()" class="btn-orange">
                                 <i class="fas fa-download mr-2"></i>Excel 다운로드
                             </button>
                         </div>
