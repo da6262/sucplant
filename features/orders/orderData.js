@@ -737,11 +737,11 @@ class OrderDataManager {
             if (filteredOrders.length === 0) {
                 const isEmpty = !this._loadErrorMessage;
                 const message = isEmpty ? '등록된 주문이 없습니다.' : '주문 목록을 불러올 수 없습니다.';
-                const detail = this._loadErrorMessage ? `<p class="mt-1 text-red-600 text-xs max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
+                const detail = this._loadErrorMessage ? `<p class="mt-1 text-danger text-xs max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
                 tableBody.innerHTML = `
                     <tr>
-                        <td colspan="10" class="px-4 text-center text-gray-500">
-                            <i class="fas ${isEmpty ? 'fa-inbox' : 'fa-exclamation-triangle'} text-2xl ${isEmpty ? 'text-gray-300' : 'text-amber-400'} mb-1 block"></i>
+                        <td colspan="10" class="px-4 text-center text-muted">
+                            <i class="fas ${isEmpty ? 'fa-inbox' : 'fa-exclamation-triangle'} text-2xl ${isEmpty ? 'text-gray-300' : 'text-warn'} mb-1 block"></i>
                             <p>${message}</p>
                             ${detail}
                         </td>
@@ -760,7 +760,7 @@ class OrderDataManager {
                         console.error(`❌ 주문 ${order.id} 행 렌더링 실패:`, rowError);
                         return `
                             <tr>
-                                <td colspan="9" class="px-6 text-center text-red-500">
+                                <td colspan="9" class="px-6 text-center text-danger">
                                     <i class="fas fa-exclamation-triangle mr-2"></i>
                                     주문 데이터 오류 (ID: ${order.id})
                                 </td>
@@ -824,7 +824,7 @@ class OrderDataManager {
                 if (tableContainer) {
                     bulkActionContainer = document.createElement('div');
                     bulkActionContainer.id = 'bulk-action-container';
-                    bulkActionContainer.className = 'mb-4 p-4 bg-gray-50 rounded-lg border border-gray-200';
+                    bulkActionContainer.className = 'mb-4 p-4 bg-section rounded-lg border border-gray-200';
                     tableContainer.insertBefore(bulkActionContainer, tableContainer.firstChild);
                     console.log('✅ 일괄 작업 버튼 컨테이너 생성 완료');
                 } else {
@@ -844,13 +844,13 @@ class OrderDataManager {
                                 <input type="checkbox" id="select-all-orders" class="rounded text-green-600 focus:ring-green-500 focus:ring-2" 
                                        ${this.isAllSelected ? 'checked' : ''} 
                                        onchange="toggleSelectAllOrders()">
-                                <label for="select-all-orders" class="text-sm font-medium text-gray-700 cursor-pointer">
+                                <label for="select-all-orders" class="text-sm font-medium text-body cursor-pointer">
                                     전체 선택 (${totalOrders}개)
                                 </label>
                             </div>
                             ${isAnySelected ? `
-                                <div class="text-sm text-gray-600">
-                                    <span class="font-semibold text-blue-600">${selectedCount}개</span> 선택됨
+                                <div class="text-sm text-body">
+                                    <span class="font-semibold text-info">${selectedCount}개</span> 선택됨
                                 </div>
                             ` : ''}
                         </div>
@@ -997,7 +997,7 @@ class OrderDataManager {
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-red-600 font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
+                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
                     <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
                     <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
                     <td class="px-2 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
@@ -1005,7 +1005,7 @@ class OrderDataManager {
                     <td class="px-2 text-center align-middle relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
-                        <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-white border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
+                        <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-card border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
                                 <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>
@@ -1013,10 +1013,10 @@ class OrderDataManager {
                         </div>
                     </td>
                     <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
-                        <span class="text-xs text-gray-600 cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
+                        <span class="text-xs text-body cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
                     </td>
                     <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
-                        <span class="text-xs text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
+                        <span class="text-xs text-body cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
                     <td class="px-2 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
                         <div class="btn-group">
@@ -1029,7 +1029,7 @@ class OrderDataManager {
         } catch (error) {
             const rid = order.order_id ?? order.id;
             console.error(`❌ 주문 ${rid} 행 렌더링 실패:`, error);
-            return `<tr><td colspan="10" class="px-4 text-center text-red-500">주문 데이터 오류</td></tr>`;
+            return `<tr><td colspan="10" class="px-4 text-center text-danger">주문 데이터 오류</td></tr>`;
         }
     }
     
@@ -1324,7 +1324,7 @@ class OrderDataManager {
         modal.innerHTML = `
             <div class="modal-container modal-sm">
                 <div class="modal-header">
-                    <span class="modal-title"><i class="fas fa-undo text-red-500 mr-2"></i>환불 사유 입력</span>
+                    <span class="modal-title"><i class="fas fa-undo text-danger mr-2"></i>환불 사유 입력</span>
                     <button id="refund-modal-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
                 </div>
                 <div class="modal-body">
@@ -1577,7 +1577,7 @@ class OrderDataManager {
                 if (orderManagement) {
                     bulkActionContainer = document.createElement('div');
                     bulkActionContainer.id = 'bulk-action-container';
-                    bulkActionContainer.className = 'mb-4 p-4 bg-blue-50 rounded-lg border-2 border-blue-200 shadow-lg';
+                    bulkActionContainer.className = 'mb-4 p-4 bg-info rounded-lg border-2 border-blue-200 shadow-lg';
                     orderManagement.insertBefore(bulkActionContainer, orderManagement.firstChild);
                     console.log('✅ 일괄 작업 버튼 컨테이너 강제 생성 완료');
                 }
@@ -1588,8 +1588,8 @@ class OrderDataManager {
                 bulkActionContainer.innerHTML = `
                     <div class="flex items-center justify-between">
                         <div class="flex items-center space-x-4">
-                            <div class="text-sm text-gray-600">
-                                <span class="font-semibold text-blue-600">${selectedCount}개</span> 주문이 선택되었습니다
+                            <div class="text-sm text-body">
+                                <span class="font-semibold text-info">${selectedCount}개</span> 주문이 선택되었습니다
                             </div>
                         </div>
                         
@@ -1778,15 +1778,15 @@ class OrderDataManager {
                     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
                         <div class="p-6">
                             <div class="flex items-center justify-between mb-4">
-                                <h3 class="text-lg font-semibold text-gray-900">일괄 상태 변경</h3>
-                                <button onclick="closeBulkStatusModal()" class="text-gray-400 hover:text-gray-600">
+                                <h3 class="text-lg font-semibold text-heading">일괄 상태 변경</h3>
+                                <button onclick="closeBulkStatusModal()" class="text-muted hover:text-gray-600">
                                     <i class="fas fa-times"></i>
                                 </button>
                             </div>
-                            
+
                             <div class="mb-4">
-                                <p class="text-sm text-gray-600 mb-3">
-                                    <span class="font-semibold text-blue-600">${selectedCount}개</span> 주문의 상태를 변경합니다.
+                                <p class="text-sm text-body mb-3">
+                                    <span class="font-semibold text-info">${selectedCount}개</span> 주문의 상태를 변경합니다.
                                 </p>
                                 
                                 <div class="space-y-2 max-h-64 overflow-y-auto">
@@ -1796,8 +1796,8 @@ class OrderDataManager {
                                             <div class="flex items-center space-x-3">
                                                 <div class="w-4 h-4 rounded-full shadow-sm" style="background-color: ${status.color}"></div>
                                                 <div class="flex-1">
-                                                    <div class="font-medium text-gray-900">${status.label}</div>
-                                                    <div class="text-xs text-gray-500">${status.description}</div>
+                                                    <div class="font-medium text-heading">${status.label}</div>
+                                                    <div class="text-xs text-secondary">${status.description}</div>
                                                 </div>
                                             </div>
                                         </button>
