@@ -70,3 +70,7 @@ dist-web/
 
 # dataconnect generated files
 .dataconnect
+
+# Claude Code worktrees and agent scratchpad
+.claude/worktrees/
+.claire/
