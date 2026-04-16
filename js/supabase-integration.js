@@ -315,8 +315,8 @@ class SupabaseIntegration {
         if (statusElement) {
             statusElement.textContent = status === 'completed' ? '동기화 완료' : 
                                       status === 'error' ? '동기화 실패' : '동기화 중...';
-            statusElement.className = status === 'completed' ? 'text-green-600' : 
-                                    status === 'error' ? 'text-red-600' : 'text-yellow-600';
+            statusElement.className = status === 'completed' ? 'text-brand' : 
+                                    status === 'error' ? 'text-danger' : 'text-warn';
         }
     }
 

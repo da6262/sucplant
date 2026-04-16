@@ -265,7 +265,7 @@ async function loadBasicShippingData() {
         }
 
         tbody.innerHTML = shippingOrders.map(order => `
-            <tr class="hover:bg-gray-50">
+            <tr class="hover:bg-section">
                 <td class="px-4 td-primary font-medium">${order.order_number || order.id}</td>
                 <td class="px-4 td-primary">${order.customer_name || '고객명'}</td>
                 <td class="px-4 td-secondary max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
@@ -279,11 +279,11 @@ async function loadBasicShippingData() {
                 <td class="px-4">
                     <div class="flex items-center gap-2">
                         ${order.tracking_number ? `
-                            <button onclick="trackOrder('${order.id}')" class="text-blue-500 hover:text-blue-700 text-xs" title="배송 추적">
+                            <button onclick="trackOrder('${order.id}')" class="text-info hover:text-blue-700 text-xs" title="배송 추적">
                                 <i class="fas fa-search"></i>
                             </button>
                         ` : ''}
-                        <button onclick="editShipping('${order.id}')" class="text-emerald-600 hover:text-emerald-800 text-xs" title="수정">
+                        <button onclick="editShipping('${order.id}')" class="text-brand hover:text-emerald-800 text-xs" title="수정">
                             <i class="fas fa-edit"></i>
                         </button>
                     </div>
@@ -495,40 +495,40 @@ function displayTrackingResult(trackingData) {
         <div class="space-y-4">
             <!-- 기본 정보 -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-blue-50 p-4 rounded-lg">
-                    <div class="text-sm text-gray-600">송장번호</div>
+                <div class="bg-info p-4 rounded-lg">
+                    <div class="text-sm text-body">송장번호</div>
                     <div class="font-semibold text-blue-800">${trackingData.trackingNumber}</div>
                 </div>
-                <div class="bg-green-50 p-4 rounded-lg">
-                    <div class="text-sm text-gray-600">택배사</div>
+                <div class="bg-success p-4 rounded-lg">
+                    <div class="text-sm text-body">택배사</div>
                     <div class="font-semibold text-green-800">${trackingData.carrier}</div>
                 </div>
                 <div class="bg-purple-50 p-4 rounded-lg">
-                    <div class="text-sm text-gray-600">현재 상태</div>
+                    <div class="text-sm text-body">현재 상태</div>
                     <div class="font-semibold text-purple-800">${trackingData.status}</div>
                 </div>
             </div>
 
             <!-- 현재 위치 -->
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <div class="text-sm text-gray-600 mb-2">현재 위치</div>
-                <div class="font-medium text-gray-800">${trackingData.currentLocation}</div>
+            <div class="bg-section p-4 rounded-lg">
+                <div class="text-sm text-body mb-2">현재 위치</div>
+                <div class="font-medium text-heading">${trackingData.currentLocation}</div>
             </div>
 
             <!-- 배송 이력 -->
             <div>
-                <div class="text-sm text-gray-600 mb-3">배송 이력</div>
+                <div class="text-sm text-body mb-3">배송 이력</div>
                 <div class="space-y-3">
                     ${trackingData.history.map((item, index) => `
                         <div class="flex items-start space-x-3 p-3 bg-white border rounded-lg">
-                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
+                            <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-info">
                                 ${index + 1}
                             </div>
                             <div class="flex-1">
-                                <div class="font-medium text-gray-800">${item.status}</div>
-                                <div class="text-sm text-gray-600">${item.location}</div>
-                                <div class="text-sm text-gray-500">${item.description}</div>
-                                <div class="text-xs text-gray-400 mt-1">${new Date(item.time).toLocaleString('ko-KR')}</div>
+                                <div class="font-medium text-heading">${item.status}</div>
+                                <div class="text-sm text-body">${item.location}</div>
+                                <div class="text-sm text-muted">${item.description}</div>
+                                <div class="text-xs text-muted mt-1">${new Date(item.time).toLocaleString('ko-KR')}</div>
                             </div>
                         </div>
                     `).join('')}
@@ -536,8 +536,8 @@ function displayTrackingResult(trackingData) {
             </div>
 
             <!-- 추적 링크 -->
-            <div class="bg-yellow-50 p-4 rounded-lg">
-                <div class="text-sm text-gray-600 mb-2">고객용 추적 링크</div>
+            <div class="bg-warn p-4 rounded-lg">
+                <div class="text-sm text-body mb-2">고객용 추적 링크</div>
                 <div class="flex items-center space-x-2">
                     <input type="text" id="tracking-link" value="${generateTrackingLink(trackingData.trackingNumber, trackingData.carrier)}" 
                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" readonly>
@@ -1153,12 +1153,12 @@ function showAddShippingForm(orders) {
     const modalHTML = `
         <div id="add-shipping-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">배송 등록</h3>
+                <h3 class="text-lg font-semibold text-heading mb-4">배송 등록</h3>
                 
                 <div class="space-y-4">
                     <!-- 주문 선택 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">주문 선택</label>
+                        <label class="block text-sm font-medium text-body mb-2">주문 선택</label>
                         <select id="order-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="">주문을 선택하세요</option>
                             ${orders.map(order => {
@@ -1170,14 +1170,14 @@ function showAddShippingForm(orders) {
                     
                     <!-- 송장번호 입력 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">송장번호</label>
+                        <label class="block text-sm font-medium text-body mb-2">송장번호</label>
                         <input type="text" id="tracking-number" placeholder="송장번호를 입력하세요" 
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                     </div>
                     
                     <!-- 택배사 선택 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">택배사</label>
+                        <label class="block text-sm font-medium text-body mb-2">택배사</label>
                         <select id="carrier-select-modal" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="">택배사를 선택하세요</option>
                             <option value="cj">CJ대한통운</option>
@@ -1191,7 +1191,7 @@ function showAddShippingForm(orders) {
                     
                     <!-- 배송 메모 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">배송 메모</label>
+                        <label class="block text-sm font-medium text-body mb-2">배송 메모</label>
                         <textarea id="shipping-memo" placeholder="특별 요청사항이나 메모를 입력하세요" 
                                   class="w-full px-3 py-2 border border-gray-300 rounded-lg h-20"></textarea>
                     </div>
@@ -1199,7 +1199,7 @@ function showAddShippingForm(orders) {
                 
                 <!-- 버튼 -->
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button id="cancel-add-shipping" class="px-4 py-2 text-gray-600 hover:text-gray-800">취소</button>
+                    <button id="cancel-add-shipping" class="px-4 py-2 text-body hover:text-heading">취소</button>
                     <button id="confirm-add-shipping" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         <i class="fas fa-plus mr-2"></i>배송 등록
                     </button>
@@ -1312,12 +1312,12 @@ function showBulkShippingModal() {
         const modalHTML = `
             <div id="bulk-shipping-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                 <div class="bg-white rounded-lg p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">일괄 배송 등록</h3>
+                    <h3 class="text-lg font-semibold text-heading mb-4">일괄 배송 등록</h3>
                     
                     <div class="space-y-4">
                         <!-- 업로드 방법 선택 -->
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">등록 방법</label>
+                            <label class="block text-sm font-medium text-body mb-2">등록 방법</label>
                             <div class="flex space-x-4">
                                 <label class="flex items-center">
                                     <input type="radio" name="bulk-method" value="excel" checked class="mr-2">
@@ -1333,14 +1333,14 @@ function showBulkShippingModal() {
                         <!-- Excel 업로드 섹션 -->
                         <div id="excel-upload-section">
                             <div class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center">
-                                <i class="fas fa-file-excel text-green-500 text-3xl mb-2"></i>
-                                <p class="text-sm text-gray-600 mb-2">Excel 파일을 드래그하거나 클릭하여 업로드</p>
+                                <i class="fas fa-file-excel text-brand text-3xl mb-2"></i>
+                                <p class="text-sm text-body mb-2">Excel 파일을 드래그하거나 클릭하여 업로드</p>
                                 <input type="file" id="excel-file" accept=".xlsx,.xls" class="hidden">
                                 <button id="select-excel-file" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
                                     파일 선택
                                 </button>
-                                <p class="text-xs text-gray-500 mt-2 space-x-3">
-                                    <a href="#" id="download-template" class="text-blue-600 hover:underline">Excel 템플릿 다운로드</a>
+                                <p class="text-xs text-muted mt-2 space-x-3">
+                                    <a href="#" id="download-template" class="text-info hover:underline">Excel 템플릿 다운로드</a>
                                     <span class="text-gray-300">|</span>
                                     <a href="#" id="edit-template" class="text-orange-600 hover:underline">템플릿 양식 편집</a>
                                 </p>
@@ -1351,7 +1351,7 @@ function showBulkShippingModal() {
                         <div id="manual-input-section" class="hidden">
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
-                                    <h4 class="font-medium text-gray-800">배송 정보 입력</h4>
+                                    <h4 class="font-medium text-heading">배송 정보 입력</h4>
                                     <button id="add-manual-row" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
                                         <i class="fas fa-plus mr-1"></i>행 추가
                                     </button>
@@ -1364,9 +1364,9 @@ function showBulkShippingModal() {
                         
                         <!-- 미리보기 -->
                         <div id="bulk-preview" class="hidden">
-                            <h4 class="font-medium text-gray-800 mb-2">등록 미리보기</h4>
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <div id="preview-content" class="text-sm text-gray-600">
+                            <h4 class="font-medium text-heading mb-2">등록 미리보기</h4>
+                            <div class="bg-section p-4 rounded-lg">
+                                <div id="preview-content" class="text-sm text-body">
                                     <!-- 미리보기 내용이 여기에 표시됩니다 -->
                                 </div>
                             </div>
@@ -1375,7 +1375,7 @@ function showBulkShippingModal() {
                     
                     <!-- 버튼 -->
                     <div class="flex justify-end space-x-3 mt-6">
-                        <button id="cancel-bulk-shipping" class="px-4 py-2 text-gray-600 hover:text-gray-800">취소</button>
+                        <button id="cancel-bulk-shipping" class="px-4 py-2 text-body hover:text-heading">취소</button>
                         <button id="confirm-bulk-shipping" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" disabled>
                             <i class="fas fa-upload mr-2"></i>일괄 등록
                         </button>
@@ -1534,10 +1534,10 @@ async function showRozenExcelPreview() {
                         <div class="bg-gradient-to-r from-orange-50 to-red-50 border-b border-gray-200 px-6 py-4">
                             <div class="flex items-center justify-between">
                                 <div>
-                                    <h2 class="text-xl font-bold text-gray-800">📦 로젠택배 Excel 미리보기</h2>
-                                    <p class="text-sm text-gray-600 mt-1">총 ${readyOrders.length}건의 배송준비 주문</p>
+                                    <h2 class="text-xl font-bold text-heading">📦 로젠택배 Excel 미리보기</h2>
+                                    <p class="text-sm text-body mt-1">총 ${readyOrders.length}건의 배송준비 주문</p>
                                 </div>
-                                <button onclick="closeRozenExcelPreview()" class="text-gray-400 hover:text-gray-600">
+                                <button onclick="closeRozenExcelPreview()" class="text-muted hover:text-body">
                                     <i class="fas fa-times text-xl"></i>
                                 </button>
                             </div>
@@ -1547,7 +1547,7 @@ async function showRozenExcelPreview() {
                         <div class="p-6 overflow-y-auto max-h-[calc(90vh-200px)]">
                             <div class="overflow-x-auto">
                                 <table class="min-w-full table-ui border border-gray-300">
-                                    <thead class="bg-blue-50">
+                                    <thead class="bg-info">
                                         <tr>
                                             <th class="px-3 font-bold border border-gray-300">수하인명</th>
                                             <th class="px-3 font-bold border border-gray-300"></th>
@@ -1569,7 +1569,7 @@ async function showRozenExcelPreview() {
                                             const itemName = extractItemNames(order.items ?? []);
                                             const message = order.memo || order.shipping_message || '';
                                             return `
-                                                <tr class="hover:bg-gray-50">
+                                                <tr class="hover:bg-section">
                                                     <td class="px-3 td-primary border border-gray-300">${order.customer_name || ''}</td>
                                                     <td class="px-3 td-secondary border border-gray-300"></td>
                                                     <td class="px-3 td-primary border border-gray-300 max-w-xs truncate">${address}</td>
@@ -1588,17 +1588,17 @@ async function showRozenExcelPreview() {
                                 </table>
                             </div>
                             
-                            <div class="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                                <p class="text-sm text-gray-700">
-                                    <i class="fas fa-info-circle text-blue-600 mr-2"></i>
+                            <div class="mt-4 p-4 bg-info border border-blue-200 rounded-lg">
+                                <p class="text-sm text-body">
+                                    <i class="fas fa-info-circle text-info mr-2"></i>
                                     <strong>참고:</strong> 운임구분 "010"은 선불 코드입니다. 택배운임은 주문의 배송비 금액이 사용됩니다.
                                 </p>
                             </div>
                         </div>
                         
                         <!-- 하단 버튼 -->
-                        <div class="bg-gray-50 px-6 py-4 flex justify-end space-x-3 border-t border-gray-200">
-                            <button onclick="closeRozenExcelPreview()" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg transition-colors">
+                        <div class="bg-section px-6 py-4 flex justify-end space-x-3 border-t border-gray-200">
+                            <button onclick="closeRozenExcelPreview()" class="px-6 py-2 bg-gray-200 hover:bg-gray-300 text-body rounded-lg transition-colors">
                                 취소
                             </button>
                             <button onclick="downloadRozenExcel()" class="px-6 py-2 bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors font-semibold">
@@ -2064,29 +2064,29 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
         <div id="template-editor-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-4xl max-h-[90vh] overflow-y-auto">
                 <div class="flex justify-between items-center mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">Excel 템플릿 양식 편집</h3>
-                    <button id="close-template-editor" class="text-gray-400 hover:text-gray-600">
+                    <h3 class="text-lg font-semibold text-heading">Excel 템플릿 양식 편집</h3>
+                    <button id="close-template-editor" class="text-muted hover:text-body">
                         <i class="fas fa-times text-xl"></i>
                     </button>
                 </div>
                 
                 <div class="space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
+                        <label class="block text-sm font-medium text-body mb-2">
                             템플릿 컬럼 및 예시 데이터
-                            <span class="text-xs text-gray-500 ml-2">표 형태로 편집하세요</span>
+                            <span class="text-xs text-muted ml-2">표 형태로 편집하세요</span>
                         </label>
                         
                         <!-- Excel 표 형태 편집 영역 -->
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
                             <table class="min-w-full table-ui" id="template-table">
-                                <thead class="bg-gray-100">
+                                <thead class="bg-page">
                                     <!-- Excel 컬럼 레터 (A, B, C...) -->
                                     <tr id="template-column-letters" class="border-b border-gray-300">
                                         <!-- 컬럼 레터가 동적으로 생성됩니다 -->
                                     </tr>
                                     <!-- 컬럼명 헤더 -->
-                                    <tr id="template-header-row" class="bg-blue-50">
+                                    <tr id="template-header-row" class="bg-info">
                                         <!-- 헤더가 동적으로 생성됩니다 -->
                                     </tr>
                                 </thead>
@@ -2109,7 +2109,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                         </div>
                     </div>
                     
-                    <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="bg-info border border-blue-200 rounded-lg p-4">
                         <h4 class="text-sm font-semibold text-blue-900 mb-2">
                             <i class="fas fa-info-circle mr-1"></i>사용 방법
                         </h4>
@@ -2131,17 +2131,17 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                     </div>
                     
                     <div class="flex items-center space-x-2">
-                        <button id="reset-template" class="px-4 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-lg hover:bg-gray-50">
+                        <button id="reset-template" class="px-4 py-2 text-sm text-body hover:text-heading border border-gray-300 rounded-lg hover:bg-section">
                             <i class="fas fa-undo mr-1"></i>기본 템플릿으로 초기화
                         </button>
-                        <button id="preview-template" class="px-4 py-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded-lg hover:bg-blue-50">
+                        <button id="preview-template" class="px-4 py-2 text-sm text-info hover:text-blue-800 border border-blue-300 rounded-lg hover:bg-info">
                             <i class="fas fa-eye mr-1"></i>미리보기
                         </button>
                     </div>
                     
                     <!-- 미리보기 영역 -->
                     <div id="template-preview" class="hidden">
-                        <h4 class="text-sm font-medium text-gray-700 mb-2">미리보기</h4>
+                        <h4 class="text-sm font-medium text-body mb-2">미리보기</h4>
                         <div class="border border-gray-300 rounded-lg overflow-x-auto">
                             <table id="preview-table" class="min-w-full table-ui">
                                 <!-- 미리보기 테이블이 여기에 표시됩니다 -->
@@ -2151,7 +2151,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                 </div>
                 
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button id="cancel-template-editor" class="px-4 py-2 text-gray-600 hover:text-gray-800">
+                    <button id="cancel-template-editor" class="px-4 py-2 text-body hover:text-heading">
                         취소
                     </button>
                     <button id="save-template" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
@@ -2191,17 +2191,17 @@ function parseTemplateToTable(templateText) {
     // Excel 컬럼 레터 행 생성 (AA, AB, AC...)
     const columnLettersRow = document.getElementById('template-column-letters');
     columnLettersRow.innerHTML = headers.map((_, index) => `
-        <th class="px-4 py-2 text-center text-xs font-bold text-gray-600 bg-gray-100 border-r border-gray-300">
+        <th class="px-4 py-2 text-center text-xs font-bold text-body bg-page border-r border-gray-300">
             ${getColumnLetter(index)}
         </th>
     `).join('') + `
-        <th class="px-4 py-2 w-24 bg-gray-100"></th>
+        <th class="px-4 py-2 w-24 bg-page"></th>
     `;
     
     // 컬럼명 헤더 행 생성
     const headerRow = document.getElementById('template-header-row');
     headerRow.innerHTML = headers.map((header, index) => `
-        <th class="px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200">
+        <th class="px-4 py-3 text-left text-xs font-medium text-body uppercase tracking-wider border-r border-gray-200">
             <input type="text" 
                    value="${header.trim()}" 
                    class="header-input w-full px-2 py-1 border border-gray-300 rounded text-center font-bold"
@@ -2210,7 +2210,7 @@ function parseTemplateToTable(templateText) {
         </th>
     `).join('') + `
         <th class="px-4 py-3 text-center w-24">
-            <button class="text-red-600 hover:text-red-800" onclick="removeLastColumn()">
+            <button class="text-danger hover:text-red-800" onclick="removeLastColumn()">
                 <i class="fas fa-times"></i>
             </button>
         </th>
@@ -2235,7 +2235,7 @@ function parseTemplateToTable(templateText) {
 function addTemplateRowToTable(cells = [], columnCount = 6) {
     const tbody = document.getElementById('template-body');
     const row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50';
+    row.className = 'hover:bg-section';
     
     // 셀 개수를 컬럼 수에 맞춤
     while (cells.length < columnCount) {
@@ -2252,7 +2252,7 @@ function addTemplateRowToTable(cells = [], columnCount = 6) {
         </td>
     `).join('') + `
         <td class="px-4 text-center">
-            <button class="text-red-600 hover:text-red-800 text-sm" onclick="removeTemplateRow(this)">
+            <button class="text-danger hover:text-red-800 text-sm" onclick="removeTemplateRow(this)">
                 <i class="fas fa-trash"></i>
             </button>
         </td>
@@ -2355,13 +2355,13 @@ function setupTemplateEditorEventListeners() {
         // 컬럼 레터 추가
         const columnLettersRow = document.getElementById('template-column-letters');
         const newLetterCell = document.createElement('th');
-        newLetterCell.className = 'px-4 py-2 text-center text-xs font-bold text-gray-600 bg-gray-100 border-r border-gray-300';
+        newLetterCell.className = 'px-4 py-2 text-center text-xs font-bold text-body bg-page border-r border-gray-300';
         newLetterCell.textContent = getColumnLetter(currentColCount);
         columnLettersRow.insertBefore(newLetterCell, columnLettersRow.lastElementChild);
         
         // 헤더에 새 컬럼 추가
         const newHeaderCell = document.createElement('th');
-        newHeaderCell.className = 'px-4 py-3 text-left text-xs font-medium text-gray-700 uppercase tracking-wider border-r border-gray-200';
+        newHeaderCell.className = 'px-4 py-3 text-left text-xs font-medium text-body uppercase tracking-wider border-r border-gray-200';
         newHeaderCell.innerHTML = `
             <input type="text" 
                    value="새컬럼" 
@@ -2438,10 +2438,10 @@ function previewTemplate(content) {
         }
         
         // 테이블 HTML 생성
-        let tableHTML = '<thead class="bg-gray-50"><tr>';
+        let tableHTML = '<thead class="bg-section"><tr>';
         const headers = lines[0].split(',');
         headers.forEach(header => {
-            tableHTML += `<th class="px-4 py-2 text-left text-xs font-medium text-gray-700 uppercase tracking-wider">${header.trim()}</th>`;
+            tableHTML += `<th class="px-4 py-2 text-left text-xs font-medium text-body uppercase tracking-wider">${header.trim()}</th>`;
         });
         tableHTML += '</tr></thead><tbody class="bg-white divide-y divide-gray-200">';
         
@@ -2522,7 +2522,7 @@ function addManualRow() {
     const rowIndex = container.children.length;
     
     const rowHTML = `
-        <div class="grid grid-cols-4 gap-2 items-center p-2 bg-gray-50 rounded">
+        <div class="grid grid-cols-4 gap-2 items-center p-2 bg-section rounded">
             <input type="text" placeholder="주문번호" class="px-2 py-1 border border-gray-300 rounded text-sm">
             <input type="text" placeholder="송장번호" class="px-2 py-1 border border-gray-300 rounded text-sm">
             <select class="px-2 py-1 border border-gray-300 rounded text-sm">
@@ -2536,7 +2536,7 @@ function addManualRow() {
             </select>
             <div class="flex space-x-1">
                 <input type="text" placeholder="메모" class="flex-1 px-2 py-1 border border-gray-300 rounded text-sm">
-                <button onclick="removeManualRow(this)" class="text-red-600 hover:text-red-800 text-sm">
+                <button onclick="removeManualRow(this)" class="text-danger hover:text-red-800 text-sm">
                     <i class="fas fa-trash"></i>
                 </button>
             </div>
@@ -2557,7 +2557,7 @@ function showBulkPreview(data) {
     const content = document.getElementById('preview-content');
     
     if (data.length === 0) {
-        content.innerHTML = '<p class="text-gray-500">등록할 데이터가 없습니다.</p>';
+        content.innerHTML = '<p class="text-muted">등록할 데이터가 없습니다.</p>';
     } else {
         content.innerHTML = `
             <p class="font-medium mb-2">총 ${data.length}건의 배송 정보가 등록됩니다:</p>
@@ -2565,7 +2565,7 @@ function showBulkPreview(data) {
                 ${data.slice(0, 5).map(row => `
                     <div class="text-sm">${row[0]} - ${row[1]} (${row[2]})</div>
                 `).join('')}
-                ${data.length > 5 ? `<div class="text-sm text-gray-500">... 외 ${data.length - 5}건</div>` : ''}
+                ${data.length > 5 ? `<div class="text-sm text-muted">... 외 ${data.length - 5}건</div>` : ''}
             </div>
         `;
     }
@@ -2701,12 +2701,12 @@ function showExportModal() {
     const modalHTML = `
         <div id="export-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div class="bg-white rounded-lg p-6 w-full max-w-md">
-                <h3 class="text-lg font-semibold text-gray-800 mb-4">배송 데이터 내보내기</h3>
+                <h3 class="text-lg font-semibold text-heading mb-4">배송 데이터 내보내기</h3>
                 
                 <div class="space-y-4">
                     <!-- 내보내기 옵션 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">내보내기 옵션</label>
+                        <label class="block text-sm font-medium text-body mb-2">내보내기 옵션</label>
                         <select id="export-option" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                             <option value="current">현재 배송 중인 주문</option>
                             <option value="completed">배송 완료된 주문</option>
@@ -2718,18 +2718,18 @@ function showExportModal() {
                     <!-- 날짜 범위 -->
                     <div class="grid grid-cols-2 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">시작일</label>
+                            <label class="block text-sm font-medium text-body mb-2">시작일</label>
                             <input type="date" id="export-start-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">종료일</label>
+                            <label class="block text-sm font-medium text-body mb-2">종료일</label>
                             <input type="date" id="export-end-date" class="w-full px-3 py-2 border border-gray-300 rounded-lg">
                         </div>
                     </div>
                     
                     <!-- 파일 형식 -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">파일 형식</label>
+                        <label class="block text-sm font-medium text-body mb-2">파일 형식</label>
                         <div class="flex space-x-4">
                             <label class="flex items-center">
                                 <input type="radio" name="export-format" value="excel" checked class="mr-2">
@@ -2749,7 +2749,7 @@ function showExportModal() {
                 
                 <!-- 버튼 -->
                 <div class="flex justify-end space-x-3 mt-6">
-                    <button id="cancel-export" class="px-4 py-2 text-gray-600 hover:text-gray-800">취소</button>
+                    <button id="cancel-export" class="px-4 py-2 text-body hover:text-heading">취소</button>
                     <button id="confirm-export" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
                         <i class="fas fa-download mr-2"></i>내보내기
                     </button>
@@ -3075,7 +3075,7 @@ async function openShippingTrackingPanel() {
         const saveAllBtn = document.getElementById('shipping-tracking-save-all-btn');
         if (saveAllBtn) saveAllBtn.onclick = saveAllShippingTrackings;
     } catch (e) {
-        tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-red-500">오류: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="px-2 text-center text-danger">오류: ${e.message}</td></tr>`;
     }
 }
 
@@ -3100,7 +3100,7 @@ async function saveShippingOneTracking(orderId, btn) {
         setTimeout(() => { btn.textContent = origText; }, 2000);
     } else {
         btn.textContent = '✓';
-        input.classList.add('border-green-400', 'bg-green-50');
+        input.classList.add('border-green-400', 'bg-success');
         setTimeout(() => { btn.textContent = origText; }, 2000);
     }
 }

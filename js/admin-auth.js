@@ -281,7 +281,7 @@ class AdminAuth {
             }
             
             userInfoElement.innerHTML = `
-                <span class="text-sm text-gray-600">
+                <span class="text-sm text-body">
                     <i class="fas fa-user-shield mr-1"></i>
                     ${displayName}
                 </span>

@@ -68,7 +68,7 @@ async function runCustomerManagementInit() {
     console.log('🔄 고객관리 초기화 시작');
     const customerListContainer = document.getElementById('customer-list-container');
     if (customerListContainer) {
-        customerListContainer.innerHTML = '<div class="text-center py-8 text-gray-500"><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-blue-600 text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
+        customerListContainer.innerHTML = '<div class="text-center py-8 text-muted"><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-info text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
     }
     if (window.customerDataManager) {
         try {
@@ -77,7 +77,7 @@ async function runCustomerManagementInit() {
         } catch (error) {
             console.error('❌ 고객 데이터 로드 실패:', error);
             if (customerListContainer) {
-                customerListContainer.innerHTML = '<div class="text-center py-8 text-red-500"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">새로고침</button></div>';
+                customerListContainer.innerHTML = '<div class="text-center py-8 text-danger"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">새로고침</button></div>';
             }
         }
         if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
@@ -475,7 +475,7 @@ async function loadCustomerGrades() {
         if (error) {
             console.error('❌ 고객등급 로드 실패:', error);
             const gradesList = document.getElementById('customer-grades-list');
-            if (gradesList) gradesList.innerHTML = '<p class="text-gray-500 text-center py-4">등록된 고객등급이 없습니다.</p>';
+            if (gradesList) gradesList.innerHTML = '<p class="text-muted text-center py-4">등록된 고객등급이 없습니다.</p>';
             return;
         }
         
@@ -496,22 +496,22 @@ async function loadCustomerGrades() {
                     const discount = grade.discount != null ? grade.discount : 0;
                     const id = grade.code || `grade-${index}`;
                     const gradeItem = document.createElement('div');
-                    gradeItem.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-2';
+                    gradeItem.className = 'flex items-center justify-between p-4 bg-section rounded-lg mb-2';
                     gradeItem.innerHTML = `
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: ${color}">
                                 <i class="${icon} text-white text-sm"></i>
                             </div>
                             <div>
-                                <h5 class="font-medium text-gray-900">${name}</h5>
-                                <p class="text-sm text-gray-600">최소 구매액: ${Number(minAmount).toLocaleString()}원 | 할인율: ${discount}%</p>
+                                <h5 class="font-medium text-heading">${name}</h5>
+                                <p class="text-sm text-body">최소 구매액: ${Number(minAmount).toLocaleString()}원 | 할인율: ${discount}%</p>
                             </div>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="edit-grade-btn text-blue-600 hover:text-blue-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
+                            <button class="edit-grade-btn text-info hover:text-blue-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="delete-grade-btn text-red-600 hover:text-red-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
+                            <button class="delete-grade-btn text-danger hover:text-red-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -519,7 +519,7 @@ async function loadCustomerGrades() {
                     gradesList.appendChild(gradeItem);
                 });
             } else {
-                gradesList.innerHTML = '<p class="text-gray-500 text-center py-4">등록된 고객등급이 없습니다.</p>';
+                gradesList.innerHTML = '<p class="text-muted text-center py-4">등록된 고객등급이 없습니다.</p>';
             }
         }
         
@@ -756,16 +756,16 @@ async function loadCustomerGradesList() {
                             <i class="${grade.icon}"></i>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-gray-800">${grade.name}</h4>
-                            <p class="text-sm text-gray-600">최소 구매금액: ${grade.minAmount.toLocaleString()}원</p>
-                            <p class="text-sm text-gray-600">할인율: ${grade.discount}%</p>
+                            <h4 class="font-semibold text-heading">${grade.name}</h4>
+                            <p class="text-sm text-body">최소 구매금액: ${grade.minAmount.toLocaleString()}원</p>
+                            <p class="text-sm text-body">할인율: ${grade.discount}%</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <button onclick="editCustomerGrade(${index})" class="text-blue-600 hover:text-blue-800 transition-colors">
+                        <button onclick="editCustomerGrade(${index})" class="text-info hover:text-blue-800 transition-colors">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteCustomerGrade(${index})" class="text-red-600 hover:text-red-800 transition-colors">
+                        <button onclick="deleteCustomerGrade(${index})" class="text-danger hover:text-red-800 transition-colors">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1224,8 +1224,8 @@ function showCustomerManagementSettings() {
                 <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold text-gray-800">고객관리 설정</h3>
-                            <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600">
+                            <h3 class="text-lg font-semibold text-heading">고객관리 설정</h3>
+                            <button onclick="closeSettingsModal()" class="text-muted hover:text-body">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -1235,10 +1235,10 @@ function showCustomerManagementSettings() {
         settingsOptions.forEach((option, index) => {
             settingsHTML += `
                 <button onclick="handleSettingsOption('${option}')" 
-                        class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-section transition-colors">
                     <div class="flex items-center">
-                        <i class="fas fa-cog text-gray-400 mr-3"></i>
-                        <span class="text-gray-700">${option}</span>
+                        <i class="fas fa-cog text-muted mr-3"></i>
+                        <span class="text-body">${option}</span>
                     </div>
                 </button>
             `;

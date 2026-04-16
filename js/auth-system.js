@@ -176,8 +176,8 @@ class AuthSystem {
             const userInfo = headerContainer.querySelector('.user-info');
             if (userInfo) {
                 userInfo.innerHTML = `
-                    <span class="text-sm text-gray-600">${this.currentUser.email}</span>
-                    <button id="logoutBtn" class="ml-2 text-sm text-red-600 hover:text-red-800">로그아웃</button>
+                    <span class="text-sm text-body">${this.currentUser.email}</span>
+                    <button id="logoutBtn" class="ml-2 text-sm text-danger hover:text-red-800">로그아웃</button>
                 `;
             }
         }
