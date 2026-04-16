@@ -284,7 +284,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <tr><td colspan="5" class="text-center text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
+                <tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
             `;
         }
     }
@@ -490,7 +490,7 @@ function checkPhoneDuplicate(phoneNumber) {
             
             // 메시지 표시
             messageDiv.innerHTML = `
-                <div class="flex items-center text-red-600">
+                <div class="flex items-center text-danger">
                     <i class="fas fa-exclamation-triangle mr-1"></i>
                     <span>이미 등록된 전화번호입니다. (${existingCustomer.name})</span>
                 </div>
@@ -682,7 +682,7 @@ function showDeleteWithOrdersModal(orders) {
         const rows = orders.map((o, i) => `
             <tr data-id="${o.id}">
                 <td class="px-2">
-                    <input type="checkbox" class="order-chk rounded border-gray-300 text-red-500 focus:ring-red-400" data-idx="${i}" checked>
+                    <input type="checkbox" class="order-chk rounded border-gray-300 text-danger focus:ring-red-400" data-idx="${i}" checked>
                 </td>
                 <td class="px-2 td-secondary">${fmt(o.created_at || o.order_date)}</td>
                 <td class="px-2 td-primary">${o.order_number || '-'}</td>
@@ -699,18 +699,18 @@ function showDeleteWithOrdersModal(orders) {
                 <div class="modal-header">
                     <div class="flex items-center gap-2">
                         <div class="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fas fa-trash text-red-500 text-sm"></i>
+                            <i class="fas fa-trash text-danger text-sm"></i>
                         </div>
                         <div>
                             <div class="modal-title">고객 삭제</div>
-                            <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
+                            <div class="text-xs text-muted">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-body">
                     <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
                         <table class="w-full table-ui">
-                            <thead class="bg-gray-50 sticky top-0">
+                            <thead class="bg-section sticky top-0">
                                 <tr>
                                     <th class="px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
                                     <th class="px-2 text-left">날짜</th>
@@ -722,7 +722,7 @@ function showDeleteWithOrdersModal(orders) {
                             <tbody id="order-del-tbody">${rows}</tbody>
                         </table>
                     </div>
-                    <p class="mt-2.5 text-xs text-red-500">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
+                    <p class="mt-2.5 text-xs text-danger">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
                 </div>
                 <div class="modal-footer">
                     <button id="btn-cancel-del" class="btn-secondary">취소</button>
@@ -1171,12 +1171,12 @@ async function loadCustomerOrders(customerId) {
         const ordersList = document.getElementById('customer-orders-list');
         if (ordersList) {
             ordersList.innerHTML = `
-                <div class="text-center py-8 text-red-500">
+                <div class="text-center py-8 text-danger">
                     <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
+                        <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                     </div>
                     <p class="text-sm">주문내역을 불러올 수 없습니다.</p>
-                    <p class="text-xs text-gray-400 mt-1">오류: ${error.message}</p>
+                    <p class="text-xs text-muted mt-1">오류: ${error.message}</p>
                 </div>
             `;
         }
@@ -1189,7 +1189,7 @@ async function renderCustomerOrders(orders, container) {
         console.log('🎨 고객 주문내역 렌더링:', orders.length);
         
         if (orders.length === 0) {
-            container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
+            container.innerHTML = `<p class="text-xs text-muted py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
             return;
         }
         
@@ -1220,7 +1220,7 @@ async function renderCustomerOrders(orders, container) {
                     <td class="px-2 td-primary whitespace-nowrap">${totalAmount}원</td>
                     <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
                     <td class="px-2 text-center whitespace-nowrap">
-                        <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-xs">보기</button>
+                        <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-brand hover:underline text-xs">보기</button>
                     </td>
                 </tr>
             `;
@@ -1246,9 +1246,9 @@ async function renderCustomerOrders(orders, container) {
     } catch (error) {
         console.error('❌ 고객 주문내역 렌더링 실패:', error);
         container.innerHTML = `
-            <div class="text-center py-8 text-red-500">
+            <div class="text-center py-8 text-danger">
                 <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
+                    <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                 </div>
                 <p class="text-sm">주문내역을 표시할 수 없습니다.</p>
             </div>
@@ -1291,9 +1291,9 @@ async function updateCustomerBasicInfo(customer) {
     const iconElement = document.getElementById('customer-detail-icon');
     if (iconElement) {
         if (customer.grade === 'VIP') {
-            iconElement.className = 'fas fa-crown text-lg text-yellow-600';
+            iconElement.className = 'fas fa-crown text-lg text-warn';
         } else {
-            iconElement.className = 'fas fa-user text-lg text-green-600';
+            iconElement.className = 'fas fa-user text-lg text-brand';
         }
     }
     
@@ -1371,10 +1371,10 @@ function updateCustomerOrders(customer) {
     const ordersContainer = document.getElementById('customer-orders-content');
     if (ordersContainer) {
         ordersContainer.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
+            <div class="text-center py-8 text-muted">
                 <i class="fas fa-shopping-cart text-4xl mb-4 text-gray-300"></i>
-                <h3 class="text-lg font-medium mb-2 text-gray-600">주문 내역이 없습니다</h3>
-                <p class="text-sm text-gray-400">${customer.name}님의 주문 기록이 아직 없습니다.</p>
+                <h3 class="text-lg font-medium mb-2 text-body">주문 내역이 없습니다</h3>
+                <p class="text-sm text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
             </div>
         `;
     }
@@ -1420,9 +1420,9 @@ async function updateCustomerModalBasicInfo(customer) {
     const iconElement = document.getElementById('customer-detail-modal-icon');
     if (iconElement) {
         if (customer.grade === 'VIP') {
-            iconElement.className = 'fas fa-crown text-lg text-yellow-600';
+            iconElement.className = 'fas fa-crown text-lg text-warn';
         } else {
-            iconElement.className = 'fas fa-user text-lg text-blue-600';
+            iconElement.className = 'fas fa-user text-lg text-info';
         }
     }
     
@@ -1498,10 +1498,10 @@ function updateCustomerModalOrders(customer) {
     const ordersContainer = document.getElementById('customer-detail-modal-orders-content');
     if (ordersContainer) {
         ordersContainer.innerHTML = `
-            <div class="text-center py-4 text-gray-500">
+            <div class="text-center py-4 text-muted">
                 <i class="fas fa-shopping-cart text-2xl mb-2 text-gray-300"></i>
-                <h3 class="text-sm font-medium mb-1 text-gray-600">주문 내역이 없습니다</h3>
-                <p class="text-xs text-gray-400">${customer.name}님의 주문 기록이 아직 없습니다.</p>
+                <h3 class="text-sm font-medium mb-1 text-body">주문 내역이 없습니다</h3>
+                <p class="text-xs text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
             </div>
         `;
     }
@@ -1828,10 +1828,10 @@ async function showAutocomplete(customers, searchTerm) {
                      onclick="selectAutocompleteItem(this)">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
-                            <div class="font-medium text-gray-900">${highlightedName}</div>
-                            <div class="text-xs text-gray-500">${customer.phone} • ${gradeDisplayName}</div>
+                            <div class="font-medium text-heading">${highlightedName}</div>
+                            <div class="text-xs text-secondary">${customer.phone} • ${gradeDisplayName}</div>
                         </div>
-                        <div class="text-xs text-gray-400">
+                        <div class="text-xs text-muted">
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
@@ -2098,8 +2098,8 @@ window.updateMemoCharCount = function(value) {
     const len = (value || '').length;
     counter.textContent = `${len} / 200`;
     counter.className = len > 180
-        ? 'text-xs text-red-500 font-medium'
-        : 'text-xs text-gray-400';
+        ? 'text-xs text-danger font-medium'
+        : 'text-xs text-muted';
 };
 
 // 추가 정보 섹션 내부 상태 리셋 유틸
@@ -2272,7 +2272,7 @@ async function _loadCustomerOrdersForModal(customerId) {
         }).join('');
     } catch (e) {
         console.error('주문이력 로드 실패:', e);
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500" style="padding:16px;">불러오기 실패</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger" style="padding:16px;">불러오기 실패</td></tr>';
     }
 }
 
