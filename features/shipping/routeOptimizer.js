@@ -244,23 +244,23 @@ export class RouteOptimizer {
             // 경로 정보 HTML 생성
             const routeHTML = `
                 <div class="route-visualization bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">배송 경로</h3>
-                    
+                    <h3 class="text-lg font-semibold text-heading mb-4">배송 경로</h3>
+
                     <div class="route-info mb-4">
                         <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-blue-50 p-3 rounded-lg">
-                                <div class="text-sm text-gray-600">총 거리</div>
-                                <div class="text-lg font-bold text-blue-600" id="total-distance">0km</div>
+                            <div class="bg-info p-3 rounded-lg">
+                                <div class="text-sm text-body">총 거리</div>
+                                <div class="text-lg font-bold text-info" id="total-distance">0km</div>
                             </div>
-                            <div class="bg-green-50 p-3 rounded-lg">
-                                <div class="text-sm text-gray-600">예상 시간</div>
-                                <div class="text-lg font-bold text-green-600" id="total-time">0시간</div>
+                            <div class="bg-success p-3 rounded-lg">
+                                <div class="text-sm text-body">예상 시간</div>
+                                <div class="text-lg font-bold text-brand" id="total-time">0시간</div>
                             </div>
                         </div>
                     </div>
-                    
+
                     <div class="route-stops">
-                        <h4 class="text-md font-medium text-gray-700 mb-2">배송 순서</h4>
+                        <h4 class="text-md font-medium text-body mb-2">배송 순서</h4>
                         <div id="route-stops-list" class="space-y-2">
                             <!-- 배송지 목록이 여기에 표시됩니다 -->
                         </div>
@@ -289,15 +289,15 @@ export class RouteOptimizer {
         if (!stopsList) return;
         
         stopsList.innerHTML = route.map((order, index) => `
-            <div class="flex items-center p-2 bg-gray-50 rounded-lg">
+            <div class="flex items-center p-2 bg-section rounded-lg">
                 <div class="w-6 h-6 bg-blue-500 text-white rounded-full flex items-center justify-center text-sm font-bold mr-3">
                     ${index + 1}
                 </div>
                 <div class="flex-1">
-                    <div class="font-medium text-gray-800">${order.customer_name}</div>
-                    <div class="text-sm text-gray-600">${order.shipping_address}</div>
+                    <div class="font-medium text-heading">${order.customer_name}</div>
+                    <div class="text-sm text-body">${order.shipping_address}</div>
                 </div>
-                <div class="text-sm text-gray-500">
+                <div class="text-sm text-secondary">
                     ${order.order_number || order.id}
                 </div>
             </div>

@@ -717,10 +717,10 @@ export class WaitlistUI {
                          data-customer-name="${customer.name}" 
                          data-customer-phone="${customer.phone || ''}">
                         <div class="flex items-center">
-                            <i class="fas fa-user text-gray-400 mr-2"></i>
+                            <i class="fas fa-user text-muted mr-2"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${customer.name}</div>
-                                <div class="text-sm text-gray-500">${customer.phone || '연락처 없음'}</div>
+                                <div class="font-medium text-heading">${customer.name}</div>
+                                <div class="text-sm text-secondary">${customer.phone || '연락처 없음'}</div>
                             </div>
                         </div>
                     </div>
@@ -729,14 +729,14 @@ export class WaitlistUI {
 
             // 새 고객 등록 옵션
             html += `
-                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer border-t-2 border-orange-200" 
-                     data-action="new-customer" 
+                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer border-t-2 border-orange-200"
+                     data-action="new-customer"
                      data-query="${query}">
                     <div class="flex items-center">
-                        <i class="fas fa-plus text-orange-500 mr-2"></i>
+                        <i class="fas fa-plus text-warn mr-2"></i>
                         <div>
-                            <div class="font-medium text-orange-700">"${query}" 새 고객으로 등록</div>
-                            <div class="text-sm text-orange-600">기존 고객이 없으면 새로 등록하세요</div>
+                            <div class="font-medium text-warn">"${query}" 새 고객으로 등록</div>
+                            <div class="text-sm text-warn">기존 고객이 없으면 새로 등록하세요</div>
                         </div>
                     </div>
                 </div>
@@ -762,14 +762,14 @@ export class WaitlistUI {
             if (!suggestionsDiv) return;
 
             const html = `
-                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer" 
-                     data-action="new-customer" 
+                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer"
+                     data-action="new-customer"
                      data-query="${query}">
                     <div class="flex items-center">
-                        <i class="fas fa-plus text-orange-500 mr-2"></i>
+                        <i class="fas fa-plus text-warn mr-2"></i>
                         <div>
-                            <div class="font-medium text-orange-700">"${query}" 새 고객으로 등록</div>
-                            <div class="text-sm text-orange-600">기존 고객이 없으므로 새로 등록하세요</div>
+                            <div class="font-medium text-warn">"${query}" 새 고객으로 등록</div>
+                            <div class="text-sm text-warn">기존 고객이 없으므로 새로 등록하세요</div>
                         </div>
                     </div>
                 </div>
