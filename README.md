@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.38-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.39-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -137,8 +137,8 @@ sucplant/
 
 | 분류 | 클래스 |
 |------|--------|
-| 버튼 | `.btn-primary` `.btn-secondary` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` |
-| 배지 | `.badge` + `.badge-success` `.badge-warning` `.badge-danger` `.badge-info` `.badge-purple` `.badge-neutral` |
+| 버튼 | `.btn-primary` `.btn-secondary` `.btn-danger` `.btn-info` `.btn-warn` `.btn-neutral` `.btn-purple` `.btn-orange` `.btn-xs` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` |
+| 배지 | `.badge` + `.badge-success` `.badge-warning` `.badge-danger` `.badge-info` `.badge-purple` `.badge-neutral` `.badge-sky` `.badge-orange` |
 | 테이블 | `.table-ui` `.td-primary` `.td-secondary` `.td-amount` `.td-muted` `.td-null` `.td-link` |
 | 필터 바 | `.filter-bar` `.input-ui` `.btn-search` |
 | 상태 탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
@@ -146,6 +146,10 @@ sucplant/
 | 모달 | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header` `.modal-body` `.modal-footer` `.modal-title` `.modal-close-btn` |
 | 폼 그리드 | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` |
 | 폼 입력 | `.form-input-group.with-unit` `.form-input-unit` `.form-section` `.form-section-inner` `.form-actions` |
+| **텍스트 컬러** | `.text-brand` `.text-brand-hover` `.text-info` `.text-danger` `.text-warn` `.text-heading` `.text-body` `.text-secondary` `.text-muted` `.text-amount` `.text-null-soft` |
+| **배경 서피스** | `.bg-card` `.bg-section` `.bg-page` `.bg-info` `.bg-danger` `.bg-warn` `.bg-success` |
+| **배경 액센트** | `.bg-info-accent` `.bg-success-accent` `.bg-warn-accent` `.bg-danger-accent` `.bg-purple-accent` `.bg-orange-accent` `.bg-sky-accent` |
+| **폰트 크기** | `.text-3xs` `.text-2xs` `.text-xs` `.text-sm` `.text-base` `.text-lg` `.text-xl` |
 
 ### 🏭 표준 렌더러 (`utils/ui.js`)
 
@@ -189,6 +193,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.39 | docs: `README.md` **🧱 공통 컴포넌트 클래스** 테이블을 Phase 1B/C/D 결과로 확장 — 버튼 행에 `.btn-danger/.btn-info/.btn-warn/.btn-neutral/.btn-purple/.btn-orange/.btn-xs` 추가, 배지 행에 `.badge-sky/.badge-orange` 보완. 신규 행 4종: **텍스트 컬러**(11종)·**배경 서피스**(7종)·**배경 액센트**(7종)·**폰트 크기**(7단계). 이로써 README/CLAUDE.md 양쪽 모두 최신 유틸 테이블 동기화 완료 — 새 기여자·AI 편집기가 어디를 열든 같은 참조 소스 |
 | v3.3.38 | chore: `.gitignore` 에 `.claude/worktrees/`·`.claire/` 추가 — Claude Code 서브에이전트가 생성하는 임시 worktree 와 에이전트 scratchpad 디렉터리를 추적에서 제외. 매 커밋 시 `git status --short` 에 `?? .claire/`·`?? .claude/worktrees/` 가 반복 표시되던 번거로움 제거. 기존 추적 중인 `.claude/settings.local.json` 은 개인 권한 설정이라 `git stash push` 루틴 유지 |
 | v3.3.37 | refactor(Phase 1D): input 복합 Tailwind → `.input-ui` 통합 9건 교체 — Python 정규식 bulk. ①`features/orders/orderSMS.js`(2건) SMS 모달 템플릿 select + 메시지 textarea (textarea 는 `input-ui resize-none` 조합). ②`features/shipping/shippingManager.js`(2건) 송장번호 input + 택배사 select. ③`features/settings/settingsUI.js`(5건) 고객등급 편집 모달 입력 5종(등급명·최소금액·할인율·색상·아이콘). 결과: `w-full px-3 py-2 border border-gray-300 rounded-lg/md focus:ring-2 focus:ring-blue-500 focus:border-transparent` 장문 Tailwind 조합 → 단일 `.input-ui` 클래스. focus 색 blue → green 전환(브랜드 primary 일관성). 남은 input Tailwind 복합은 대부분 루트의 테스트/디버그 HTML 파일(allowed-users-management.html·white-platter-registration-final.html 등 12건) 으로 범위 외 |
 | v3.3.36 | docs: `CLAUDE.md` Layer 2 시맨틱 클래스 테이블을 Phase 1B/C 결과로 확장 — 버튼 행에 `.btn-danger/.btn-info/.btn-warn/.btn-neutral/.btn-purple/.btn-orange/.btn-xs` 추가, **텍스트 컬러 유틸**(11종 `.text-brand/-hover/-info/-danger/-warn/-heading/-body/-secondary/-muted/-amount/-null-soft`)·**배경 액센트 유틸**(7종 `.bg-{info/success/warn/danger/purple/orange/sky}-accent`)·**폰트 크기 스케일**(7단계) 행 신설. 신규 유틸 정책 조항 명시: raw Tailwind 색상/진한 버튼 조합/bg-*-100 금지, 오버라이드 레이어는 구형 코드 안전망일 뿐 신규 코드는 시맨틱 유틸 직접 사용 원칙. 향후 세션·다른 AI 편집기가 CLAUDE.md 참조 시 Phase 1B/C 결과를 그대로 활용 가능 |
