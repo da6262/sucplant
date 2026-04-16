@@ -264,7 +264,7 @@ start-server.bat
 
 | 분류 | 클래스 |
 |---|---|
-| 버튼 | `.btn-primary` `.btn-secondary` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` `.btn-icon-copy` `.btn-search` |
+| 버튼 (전체) | `.btn-primary` `.btn-secondary` `.btn-danger` `.btn-info` `.btn-warn` `.btn-neutral` `.btn-purple` `.btn-orange` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` `.btn-icon-copy` `.btn-search` `.btn-xs` |
 | 뱃지 | `.badge` + `.badge-neutral/success/warning/danger/info/purple/sky/orange` |
 | 테이블 셀 | `.td-primary` `.td-secondary` `.td-muted` `.td-amount` `.td-num` `.td-null` `.td-link` |
 | 테이블 | `.table-ui` (전역 격자선 포함) |
@@ -273,6 +273,16 @@ start-server.bat
 | 헤더 | `.page-header` `.action-group` |
 | 모달 | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header/body/footer` `.modal-title` `.modal-close-btn` |
 | 폼 | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` `.form-input-group` `.form-section` `.form-actions` |
+| **텍스트 컬러 유틸** (Phase 1B) | `.text-brand` `.text-brand-hover` `.text-info` `.text-danger` `.text-warn` `.text-heading` `.text-body` `.text-secondary` `.text-muted` `.text-amount` `.text-null-soft` |
+| **배경 서피스 유틸** | `.bg-card` `.bg-section` `.bg-page` `.bg-info` `.bg-danger` `.bg-warn` `.bg-success` |
+| **배경 액센트 유틸** (Phase 1B·아이콘 박스용) | `.bg-info-accent` `.bg-success-accent` `.bg-warn-accent` `.bg-danger-accent` `.bg-purple-accent` `.bg-orange-accent` `.bg-sky-accent` |
+| **폰트 크기** | `.text-3xs(9px)` `.text-2xs(10px)` `.text-xs(11px)` `.text-sm(12px)` `.text-base(13px)` `.text-lg(15px)` `.text-xl(18px)` |
+
+**신규 유틸 정책 (Phase 1B/C 완료 후)**:
+- 브랜드·의미 색상은 위 유틸 사용 — `text-gray-500` 같은 raw Tailwind 금지
+- 진한 버튼은 `.btn-*` 공용 클래스 사용 — `bg-blue-600 text-white hover:bg-blue-700 ...` 금지
+- 아이콘 박스 배경은 `.bg-*-accent` 사용 — `bg-blue-100` 금지
+- 오버라이드 레이어(`styles/index-inline.css` L839~)가 구형 Tailwind 색상을 자동 변환하지만, **신규 코드는 처음부터 시맨틱 유틸 사용**
 
 ### Layer 3 — 렌더러 (`utils/ui.js`)
 
