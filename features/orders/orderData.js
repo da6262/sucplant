@@ -737,7 +737,7 @@ class OrderDataManager {
             if (filteredOrders.length === 0) {
                 const isEmpty = !this._loadErrorMessage;
                 const message = isEmpty ? '등록된 주문이 없습니다.' : '주문 목록을 불러올 수 없습니다.';
-                const detail = this._loadErrorMessage ? `<p class="mt-1 text-red-600 text-[11px] max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
+                const detail = this._loadErrorMessage ? `<p class="mt-1 text-red-600 text-xs max-w-md mx-auto">${String(this._loadErrorMessage).replace(/</g, '&lt;')}</p>` : '';
                 tableBody.innerHTML = `
                     <tr>
                         <td colspan="10" class="px-4 text-center text-gray-500">
@@ -1013,10 +1013,10 @@ class OrderDataManager {
                         </div>
                     </td>
                     <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
-                        <span class="text-[11px] text-gray-600 cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
+                        <span class="text-xs text-gray-600 cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
                     </td>
                     <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
-                        <span class="text-[11px] text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
+                        <span class="text-xs text-gray-600 cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
                     <td class="px-2 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
                         <div class="btn-group">

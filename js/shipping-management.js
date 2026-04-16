@@ -3066,7 +3066,7 @@ async function openShippingTrackingPanel() {
                         placeholder="송장번호 입력" value="${o.tracking_number || ''}" data-order-id="${o.id}">
                 </td>
                 <td class="px-2">
-                    <button onclick="saveShippingOneTracking('${o.id}', this)" class="app-btn app-btn-soft text-[10px] px-2 py-0.5">저장</button>
+                    <button onclick="saveShippingOneTracking('${o.id}', this)" class="app-btn app-btn-soft text-2xs px-2 py-0.5">저장</button>
                 </td>
             </tr>`;
         }).join('');

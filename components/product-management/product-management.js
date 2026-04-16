@@ -967,40 +967,40 @@ class ProductManagementComponent {
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-sm">
                         <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
+                            <p class="text-xs text-gray-400 mb-0.5">카테고리</p>
                             <p class="font-medium text-gray-800">${fmt(product.category)}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
+                            <p class="text-xs text-gray-400 mb-0.5">사이즈</p>
                             <p class="font-medium text-gray-800">${fmt(product.size)}</p>
                         </div>
                         <div class="bg-green-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
+                            <p class="text-xs text-gray-400 mb-0.5">판매가</p>
                             <p class="font-semibold text-green-700 text-base">${fmtP(product.price)}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
+                            <p class="text-xs text-gray-400 mb-0.5">매입가</p>
                             <p class="font-medium text-gray-800">${fmtP(product.cost)}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
+                            <p class="text-xs text-gray-400 mb-0.5">재고</p>
                             <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
+                            <p class="text-xs text-gray-400 mb-0.5">마진율</p>
                             <p class="font-medium text-gray-800">${profitMargin}</p>
                         </div>
                         <div class="bg-gray-50 rounded-lg p-3 col-span-2">
-                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
+                            <p class="text-xs text-gray-400 mb-0.5">배송 옵션</p>
                             <p class="font-medium text-gray-800">${shipping}</p>
                         </div>
                     </div>
                     ${product.description ? `
                     <div class="bg-gray-50 rounded-lg p-3 text-sm">
-                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
+                        <p class="text-xs text-gray-400 mb-1">상품 설명</p>
                         <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
                     </div>` : ''}
-                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
+                    <div class="flex gap-4 text-xs text-gray-400 pt-1 border-t border-gray-100">
                         <span>등록일 ${fmtD(product.created_at)}</span>
                         <span>수정일 ${fmtD(product.updated_at)}</span>
                     </div>

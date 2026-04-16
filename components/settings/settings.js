@@ -462,7 +462,7 @@ async function loadSMSSettings() {
                     <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
                 </div>
                 <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
-                    <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                    <p class="text-xs text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
                     <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
                     <div class="flex justify-end mt-1.5">
                         <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>

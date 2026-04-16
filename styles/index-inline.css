@@ -876,6 +876,8 @@ select.form-control {
 .bg-green-50                { background-color: #F0FDF4; }
 
 /* 폰트 크기 — 통제실 표준 */
+.text-3xs  { font-size: 9px; }   /* 극소형 라벨 (시스템 경고, 뱃지 숫자 등) */
+.text-2xs  { font-size: 10px; }  /* 초소형 (탭 카운트, 아이콘 옆 작은 라벨) */
 .text-xs   { font-size: 11px; }
 .text-sm   { font-size: 12px; }
 .text-base { font-size: 13px; }
