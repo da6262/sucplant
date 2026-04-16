@@ -1580,7 +1580,7 @@ async function openAddressSearch() {
     }
 }
 
-// 주소 입력 시 Enter 키로 Daum 검색 팝업 창 열기
+// 주소 입력 시 Enter 키 → 자체 중앙 모달(420×460)로 Daum 검색 임베드
 window.handleAddressInput = async function(value) {
     const trimmed = (value || '').trim();
     if (!trimmed) return;
@@ -1593,14 +1593,35 @@ window.handleAddressInput = async function(value) {
     }
     if (typeof daum === 'undefined' || !daum.Postcode) return;
 
-    // 임베드 컨테이너는 사용하지 않음(숨김 유지)
-    const container = document.getElementById('address-embed-container');
-    if (container) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-    }
+    // 하단 임베드 컨테이너 숨김 유지
+    const legacyContainer = document.getElementById('address-embed-container');
+    if (legacyContainer) { legacyContainer.classList.add('hidden'); legacyContainer.innerHTML = ''; }
 
-    // 별도 팝업 창으로 검색 열기
+    // 기존 모달 있으면 제거
+    document.getElementById('daum-address-modal')?.remove();
+
+    // 중앙 고정 크기 모달 생성 (Daum 기본 팝업보다 컴팩트)
+    const overlay = document.createElement('div');
+    overlay.id = 'daum-address-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;';
+    overlay.innerHTML = `
+        <div style="background:#fff;border-radius:8px;width:420px;height:460px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.2);overflow:hidden;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;">
+                <strong style="color:#1E293B;">주소 검색</strong>
+                <button type="button" id="daum-address-close" aria-label="닫기"
+                        style="border:none;background:transparent;font-size:16px;cursor:pointer;color:#64748B;padding:0 4px;line-height:1;">&times;</button>
+            </div>
+            <div id="daum-address-embed" style="flex:1;overflow:hidden;"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
+    overlay.querySelector('#daum-address-close').addEventListener('click', closeModal);
+    const onEsc = (ev) => { if (ev.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); } };
+    document.addEventListener('keydown', onEsc);
+
     new daum.Postcode({
         oncomplete: function(data) {
             const addr = data.roadAddress || data.jibunAddress || '';
@@ -1614,17 +1635,15 @@ window.handleAddressInput = async function(value) {
                     addressField.style.borderColor = '';
                 }, 2000);
             }
+            closeModal();
             const detailField = document.getElementById('customer-form-address-detail');
             if (detailField) {
-                setTimeout(() => {
-                    detailField.focus();
-                    detailField.placeholder = '동, 호수 등 상세주소 입력';
-                }, 50);
+                setTimeout(() => { detailField.focus(); detailField.placeholder = '동, 호수 등 상세주소 입력'; }, 50);
             }
         },
         width: '100%',
         height: '100%',
-    }).open({ q: trimmed });
+    }).embed(overlay.querySelector('#daum-address-embed'), { q: trimmed, autoClose: true });
 };
 
 // 주소 검색창 외부 클릭 시 닫기
