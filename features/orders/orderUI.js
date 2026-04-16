@@ -353,7 +353,7 @@ async function loadOrderItemsToCart(items) {
         if (!items || items.length === 0) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500">
+                    <td colspan="5" class="text-center text-muted">
                         <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
@@ -480,7 +480,7 @@ function addItemToCartDirectly(item) {
             <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
             <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300" title="삭제">
-                    <i class="fas fa-trash text-xs text-red-600"></i>
+                    <i class="fas fa-trash text-xs text-danger"></i>
                 </button>
             </td>
         `;
@@ -526,7 +526,7 @@ export function clearOrderForm() {
         if (cartItemsBody) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500">
+                    <td colspan="5" class="text-center text-muted">
                         <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
@@ -623,8 +623,8 @@ async function fillOrderForm(orderData) {
         [customerName, customerPhone, customerAddress].forEach(field => {
             if (field && field.hasAttribute('readonly')) {
                 field.removeAttribute('readonly');
-                field.classList.remove('bg-gray-50');
-                field.classList.add('bg-white');
+                field.classList.remove('bg-section');
+                field.classList.add('bg-card');
                 console.log(`✅ ${field.id} readonly 제거됨 (수정 모드)`);
             }
         });

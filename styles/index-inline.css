@@ -1248,6 +1248,18 @@ table tbody td [class*="shrink-0"] {
 .bg-warn    { background-color: var(--warn-bg); }
 .bg-success { background-color: #F0FDF4; }
 
+/* Semantic text color utilities — Tailwind text-{color}-NNN 대체 */
+.text-brand       { color: var(--primary); }
+.text-brand-hover { color: var(--primary-hover); }
+.text-info        { color: var(--info); }
+.text-danger      { color: var(--danger); }
+.text-warn        { color: var(--warn); }
+.text-heading     { color: var(--text-heading); }
+.text-body        { color: var(--text-body); }
+.text-muted       { color: var(--text-muted); }
+.text-amount      { color: var(--text-amount); }
+.text-null-soft   { color: var(--text-null); }
+
 /* Border */
 .border-std    { border: 1px solid var(--border); }
 .border-bottom { border-bottom: 1px solid var(--border); }

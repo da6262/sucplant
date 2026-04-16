@@ -301,7 +301,7 @@ export async function updateProductCategoryDropdown() {
         const addOpt = document.createElement('option');
         addOpt.value = '__ADD_NEW__';
         addOpt.textContent = '+ 새 카테고리 추가';
-        addOpt.className = 'text-blue-600 font-medium';
+        addOpt.className = 'text-info font-medium';
         sel.appendChild(addOpt);
 
     } catch (err) {

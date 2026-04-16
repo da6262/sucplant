@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.12-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.13-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -189,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.13 | refactor(Phase 1B 시작): Tailwind 색상 하드코딩 → 시맨틱 유틸리티 교체 착수 — `styles/index-inline.css` 에 시맨틱 텍스트 컬러 유틸 10종 신설(`.text-brand/-hover`·`.text-info`·`.text-danger`·`.text-warn`·`.text-heading`·`.text-body`·`.text-muted`·`.text-amount`·`.text-null-soft`). `:root` CSS 변수 기반으로 매핑되어 브랜드 변경 시 단일 지점 제어 가능. 검증 묶음으로 소형 파일 2개 교체: `features/categories/categoryUI.js`(신규 카테고리 추가 옵션 `text-blue-600` → `text-info`), `features/orders/orderUI.js`(장바구니 빈 상태·고객 readonly 배경·삭제 아이콘 `text-gray-500`/`bg-gray-50`/`bg-white`/`text-red-600` → `text-muted`/`bg-section`/`bg-card`/`text-danger`, 4건). Phase 1B 전체 목표: 프로덕션 JS·HTML 798건의 `bg-red-200` 같은 원시 Tailwind 색상 클래스를 CSS 변수 기반 시맨틱 이름으로 점진 교체해 브랜드 통제권 회복. 후속: orderUI.js L482 mini-trash(`bg-red-200 hover:bg-red-300`) 는 `.btn-trash-mini` 공용 유틸 신설 후 일괄 처리 예정 |
 | v3.3.12 | refactor: Tailwind 임의 폰트 크기(`text-[Npx]`) 시맨틱 클래스화 — `styles/index-inline.css` 폰트 스케일에 `.text-3xs(9px)`·`.text-2xs(10px)` 신규 추가(기존 `.text-xs(11px)`/`.text-sm(12px)`/`.text-base(13px)` 와 연속). 프로덕션 파일 56건 일괄 교체: `text-[11px]`→`text-xs` 27건, `text-[10px]`→`text-2xs` 23건, `text-[9px]`→`text-3xs` 6건. 영향 파일 10개(`dashboard.html`·`header.html`·`order-management.html`·`order-detail-modal.html`·`sales-channels.html`·`product-management.js`·`orderData.js`·`settingsUI.js`·`settings.js`·`shipping-management.js`). 효과: 임의값 브래킷 구문 제거로 본진(`styles/index-inline.css`) 단일 제어, 작은 글자 크기 정책 변경 시 한 줄 수정으로 전 파일 반영. 남은 Tailwind 임의값은 컬럼 너비(`min-w-[Npx]`)·사이드바 오프셋(`md:pl-[180px]`)·절대 위치 등 개별 특수 케이스로 정당 유지 |
 | v3.3.11 | refactor: `border-radius` 하드코딩 일괄 변수화 — 프로덕션 파일 28건 `Npx` → `var(--radius-*)` 교체. `features/orders/orderForm.js` 11건(4/6/8px → sm/md/lg), `features/customers/customerUI.js` 7건(6/8/10px → md/lg/lg), `components/customer-management/customer-modal.html` 5건, `components/settings/settings.css` 3건, `features/orders/orderFormMinimalLayout.js`·`components/modals/waitlist-modal.html` 각 1건. 정당 예외 4건 유지: 뱃지 pill `9px`(header·orderFormMinimalLayout 2건 — `--radius-*` 스케일에 없는 의도적 pill 반경), 스크롤바 thumb `3px`(order-modal — 마이크로 radius 특수), 프린트 템플릿 `6px`(orderPrint — 격리된 print HTML 에 CSS 변수 cascade 안 함). 의미: 모서리 둥글기 전 프로젝트 `--radius-sm/md/lg/xl/full` 스케일로 통일 → 변경 시 `:root` 한 곳만 수정 |
 | v3.3.10 | docs: CLAUDE.md 데이터베이스 섹션에 "DB 쿼리는 `window.supabaseClient` 로만 접근 (`window.supabase` 금지)" 영속 규칙 추가. `window.supabase` 가 초기화 경로에 따라 라이브러리 namespace 이거나 client 이거나 타이밍 의존적이라는 함정과 v3.3.9 수정 사례를 명시 — 향후 데이터 매니저 추가 시 동일 실수 재발 방지 |
