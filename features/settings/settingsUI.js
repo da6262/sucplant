@@ -322,7 +322,60 @@ export async function loadCustomerGrades() {
         });
         
         console.log('✅ 고객 등급 관리 로드 완료');
-        
+
+        // "등급 추가" 버튼 리스너: initSettingsEventListeners() 가 never called 라서 여기서 1회 바인딩
+        const addGradeBtn = document.getElementById('add-customer-grade-btn');
+        if (addGradeBtn && !addGradeBtn.dataset.listenerAdded) {
+            addGradeBtn.dataset.listenerAdded = 'true';
+            addGradeBtn.addEventListener('click', async function () {
+                const name = prompt('등급명을 입력하세요:');
+                if (!name || !name.trim()) return;
+                try {
+                    await window.settingsDataManager.addCustomerGrade({
+                        name: name.trim(),
+                        code: name.trim().toUpperCase().replace(/\s+/g, '_'),
+                        minAmount: 0,
+                        discount: 0,
+                        color: '#6B7280',
+                        icon: 'fas fa-circle'
+                    });
+                    setTimeout(() => loadCustomerGrades(), 100);
+                } catch (error) {
+                    console.error('❌ 고객등급 추가 실패:', error);
+                    alert('등급 추가에 실패했습니다: ' + (error.message || error));
+                }
+            });
+        }
+
+        // "등급 적용 기간 저장" 버튼 리스너
+        const saveGradePeriodBtn = document.getElementById('save-grade-period-btn');
+        if (saveGradePeriodBtn && !saveGradePeriodBtn.dataset.listenerAdded) {
+            saveGradePeriodBtn.dataset.listenerAdded = 'true';
+            saveGradePeriodBtn.addEventListener('click', async function () {
+                const periodSelect = document.getElementById('grade-period-select');
+                if (!periodSelect) {
+                    alert('등급 적용 기간 설정을 찾을 수 없습니다.');
+                    return;
+                }
+                try {
+                    if (!window.supabaseClient) throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                    const period = periodSelect.value;
+                    const { data, error } = await window.supabaseClient
+                        .from('farm_settings').select('settings').eq('id', 1).single();
+                    if (error) throw error;
+                    const updatedSettings = { ...data.settings, gradePeriod: period };
+                    const { error: updateError } = await window.supabaseClient
+                        .from('farm_settings').update({ settings: updatedSettings }).eq('id', 1);
+                    if (updateError) throw updateError;
+                    await window.forceReloadSettings();
+                    alert('✅ 등급 적용 기간이 저장되었습니다.');
+                } catch (error) {
+                    console.error('❌ 등급 적용 기간 저장 실패:', error);
+                    alert('등급 적용 기간 저장에 실패했습니다.');
+                }
+            });
+        }
+
         // 전체 고객 등급 재계산 버튼 이벤트 리스너 등록 (여기서 등록!)
         setTimeout(() => {
             const recalculateBtn = document.getElementById('recalculate-all-grades-btn');
@@ -521,7 +574,29 @@ export function loadOrderStatuses() {
             `;
             container.appendChild(statusElement);
         });
-        
+
+        // "상태 추가" 버튼 리스너: initSettingsEventListeners() 가 never called 라서 여기서 1회 바인딩
+        const addOrderStatusBtn = document.getElementById('add-order-status-btn');
+        if (addOrderStatusBtn && !addOrderStatusBtn.dataset.listenerAdded) {
+            addOrderStatusBtn.dataset.listenerAdded = 'true';
+            addOrderStatusBtn.addEventListener('click', async function () {
+                const label = prompt('상태명을 입력하세요:');
+                if (!label || !label.trim()) return;
+                try {
+                    await window.settingsDataManager.addOrderStatus({
+                        value: label.trim(),
+                        label: label.trim(),
+                        color: '#6B7280',
+                        description: '새로 추가된 상태'
+                    });
+                    loadOrderStatuses();
+                } catch (error) {
+                    console.error('❌ 주문 상태 추가 실패:', error);
+                    alert('주문 상태 추가에 실패했습니다: ' + (error.message || error));
+                }
+            });
+        }
+
         console.log('✅ 주문 상태 관리 로드 완료');
     } catch (error) {
         console.error('❌ 주문 상태 관리 로드 실패:', error);
@@ -1013,7 +1088,7 @@ window.editCustomerGrade = async function(index) {
                         <button onclick="closeEditGradeModal()" class="px-4 py-2 text-gray-600 bg-gray-100 hover:bg-gray-200 rounded-lg">
                             취소
                         </button>
-                        <button onclick="saveEditGrade(${index})" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg">
+                        <button onclick="saveEditGrade(${index})" class="btn-info">
                             저장
                         </button>
                     </div>
