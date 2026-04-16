@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.97-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.98-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.98 | fix: 주문 모달에서 신규 고객 등록 후 재검색 필요 문제 — `saveCustomer`의 `tempCustomerName` 분기가 `customerModalCallback`을 건너뛰고 return 하여 orderForm의 `selectCustomerFromSearch`(customer_id·grade·UI 상태 일괄 동기화) 미호출. 콜백 우선 실행 + 저장된 고객의 id·grade 조회 후 `fullCustomer` 전달하도록 수정 |
 | v3.2.97 | fix: 고객 등록 모달 주소 입력 — 타이핑마다 자동 검색으로 혼란 유발 → Enter 키 입력 시만 Daum 오버레이 열리도록 변경 (`oninput` → `onkeydown` + Enter 판별), placeholder 문구도 "Enter 키로 검색" 으로 명시 |
 | v3.2.96 | docs: CLAUDE.md 에 Git·문서 워크플로우 섹션 신설 — 작업 단위 완료 시 ①커밋 ②README 변경이력 동일 커밋 포함 ③`pull --rebase` 후 자동 푸시 규칙화. AI 편집기 간 원격 동기화 지연 방지 목적. "주문관리가 기준" 원칙 삭제(특정 탭 기준 대신 공통 규칙으로 평준화). 뱃지 금지 variant(badge-red/yellow/green/blue) 명시, `.table-ui` 엑셀 격자 전역 표준, `.td-link` 색 상속(검정 통일), `px-2 align-middle`·`nullDash` 셀 규칙, Dead code 경고(features/products/productUI.js 미사용) 문서화 |
 | v3.4.1 | refactor: `features/orders/orderForm.js` 하드코딩 스타일 전면 제거 — 3177줄→2680줄(-497줄, -15.6%), raw Tailwind 유틸리티 281건→0건. ①레거시 `generateOrderFormHTML` 본체(430줄, 미사용 fallback) 삭제 ②상품 선택 모달 `showProductManagementModal` → `renderModal`+`renderFilterBar` 적용 ③`loadAllProducts` 상품 카드 그리드 재작성 — 상태 메시지 헬퍼 통합·CSS 변수·`renderFormActions` 적용 ④카트 행 3종(`addQuickProductToCart`·`addProductToCart`·`addToCart`) → 삼각 정렬 법칙·`tabular-nums`·`renderBtnIcon`·`renderEmptyRow` 적용 ⑤인기/빠른 상품 카드 → 파란색 강조 제거, primary 초록(`#16A34A`) 통일 ⑥`searchExistingCustomers` 고객 드롭다운 → `renderGradeBadge` 적용 ⑦추가 배송지 행+배지 → `renderBadge` 적용·파란 톤→초록 통일 ⑧CLAUDE.md 확장 — UI/Design System Rules 통합 섹션(Data Form & Header Constitution 8개 조항·경산다육 디자인 가이드라인 4개 섹션·데이터 테이블 표준) |

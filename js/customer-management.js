@@ -182,45 +182,54 @@ async function saveCustomer() {
             // 주문 폼에서 온 경우 주문 폼으로 돌아가기
             if (window.tempCustomerName) {
                 console.log('🔄 주문 폼으로 돌아가기 - tempCustomerName:', window.tempCustomerName);
-                
-                // 고객 정보를 주문 폼에 자동 입력
-                const customerNameInput = document.getElementById('order-customer-name');
-                const customerPhoneInput = document.getElementById('order-customer-phone');
-                const customerAddressInput = document.getElementById('order-customer-address');
-                
-                if (customerNameInput) customerNameInput.value = customerData.name;
-                if (customerPhoneInput) customerPhoneInput.value = customerData.phone;
-                if (customerAddressInput) customerAddressInput.value = customerData.address;
-                
-                console.log('📝 주문 폼에 고객 정보 입력 완료:', {
+
+                // 저장된 고객의 실제 ID·grade 확보 (callback 및 후속 주문 생성에 필요)
+                let newCustomer = null;
+                try {
+                    const list = window.customerDataManager?.getAllCustomers?.() || window.customerDataManager?.customers || [];
+                    newCustomer = list.find(c => c?.phone === customerData.phone) || null;
+                } catch (_) {}
+                const fullCustomer = {
+                    id: newCustomer?.id || result?.id || null,
                     name: customerData.name,
                     phone: customerData.phone,
-                    address: customerData.address
-                });
-                
+                    address: customerData.address,
+                    address_detail: customerData.address_detail || '',
+                    grade: newCustomer?.grade || 'GENERAL'
+                };
+
                 // 고객 모달 닫기
                 if (window.closeCustomerModal) {
                     window.closeCustomerModal();
                 }
-                
+
                 // 주문 모달 다시 표시
                 const orderModal = document.getElementById('order-modal');
                 if (orderModal) {
                     orderModal.style.display = 'flex';
                     orderModal.classList.remove('hidden');
-                    console.log('📦 주문 모달 다시 표시 완료');
-                    console.log('🔍 주문 모달 상태:', {
-                        display: orderModal.style.display,
-                        hidden: orderModal.classList.contains('hidden'),
-                        visibility: orderModal.style.visibility
-                    });
-                } else {
-                    console.error('❌ 주문 모달을 찾을 수 없습니다');
                 }
-                
-                // 임시 저장된 고객명 초기화 (주문 모달이 다시 표시된 후)
+
+                // 콜백 우선 실행 — orderForm 의 selectCustomerFromSearch 로 customer_id·grade·UI 일괄 동기화
+                if (window.customerModalCallback) {
+                    try {
+                        console.log('🔄 주문 폼 콜백 실행으로 고객 완전 동기화');
+                        window.customerModalCallback(fullCustomer);
+                    } catch (cbErr) {
+                        console.error('❌ 주문 폼 콜백 실행 실패:', cbErr);
+                    }
+                    window.customerModalCallback = null;
+                } else {
+                    // 콜백 없으면 최소한 기본 필드 직접 채움 (후방 호환)
+                    const nameEl = document.getElementById('order-customer-name');
+                    const phoneEl = document.getElementById('order-customer-phone');
+                    const addrEl  = document.getElementById('order-customer-address');
+                    if (nameEl)  nameEl.value  = fullCustomer.name;
+                    if (phoneEl) phoneEl.value = fullCustomer.phone;
+                    if (addrEl)  addrEl.value  = fullCustomer.address;
+                }
+
                 window.tempCustomerName = null;
-                
                 console.log('✅ 주문 폼으로 돌아가기 완료');
                 return;
             }
