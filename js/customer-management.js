@@ -1603,10 +1603,11 @@ window.handleAddressInput = async function(value) {
     // 중앙 고정 크기 모달 생성 (Daum 기본 팝업보다 컴팩트)
     const overlay = document.createElement('div');
     overlay.id = 'daum-address-modal';
-    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:999999;display:flex;align-items:center;justify-content:center;';
+    // 배경 불투명도 없음 — 뒤의 고객 등록 모달이 그대로 보이게
+    overlay.style.cssText = 'position:fixed;inset:0;background:transparent;z-index:1000000;display:flex;align-items:center;justify-content:center;pointer-events:none;';
     overlay.innerHTML = `
-        <div style="background:#fff;border-radius:8px;width:420px;height:460px;display:flex;flex-direction:column;box-shadow:0 8px 32px rgba(0,0,0,0.2);overflow:hidden;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;">
+        <div style="background:#fff;border-radius:8px;width:420px;height:460px;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.35);overflow:hidden;pointer-events:auto;border:1px solid #CBD5E1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;cursor:move;">
                 <strong style="color:#1E293B;">주소 검색</strong>
                 <button type="button" id="daum-address-close" aria-label="닫기"
                         style="border:none;background:transparent;font-size:16px;cursor:pointer;color:#64748B;padding:0 4px;line-height:1;">&times;</button>
@@ -1617,7 +1618,6 @@ window.handleAddressInput = async function(value) {
     document.body.appendChild(overlay);
 
     const closeModal = () => overlay.remove();
-    overlay.addEventListener('click', (e) => { if (e.target === overlay) closeModal(); });
     overlay.querySelector('#daum-address-close').addEventListener('click', closeModal);
     const onEsc = (ev) => { if (ev.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); } };
     document.addEventListener('keydown', onEsc);

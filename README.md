@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.0-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.2-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.2 | fix 2종: ①주문→신규고객등록→주문 자동채움 **진짜 원인** 수정 — 저장 핸들러 이원화(`js/customer-management.js` `saveCustomer` vs `features/customers/customerUI.js` `handleCustomerSave`) 중 실제 실행되는 후자에 `tempCustomerName` 분기 + `selectCustomerFromSearch` 직접 호출 로직 이식 ②Daum 주소 검색 모달이 고객 등록 모달 위에서 배경을 검게 덮어 고객 화면이 안 보이는 문제 — `background:rgba(0,0,0,0.5)` 백드롭 제거(`transparent`), `pointer-events:none` 으로 고객 모달 클릭 통과, 모달 박스만 `pointer-events:auto`. 그림자 강화(0 12px 40px rgba 0.35)로 시각 분리 — 커스터 모달 저장 버튼의 실제 핸들러는 `js/customer-management.js`의 `saveCustomer` 가 아니라 `features/customers/customerUI.js` 의 `handleCustomerSave` 였음(저장 버튼 ID `customer-save-btn`에 직접 addEventListener). 기존 `saveCustomer` 내 `tempCustomerName` 분기 및 `selectCustomerFromSearch` 호출 로직이 아예 실행되지 않던 것. `handleCustomerSave` 성공 분기 안에 동일 로직 이식: 저장된 고객의 id·grade 조회 → `closeCustomerModal` → 주문 모달 재표시 → 50ms setTimeout 으로 `selectCustomerFromSearch` 직접 호출(customer_id·readonly·hidden input 완전 동기화) |
 | v3.3.0 | chore+fix: MINOR 버전 승격 — PATCH 100+ 도달로 수동 리셋 (v3.2.102 → v3.3.0). 동시에 Daum 주소 검색 팝업 크기 제어: `.open()` 브라우저 팝업(크기 제어 불가) → 자체 중앙 모달(480×500px) + `.embed()` 로 교체. 모달 헤더·X 버튼·배경 클릭 닫기 포함 |
 | v3.2.102 | style: 사이드바 버전 배지를 로고 아래로 이동 + 흰색으로 시인성 개선 — 기존 하단 분리 영역(색 #475569·text-center) 제거, 로고 영역 내부 "식물농장 관리" 서브타이틀 아래로 이동, `color:#fff` + `letter-spacing:0.04em` 유지, 크기(10px) 동일 |
 | v3.2.101 | fix: 고객 등록 모달 개선 2종 — ①주소 입력창 Enter 시 Daum 임베드(페이지 하단 고정 영역 차지)가 불편 → 별도 팝업 창(`.open()`)으로 전환, 임베드 컨테이너 미사용 ②주문 모달에서 신규 고객 등록 후 재검색 필요 문제(v3.2.98 미해결) — `saveCustomer` `tempCustomerName` 분기에서 `window.selectCustomerFromSearch` 를 **직접 호출**(callback 경로 미등록 케이스 우회), 50ms setTimeout 으로 주문 모달 재표시 직후 DOM 안정화 대기, customer_id·grade 완전 동기화 |

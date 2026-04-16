@@ -121,8 +121,63 @@ async function handleCustomerSave(event) {
             await window.updateCustomerGradeCounts();
         }
 
+        // 주문 폼에서 신규 등록 진입한 경우 → 주문 모달로 고객 정보 전달
+        const fromOrderFlow = !!window.tempCustomerName && !customerId;
+        let fullCustomer = null;
+        if (fromOrderFlow) {
+            try {
+                const list = customerDataManager?.getAllCustomers?.() || customerDataManager?.customers || [];
+                const saved = list.find(c => c?.phone === payload.phone) || null;
+                fullCustomer = {
+                    id:             saved?.id || null,
+                    name:           payload.name,
+                    phone:          payload.phone,
+                    address:        payload.address || '',
+                    address_detail: payload.address_detail || '',
+                    grade:          saved?.grade || 'GENERAL'
+                };
+            } catch (_) { /* noop */ }
+        }
+
         // 모달 닫기
         closeCustomerModal();
+
+        // 주문 폼으로 돌아가 고객 선택 상태 완전 동기화
+        if (fromOrderFlow && fullCustomer) {
+            const orderModal = document.getElementById('order-modal');
+            if (orderModal) {
+                orderModal.style.display = 'flex';
+                orderModal.classList.remove('hidden');
+            }
+            setTimeout(() => {
+                if (typeof window.selectCustomerFromSearch === 'function') {
+                    try {
+                        window.selectCustomerFromSearch(
+                            fullCustomer.id,
+                            fullCustomer.name,
+                            fullCustomer.phone,
+                            fullCustomer.address,
+                            fullCustomer.grade,
+                            fullCustomer.address_detail
+                        );
+                    } catch (err) {
+                        console.error('❌ selectCustomerFromSearch 호출 실패:', err);
+                    }
+                } else {
+                    const nameEl  = document.getElementById('order-customer-name');
+                    const phoneEl = document.getElementById('order-customer-phone');
+                    const addrEl  = document.getElementById('order-customer-address');
+                    if (nameEl)  nameEl.value  = fullCustomer.name;
+                    if (phoneEl) phoneEl.value = fullCustomer.phone;
+                    if (addrEl)  addrEl.value  = fullCustomer.address;
+                }
+                if (window.customerModalCallback) {
+                    try { window.customerModalCallback(fullCustomer); } catch (_) {}
+                    window.customerModalCallback = null;
+                }
+                window.tempCustomerName = null;
+            }, 50);
+        }
     } catch (error) {
         console.error('❌ 고객 저장 실패:', error);
         if (window.showToast) {
