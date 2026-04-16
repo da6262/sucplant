@@ -176,56 +176,56 @@ export class ShippingAnalytics {
             <div id="shipping-analytics-dashboard" class="bg-white rounded-lg shadow-md p-6">
                 <!-- 헤더 -->
                 <div class="mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-2">배송 성과 분석</h2>
-                    <p class="text-gray-600">배송 현황과 성과를 분석합니다</p>
+                    <h2 class="text-2xl font-bold text-heading mb-2">배송 성과 분석</h2>
+                    <p class="text-body">배송 현황과 성과를 분석합니다</p>
                 </div>
 
                 <!-- 핵심 지표 카드 -->
                 <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-                    <div class="bg-blue-50 p-4 rounded-lg">
+                    <div class="bg-info p-4 rounded-lg">
                         <div class="flex items-center">
                             <div class="p-2 bg-blue-100 rounded-lg">
-                                <i class="fas fa-truck text-blue-600"></i>
+                                <i class="fas fa-truck text-info"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-gray-600">총 배송 건수</p>
-                                <p class="text-2xl font-bold text-blue-600" id="total-shipments">0</p>
+                                <p class="text-sm font-medium text-body">총 배송 건수</p>
+                                <p class="text-2xl font-bold text-info" id="total-shipments">0</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-green-50 p-4 rounded-lg">
+
+                    <div class="bg-success p-4 rounded-lg">
                         <div class="flex items-center">
                             <div class="p-2 bg-green-100 rounded-lg">
-                                <i class="fas fa-check-circle text-green-600"></i>
+                                <i class="fas fa-check-circle text-brand"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-gray-600">배송 완료율</p>
-                                <p class="text-2xl font-bold text-green-600" id="delivery-rate">0%</p>
+                                <p class="text-sm font-medium text-body">배송 완료율</p>
+                                <p class="text-2xl font-bold text-brand" id="delivery-rate">0%</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-yellow-50 p-4 rounded-lg">
+
+                    <div class="bg-warn p-4 rounded-lg">
                         <div class="flex items-center">
                             <div class="p-2 bg-yellow-100 rounded-lg">
-                                <i class="fas fa-clock text-yellow-600"></i>
+                                <i class="fas fa-clock text-warn"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-gray-600">평균 배송 시간</p>
-                                <p class="text-2xl font-bold text-yellow-600" id="avg-delivery-time">0일</p>
+                                <p class="text-sm font-medium text-body">평균 배송 시간</p>
+                                <p class="text-2xl font-bold text-warn" id="avg-delivery-time">0일</p>
                             </div>
                         </div>
                     </div>
-                    
-                    <div class="bg-red-50 p-4 rounded-lg">
+
+                    <div class="bg-danger p-4 rounded-lg">
                         <div class="flex items-center">
                             <div class="p-2 bg-red-100 rounded-lg">
-                                <i class="fas fa-exclamation-triangle text-red-600"></i>
+                                <i class="fas fa-exclamation-triangle text-danger"></i>
                             </div>
                             <div class="ml-3">
-                                <p class="text-sm font-medium text-gray-600">지연률</p>
-                                <p class="text-2xl font-bold text-red-600" id="delay-rate">0%</p>
+                                <p class="text-sm font-medium text-body">지연률</p>
+                                <p class="text-2xl font-bold text-danger" id="delay-rate">0%</p>
                             </div>
                         </div>
                     </div>
@@ -234,24 +234,24 @@ export class ShippingAnalytics {
                 <!-- 차트 영역 -->
                 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
                     <!-- 일별 배송 현황 차트 -->
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">일별 배송 현황</h3>
+                    <div class="bg-section p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-heading mb-4">일별 배송 현황</h3>
                         <canvas id="daily-shipments-chart" width="400" height="200"></canvas>
                     </div>
-                    
+
                     <!-- 택배사별 성과 차트 -->
-                    <div class="bg-gray-50 p-4 rounded-lg">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">택배사별 성과</h3>
+                    <div class="bg-section p-4 rounded-lg">
+                        <h3 class="text-lg font-semibold text-heading mb-4">택배사별 성과</h3>
                         <canvas id="carrier-performance-chart" width="400" height="200"></canvas>
                     </div>
                 </div>
 
                 <!-- 상세 통계 테이블 -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">상세 통계</h3>
+                <div class="bg-section p-4 rounded-lg">
+                    <h3 class="text-lg font-semibold text-heading mb-4">상세 통계</h3>
                     <div class="overflow-x-auto">
                         <table class="min-w-full table-ui">
-                            <thead class="bg-gray-100">
+                            <thead class="bg-page">
                                 <tr>
                                     <th class="px-4 text-left">택배사</th>
                                     <th class="px-4 text-left">총 건수</th>
@@ -260,7 +260,7 @@ export class ShippingAnalytics {
                                     <th class="px-4 text-left">성공률</th>
                                 </tr>
                             </thead>
-                            <tbody id="carrier-stats-table" class="bg-white divide-y divide-gray-200">
+                            <tbody id="carrier-stats-table" class="bg-card divide-y divide-gray-200">
                                 <!-- 데이터가 동적으로 로드됩니다 -->
                             </tbody>
                         </table>
@@ -407,9 +407,9 @@ export class ShippingAnalytics {
             <tr>
                 <td class="px-4 td-primary">${carrier.carrier}</td>
                 <td class="px-4 td-primary">${carrier.totalOrders}</td>
-                <td class="px-4 text-green-600">${carrier.delivered}</td>
-                <td class="px-4 text-red-600">${carrier.delayed}</td>
-                <td class="px-4 text-blue-600">${carrier.successRate}%</td>
+                <td class="px-4 text-brand">${carrier.delivered}</td>
+                <td class="px-4 text-danger">${carrier.delayed}</td>
+                <td class="px-4 text-info">${carrier.successRate}%</td>
             </tr>
         `).join('');
     }
