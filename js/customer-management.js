@@ -77,7 +77,7 @@ async function runCustomerManagementInit() {
         } catch (error) {
             console.error('❌ 고객 데이터 로드 실패:', error);
             if (customerListContainer) {
-                customerListContainer.innerHTML = '<div class="text-center py-8 text-danger"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">새로고침</button></div>';
+                customerListContainer.innerHTML = '<div class="text-center py-8 text-danger"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="btn-danger btn-xs mt-3">새로고침</button></div>';
             }
         }
         if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();

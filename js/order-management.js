@@ -1737,7 +1737,7 @@ function createShippingSettingsSection() {
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
-                            <button id="save-shipping-settings" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <button id="save-shipping-settings" class="btn-info">
                                 <i class="fas fa-save mr-2"></i>설정 저장
                             </button>
                         </div>

@@ -541,7 +541,7 @@ function displayTrackingResult(trackingData) {
                 <div class="flex items-center space-x-2">
                     <input type="text" id="tracking-link" value="${generateTrackingLink(trackingData.trackingNumber, trackingData.carrier)}" 
                            class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" readonly>
-                    <button onclick="copyTrackingLink()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm">
+                    <button onclick="copyTrackingLink()" class="btn-warn">
                         <i class="fas fa-copy mr-1"></i>복사
                     </button>
                 </div>
@@ -1200,7 +1200,7 @@ function showAddShippingForm(orders) {
                 <!-- 버튼 -->
                 <div class="flex justify-end space-x-3 mt-6">
                     <button id="cancel-add-shipping" class="px-4 py-2 text-body hover:text-heading">취소</button>
-                    <button id="confirm-add-shipping" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button id="confirm-add-shipping" class="btn-info">
                         <i class="fas fa-plus mr-2"></i>배송 등록
                     </button>
                 </div>
@@ -1336,7 +1336,7 @@ function showBulkShippingModal() {
                                 <i class="fas fa-file-excel text-brand text-3xl mb-2"></i>
                                 <p class="text-sm text-body mb-2">Excel 파일을 드래그하거나 클릭하여 업로드</p>
                                 <input type="file" id="excel-file" accept=".xlsx,.xls" class="hidden">
-                                <button id="select-excel-file" class="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700">
+                                <button id="select-excel-file" class="btn-primary">
                                     파일 선택
                                 </button>
                                 <p class="text-xs text-muted mt-2 space-x-3">
@@ -1352,7 +1352,7 @@ function showBulkShippingModal() {
                             <div class="space-y-3">
                                 <div class="flex items-center justify-between">
                                     <h4 class="font-medium text-heading">배송 정보 입력</h4>
-                                    <button id="add-manual-row" class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700">
+                                    <button id="add-manual-row" class="btn-info btn-xs">
                                         <i class="fas fa-plus mr-1"></i>행 추가
                                     </button>
                                 </div>
@@ -1376,7 +1376,7 @@ function showBulkShippingModal() {
                     <!-- 버튼 -->
                     <div class="flex justify-end space-x-3 mt-6">
                         <button id="cancel-bulk-shipping" class="px-4 py-2 text-body hover:text-heading">취소</button>
-                        <button id="confirm-bulk-shipping" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700" disabled>
+                        <button id="confirm-bulk-shipping" class="btn-info" disabled>
                             <i class="fas fa-upload mr-2"></i>일괄 등록
                         </button>
                     </div>
@@ -2097,13 +2097,13 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                         </div>
                         
                         <div class="flex space-x-2 mt-3">
-                            <button id="add-template-column" class="px-3 py-1 text-sm bg-blue-600 text-white rounded hover:bg-blue-700">
+                            <button id="add-template-column" class="btn-info btn-xs">
                                 <i class="fas fa-plus mr-1"></i>컬럼 추가
                             </button>
-                            <button id="add-template-row" class="px-3 py-1 text-sm bg-green-600 text-white rounded hover:bg-green-700">
+                            <button id="add-template-row" class="btn-primary btn-xs">
                                 <i class="fas fa-plus mr-1"></i>행 추가
                             </button>
-                            <button id="remove-template-row" class="px-3 py-1 text-sm bg-red-600 text-white rounded hover:bg-red-700">
+                            <button id="remove-template-row" class="btn-danger btn-xs">
                                 <i class="fas fa-minus mr-1"></i>마지막 행 삭제
                             </button>
                         </div>
@@ -2154,7 +2154,7 @@ local_1758265108788_example2,홍길동,,서울시 강남구 테헤란로 123,010
                     <button id="cancel-template-editor" class="px-4 py-2 text-body hover:text-heading">
                         취소
                     </button>
-                    <button id="save-template" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button id="save-template" class="btn-info">
                         <i class="fas fa-save mr-2"></i>저장
                     </button>
                 </div>
@@ -2750,7 +2750,7 @@ function showExportModal() {
                 <!-- 버튼 -->
                 <div class="flex justify-end space-x-3 mt-6">
                     <button id="cancel-export" class="px-4 py-2 text-body hover:text-heading">취소</button>
-                    <button id="confirm-export" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    <button id="confirm-export" class="btn-info">
                         <i class="fas fa-download mr-2"></i>내보내기
                     </button>
                 </div>
