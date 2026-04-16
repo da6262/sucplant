@@ -880,6 +880,12 @@ select.form-control {
 .bg-red-600,  .bg-red-500     { background-color: var(--danger) !important; }
 .bg-yellow-600,.bg-yellow-500 { background-color: var(--warn) !important; }
 .bg-gray-500, .bg-gray-600    { background-color: var(--text-secondary) !important; }
+
+/* 연한 붉은 톤 — mini-trash 버튼·low-stock 필터 */
+.bg-red-100                    { background-color: var(--badge-danger-bg) !important; }  /* #FEE2E2 */
+.bg-red-200                    { background-color: #FCA5A5 !important; }                 /* mini trash 기본 */
+.hover\:bg-red-200:hover       { background-color: var(--badge-danger-bg) !important; }
+.hover\:bg-red-300:hover       { background-color: #F87171 !important; }                 /* mini trash hover */
 .hover\:bg-blue-700:hover,
 .hover\:bg-blue-600:hover     { background-color: #1D4ED8 !important; }
 .hover\:bg-red-700:hover,
