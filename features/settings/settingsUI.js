@@ -14,7 +14,7 @@ export function showSettingsTab(tabName) {
         // 모든 탭 버튼 비활성화
         document.querySelectorAll('[id^="settings-tab-"]').forEach(tab => {
             tab.classList.remove('active', 'border-blue-500', 'text-blue-600');
-            tab.classList.add('border-transparent', 'text-gray-500');
+            tab.classList.add('border-transparent', 'text-muted');
         });
         
         // 선택된 탭 표시
@@ -27,7 +27,7 @@ export function showSettingsTab(tabName) {
             
             // 탭 버튼 활성화
             if (targetTabButton) {
-                targetTabButton.classList.remove('border-transparent', 'text-gray-500');
+                targetTabButton.classList.remove('border-transparent', 'text-muted');
                 targetTabButton.classList.add('active');
             }
             
@@ -126,12 +126,12 @@ async function loadSMSSettings() {
             item.className = 'border-b border-gray-100 last:border-0';
             item.innerHTML = `
                 <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
-                    <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${tpl.label}</span>
-                    <span class="sms-preview text-xs text-gray-400 flex-1 truncate">${preview}</span>
+                    <span class="text-xs font-medium text-body w-20 shrink-0">${tpl.label}</span>
+                    <span class="sms-preview text-xs text-muted flex-1 truncate">${preview}</span>
                     <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
                 </div>
-                <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
-                    <p class="text-xs text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                <div class="hidden px-3 pb-3 bg-section" id="sms-detail-${tpl.key}">
+                    <p class="text-xs text-muted mb-1.5">변수: ${tpl.vars}</p>
                     <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
                     <div class="flex justify-end mt-1.5">
                         <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
@@ -300,7 +300,7 @@ export async function loadCustomerGrades() {
         
         if (!settings.customerGrades || settings.customerGrades.length === 0) {
             console.warn('⚠️ 고객등급 데이터가 없습니다');
-            container.innerHTML = '<div class="text-gray-500 text-center py-4 text-xs">고객등급이 없습니다.</div>';
+            container.innerHTML = '<div class="text-muted text-center py-4 text-xs">고객등급이 없습니다.</div>';
             return;
         }
 
@@ -310,11 +310,11 @@ export async function loadCustomerGrades() {
             row.id = `grade-row-${index}`;
             row.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             row.innerHTML = `
-                <span class="flex-1 text-xs font-medium text-gray-800">${_esc(grade.name)}</span>
-                <span class="text-xs text-gray-500 w-36 text-right">${(grade.minAmount||0).toLocaleString()}원 이상</span>
-                <span class="text-xs text-gray-500 w-10 text-right">${grade.discount||0}%</span>
-                <button onclick="startEditGrade(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteCustomerGrade(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="flex-1 text-xs font-medium text-body">${_esc(grade.name)}</span>
+                <span class="text-xs text-secondary w-36 text-right">${(grade.minAmount||0).toLocaleString()}원 이상</span>
+                <span class="text-xs text-secondary w-10 text-right">${grade.discount||0}%</span>
+                <button onclick="startEditGrade(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteCustomerGrade(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
             container.appendChild(row);
         });
@@ -434,13 +434,13 @@ export async function loadSalesChannels() {
     try {
         console.log('🏪 판매 채널 관리 로드 (farm_channels)');
         if (!window.salesChannelsDataManager) {
-            container.innerHTML = '<div class="text-gray-500 text-center py-4">판매채널 모듈을 불러올 수 없습니다.</div>';
+            container.innerHTML = '<div class="text-muted text-center py-4">판매채널 모듈을 불러올 수 없습니다.</div>';
             return;
         }
         const channels = await window.salesChannelsDataManager.loadChannels();
         container.innerHTML = '';
         if (!channels || channels.length === 0) {
-            container.innerHTML = '<div class="text-gray-500 text-center py-4">판매채널이 없습니다.</div>';
+            container.innerHTML = '<div class="text-muted text-center py-4">판매채널이 없습니다.</div>';
             console.log('✅ 판매 채널 관리 로드 완료 (0개)');
             return;
         }
@@ -451,18 +451,18 @@ export async function loadSalesChannels() {
             channelElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             channelElement.innerHTML = `
                 <div class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></div>
-                <span class="text-xs font-medium text-gray-800 flex-1">${esc2(channel.name||'')}</span>
-                <span class="text-xs text-gray-400">${esc2(channel.description||'')}</span>
-                <button onclick="toggleSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
-                <button onclick="editSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="편집"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteSalesChannelByIndex(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="text-xs font-medium text-body flex-1">${esc2(channel.name||'')}</span>
+                <span class="text-xs text-muted">${esc2(channel.description||'')}</span>
+                <button onclick="toggleSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                <button onclick="editSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="편집"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
             container.appendChild(channelElement);
         });
         console.log('✅ 판매 채널 관리 로드 완료:', channels.length, '개');
     } catch (error) {
         console.error('❌ 판매 채널 관리 로드 실패:', error);
-        container.innerHTML = '<div class="text-red-500 text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
+        container.innerHTML = '<div class="text-danger text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
     }
 
     // 채널 추가 버튼 리스너 (1회만 등록)
@@ -512,10 +512,10 @@ export function loadOrderStatuses() {
             statusElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             statusElement.innerHTML = `
                 <div class="w-2 h-2 rounded-full shrink-0" style="background-color:${status.color||'#6B7280'}"></div>
-                <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${status.label||''}</span>
-                <span class="text-xs text-gray-400 flex-1">${status.description||''}</span>
-                <button onclick="editOrderStatus(${index})" class="p-1 text-gray-400 hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteOrderStatus(${index})" class="p-1 text-gray-400 hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="text-xs font-medium text-body w-20 shrink-0">${status.label||''}</span>
+                <span class="text-xs text-muted flex-1">${status.description||''}</span>
+                <button onclick="editOrderStatus(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
+                <button onclick="deleteOrderStatus(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
             `;
             container.appendChild(statusElement);
         });
@@ -968,34 +968,34 @@ window.editCustomerGrade = async function(index) {
             <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
                 <div class="p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">고객등급 편집</h3>
-                        <button onclick="closeEditGradeModal()" class="text-gray-400 hover:text-gray-600">
+                        <h3 class="text-lg font-semibold text-heading">고객등급 편집</h3>
+                        <button onclick="closeEditGradeModal()" class="text-muted hover:text-gray-600">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
                     <div class="space-y-4">
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">등급명</label>
+                            <label class="block text-xs font-medium text-body mb-1">등급명</label>
                             <input type="text" id="edit-grade-name" value="${currentGrade.name}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">최소 구매금액 (원)</label>
+                            <label class="block text-xs font-medium text-body mb-1">최소 구매금액 (원)</label>
                             <input type="number" id="edit-grade-min-amount" value="${currentGrade.minAmount}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">할인율 (%)</label>
+                            <label class="block text-xs font-medium text-body mb-1">할인율 (%)</label>
                             <input type="number" id="edit-grade-discount" value="${currentGrade.discount}" min="0" max="100"
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">색상</label>
+                            <label class="block text-xs font-medium text-body mb-1">색상</label>
                             <input type="color" id="edit-grade-color" value="${currentGrade.color}" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-700 mb-1">아이콘</label>
+                            <label class="block text-xs font-medium text-body mb-1">아이콘</label>
                             <select id="edit-grade-icon" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500">
                                 <option value="fas fa-circle" ${currentGrade.icon === 'fas fa-circle' ? 'selected' : ''}>원형</option>
                                 <option value="fas fa-hexagon" ${currentGrade.icon === 'fas fa-hexagon' ? 'selected' : ''}>육각형</option>
@@ -1145,9 +1145,9 @@ window.startEditGrade = function(index) {
     row.innerHTML = `
         <input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui flex-1 text-xs" placeholder="등급명">
         <input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui w-28 text-xs text-right" min="0">
-        <span class="text-xs text-gray-400 shrink-0">원 이상</span>
+        <span class="text-xs text-muted shrink-0">원 이상</span>
         <input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui w-14 text-xs text-right" min="0" max="100">
-        <span class="text-xs text-gray-400 shrink-0">%</span>
+        <span class="text-xs text-muted shrink-0">%</span>
         <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs shrink-0">저장</button>
         <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs shrink-0">취소</button>
     `;
