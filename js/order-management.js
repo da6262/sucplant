@@ -716,12 +716,12 @@ function attachOrderEventListeners() {
             };
         }
 
-        // 페이지당 표시 수 선택 — onchange 할당
-        const orderPageSize = document.getElementById('order-page-size');
-        if (orderPageSize) {
-            orderPageSize.onchange = function() {
+        // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)
+        if (window.PageSize) {
+            // 주문은 기본 50 유지 (orderData.js:683 default 와 정합)
+            window.PageSize.attach('order-page-size', () => {
                 if (window.orderDataManager) window.orderDataManager.renderOrdersTable();
-            };
+            }, 50);
         }
 
         // 피킹 리스트 버튼 — onclick 할당

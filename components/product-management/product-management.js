@@ -222,16 +222,14 @@ class ProductManagementComponent {
             });
         }
 
-        // 페이지당 표시 개수 선택 (HTML id: product-page-size)
-        const itemsPerPageSel = document.getElementById('product-page-size');
-        if (itemsPerPageSel) {
-            itemsPerPageSel.value = String(this.itemsPerPage === 0 ? 0 : this.itemsPerPage);
-            itemsPerPageSel.addEventListener('change', () => {
-                this.itemsPerPage = parseInt(itemsPerPageSel.value) || 0;
+        // 페이지당 표시 개수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)
+        if (window.PageSize) {
+            window.PageSize.attach('product-page-size', (size) => {
+                this.itemsPerPage = size;
                 this.currentPage = 1;
                 this.updatePagination();
                 this.renderProducts();
-            });
+            }, this.itemsPerPage);
         }
 
         // 필터 초기화 버튼

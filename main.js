@@ -7,6 +7,9 @@ import './js/supabase-production-config.js';
 // 공통 유틸리티 함수들 import
 import { TABLE_MAP, mapTable, getSupabaseTableName } from './utils/helpers.js';
 
+// 페이지 표시 개수 컨트롤 — 전역 window.PageSize 등록 (side-effect import)
+import './utils/pageSize.js';
+
 // ── 공통 데이터 포맷터 (Single Source of Truth) ──────────────
 import {
     formatDate, formatDateTime,
