@@ -27,15 +27,10 @@ export async function openOrderModal(orderId = null, customerData = null) {
             }
         }
         
-        // 기존 모달이 열려있다면 닫기
+        // 기존 모달이 열려있다면 닫고 즉시 재열기 (setTimeout 지연 제거)
         if (!modal.classList.contains('hidden')) {
             console.log('🔄 기존 모달이 열려있어서 닫습니다...');
             closeOrderModal();
-            // 잠시 대기 후 다시 열기
-            setTimeout(() => {
-                openOrderModal(orderId);
-            }, 100);
-            return;
         }
 
         const modalTitle = document.getElementById('modal-title');
@@ -75,32 +70,9 @@ export async function openOrderModal(orderId = null, customerData = null) {
         
         if (window.initOrderForm) {
             try {
-                window.initOrderForm();
+                // async 함수이므로 await — 첫 클릭에서 완료 보장 (이전에는 미await로 2회 클릭 필요 현상)
+                await window.initOrderForm();
                 console.log('✅ 주문 폼 초기화 완료');
-                
-                // 장바구니 컨테이너가 제대로 생성되었는지 확인
-                setTimeout(() => {
-                    const cartItemsBody = document.getElementById('cart-items-body');
-                    const orderForm = document.getElementById('order-form');
-                    const submitButton = document.querySelector('button[type="submit"][form="order-form"]');
-                    
-                    console.log('🔍 DOM 요소 확인:');
-                    console.log('  - order-form:', orderForm);
-                    console.log('  - cart-items-body:', cartItemsBody);
-                    console.log('  - submit-button:', submitButton);
-                    
-                    if (cartItemsBody) {
-                        console.log('✅ 장바구니 컨테이너 확인 완료');
-                    } else {
-                        console.error('❌ 장바구니 컨테이너가 생성되지 않았습니다');
-                    }
-                    
-                    if (submitButton) {
-                        console.log('✅ 주문 등록 버튼 확인 완료');
-                    } else {
-                        console.error('❌ 주문 등록 버튼이 생성되지 않았습니다');
-                    }
-                }, 200);
             } catch (error) {
                 console.error('❌ 주문 폼 초기화 실패:', error);
             }

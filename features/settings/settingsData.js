@@ -118,6 +118,11 @@ class SettingsDataManager {
     
     // 설정 로드
     async loadSettings() {
+        // 이미 로드된 값 있으면 캐시 반환 — 명시적 새로고침은 forceReloadSettings() 사용
+        // (새 주문 모달 매번 DB 왕복하던 지연 제거)
+        if (this.settings) {
+            return this.settings;
+        }
         try {
             const ok = await this.ensureSupabaseClient();
             if (ok && window.supabaseClient) {
@@ -126,23 +131,26 @@ class SettingsDataManager {
                         .from('farm_settings')
                         .select('*')
                         .single();
-                    
+
                     if (!error && data) {
                         console.log('✅ Supabase에서 설정 로드 완료');
-                        return this.mergeWithDefaults(data.settings);
+                        this.settings = this.mergeWithDefaults(data.settings);
+                        return this.settings;
                     } else {
                         console.log('⚠️ Supabase 설정 없음, 기본값 사용');
-                        return this.defaultSettings;
+                        this.settings = this.defaultSettings;
+                        return this.settings;
                     }
                 } catch (supabaseError) {
                     console.log('⚠️ Supabase 테이블 없음 (farm_settings), 기본값 사용');
-                    console.log('💡 farm_settings 테이블을 생성하려면 create-farm-settings-table.sql 파일을 Supabase SQL Editor에서 실행하세요');
-                    return this.defaultSettings;
+                    this.settings = this.defaultSettings;
+                    return this.settings;
                 }
             }
-            
+
             console.log('📋 기본 설정값 사용 (Supabase 미연결)');
-            return this.defaultSettings;
+            this.settings = this.defaultSettings;
+            return this.settings;
         } catch (error) {
             console.error('❌ 설정 로드 실패:', error);
             return this.defaultSettings;

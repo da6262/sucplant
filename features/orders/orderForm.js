@@ -48,7 +48,9 @@ function applyCoupon() {
 function saveOrderDraft() {
     console.log('💾 주문 임시저장');
     // 임시저장 로직 구현
-    alert('주문이 임시저장되었습니다.');
+    if (typeof window.showToast === 'function') {
+        window.showToast('💾 주문이 임시저장되었습니다', 2000);
+    }
 }
 
 // 주문 미리보기 함수
@@ -2191,11 +2193,14 @@ async function handleOrderSubmit(event) {
             }
         }
 
-        // 성공 메시지 표시
-        if (extraCreatedCount > 0) {
-            alert(`주문이 등록되었습니다!\n추가 배송지 ${extraCreatedCount}건 포함 → 총 ${1 + extraCreatedCount}건 생성`);
+        // 성공 메시지 표시 — blocking alert 대신 자동 사라지는 토스트로 UX 개선
+        const successMsg = extraCreatedCount > 0
+            ? `✅ 주문 등록 완료 (추가 배송지 ${extraCreatedCount}건 포함 → 총 ${1 + extraCreatedCount}건)`
+            : `✅ 주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다`;
+        if (typeof window.showToast === 'function') {
+            window.showToast(successMsg, 2500);
         } else {
-            alert(`주문이 성공적으로 ${isEditMode ? '수정' : '등록'}되었습니다!`);
+            console.log(successMsg);
         }
 
         // 주문 모달 닫기
@@ -2221,14 +2226,37 @@ async function handleOrderSubmit(event) {
             console.log('✅ 장바구니 초기화 완료');
         }
         
-        // 저장된 주문 상태에 맞는 탭을 글로벌 플래그로 전달
-        // initializeOrderManagement가 로드 완료 후 이 값을 읽어 올바른 탭으로 렌더링
+        // 저장된 주문 상태에 맞는 탭으로 이동 + 데이터 새로고침
         const savedOrderStatus = orderData.order_status || '주문접수';
-        window._pendingOrderStatus = isEditMode ? null : savedOrderStatus;
 
-        // 주문관리 탭으로 이동
-        const navBtn = document.getElementById('nav-orders');
-        if (navBtn) navBtn.click();
+        // 이미 주문관리 탭에 있으면 전체 탭 리로드(HTML 재fetch) 불필요 —
+        // 데이터만 새로고침하고 상태 탭만 전환 (navBtn.click() 로 인한 section
+        // HTML 재생성 중 '새 주문' 버튼이 DOM 에서 잠시 사라져 첫 클릭 무효화되던 근본 원인 제거)
+        const ordersSection = document.getElementById('orders-section');
+        const alreadyOnOrders = ordersSection && !ordersSection.classList.contains('hidden');
+
+        if (alreadyOnOrders) {
+            try {
+                if (window.orderDataManager) {
+                    await window.orderDataManager.loadOrders();
+                    if (typeof window.orderDataManager.renderOrdersTable === 'function') {
+                        window.orderDataManager.renderOrdersTable(isEditMode ? 'all' : savedOrderStatus);
+                    }
+                }
+                // 상태 탭 활성화 (수정 모드는 전체)
+                const targetTabId = isEditMode ? 'status-all' : ('status-' + savedOrderStatus);
+                document.querySelectorAll('.status-tab-btn').forEach(t => t.classList.remove('active'));
+                const tabBtn = document.getElementById(targetTabId) || document.getElementById('status-all');
+                if (tabBtn) tabBtn.classList.add('active');
+            } catch (refreshErr) {
+                console.warn('⚠️ 주문 목록 경량 새로고침 실패, 폴백 진행:', refreshErr);
+            }
+        } else {
+            // 다른 탭에서 저장한 경우에만 탭 전환 (이 경우에만 전체 리로드 허용)
+            window._pendingOrderStatus = isEditMode ? null : savedOrderStatus;
+            const navBtn = document.getElementById('nav-orders');
+            if (navBtn) navBtn.click();
+        }
         
         console.log('✅ 주문 제출 처리 완료 - 함수 종료');
         return true; // 성공 시 true 반환

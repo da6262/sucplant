@@ -5,19 +5,10 @@ async function loadOrderManagementComponent() {
         
         // 기존 이벤트 리스너 정리
         cleanupOrderEventListeners();
-        
-        // 기존 주문관리 섹션 내용만 제거 (섹션 자체는 유지)
-        const existingSection = document.getElementById('orders-section');
-        if (existingSection) {
-            console.log('🗑️ 기존 주문관리 섹션 내용 제거');
-            existingSection.innerHTML = '';
-        }
-        
-        // 다른 섹션들은 제거하지 않음 (화면 전환을 위해 유지)
-        console.log('📋 다른 섹션들은 화면 전환을 위해 유지');
-        
-        // 잠시 대기하여 DOM 정리 완료
-        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 섹션 사전 비우기 + 100ms 대기 제거 — 버튼이 잠시 DOM 에서 사라져
+        // 첫 클릭이 먹히는 race condition 원인이었음. innerHTML 은 아래 fetch 완료 후
+        // 새 HTML 로 한 번에 교체 (깜빡임·공백 타이밍 제거).
         
         // 팝업 모달이므로 다른 섹션 제거 불필요
         // const mainContent = document.getElementById('mainContent');

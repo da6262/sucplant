@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.3-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.4-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.4 | perf+UX 5종 (주문 모달 반응성·UX 개선) — ①주문 저장 후 `새 주문` 재클릭 시 2회 클릭 필요하던 race condition **근본 수정**: `navBtn.click()` 이 이미 주문관리 탭에서도 `loadOrderManagementComponent()` 전체 HTML 재fetch 를 트리거해 그 과정에서 `add-order-btn` 이 DOM 에서 잠시 사라짐이 원인. 저장 후 현재 탭이 orders 면 `orderDataManager.loadOrders()` + `renderOrdersTable()` + 상태 탭 class 토글만 수행(섹션 HTML 무교체) ②`js/order-management.js` `loadOrderManagementComponent` 의 `innerHTML=''` 사전 비우기 + 100ms setTimeout 제거 — 섹션을 파괴 후 재생성하지 않고 fetch 완료 후 한 번에 교체 ③`settingsDataManager.loadSettings()` 메모리 캐시 도입 — 새 주문 모달 열 때마다 `farm_settings` Supabase 쿼리 반복하던 200~500ms 지연 제거 (`forceReloadSettings()` 만 DB 재조회) ④`openOrderModal` 에서 `await window.initOrderForm()` — async 함수 미await 로 폼 초기화 미완성 상태로 모달 노출되던 현상 제거, 모달 재열기 시 `setTimeout 100ms` 및 디버그용 `setTimeout 200ms` DOM 검증 제거 ⑤주문 저장 성공 `alert()` blocking 팝업 → `window.showToast()` 2.5초 자동 소멸 토스트로 교체, 임시저장 alert 도 동일 교체 |
 | v3.3.3 | fix 4종 (주문 모달 UX 연쇄 개선) — ①주문 모달 X 버튼 무효화: `closeOrderModal` 이 `classList.add('hidden')` 만 할 뿐 앞서 세팅된 inline `style.display='flex'` 를 지우지 않아 Tailwind `.hidden` 보다 특이도가 높은 inline 이 이김 → `modal.style.display=''` 추가로 정리 ②주문 모달 취소 버튼 부재: `orderFormMinimalLayout.js` 저장 영역을 `.xf-actions` flex 컨테이너로 감싸고 `[취소 96px] [저장 flex:1]` 배치, `.xf-cancel-btn` 스타일(흰 배경·회색 테두리, 디자인 시스템 btn-secondary 톤) 신설 ③신규고객 저장 후 주문 모달이 좌측으로 치우치는 현상: `closeCustomerModal` 내부에 중복으로 `orderModal.style.display='flex'` 를 설정하던 코드를 `.hidden` 클래스 토글로 통일(X 버그와도 정합) ④Daum 모달 DOM 잔존 + body overflow 잔존으로 스크롤바 폭 변동 → 주문 모달 중앙 정렬 틀어짐: `handleCustomerSave` 에서 `daum-address-modal` 제거 + `document.body.style.overflow=''` 복원 추가. 또 Daum 주소 모달을 화면 중앙에서 `calc(50% + 240px)` 위치로 고정하여 고객 등록 모달 우측 옆에 나란히 표시(모달끼리 겹침 방지) |
 | v3.3.2 | fix 2종: ①주문→신규고객등록→주문 자동채움 **진짜 원인** 수정 — 저장 핸들러 이원화(`js/customer-management.js` `saveCustomer` vs `features/customers/customerUI.js` `handleCustomerSave`) 중 실제 실행되는 후자에 `tempCustomerName` 분기 + `selectCustomerFromSearch` 직접 호출 로직 이식 ②Daum 주소 검색 모달이 고객 등록 모달 위에서 배경을 검게 덮어 고객 화면이 안 보이는 문제 — `background:rgba(0,0,0,0.5)` 백드롭 제거(`transparent`), `pointer-events:none` 으로 고객 모달 클릭 통과, 모달 박스만 `pointer-events:auto`. 그림자 강화(0 12px 40px rgba 0.35)로 시각 분리 — 커스터 모달 저장 버튼의 실제 핸들러는 `js/customer-management.js`의 `saveCustomer` 가 아니라 `features/customers/customerUI.js` 의 `handleCustomerSave` 였음(저장 버튼 ID `customer-save-btn`에 직접 addEventListener). 기존 `saveCustomer` 내 `tempCustomerName` 분기 및 `selectCustomerFromSearch` 호출 로직이 아예 실행되지 않던 것. `handleCustomerSave` 성공 분기 안에 동일 로직 이식: 저장된 고객의 id·grade 조회 → `closeCustomerModal` → 주문 모달 재표시 → 50ms setTimeout 으로 `selectCustomerFromSearch` 직접 호출(customer_id·readonly·hidden input 완전 동기화) |
 | v3.3.0 | chore+fix: MINOR 버전 승격 — PATCH 100+ 도달로 수동 리셋 (v3.2.102 → v3.3.0). 동시에 Daum 주소 검색 팝업 크기 제어: `.open()` 브라우저 팝업(크기 제어 불가) → 자체 중앙 모달(480×500px) + `.embed()` 로 교체. 모달 헤더·X 버튼·배경 클릭 닫기 포함 |
