@@ -39,8 +39,8 @@ export class ShippingManager {
                     <div class="bg-white rounded-lg shadow-md p-6">
                         <div class="flex items-center justify-between">
                             <div>
-                                <h1 class="text-3xl font-bold text-gray-800">배송관리 시스템</h1>
-                                <p class="text-gray-600 mt-2">통합 배송 관리 및 최적화</p>
+                                <h1 class="text-3xl font-bold text-heading">배송관리 시스템</h1>
+                                <p class="text-body mt-2">통합 배송 관리 및 최적화</p>
                             </div>
                             <div class="flex space-x-3">
                                 <button id="refresh-shipping-data" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
@@ -83,38 +83,38 @@ export class ShippingManager {
                             <!-- 개요 탭 -->
                             <div id="tab-overview" class="tab-content">
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
-                                    <div class="bg-blue-50 p-6 rounded-lg">
+                                    <div class="bg-info p-6 rounded-lg">
                                         <div class="flex items-center">
                                             <div class="p-3 bg-blue-100 rounded-lg">
-                                                <i class="fas fa-truck text-blue-600 text-xl"></i>
+                                                <i class="fas fa-truck text-info text-xl"></i>
                                             </div>
                                             <div class="ml-4">
-                                                <p class="text-sm font-medium text-gray-600">오늘 배송</p>
-                                                <p class="text-2xl font-bold text-blue-600" id="today-shipments">0</p>
+                                                <p class="text-sm font-medium text-body">오늘 배송</p>
+                                                <p class="text-2xl font-bold text-info" id="today-shipments">0</p>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="bg-green-50 p-6 rounded-lg">
+                                    <div class="bg-success p-6 rounded-lg">
                                         <div class="flex items-center">
                                             <div class="p-3 bg-green-100 rounded-lg">
-                                                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+                                                <i class="fas fa-check-circle text-brand text-xl"></i>
                                             </div>
                                             <div class="ml-4">
-                                                <p class="text-sm font-medium text-gray-600">배송 완료</p>
-                                                <p class="text-2xl font-bold text-green-600" id="completed-shipments">0</p>
+                                                <p class="text-sm font-medium text-body">배송 완료</p>
+                                                <p class="text-2xl font-bold text-brand" id="completed-shipments">0</p>
                                             </div>
                                         </div>
                                     </div>
                                     
-                                    <div class="bg-yellow-50 p-6 rounded-lg">
+                                    <div class="bg-warn p-6 rounded-lg">
                                         <div class="flex items-center">
                                             <div class="p-3 bg-yellow-100 rounded-lg">
-                                                <i class="fas fa-clock text-yellow-600 text-xl"></i>
+                                                <i class="fas fa-clock text-warn text-xl"></i>
                                             </div>
                                             <div class="ml-4">
-                                                <p class="text-sm font-medium text-gray-600">배송 중</p>
-                                                <p class="text-2xl font-bold text-yellow-600" id="in-transit-shipments">0</p>
+                                                <p class="text-sm font-medium text-body">배송 중</p>
+                                                <p class="text-2xl font-bold text-warn" id="in-transit-shipments">0</p>
                                             </div>
                                         </div>
                                     </div>
@@ -252,16 +252,16 @@ export class ShippingManager {
             <div class="space-y-6">
                 <!-- 송장번호 입력 섹션 -->
                 <div class="bg-white rounded-lg shadow-md p-6">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">송장번호로 배송 추적</h3>
+                    <h3 class="text-lg font-semibold text-heading mb-4">송장번호로 배송 추적</h3>
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">송장번호</label>
+                            <label class="block text-sm font-medium text-body mb-2">송장번호</label>
                             <input type="text" id="tracking-number-input" 
                                    placeholder="송장번호를 입력하세요 (예: 1234567890)" 
                                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-2">택배사 (선택사항)</label>
+                            <label class="block text-sm font-medium text-body mb-2">택배사 (선택사항)</label>
                             <select id="carrier-select" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                                 <option value="">자동 감지</option>
                                 <option value="cj">CJ대한통운</option>
@@ -283,7 +283,7 @@ export class ShippingManager {
                 <!-- 배송 추적 결과 -->
                 <div id="tracking-result" class="hidden">
                     <div class="bg-white rounded-lg shadow-md p-6">
-                        <h3 class="text-lg font-semibold text-gray-800 mb-4">배송 추적 결과</h3>
+                        <h3 class="text-lg font-semibold text-heading mb-4">배송 추적 결과</h3>
                         <div id="tracking-details">
                             <!-- 추적 결과가 여기에 표시됩니다 -->
                         </div>
@@ -293,7 +293,7 @@ export class ShippingManager {
                 <!-- 기존 배송 목록 -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
-                        <h3 class="text-lg font-semibold text-gray-800">현재 배송 중인 주문</h3>
+                        <h3 class="text-lg font-semibold text-heading">현재 배송 중인 주문</h3>
                         <button id="refresh-tracking" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
                             <i class="fas fa-sync-alt mr-2"></i>새로고침
                         </button>
@@ -399,40 +399,40 @@ export class ShippingManager {
             <div class="space-y-4">
                 <!-- 기본 정보 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div class="bg-blue-50 p-4 rounded-lg">
-                        <div class="text-sm text-gray-600">송장번호</div>
+                    <div class="bg-info p-4 rounded-lg">
+                        <div class="text-sm text-body">송장번호</div>
                         <div class="font-semibold text-blue-800">${trackingData.trackingNumber}</div>
                     </div>
-                    <div class="bg-green-50 p-4 rounded-lg">
-                        <div class="text-sm text-gray-600">택배사</div>
+                    <div class="bg-success p-4 rounded-lg">
+                        <div class="text-sm text-body">택배사</div>
                         <div class="font-semibold text-green-800">${trackingData.carrier}</div>
                     </div>
                     <div class="bg-purple-50 p-4 rounded-lg">
-                        <div class="text-sm text-gray-600">현재 상태</div>
+                        <div class="text-sm text-body">현재 상태</div>
                         <div class="font-semibold text-purple-800">${trackingData.status}</div>
                     </div>
                 </div>
 
                 <!-- 현재 위치 -->
-                <div class="bg-gray-50 p-4 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-2">현재 위치</div>
-                    <div class="font-medium text-gray-800">${trackingData.currentLocation}</div>
+                <div class="bg-section p-4 rounded-lg">
+                    <div class="text-sm text-body mb-2">현재 위치</div>
+                    <div class="font-medium text-heading">${trackingData.currentLocation}</div>
                 </div>
 
                 <!-- 배송 이력 -->
                 <div>
-                    <div class="text-sm text-gray-600 mb-3">배송 이력</div>
+                    <div class="text-sm text-body mb-3">배송 이력</div>
                     <div class="space-y-3">
                         ${trackingData.history.map((item, index) => `
                             <div class="flex items-start space-x-3 p-3 bg-white border rounded-lg">
-                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-blue-600">
+                                <div class="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center text-sm font-bold text-info">
                                     ${index + 1}
                                 </div>
                                 <div class="flex-1">
-                                    <div class="font-medium text-gray-800">${item.status}</div>
-                                    <div class="text-sm text-gray-600">${item.location}</div>
-                                    <div class="text-sm text-gray-500">${item.description}</div>
-                                    <div class="text-xs text-gray-400 mt-1">${new Date(item.time).toLocaleString('ko-KR')}</div>
+                                    <div class="font-medium text-heading">${item.status}</div>
+                                    <div class="text-sm text-body">${item.location}</div>
+                                    <div class="text-sm text-muted">${item.description}</div>
+                                    <div class="text-xs text-muted mt-1">${new Date(item.time).toLocaleString('ko-KR')}</div>
                                 </div>
                             </div>
                         `).join('')}
@@ -440,8 +440,8 @@ export class ShippingManager {
                 </div>
 
                 <!-- 추적 링크 -->
-                <div class="bg-yellow-50 p-4 rounded-lg">
-                    <div class="text-sm text-gray-600 mb-2">고객용 추적 링크</div>
+                <div class="bg-warn p-4 rounded-lg">
+                    <div class="text-sm text-body mb-2">고객용 추적 링크</div>
                     <div class="flex items-center space-x-2">
                         <input type="text" id="tracking-link" value="${this.generateTrackingLink(trackingData.trackingNumber, trackingData.carrier)}" 
                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" readonly>
@@ -624,8 +624,8 @@ export class ShippingManager {
                 <!-- SMS 템플릿 관리 -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="p-4 border-b border-gray-200">
-                        <h4 class="font-semibold text-gray-800">SMS 템플릿 관리</h4>
-                        <p class="text-sm text-gray-600 mt-1">주문 관련 SMS 템플릿을 관리하세요</p>
+                        <h4 class="font-semibold text-heading">SMS 템플릿 관리</h4>
+                        <p class="text-sm text-body mt-1">주문 관련 SMS 템플릿을 관리하세요</p>
                     </div>
                     <div class="p-4">
                         <div id="sms-templates-container">
@@ -637,8 +637,8 @@ export class ShippingManager {
                 <!-- SMS 발송 이력 -->
                 <div class="bg-white rounded-lg shadow-sm border border-gray-200">
                     <div class="p-4 border-b border-gray-200">
-                        <h4 class="font-semibold text-gray-800">SMS 발송 이력</h4>
-                        <p class="text-sm text-gray-600 mt-1">최근 발송된 SMS 내역을 확인하세요</p>
+                        <h4 class="font-semibold text-heading">SMS 발송 이력</h4>
+                        <p class="text-sm text-body mt-1">최근 발송된 SMS 내역을 확인하세요</p>
                     </div>
                     <div class="p-4">
                         <div id="sms-history-container">
@@ -716,7 +716,7 @@ export class ShippingManager {
             if (!container) return;
 
             if (!window.orderDataManager) {
-                container.innerHTML = '<p class="text-gray-500">주문 데이터를 찾을 수 없습니다.</p>';
+                container.innerHTML = '<p class="text-muted">주문 데이터를 찾을 수 없습니다.</p>';
                 return;
             }
 
@@ -726,7 +726,7 @@ export class ShippingManager {
             );
 
             if (shippingOrders.length === 0) {
-                container.innerHTML = '<p class="text-gray-500">배송 중인 주문이 없습니다.</p>';
+                container.innerHTML = '<p class="text-muted">배송 중인 주문이 없습니다.</p>';
                 return;
             }
 
@@ -734,16 +734,16 @@ export class ShippingManager {
                 <div class="bg-white border rounded-lg p-4 mb-4">
                     <div class="flex justify-between items-start">
                         <div>
-                            <h4 class="font-semibold text-gray-800">${order.customer_name}</h4>
-                            <p class="text-sm text-gray-600">${order.order_number || order.id}</p>
-                            <p class="text-sm text-gray-500">${order.shipping_address}</p>
+                            <h4 class="font-semibold text-heading">${order.customer_name}</h4>
+                            <p class="text-sm text-body">${order.order_number || order.id}</p>
+                            <p class="text-sm text-muted">${order.shipping_address}</p>
                         </div>
                         <div class="text-right">
                             <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusColor(order.status)}">
                                 ${order.status}
                             </span>
                             ${order.tracking_number ? `
-                                <p class="text-sm text-gray-600 mt-1">송장: ${order.tracking_number}</p>
+                                <p class="text-sm text-body mt-1">송장: ${order.tracking_number}</p>
                             ` : ''}
                         </div>
                     </div>
@@ -763,7 +763,7 @@ export class ShippingManager {
             '배송완료': 'bg-green-100 text-green-800',
             '배송지연': 'bg-red-100 text-red-800'
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || 'bg-gray-100 text-heading';
     }
 
     // 배송 라벨 생성
@@ -900,21 +900,21 @@ export class ShippingManager {
                     <div class="border border-gray-200 rounded-lg p-4">
                         <div class="flex justify-between items-start mb-3">
                             <div>
-                                <h5 class="font-semibold text-gray-800">${template.name}</h5>
-                                <p class="text-sm text-gray-600">${template.description}</p>
+                                <h5 class="font-semibold text-heading">${template.name}</h5>
+                                <p class="text-sm text-body">${template.description}</p>
                             </div>
                             <div class="flex space-x-2">
                                 <button onclick="shippingManager.editSMSTemplate('${template.id}')" 
-                                        class="text-blue-600 hover:text-blue-800 text-sm">
+                                        class="text-info hover:text-blue-800 text-sm">
                                     <i class="fas fa-edit mr-1"></i>수정
                                 </button>
                                 <button onclick="shippingManager.testSMSTemplate('${template.id}')" 
-                                        class="text-green-600 hover:text-green-800 text-sm">
+                                        class="text-brand hover:text-green-800 text-sm">
                                     <i class="fas fa-paper-plane mr-1"></i>테스트
                                 </button>
                             </div>
                         </div>
-                        <div class="bg-gray-50 p-3 rounded text-sm text-gray-700 whitespace-pre-line">
+                        <div class="bg-section p-3 rounded text-sm text-body whitespace-pre-line">
                             ${template.template}
                         </div>
                     </div>
@@ -933,7 +933,7 @@ export class ShippingManager {
         
         if (smsHistory.length === 0) {
             container.innerHTML = `
-                <div class="text-center py-8 text-gray-500">
+                <div class="text-center py-8 text-muted">
                     <i class="fas fa-comment-sms text-4xl mb-4"></i>
                     <p>발송된 SMS가 없습니다.</p>
                 </div>
@@ -944,18 +944,18 @@ export class ShippingManager {
         container.innerHTML = `
             <div class="space-y-3">
                 ${smsHistory.slice(0, 10).map(record => `
-                    <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                    <div class="flex items-center justify-between p-3 bg-section rounded-lg">
                         <div class="flex-1">
                             <div class="flex items-center space-x-3">
-                                <span class="text-sm font-medium text-gray-800">${record.customerName}</span>
-                                <span class="text-xs text-gray-500">${record.phone}</span>
+                                <span class="text-sm font-medium text-heading">${record.customerName}</span>
+                                <span class="text-xs text-muted">${record.phone}</span>
                                 <span class="text-xs px-2 py-1 bg-blue-100 text-blue-700 rounded">${record.type}</span>
                             </div>
-                            <p class="text-sm text-gray-600 mt-1">${record.message.substring(0, 50)}...</p>
+                            <p class="text-sm text-body mt-1">${record.message.substring(0, 50)}...</p>
                         </div>
                         <div class="text-right">
-                            <div class="text-xs text-gray-500">${new Date(record.timestamp).toLocaleString()}</div>
-                            <div class="text-xs ${record.success ? 'text-green-600' : 'text-red-600'}">
+                            <div class="text-xs text-muted">${new Date(record.timestamp).toLocaleString()}</div>
+                            <div class="text-xs ${record.success ? 'text-brand' : 'text-danger'}">
                                 ${record.success ? '발송완료' : '발송실패'}
                             </div>
                         </div>
@@ -985,11 +985,11 @@ export class ShippingManager {
                 <div class="flex items-center justify-center min-h-screen p-4">
                     <div class="bg-white rounded-lg shadow-xl w-full max-w-md">
                         <div class="p-6">
-                            <h3 class="text-lg font-semibold text-gray-800 mb-4">일괄 SMS 발송</h3>
+                            <h3 class="text-lg font-semibold text-heading mb-4">일괄 SMS 발송</h3>
                             
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">발송 대상</label>
+                                    <label class="block text-sm font-medium text-body mb-2">발송 대상</label>
                                     <select id="bulk-sms-target" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                                         <option value="all_orders">모든 주문 고객</option>
                                         <option value="waiting_orders">대기중인 주문</option>
@@ -999,7 +999,7 @@ export class ShippingManager {
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">SMS 템플릿</label>
+                                    <label class="block text-sm font-medium text-body mb-2">SMS 템플릿</label>
                                     <select id="bulk-sms-template" class="w-full px-3 py-2 border border-gray-300 rounded-md">
                                         <option value="orderConfirm">주문확인</option>
                                         <option value="paymentConfirm">입금확인</option>
@@ -1010,7 +1010,7 @@ export class ShippingManager {
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">메시지 내용</label>
+                                    <label class="block text-sm font-medium text-body mb-2">메시지 내용</label>
                                     <textarea id="bulk-sms-message" rows="4" 
                                               class="w-full px-3 py-2 border border-gray-300 rounded-md resize-none"
                                               placeholder="SMS 메시지를 입력하세요..."></textarea>
@@ -1019,7 +1019,7 @@ export class ShippingManager {
                             
                             <div class="flex justify-end space-x-3 mt-6">
                                 <button onclick="shippingManager.closeBulkSMSSModal()" 
-                                        class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                        class="px-4 py-2 text-body bg-white border border-gray-300 rounded-md hover:bg-gray-50">
                                     취소
                                 </button>
                                 <button onclick="shippingManager.sendBulkSMS()"
@@ -1096,20 +1096,20 @@ export class ShippingManager {
         if (!container) return;
 
         container.innerHTML = `
-            <div class="bg-gray-50 p-4 rounded-lg">
-                <h4 class="font-semibold text-gray-800 mb-4">알림 설정</h4>
+            <div class="bg-section p-4 rounded-lg">
+                <h4 class="font-semibold text-heading mb-4">알림 설정</h4>
                 <div class="space-y-3">
                     <label class="flex items-center">
                         <input type="checkbox" id="sms-notifications" class="mr-2" checked>
-                        <span class="text-sm text-gray-700">SMS 알림</span>
+                        <span class="text-sm text-body">SMS 알림</span>
                     </label>
                     <label class="flex items-center">
                         <input type="checkbox" id="email-notifications" class="mr-2">
-                        <span class="text-sm text-gray-700">이메일 알림</span>
+                        <span class="text-sm text-body">이메일 알림</span>
                     </label>
                     <label class="flex items-center">
                         <input type="checkbox" id="push-notifications" class="mr-2">
-                        <span class="text-sm text-gray-700">푸시 알림</span>
+                        <span class="text-sm text-body">푸시 알림</span>
                     </label>
                 </div>
             </div>
