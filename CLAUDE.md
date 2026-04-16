@@ -9,6 +9,9 @@
 - 메시지 프리픽스: `fix` / `feat` / `style` / `refactor` / `docs` / `chore`
 - 한글 메시지 OK (UTF-8)
 - `js/config.js` 패치 버전은 git hook 이 자동 +1
+- **내가 편집한 파일만 명시 스테이징** (`git add <file1> <file2>` 형태). `git add .` / `git add -A` 금지 — 다른 AI 편집기 세션의 미커밋 변경이 끼어들면 다른 세션의 작업이 통째로 섞여 들어감
+- 다른 세션의 modified 파일은 commit 전 `git stash push -- <files>` 로 분리, push 완료 후 `git stash pop` 으로 원복
+- README/config 는 내 커밋의 일부로 취급해 같이 스테이징 (변경 이력 동일 커밋 규칙과 정합)
 
 ### 2) README 변경이력 (커밋과 동일 커밋에 포함)
 - `README.md` 의 "변경 이력" 테이블 **맨 위**에 이번 버전 + 내용 한 줄 추가
@@ -168,6 +171,114 @@ start-server.bat
 .input-ui { @apply w-full rounded-md border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500; }
 .table-ui { @apply min-w-full divide-y divide-gray-200 hover:bg-gray-50; }
 ```
+
+---
+
+## 🎨 디자인 토큰 & UI 통제소 (Single Source of Truth)
+
+모든 UI 결정은 아래 5계층으로 관리. **새 코드는 반드시 각 계층 기존 값/클래스 사용**, 하드코딩 금지.
+
+### Layer 1 — CSS 변수 (`styles/index-inline.css` `:root`)
+
+**브랜드·의미 색상**
+```
+--primary          #16A34A   버튼·활성 탭 (btn-primary)
+--primary-hover    #15803D   primary hover
+--primary-light    #22C55E   밝은 그린 (btn-search)
+--primary-accent   #059669   에메랄드 (nav·아이콘)
+--danger           #DC2626   삭제·위험 / --danger-hover / --danger-bg
+--info             #2563EB   정보·링크 호버 / --info-bg
+--warn             #D97706   경고 / --warn-bg
+```
+
+**배경·테두리**
+```
+--bg-page          #F1F5F9   페이지 배경
+--bg-light         #F9FAFB   호버·섹션 배경
+--bg-lighter       #F8FAFC   테이블 헤더 배경
+--bg-white         #ffffff
+--border           #E2E8F0   범용 테두리
+--border-light     #F0F0F0   연한 구분선
+```
+
+**텍스트 계층**
+```
+--text-heading     #111827   섹션 제목
+--text-primary     #1E293B   핵심 데이터 (td-primary)
+--text-body        #374151   본문·버튼 텍스트
+--text-secondary   #64748B   보조 정보 (td-secondary)
+--text-muted       #94A3B8   부수 정보 (td-muted)
+--text-link        #3B82F6   (사용 안 함 — `.td-link` 는 상속으로 검정)
+--text-amount      #0F172A   금액 (td-amount)
+--text-null        #94A3B8   빈 값 대시 (td-null)
+```
+
+**테이블**
+```
+--tbl-row-height   30px    --tbl-cell-py       5px
+--tbl-font-size    13px    --tbl-header-bg     var(--bg-lighter)
+--tbl-header-fw    600     --tbl-grid-color    #CBD5E1 (엑셀 격자선)
+--tbl-hover-bg     #F0FDF4 --tbl-zebra-bg      #FAFAFA
+```
+
+**뱃지 (배경/텍스트 쌍)**
+```
+--badge-neutral-bg/txt   --badge-warning-bg/txt
+--badge-info-bg/txt      --badge-danger-bg
+--badge-purple-bg/txt    --badge-sky-bg/txt
+--badge-orange-bg/txt    --badge-green-bg / --badge-gray-txt
+```
+
+**모양·그림자**
+```
+--radius-sm 4px  --radius-md 6px  --radius-lg 8px  --radius-xl 12px  --radius-full 9999px
+--shadow-xs  0 1px 2px rgba(0,0,0,0.05)
+--shadow-sm  0 1px 4px rgba(0,0,0,0.06)
+--shadow-md  0 4px 16px rgba(0,0,0,0.10)
+--shadow-lg  0 8px 32px rgba(0,0,0,0.18)
+```
+
+**사이드바**: `--sidebar-dark #0f172a` / `--sidebar-mid #1a2744`
+
+---
+
+### Layer 2 — 시맨틱 클래스
+
+| 분류 | 클래스 |
+|---|---|
+| 버튼 | `.btn-primary` `.btn-secondary` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` `.btn-icon-copy` `.btn-search` |
+| 뱃지 | `.badge` + `.badge-neutral/success/warning/danger/info/purple/sky/orange` |
+| 테이블 셀 | `.td-primary` `.td-secondary` `.td-muted` `.td-amount` `.td-num` `.td-null` `.td-link` |
+| 테이블 | `.table-ui` (전역 격자선 포함) |
+| 필터 | `.filter-bar` `.input-ui` |
+| 상태탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
+| 헤더 | `.page-header` `.action-group` |
+| 모달 | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header/body/footer` `.modal-title` `.modal-close-btn` |
+| 폼 | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` `.form-input-group` `.form-section` `.form-actions` |
+
+### Layer 3 — 렌더러 (`utils/ui.js`)
+
+16종 표준 렌더러. 모듈 내에서 raw Tailwind 클래스 직접 쓰지 말고 이 함수 사용:
+- **레이아웃**: `renderPageHeader`, `renderFilterBar`, `renderEmptyRow`, `renderModal`
+- **폼**: `renderField`, `renderFormSection`, `renderFormGrid`, `renderFormActions`
+- **뱃지/버튼**: `renderBadge`, `renderOrderStatusBadge`, `renderGradeBadge`, `renderBtnIcon`, `renderBtnGroup`, `renderEditDeleteBtns`
+- **기타**: `renderConfirmDialog`, `renderInfoRow`, `renderSectionTitle`
+
+### Layer 4 — 도구 유틸 (`utils/`)
+
+- `utils/pageSize.js` — `window.PageSize.attach(selectId, onChange, initialValue)` 페이지 표시 개수 컨트롤
+- `utils/formatters.js` — `formatDate`, `formatCurrency`, `formatPhone`, `formatQty`, `nullDash`, `emptyDash` + `window.fmt.*`
+
+### Layer 5 — 강제 규칙
+
+- **색상 하드코딩 금지** — `#16a34a` 같은 헥스 직접 기재 금지, `var(--primary)` 사용
+- **Tailwind 임의값 지양** — `text-[11px]`, `min-w-[200px]` 는 특수 사례에만
+- **badge 금지 variant** — `badge-red/yellow/green/blue` 사용 금지, 시맨틱 이름만
+- **테이블 컬럼 너비** — 탭별 데이터 특성에 맞춰 개별 관리 (전 탭 통일 금지 — 데이터 폭 다르면 너비 다름)
+- **수정 시 반드시 Layer 1 먼저 확인** — 기존 토큰으로 표현 가능하면 토큰 사용
+- **신규 토큰 추가** — `:root` 에 추가 + 이 섹션에 문서화 필수
+
+---
 
 ## 주요 기능
 - 대시보드 (매출 차트, 통계)

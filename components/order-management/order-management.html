@@ -41,8 +41,8 @@
     </nav>
 </div>
 
-<!-- 날짜 필터 바 -->
-<div id="order-date-filter-bar" class="filter-bar">
+<!-- 날짜 필터 바 — 기간·채널·검색을 한 줄에 유지 (공간 부족 시 가로 스크롤) -->
+<div id="order-date-filter-bar" class="filter-bar" style="flex-wrap:nowrap; overflow-x:auto;">
     <span class="text-[11px] font-medium text-gray-500 shrink-0">기간</span>
     <div class="flex items-center gap-1 flex-wrap">
         <button onclick="setOrderDateFilter('today')" id="date-btn-today" class="order-date-quick-btn">오늘</button>
@@ -63,17 +63,18 @@
     </div>
     <span id="order-date-label" class="text-[11px] text-green-600 font-medium ml-auto hidden"></span>
     <span class="text-gray-200 text-xs shrink-0">|</span>
+    <span class="text-[11px] font-medium text-gray-500 shrink-0">검색</span>
+    <input type="text" id="order-search-input" class="input-ui"
+           placeholder="고객명/전화 뒷4자리"
+           style="font-size:11px;height:22px;padding:0 6px;width:150px;min-width:0;box-sizing:border-box;"
+           oninput="window.orderDataManager?.setSearchTerm(this.value)">
+    <span class="text-gray-200 text-xs shrink-0">|</span>
     <span class="text-[11px] font-medium text-gray-500 shrink-0">채널</span>
-    <select id="order-channel-filter" class="input-ui" style="font-size:11px;padding:2px 6px;min-width:80px;"
+    <select id="order-channel-filter" class="input-ui"
+            style="font-size:11px;height:22px;padding:0 22px 0 6px;width:auto;min-width:0;box-sizing:border-box;"
             onchange="window.orderDataManager?.setChannelFilter(this.value)">
         <option value="">전체</option>
     </select>
-    <span class="text-gray-200 text-xs shrink-0">|</span>
-    <span class="text-[11px] font-medium text-gray-500 shrink-0">검색</span>
-    <input type="text" id="order-search-input" class="input-ui"
-           placeholder="고객명 또는 전화번호 뒷 4자리"
-           style="font-size:11px;padding:2px 8px;min-width:220px;"
-           oninput="window.orderDataManager?.setSearchTerm(this.value)">
 </div>
 
 <!-- 송장번호 일괄입력 패널 -->

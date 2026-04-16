@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.6-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.7-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.7 | style+docs: ①주문관리 검색창 크기·배치 정돈 — `components/order-management/order-management.html` 필터 바 `flex-wrap:nowrap; overflow-x:auto` 강제로 `기간·검색·채널` 한 줄 유지(줄바꿈 방지, 좁으면 가로 스크롤). 검색창·채널 select 높이 `30px → 22px` 로 축소해 기간 빠른버튼과 시각 정렬, 검색창 `min-width:180px → width:150px` 고정, 채널 `width:auto` 로 내용 맞춤, placeholder 간결화("고객명/전화 뒷4자리"), 순서 `기간 → 검색 → 채널` 로 재배치. ②`CLAUDE.md` 커밋 워크플로우에 "내가 편집한 파일만 명시 스테이징(`git add <file>`), `git add .`/`-A` 금지, 다른 세션 modified 는 stash→push→pop 으로 분리" 규칙 추가 (다중 AI 편집기 동시 작업 시 타 세션 미커밋 변경 혼입 차단) |
 | v3.3.6 | feat: 주문관리 검색 — 고객명 부분일치 또는 전화번호 뒷 4자리로 주문 필터링. `components/order-management/order-management.html` 날짜·채널 필터 바 우측에 `#order-search-input` 추가(placeholder "고객명 또는 전화번호 뒷 4자리"). `features/orders/orderData.js` 생성자에 `_searchTerm` 필드 + `setSearchTerm(term)` 메서드(200ms 디바운스) 신설, `filterOrdersByStatus` 에 검색 블록 추가 — 입력값 소문자화 후 `customer_name` 부분일치, 숫자만 추출해 `customer_phone_last4` 부분일치 OR 조건. 상태·날짜·채널 필터와 조합 적용 |
 | v3.3.5 | refactor: 페이지 표시 개수 컨트롤 전역 중앙화 — 4개 탭(주문·고객·상품·대기자)에 중복되던 `<select>` 옵션·change 리스너 로직을 `utils/pageSize.js` 신규 모듈로 통합. `PAGE_SIZE_OPTIONS`(10/20/50/전체) 단일 정의, `window.PageSize.attach(selectId, onChange, initialValue)` 헬퍼 제공 (onchange 할당 방식으로 중복 리스너 자동 방지). `main.js` 에서 side-effect import 로 전역 등록. 각 탭 JS(`components/product-management/product-management.js`, `js/order-management.js`, `js/customer-management.js`, `js/waitlist-management.js`)의 기존 addEventListener/onchange 직결 코드를 `window.PageSize.attach(...)` 호출로 교체. 기본값은 탭별 유지(주문 50, 나머지 20) |
 | v3.3.4 | perf+UX 5종 (주문 모달 반응성·UX 개선) — ①주문 저장 후 `새 주문` 재클릭 시 2회 클릭 필요하던 race condition **근본 수정**: `navBtn.click()` 이 이미 주문관리 탭에서도 `loadOrderManagementComponent()` 전체 HTML 재fetch 를 트리거해 그 과정에서 `add-order-btn` 이 DOM 에서 잠시 사라짐이 원인. 저장 후 현재 탭이 orders 면 `orderDataManager.loadOrders()` + `renderOrdersTable()` + 상태 탭 class 토글만 수행(섹션 HTML 무교체) ②`js/order-management.js` `loadOrderManagementComponent` 의 `innerHTML=''` 사전 비우기 + 100ms setTimeout 제거 — 섹션을 파괴 후 재생성하지 않고 fetch 완료 후 한 번에 교체 ③`settingsDataManager.loadSettings()` 메모리 캐시 도입 — 새 주문 모달 열 때마다 `farm_settings` Supabase 쿼리 반복하던 200~500ms 지연 제거 (`forceReloadSettings()` 만 DB 재조회) ④`openOrderModal` 에서 `await window.initOrderForm()` — async 함수 미await 로 폼 초기화 미완성 상태로 모달 노출되던 현상 제거, 모달 재열기 시 `setTimeout 100ms` 및 디버그용 `setTimeout 200ms` DOM 검증 제거 ⑤주문 저장 성공 `alert()` blocking 팝업 → `window.showToast()` 2.5초 자동 소멸 토스트로 교체, 임시저장 alert 도 동일 교체 |
