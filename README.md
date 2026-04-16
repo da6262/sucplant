@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.30-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.31-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -189,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.31 | refactor(Phase 1C 검증): `features/orders/orderSMS.js` SMS 발송 모달 버튼 2종을 시맨틱 단일 클래스로 교체 — ①취소 버튼: `px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50` → `btn-secondary`. ②발송 버튼: `px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700` → `btn-info`. 검증 포인트: 기존 Tailwind 조합의 padding(`px-4 py-2 = 16/8px`)이 `.btn-*`(14/6px)보다 커서 버튼이 약간 작아짐 — 의도된 통일(앱 전체 버튼 스케일 일관성). 시각 회귀 **필요시 브라우저 확인 → SMS 템플릿 모달 열기 → 하단 버튼 크기·색·hover 체크**. 사용자 요청: 브라우저에서 검증 후 정책(브랜드 일관 축소 채택 vs 원본 크기 유지) 결정 후 본격 bulk 교체 여부 판단 |
 | v3.3.30 | feat(Phase 1C 시작): 진한 버튼 공용 시맨틱 클래스 3종 신설 — `.btn-info`·`.btn-warn`·`.btn-neutral` 추가(`styles/index-inline.css`). 기존 `.btn-primary/.btn-secondary/.btn-danger` 와 동일 사양(inline-flex·6px 14px padding·12px font·6px radius·hover 전환). 색상: `.btn-info`(bg `var(--info)` → hover `#1D4ED8`), `.btn-warn`(bg `var(--warn)` → hover `#B45309`), `.btn-neutral`(bg `var(--text-secondary)` → hover `var(--text-body)`). 기존 소스의 `bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg` 같은 긴 Tailwind 조합을 단일 시맨틱 클래스로 교체할 수 있는 기반 완성. 본격 소스 교체는 후속(각 사용처마다 크기·padding 이 달라 시각 회귀 방지 위해 개별 검증 필요) |
 | v3.3.29 | refactor(Phase 1B 마감): 잔여 mini-trash 패턴(`bg-red-200 hover:bg-red-300`) + low-stock 필터(`bg-red-100 hover:bg-red-200`) 오버라이드 흡수 — `styles/index-inline.css` 에 `.bg-red-100`(→`var(--badge-danger-bg)`)·`.bg-red-200`(#FCA5A5)·`.hover\:bg-red-200:hover`·`.hover\:bg-red-300:hover`(#F87171) 규칙 추가. 영향: `features/orders/orderUI.js:482`·`features/orders/orderSearch.js:275` 카트 삭제 미니 버튼, `inventory-modal.html:117/183` 재고 부족 카드·필터 버튼이 소스 교체 없이 브랜드 토큰 시맨틱 렌더링. Task #4(`btn-trash-mini` 후속) 완결. Phase 1B 모든 TODO 소진 |
 | v3.3.28 | docs(retroactive): `SettingsDataManager.loadSettings()` 캐시 버그 수정을 변경이력에 정식 명시 — 해당 fix(`features/settings/settingsData.js` L125·L285) 는 Phase 1B 13차 커밋(`0af3b9a`) 에 다른 세션이 자기 스테이징에 내 미커밋 수정분을 함께 쓸어 담아 푸시한 상태였으나 커밋 메시지가 색상 refactor 만 언급해 사실상 undocumented 였음. **버그 원인**: v3.3.19 (커밋 `97fea1b`, "perf+UX 5종") 에서 `loadSettings()` 에 `if (this.settings) return this.settings;` 캐시 조기 반환을 추가했지만 생성자 `this.settings = {}` 초기값도 truthy 라서 최초 호출부터 DB 조회를 건너뛰고 빈 객체를 반환하는 구조. 결과로 **배송비·농장정보·SMS 템플릿·주문상태** 설정이 새로고침 후 기본값으로 되돌아가는 것처럼 보였음(실제 DB 에는 저장됐으나 JS 가 못 읽음). 고객 등급은 `customerUI.js:405` 직접 쿼리 경로 덕에 영향 받지 않아 조기 발견이 지연됨. **수정**: ①L125 캐시 체크를 `if (this.settings && Object.keys(this.settings).length > 0)` 로 교체해 빈 객체 구분. ②`forceReloadSettings()` L285 에 `this.settings = {}` 선행으로 캐시 무효화 보장. **검증 절차**: 환경설정 → 배송 탭에서 값 변경 후 저장 → 새로고침(F5) → 저장한 값 표시 확인 |

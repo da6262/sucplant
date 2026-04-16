@@ -312,12 +312,10 @@ function showSMSTemplateModal(orderId) {
                                 </div>
                                 
                                 <div class="flex justify-end space-x-3">
-                                    <button onclick="closeSMSTemplateModal()" 
-                                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                    <button onclick="closeSMSTemplateModal()" class="btn-secondary">
                                         취소
                                     </button>
-                                    <button onclick="sendOrderSMSFromModal('${orderId}')" 
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <button onclick="sendOrderSMSFromModal('${orderId}')" class="btn-info">
                                         발송
                                     </button>
                                 </div>
