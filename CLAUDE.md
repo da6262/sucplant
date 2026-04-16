@@ -87,7 +87,8 @@ start-server.bat
 
 **상태 표시 (Badges)**
 - 버튼 형태 금지. 둥근 배지(Pill Badge)로 통일
-- Variant: `neutral`(회색), `success`(초록), `warning`(주황), `info`(파랑)
+- **허용 variant**: `neutral`(회색), `success`(초록), `warning`(주황), `info`(파랑), `danger`(빨강), `purple`, `sky`, `orange`
+- **금지**: `badge-red`, `badge-yellow`, `badge-green`, `badge-blue` 같은 색상 이름 직접 사용 (시맨틱 이름만 사용)
 
 #### 3. 모달 및 폼 표준 (Modal & Form Standards)
 - **구조**: [헤더(흰색 배경, Border 하단) — 바디(`p-6`, 2열 그리드) — 푸터(우측 버튼 정렬)] 3단 구성
@@ -96,18 +97,35 @@ start-server.bat
 - **아이콘**: Lucide 또는 Heroicons 스타일로 통일. 선 굵기와 크기를 전 페이지 동일하게 유지
 
 #### 4. 데이터 테이블 표준 (Data Table Standard)
-**주문관리 화면(`features/orders/orderUI.js`의 테이블)을 모든 데이터 리스트의 표준 레퍼런스로 삼는다.**
+**주문관리 화면(`features/orders/orderData.js`의 `renderOrderRow`)을 모든 데이터 리스트의 표준 레퍼런스로 삼는다.**
 
 - 다른 모든 탭(고객관리·상품관리·대기자·배송관리)의 테이블은 주문관리 테이블의 **컬럼 구조·정렬 규칙·뱃지 사용·액션 버튼 배치·스티키 헤더·행 높이·여백**을 기준으로 맞춘다.
 - 불일치 발견 시: 주문관리가 정답. 다른 탭을 주문관리 쪽으로 수정한다 (역방향 금지).
 - 주문관리 테이블 자체를 변경할 때는 **전체 탭에 동일 변경을 전파**해야 한다.
-- 구체 항목:
-  - 테이블 헤더: `sticky top-0`, 배경색·폰트 굵기 통일
-  - 상태 컬럼: `renderOrderStatusBadge` 패턴 — 다른 탭은 `renderBadge`·`renderGradeBadge`로 동일 톤
-  - 액션 컬럼: 항상 맨 오른쪽, `renderEditDeleteBtns` 사용
-  - 숫자(금액/수량): 오른쪽 정렬 + `tabular-nums`
-  - 날짜: 중앙 정렬, `fmt.date()` 포맷 사용
-  - 빈 상태: `renderEmptyRow`로 통일
+
+**테이블 전역 스타일 (`.table-ui`)**:
+- **엑셀 격자선**: 모든 `<th>/<td>`에 `border-right: 1px solid #CBD5E1`, 테이블 전체 테두리 1px. `styles/index-inline.css`의 `.table-ui` 정의에서 일괄 관리 (개별 테이블에 테두리 직접 지정 금지).
+- **컬럼 너비**: `<colgroup>` 사용 금지. `<th>`에 Tailwind 클래스(`w-10`, `w-20`, `w-24`, `min-w-[200px]`) 직접 지정. 가변 컬럼은 `min-w-[Npx]`, 고정 컬럼은 `w-N`.
+
+**셀 렌더링 규칙** (주문관리 `renderOrderRow` 패턴 필수 준수):
+- 모든 `<td>`에 `px-2 align-middle` 기본 적용
+- 빈 값 표기: `const nullDash = '<span class="td-null">—</span>';` 상단 선언 → 값 없을 때 `nullDash` 삽입 (하이픈 문자 `-` 금지)
+- 시맨틱 셀 클래스:
+  - 주 데이터(이름/상품명/고객명): `td-primary` (+ 클릭 가능 시 `td-link`, 선택적 래퍼 `.customer-name-link` 등)
+  - 보조 정보: `td-secondary`
+  - ID류(상품코드/주문번호): `td-muted whitespace-nowrap`
+  - 금액: `td-amount text-right text-numeric`
+  - 숫자: `td-num text-right`
+- 상태 컬럼: `renderOrderStatusBadge` 패턴 — 다른 탭은 `renderBadge`·`renderGradeBadge`로 동일 톤
+- 액션 컬럼: 항상 맨 오른쪽, `renderEditDeleteBtns` 사용, `whitespace-nowrap`
+- 날짜: 중앙 정렬, `fmt.date()` 포맷 사용
+- 빈 상태(행 0개): `renderEmptyRow`로 통일
+- XSS 방어: 외부 문자열은 `.replace(/</g, '&lt;').replace(/>/g, '&gt;')` 필수
+
+**이름 컬럼 색상 규칙** (`.td-link`):
+- `.td-link` 클래스의 `color` 속성은 **제거됨** — `td-primary`(검정) 상속
+- 호버 시에만 `color: var(--info)` + `text-decoration: underline`
+- 결과: 주문·고객·상품·대기자 **모든 탭의 이름 컬럼은 검정**으로 통일, 클릭 가능성은 호버로 표시
 
 #### 5. 공통 컴포넌트 클래스 (Common Classes)
 `<style>` 블록 또는 `styles/index-inline.css` 내에 정의되어야 함:
@@ -148,8 +166,13 @@ start-server.bat
 
 ## 개발 시 주의사항
 - `server.js`는 로컬 `.js`/`.css`에 `?v=` 쿼리 자동 주입 (캐시 버스팅, CDN URL은 제외)
-- 컴포넌트 HTML 파일에는 `index.html` 컨테이너와 동일 ID의 외부 wrapper div 넣지 말 것 (네비게이션 백지 이슈 유발)
+- 컴포넌트 HTML 파일에는 `index.html` 컨테이너와 동일 ID의 외부 wrapper div 넣지 말 것 — `index.html`의 `<div id="*-section">` 안에 또 `<div id="*-section">`이 들어가면 탭 전환 로직이 내부에 `hidden` 부여하여 빈 화면. 컴포넌트 HTML 외곽은 class만 유지하고 id 제거.
 - 컴포넌트 동적 로딩 시 Supabase client 초기화에 대한 순환 의존 주의
+- `data-manager` polling 루프 금지. `initialize*DataManager()` 즉시 호출이 기본. 꼭 필요하면 `supabase-ready` CustomEvent 구독.
+- 과거 등록된 `sw.js` Service Worker 가 브라우저에 남아 캐시 덮는 문제 방지용 자동 해제 스크립트가 `index.html` `<head>` 에 포함되어 있음 — 제거하지 말 것.
+
+### Dead Code 경고
+- `features/products/productUI.js` 의 `renderProductsTable` / `PRODUCT_TABLE_COLUMNS` 는 **사용되지 않음**. 실제 상품 테이블 렌더링은 `components/product-management/product-management.js` 의 `createProductRow` 담당. 상품 테이블 수정 시 후자만 고치면 됨.
 
 ## GitHub
 - https://github.com/da6262/sucplant
