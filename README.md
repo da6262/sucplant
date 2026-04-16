@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.2.100-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.2.101-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -148,6 +148,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.2.101 | fix: 고객 등록 모달 개선 2종 — ①주소 입력창 Enter 시 Daum 임베드(페이지 하단 고정 영역 차지)가 불편 → 별도 팝업 창(`.open()`)으로 전환, 임베드 컨테이너 미사용 ②주문 모달에서 신규 고객 등록 후 재검색 필요 문제(v3.2.98 미해결) — `saveCustomer` `tempCustomerName` 분기에서 `window.selectCustomerFromSearch` 를 **직접 호출**(callback 경로 미등록 케이스 우회), 50ms setTimeout 으로 주문 모달 재표시 직후 DOM 안정화 대기, customer_id·grade 완전 동기화 |
 | v3.2.100 | refactor: 레거시 테이블 CSS 클래스 일괄 제거 — `.app-table`(44줄)·`.customer-table`(19줄)·`.tbl-ui`(7줄) 정의 삭제(production 사용처 0), `.customer-row` 자체 `border-bottom`·`transition`·`:hover`·td padding 제거하여 `.table-ui tbody tr` 로부터 상속(선택상태·커서만 유지), Spec ⑥ 공용 selector(`.app-table td, .table-ui td, .tbl-ui td, .customer-table td, .customer-row td`)를 `.table-ui td` 로 축소. CLAUDE.md 107행 "개별 테이블 테두리 직접 지정 금지" 준수, 총 순 -76줄 |
 | v3.2.98 | fix: 주문 모달에서 신규 고객 등록 후 재검색 필요 문제 — `saveCustomer`의 `tempCustomerName` 분기가 `customerModalCallback`을 건너뛰고 return 하여 orderForm의 `selectCustomerFromSearch`(customer_id·grade·UI 상태 일괄 동기화) 미호출. 콜백 우선 실행 + 저장된 고객의 id·grade 조회 후 `fullCustomer` 전달하도록 수정 |
 | v3.2.97 | fix: 고객 등록 모달 주소 입력 — 타이핑마다 자동 검색으로 혼란 유발 → Enter 키 입력 시만 Daum 오버레이 열리도록 변경 (`oninput` → `onkeydown` + Enter 판별), placeholder 문구도 "Enter 키로 검색" 으로 명시 |

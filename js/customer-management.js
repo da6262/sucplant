@@ -210,24 +210,38 @@ async function saveCustomer() {
                     orderModal.classList.remove('hidden');
                 }
 
-                // 콜백 우선 실행 — orderForm 의 selectCustomerFromSearch 로 customer_id·grade·UI 일괄 동기화
-                if (window.customerModalCallback) {
-                    try {
-                        console.log('🔄 주문 폼 콜백 실행으로 고객 완전 동기화');
-                        window.customerModalCallback(fullCustomer);
-                    } catch (cbErr) {
-                        console.error('❌ 주문 폼 콜백 실행 실패:', cbErr);
+                // orderForm 의 selectCustomerFromSearch 직접 호출로 customer_id·grade·UI 완전 동기화
+                // (기존 callback 메커니즘이 일부 경로에서 등록되지 않는 문제 회피)
+                setTimeout(() => {
+                    if (typeof window.selectCustomerFromSearch === 'function') {
+                        try {
+                            console.log('🔄 selectCustomerFromSearch 직접 호출로 고객 완전 동기화');
+                            window.selectCustomerFromSearch(
+                                fullCustomer.id,
+                                fullCustomer.name,
+                                fullCustomer.phone,
+                                fullCustomer.address,
+                                fullCustomer.grade,
+                                fullCustomer.address_detail
+                            );
+                        } catch (err) {
+                            console.error('❌ selectCustomerFromSearch 호출 실패:', err);
+                        }
+                    } else {
+                        console.warn('⚠️ selectCustomerFromSearch 미등록 — 필드 직접 채움 폴백');
+                        const nameEl = document.getElementById('order-customer-name');
+                        const phoneEl = document.getElementById('order-customer-phone');
+                        const addrEl  = document.getElementById('order-customer-address');
+                        if (nameEl)  nameEl.value  = fullCustomer.name;
+                        if (phoneEl) phoneEl.value = fullCustomer.phone;
+                        if (addrEl)  addrEl.value  = fullCustomer.address;
                     }
-                    window.customerModalCallback = null;
-                } else {
-                    // 콜백 없으면 최소한 기본 필드 직접 채움 (후방 호환)
-                    const nameEl = document.getElementById('order-customer-name');
-                    const phoneEl = document.getElementById('order-customer-phone');
-                    const addrEl  = document.getElementById('order-customer-address');
-                    if (nameEl)  nameEl.value  = fullCustomer.name;
-                    if (phoneEl) phoneEl.value = fullCustomer.phone;
-                    if (addrEl)  addrEl.value  = fullCustomer.address;
-                }
+                    // 레거시 callback 있으면 함께 실행
+                    if (window.customerModalCallback) {
+                        try { window.customerModalCallback(fullCustomer); } catch (_) {}
+                        window.customerModalCallback = null;
+                    }
+                }, 50);  // 주문 모달 재표시 직후 DOM 안정화 대기
 
                 window.tempCustomerName = null;
                 console.log('✅ 주문 폼으로 돌아가기 완료');
@@ -1566,67 +1580,51 @@ async function openAddressSearch() {
     }
 }
 
-// 주소 입력 시 실시간 검색 (입력창에 직접 타이핑하면 Daum 검색 임베드)
-let _addressInputTimer = null;
-
+// 주소 입력 시 Enter 키로 Daum 검색 팝업 창 열기
 window.handleAddressInput = async function(value) {
+    const trimmed = (value || '').trim();
+    if (!trimmed) return;
+
+    try {
+        await loadDaumPostcodeService();
+    } catch (e) {
+        console.warn('Daum 우편번호 로드 실패:', e);
+        return;
+    }
+    if (typeof daum === 'undefined' || !daum.Postcode) return;
+
+    // 임베드 컨테이너는 사용하지 않음(숨김 유지)
     const container = document.getElementById('address-embed-container');
-    if (!container) return;
-
-    // 2글자 미만이면 검색창 숨김
-    if (!value || value.trim().length < 2) {
+    if (container) {
         container.classList.add('hidden');
         container.innerHTML = '';
-        return;
     }
 
-    // 이미 주소가 완성된 것처럼 보이면 (공백 포함 10자 이상이고 숫자 포함) 닫기
-    if (value.length >= 10 && /\d/.test(value) && value.includes(' ')) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-        return;
-    }
-
-    clearTimeout(_addressInputTimer);
-    _addressInputTimer = setTimeout(async () => {
-        try {
-            await loadDaumPostcodeService();
-        } catch (e) {
-            console.warn('Daum 우편번호 로드 실패:', e);
-            return;
-        }
-        if (typeof daum === 'undefined' || !daum.Postcode) return;
-
-        container.innerHTML = '';
-        container.classList.remove('hidden');
-
-        new daum.Postcode({
-            oncomplete: function(data) {
-                const addr = data.roadAddress || data.jibunAddress || '';
-                const addressField = document.getElementById('customer-form-address');
-                if (addressField) {
-                    addressField.value = addr;
-                    addressField.style.backgroundColor = '#f0f9ff';
-                    addressField.style.borderColor = '#3b82f6';
-                    setTimeout(() => {
-                        addressField.style.backgroundColor = '';
-                        addressField.style.borderColor = '';
-                    }, 2000);
-                }
-                container.classList.add('hidden');
-                container.innerHTML = '';
-                const detailField = document.getElementById('customer-form-address-detail');
-                if (detailField) {
-                    setTimeout(() => {
-                        detailField.focus();
-                        detailField.placeholder = '동, 호수 등 상세주소 입력';
-                    }, 50);
-                }
-            },
-            width: '100%',
-            height: '100%',
-        }).embed(container, { q: value, autoClose: false });
-    }, 350);
+    // 별도 팝업 창으로 검색 열기
+    new daum.Postcode({
+        oncomplete: function(data) {
+            const addr = data.roadAddress || data.jibunAddress || '';
+            const addressField = document.getElementById('customer-form-address');
+            if (addressField) {
+                addressField.value = addr;
+                addressField.style.backgroundColor = '#f0f9ff';
+                addressField.style.borderColor = '#3b82f6';
+                setTimeout(() => {
+                    addressField.style.backgroundColor = '';
+                    addressField.style.borderColor = '';
+                }, 2000);
+            }
+            const detailField = document.getElementById('customer-form-address-detail');
+            if (detailField) {
+                setTimeout(() => {
+                    detailField.focus();
+                    detailField.placeholder = '동, 호수 등 상세주소 입력';
+                }, 50);
+            }
+        },
+        width: '100%',
+        height: '100%',
+    }).open({ q: trimmed });
 };
 
 // 주소 검색창 외부 클릭 시 닫기
