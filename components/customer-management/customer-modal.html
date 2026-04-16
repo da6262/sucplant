@@ -56,13 +56,13 @@
                     <div id="phone-duplicate-message" class="form-error hidden"></div>
                 </div>
 
-                <!-- 주소 (col-12) - 타이핑하면 자동 검색 -->
+                <!-- 주소 (col-12) - Enter 키 입력 시 Daum 검색 오버레이 -->
                 <div class="form-col-12">
                     <label class="form-label">주소</label>
                     <input type="text" id="customer-form-address"
-                           placeholder="주소 입력 시 자동 검색 (2글자 이상)"
+                           placeholder="주소 입력 후 Enter 키로 검색"
                            autocomplete="off"
-                           oninput="window.handleAddressInput(this.value)"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();window.handleAddressInput(this.value);}"
                            class="form-control">
                     <div id="address-embed-container"
                          class="hidden mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-md"
