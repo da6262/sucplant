@@ -315,7 +315,7 @@ start-server.bat
 
 ## 데이터베이스
 - Supabase 전용 (localStorage 없음)
-- `window.supabaseClient`로 접근
+- **DB 쿼리는 오직 `window.supabaseClient` 로만 접근**. `window.supabase` 사용 금지 — 초기화 경로(index.html inline vs supabase-config.js)에 따라 `window.supabase` 가 라이브러리 namespace(`.from()` 없음) 이거나 client 이거나 타이밍 의존적. `window.supabaseClient` 는 항상 client 인스턴스로만 설정되므로 안전. 함정 사례: v3.3.9 에서 categoryData.js 가 `window.supabase.from(...)` 호출로 일부 init 경로에서 silent fail 하던 버그 수정
 - 주요 테이블: farm_customers, farm_orders, farm_products, farm_categories
 - 프로덕션 활성화: `window.enableSupabaseProduction()`
 - `supabase-production-config.js`에 `migrationMode: true`, `autoSync: true` 설정됨
