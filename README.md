@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.26-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.27-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -189,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.27 | refactor(Phase 1B 14차·마무리): **CSS 오버라이드 레이어 확장으로 잔여 ~90건 시각 통일** — 구조적 리팩터링(버튼/인풋/뱃지 전면 재작성) 없이 `styles/index-inline.css` 한 곳에 오버라이드 규칙만 추가해 남은 Tailwind 원시 색상을 브랜드 토큰으로 강제 전환. ①진한 버튼 배경: `.bg-blue-600/500`·`.bg-red-600/500`·`.bg-yellow-600/500`·`.bg-gray-500/600` → `var(--info/danger/warn/text-secondary)` (+ `!important`), 대응 `hover:bg-*-700/600` pseudo-class 오버라이드로 hover 시 `#1D4ED8/--danger-hover/#B45309/--text-body`. ②focus ring: `focus:ring-blue-500`·`focus:border-blue-500`·`focus:ring-red-500` → info/danger. ③테두리: `.border-gray-100/200/300`·`.border-slate-*` → `var(--border-light/--border)`, `.border-blue-200/red-200/yellow-200` 별도 근사값. ④배지 내 진한 글자: `.text-blue-700/800`·`.text-red-700/800`·`.text-green-700/800`·`.text-yellow-700/800`·`.text-purple-700/800`·`.text-orange-700/800`·`.text-sky-700/800` → 각각 `--badge-{type}-txt` 또는 `*-hover` 변수. **효과**: 잔여 88건(진한 버튼·input border·뱃지 글자·dot indicator 일부)이 소스 교체 없이 시각적으로 브랜드 토큰 적용. 완전한 구조적 시맨틱화(`.btn-info` 같은 공용 클래스 도입)는 별도 대규모 리팩 필요하므로 후속. Phase 1B **최종 진행률**: ~95%(소스 교체 710+ + 오버라이드 커버 ~88) / 798건. 브랜드 변경 시 `:root` 변수 한 줄만 건드리면 전 UI 반영되는 상태 달성 |
 | v3.3.26 | refactor(Phase 1B 13차): 아이콘 박스용 `.bg-*-accent` 유틸 7종 신설 후 `bg-*-100` bulk 교체 — `styles/index-inline.css` 에 `.bg-info-accent`(#DBEAFE)·`.bg-success-accent`(#DCFCE7)·`.bg-warn-accent`(#FEF3C7)·`.bg-danger-accent`(#FEE2E2)·`.bg-purple-accent`(#F3E8FF)·`.bg-orange-accent`(#FFF7ED)·`.bg-sky-accent`(#E0F2FE) 추가, `--badge-*-bg` 변수 재사용. sed 로 프로덕션 전체 `bg-blue-100`→`bg-info-accent` 등 6종 일괄 교체. 주로 `analyticsDashboard.js`·`shippingManager.js` KPI 카드 아이콘 박스, 기타 배지 스타일 컨테이너. 남은 패턴: 진한 버튼(`bg-blue-600 hover:bg-blue-700`)·input border·dot indicator. 누적 Phase 1B 추정: 710+건/798건(88.9%+) |
 | v3.3.25 | refactor(Phase 1B 12차): js/*.js 7파일 bulk ~167건 시맨틱 교체 — 레거시 최상위 JS 들(features 로 이관되지 않은 코드)에 동일 sed 매핑 적용. 영향: `shipping-management.js`(최다 ~62건 교체·90 잔여)·`order-management.js`(~50·48 잔여)·`customer-management.js`(~12·8 잔여)·`admin-auth.js`·`auth-system.js`·`temp-auth-bypass.js`·`supabase-integration.js` 각 소수. 잔여 148건은 `bg-*-100/200`·진한 버튼(`bg-blue-600 text-white hover:*`)·border-*·input focus ring·dot indicator 등 복합 패턴. 누적 Phase 1B: 698건/798건(87.5%) — 단순 시맨틱 교체 거의 마무리 |
 | v3.3.24 | refactor(Phase 1B 11차): components/*.js 6파일 bulk ~93건 시맨틱 교체 — 직전 HTML bulk 과 동일 sed 매핑을 JS 파일에도 적용. 영향 파일: `product-management.js`(최다 46+건)·`dashboard.js`(20)·`settings.js`(5)·`sales-channels.js`(3)·`header.js`(0~4)·`navigation.js`·`waitlist-management.js`(각 1). 남은 39건은 `bg-*-100/200`·진한 버튼 Tailwind·`border-*`·조건부 클래스 문자열(`isActive ? 'bg-green-500' : 'bg-gray-300'` 등 dot indicator)·`text-*-700/800`. 누적 Phase 1B: 531건/798건(66.5%) |

@@ -875,6 +875,43 @@ select.form-control {
 .bg-yellow-50               { background-color: var(--warn-bg); }
 .bg-green-50                { background-color: #F0FDF4; }
 
+/* 진한 버튼 배경 — 의미 색상 브랜드로 통일 (hover 포함) */
+.bg-blue-600, .bg-blue-500    { background-color: var(--info) !important; }
+.bg-red-600,  .bg-red-500     { background-color: var(--danger) !important; }
+.bg-yellow-600,.bg-yellow-500 { background-color: var(--warn) !important; }
+.bg-gray-500, .bg-gray-600    { background-color: var(--text-secondary) !important; }
+.hover\:bg-blue-700:hover,
+.hover\:bg-blue-600:hover     { background-color: #1D4ED8 !important; }
+.hover\:bg-red-700:hover,
+.hover\:bg-red-600:hover      { background-color: var(--danger-hover) !important; }
+.hover\:bg-yellow-700:hover,
+.hover\:bg-yellow-600:hover   { background-color: #B45309 !important; }
+.hover\:bg-gray-700:hover,
+.hover\:bg-gray-600:hover     { background-color: var(--text-body) !important; }
+
+/* focus ring — 브랜드 통일 */
+.focus\:ring-blue-500:focus   { --tw-ring-color: var(--info) !important; }
+.focus\:ring-red-500:focus    { --tw-ring-color: var(--danger) !important; }
+.focus\:border-blue-500:focus { border-color: var(--info) !important; }
+.focus\:border-red-500:focus  { border-color: var(--danger) !important; }
+
+/* 테두리 — 기본 border 토큰으로 매핑 */
+.border-gray-100, .border-slate-100 { border-color: var(--border-light); }
+.border-gray-200, .border-slate-200,
+.border-gray-300, .border-slate-300 { border-color: var(--border); }
+.border-blue-200              { border-color: #BFDBFE; }
+.border-red-200               { border-color: #FECACA; }
+.border-yellow-200            { border-color: #FDE68A; }
+
+/* 배지 내 진한 글자 — --badge-*-txt 토큰 재사용 */
+.text-blue-700, .text-blue-800   { color: var(--badge-info-txt); }
+.text-red-700,  .text-red-800    { color: var(--danger-hover); }
+.text-green-700, .text-green-800 { color: var(--primary-hover); }
+.text-yellow-700,.text-yellow-800{ color: var(--badge-warning-txt); }
+.text-purple-700,.text-purple-800{ color: var(--badge-purple-txt); }
+.text-orange-700,.text-orange-800{ color: var(--badge-orange-txt); }
+.text-sky-700, .text-sky-800     { color: var(--badge-sky-txt); }
+
 /* 폰트 크기 — 통제실 표준 */
 .text-3xs  { font-size: 9px; }   /* 극소형 라벨 (시스템 경고, 뱃지 숫자 등) */
 .text-2xs  { font-size: 10px; }  /* 초소형 (탭 카운트, 아이콘 옆 작은 라벨) */
