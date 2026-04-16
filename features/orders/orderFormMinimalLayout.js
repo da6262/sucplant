@@ -60,9 +60,9 @@ window.generateOrderFormHTMLMinimal = function () {
                         <label class="form-label">추가배송지</label>
                         <div id="extra-shipping-list" style="display:flex;flex-direction:column;gap:6px;"></div>
                         <button type="button" onclick="addExtraShipping()"
-                                style="margin-top:6px;font-size:11px;color:#2563eb;background:none;border:1px dashed #93c5fd;border-radius:4px;padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                                style="margin-top:6px;font-size:11px;color:var(--info);background:none;border:1px dashed #93c5fd;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
                             + 배송지 추가
-                            <span id="extra-shipping-badge" style="display:none;background:#dbeafe;color:#1d4ed8;border-radius:9px;padding:1px 7px;font-size:10px;"></span>
+                            <span id="extra-shipping-badge" style="display:none;background:var(--badge-info-bg);color:var(--badge-info-txt);border-radius:9px;padding:1px 7px;font-size:10px;"></span>
                         </button>
                     </div>
 
@@ -340,7 +340,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 letter-spacing: .03em;
                 font-family: inherit;
             }
-            .xf-save-btn:hover:not(:disabled) { background: #15803d; }
+            .xf-save-btn:hover:not(:disabled) { background: var(--primary-hover); }
             .xf-save-btn:active:not(:disabled) { background: #166534; }
             /* ── 취소 버튼 ── */
             .xf-cancel-btn {
@@ -355,7 +355,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 cursor: pointer;
                 font-family: inherit;
             }
-            .xf-cancel-btn:hover { background: #F8FAFC; color: #1E293B; border-color: #94A3B8; }
+            .xf-cancel-btn:hover { background: var(--bg-lighter); color: var(--text-primary); border-color: var(--text-muted); }
             .xf-cancel-btn:active { background: #F1F5F9; }
             /* ── 수량 입력 ── */
             #order-form-minimal-wrap .quantity-input {

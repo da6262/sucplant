@@ -1598,29 +1598,76 @@ window.handleAddressInput = async function(value) {
     // 기존 모달 있으면 제거
     document.getElementById('daum-address-modal')?.remove();
 
-    // 중앙 고정 크기 모달 생성 (Daum 기본 팝업보다 컴팩트)
+    // 드래그 가능한 주소 검색 모달 (고객 모달 우측 옆)
+    // 고객 모달 modal-sm 420px 기준: 중앙 + 240px = 우측 옆
+    // 헤더에는 드래그 핸들만(X 제거) — Daum embed 내부에 기본 닫기 버튼 있어 중복 방지
     const overlay = document.createElement('div');
     overlay.id = 'daum-address-modal';
-    // 고객 모달(modal-sm 420px 너비, 화면 중앙) 우측 옆에 나란히 배치
-    // 배경 없음 — 뒤의 고객 등록 모달이 그대로 보이게
-    // 화면 중앙에서 오른쪽으로 240px(고객모달 반너비 210px + 간격 30px) 떨어진 위치
     overlay.style.cssText = 'position:fixed;inset:0;background:transparent;z-index:1000000;pointer-events:none;';
     overlay.innerHTML = `
-        <div style="position:fixed;left:calc(50% + 240px);top:50%;transform:translateY(-50%);background:#fff;border-radius:8px;width:420px;height:460px;max-width:calc(100vw - 40px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.35);overflow:hidden;pointer-events:auto;border:1px solid #CBD5E1;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;">
-                <strong style="color:#1E293B;">주소 검색</strong>
+        <div id="daum-address-box"
+             style="position:fixed;right:20px;top:60px;background:var(--bg-white);border-radius:var(--radius-lg);width:500px;height:580px;max-width:calc(100vw - 40px);max-height:calc(100vh - 80px);display:flex;flex-direction:column;box-shadow:var(--shadow-lg);pointer-events:auto;border:1px solid var(--border);">
+            <div id="daum-address-header"
+                 style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-lighter);font-size:11px;cursor:move;user-select:none;flex-shrink:0;">
+                <span style="color:var(--text-muted);"><i class="fas fa-grip-lines" style="margin-right:4px;"></i>드래그로 이동</span>
                 <button type="button" id="daum-address-close" aria-label="닫기"
-                        style="border:none;background:transparent;font-size:16px;cursor:pointer;color:#64748B;padding:0 4px;line-height:1;">&times;</button>
+                        style="border:none;background:transparent;font-size:16px;cursor:pointer;color:var(--text-secondary);padding:0 6px;line-height:1;">&times;</button>
             </div>
-            <div id="daum-address-embed" style="flex:1;overflow:hidden;"></div>
+            <div id="daum-address-embed" style="flex:1;min-height:0;"></div>
         </div>
     `;
     document.body.appendChild(overlay);
 
     const closeModal = () => overlay.remove();
+
+    // X 버튼 닫기 (내 헤더 X — Daum embed 내부에는 자체 X 없음)
     overlay.querySelector('#daum-address-close').addEventListener('click', closeModal);
+
+    // ESC 닫기
     const onEsc = (ev) => { if (ev.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); } };
     document.addEventListener('keydown', onEsc);
+
+    // 드래그 이동 구현
+    const box = overlay.querySelector('#daum-address-box');
+    const header = overlay.querySelector('#daum-address-header');
+    let dragState = null;
+    header.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        const rect = box.getBoundingClientRect();
+        dragState = {
+            startX: e.clientX,
+            startY: e.clientY,
+            boxLeft: rect.left,
+            boxTop: rect.top
+        };
+        box.style.left = rect.left + 'px';
+        box.style.top = rect.top + 'px';
+        e.preventDefault();
+    });
+    const onMouseMove = (e) => {
+        if (!dragState) return;
+        const nx = dragState.boxLeft + (e.clientX - dragState.startX);
+        const ny = dragState.boxTop + (e.clientY - dragState.startY);
+        // 화면 경계 안으로 제한
+        const maxX = window.innerWidth - box.offsetWidth - 4;
+        const maxY = window.innerHeight - box.offsetHeight - 4;
+        box.style.left = Math.max(4, Math.min(nx, maxX)) + 'px';
+        box.style.top  = Math.max(4, Math.min(ny, maxY)) + 'px';
+    };
+    const onMouseUp = () => { dragState = null; };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // 모달 제거 시 drag 리스너도 함께 제거
+    const observer = new MutationObserver(() => {
+        if (!document.contains(overlay)) {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('keydown', onEsc);
+            observer.disconnect();
+        }
+    });
+    observer.observe(document.body, { childList: true });
 
     new daum.Postcode({
         oncomplete: function(data) {
@@ -1640,6 +1687,10 @@ window.handleAddressInput = async function(value) {
             if (detailField) {
                 setTimeout(() => { detailField.focus(); detailField.placeholder = '동, 호수 등 상세주소 입력'; }, 50);
             }
+        },
+        onclose: function() {
+            // Daum 내부 닫기 버튼 클릭 시 우리 overlay 도 제거
+            closeModal();
         },
         width: '100%',
         height: '100%',

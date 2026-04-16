@@ -176,6 +176,24 @@ start-server.bat
 
 ## 🎨 디자인 토큰 & UI 통제소 (Single Source of Truth)
 
+### 🏛 역할 분리 — Tailwind vs CSS 통제소
+
+두 시스템을 **영역별로 엄격히 분리**. 섞으면 브랜드 통제권이 무너짐.
+
+| 영역 | 도구 | 예시 |
+|---|---|---|
+| **브랜드·색상·컴포넌트** | `styles/index-inline.css` CSS 변수 + 컴포넌트 클래스 | `.btn-primary`, `.badge-success`, `var(--primary)`, `.table-ui` |
+| **레이아웃·간격·반응형** | Tailwind CDN 유틸리티 | `flex`, `gap-2`, `px-4`, `grid-cols-12`, `md:pl-[180px]` |
+
+**금지 사항:**
+- ❌ Tailwind 색상 직접 사용: `bg-green-500`, `text-red-600`, `border-blue-400` 등
+- ❌ 인라인 스타일 색상 하드코딩: `style="color:#16a34a"`
+- ❌ 브랜드 변경을 위해 Tailwind 색상 사용 (브랜드는 오직 CSS 변수·컴포넌트 클래스 경유)
+
+**주의:** 루트의 `tailwind.config.js` 파일은 **빌드 전용 포맷이라 CDN 런타임에 반영 안 됨** (dead config). 건드리지 말고, 브랜드 색상은 오직 CSS 변수로 관리할 것.
+
+---
+
 모든 UI 결정은 아래 5계층으로 관리. **새 코드는 반드시 각 계층 기존 값/클래스 사용**, 하드코딩 금지.
 
 ### Layer 1 — CSS 변수 (`styles/index-inline.css` `:root`)

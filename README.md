@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.7-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.8-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -89,33 +89,74 @@ sucplant/
 
 ---
 
-## 디자인 시스템 (v3.2.54+)
+## UI 통제소 (본진 · Single Source of Truth)
 
-모든 색상·여백·폰트 크기는 CSS 변수 하나로 제어됩니다.
+### 🏛 **본진 = `styles/index-inline.css`**
+
+시스템 디자인의 **모든 결정**(색상·여백·폰트·테이블·뱃지·모달·폼)은 이 파일 한 곳에 저장. **여기만 수정하면 전 페이지가 동시에 바뀐다.**
+
+**예:** "초록색을 더 진하게" 요청 시 → `--primary: #16A34A` → `#0F7A36` 한 줄 변경 → 버튼·탭·뱃지·테이블 헤더 모든 초록이 즉시 반영.
+
+### 🔀 역할 분리 — 본진 vs Tailwind
+
+두 시스템이 **각자의 영역만** 담당해야 통제권 유지됨:
+
+| 영역 | 도구 | 예시 |
+|---|---|---|
+| **브랜드·색상·컴포넌트** | 본진(`styles/index-inline.css`) | `var(--primary)`, `.btn-primary`, `.badge-success`, `.table-ui` |
+| **레이아웃·간격·반응형** | Tailwind CDN | `flex`, `gap-2`, `px-4`, `grid-cols-12`, `md:pl-[180px]` |
+
+**절대 금지:**
+- ❌ Tailwind 색상 직접 사용: `bg-green-500`, `text-red-600`, `border-blue-400`
+- ❌ 인라인 `style=` 에 색상 하드코딩: `style="color:#16a34a"`
+- ❌ 브랜드 변경 목적으로 Tailwind 사용 (브랜드는 오직 본진 경유)
+
+### 📐 CSS 변수 핵심 (`styles/index-inline.css :root`)
 
 ```css
-/* styles/index-inline.css :root */
---primary:        #16A34A;   /* 브랜드 그린 — 버튼, 활성 탭 */
---primary-hover:  #15803D;   /* hover 상태 */
---primary-accent: #059669;   /* 에메랄드 — 아이콘, 링크 */
+/* 브랜드·의미 색상 */
+--primary: #16A34A     --primary-hover: #15803D
+--danger:  #DC2626     --info: #2563EB     --warn: #D97706
 
---tbl-cell-py:    4px;       /* 테이블 행 높이 전역 제어 */
---tbl-font-size:  12px;      /* 테이블 폰트 크기 */
+/* 텍스트 계층 */
+--text-primary:   #1E293B    --text-secondary: #64748B
+--text-muted:     #94A3B8    --text-amount:    #0F172A
+
+/* 테이블 */
+--tbl-row-height: 30px   --tbl-cell-py: 5px   --tbl-font-size: 13px
+--tbl-grid-color: #CBD5E1 (엑셀 격자선)
+
+/* 모양·그림자 */
+--radius-sm/md/lg/xl: 4/6/8/12px
+--shadow-xs/sm/md/lg
 ```
 
-### 공통 클래스
+> **전체 토큰 목록 + 엄격 규정**은 [CLAUDE.md](./CLAUDE.md) "🎨 디자인 토큰 & UI 통제소" 섹션.
+
+### 🧱 공통 컴포넌트 클래스
 
 | 분류 | 클래스 |
 |------|--------|
 | 버튼 | `.btn-primary` `.btn-secondary` `.btn-icon` `.btn-icon-edit` `.btn-icon-delete` |
 | 배지 | `.badge` + `.badge-success` `.badge-warning` `.badge-danger` `.badge-info` `.badge-purple` `.badge-neutral` |
-| 테이블 | `.table-ui` `.td-primary` `.td-secondary` `.td-amount` `.td-muted` `.td-null` |
+| 테이블 | `.table-ui` `.td-primary` `.td-secondary` `.td-amount` `.td-muted` `.td-null` `.td-link` |
 | 필터 바 | `.filter-bar` `.input-ui` `.btn-search` |
 | 상태 탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
 | 헤더 | `.page-header` `.action-group` |
-| **모달** | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header` `.modal-body` `.modal-footer` `.modal-title` `.modal-close-btn` |
-| **폼 그리드** | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` |
-| **폼 입력** | `.form-input-group.with-unit` `.form-input-unit` `.form-section` `.form-section-inner` `.form-actions` |
+| 모달 | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header` `.modal-body` `.modal-footer` `.modal-title` `.modal-close-btn` |
+| 폼 그리드 | `.form-grid` `.form-col-4/6/12` `.form-label .req` `.form-control` `.form-helper` `.form-error` |
+| 폼 입력 | `.form-input-group.with-unit` `.form-input-unit` `.form-section` `.form-section-inner` `.form-actions` |
+
+### 🏭 표준 렌더러 (`utils/ui.js`)
+
+16종 함수로 HTML 을 프로그램적 생성 — 모듈에서 raw Tailwind 직접 쓰지 말고 이 함수 호출:
+- 레이아웃: `renderPageHeader`, `renderFilterBar`, `renderEmptyRow`, `renderModal`
+- 폼: `renderField`, `renderFormSection`, `renderFormGrid`, `renderFormActions`
+- 뱃지/버튼: `renderBadge`, `renderOrderStatusBadge`, `renderGradeBadge`, `renderBtnIcon`, `renderBtnGroup`, `renderEditDeleteBtns`
+
+### ⚠️ 주의
+
+- 루트의 `tailwind.config.js` 는 **빌드 전용 포맷이라 CDN 런타임에 반영 안 됨** (dead config). 브랜드 색상은 오직 CSS 변수 경유.
 
 ---
 
@@ -148,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.8 | refactor+docs: UI 통제소 프레이밍 + 하드코딩 색상 일괄 변수화 — ①README 의 "디자인 시스템" 섹션을 **"UI 통제소(본진·Single Source of Truth)"** 로 리네이밍·확장. `styles/index-inline.css` 가 **본진** 임을 명시, 본진(브랜드·색상·컴포넌트) vs Tailwind(레이아웃·간격·반응형) 역할 분리 원칙 및 금지 사항(`bg-green-500` 같은 Tailwind 색상 사용·인라인 `style=` 색상 하드코딩·브랜드용 Tailwind 금지) 강조. 오래된 값(`--tbl-cell-py:4px`→5px, `--tbl-font-size:12px`→13px) 바로잡음, 누락 토큰(`--danger/info/warn/text-*/radius-*/shadow-*`) 추가. `tailwind.config.js` dead-config 경고 기록(빌드 전용 포맷이라 CDN 미반영). ②`CLAUDE.md` 디자인 토큰 섹션 맨 앞에 역할 분리 원칙 추가. ③프로덕션 파일의 브랜드 색상 하드코딩 일괄 변수화: `customer-modal.html`(탭·통계 `#16a34a/#2563eb/#d97706/#374151/#6b7280` → `var(--primary)/var(--info)/var(--warn)/var(--text-body)/var(--text-secondary)`), `product-modal.html`·`product-management.html`(카테고리 빠른추가 `#2563eb`→`var(--info)`), `order-management.html`(일괄삭제 `#dc2626`→`var(--danger)`), `settings.css`(hover `#dc2626`/`#fef2f2`→`var(--danger)`/`var(--danger-bg)`), `customerUI.js`(삭제 버튼·탭 스타일 → `var(--danger)`/`var(--primary)`), `orderFormMinimalLayout.js`(배송지 추가 버튼·저장 hover·취소 hover → `var(--info)`/`var(--primary-hover)`/`var(--text-muted)` 등), `customer-management.js` Daum 주소 모달(테두리·배경·글자 7개 → `var(--bg-white)`/`var(--border)`/`var(--text-*)`/`var(--radius-lg)`/`var(--shadow-lg)`), `header.html` 사이드바(사용자 정보·새로고침 `#64748b`/`#94a3b8` → `var(--text-secondary)`/`var(--text-muted)`, onmouseover/out 핸들러 포함) |
 | v3.3.7 | style+docs: ①주문관리 검색창 크기·배치 정돈 — `components/order-management/order-management.html` 필터 바 `flex-wrap:nowrap; overflow-x:auto` 강제로 `기간·검색·채널` 한 줄 유지(줄바꿈 방지, 좁으면 가로 스크롤). 검색창·채널 select 높이 `30px → 22px` 로 축소해 기간 빠른버튼과 시각 정렬, 검색창 `min-width:180px → width:150px` 고정, 채널 `width:auto` 로 내용 맞춤, placeholder 간결화("고객명/전화 뒷4자리"), 순서 `기간 → 검색 → 채널` 로 재배치. ②`CLAUDE.md` 커밋 워크플로우에 "내가 편집한 파일만 명시 스테이징(`git add <file>`), `git add .`/`-A` 금지, 다른 세션 modified 는 stash→push→pop 으로 분리" 규칙 추가 (다중 AI 편집기 동시 작업 시 타 세션 미커밋 변경 혼입 차단) |
 | v3.3.6 | feat: 주문관리 검색 — 고객명 부분일치 또는 전화번호 뒷 4자리로 주문 필터링. `components/order-management/order-management.html` 날짜·채널 필터 바 우측에 `#order-search-input` 추가(placeholder "고객명 또는 전화번호 뒷 4자리"). `features/orders/orderData.js` 생성자에 `_searchTerm` 필드 + `setSearchTerm(term)` 메서드(200ms 디바운스) 신설, `filterOrdersByStatus` 에 검색 블록 추가 — 입력값 소문자화 후 `customer_name` 부분일치, 숫자만 추출해 `customer_phone_last4` 부분일치 OR 조건. 상태·날짜·채널 필터와 조합 적용 |
 | v3.3.5 | refactor: 페이지 표시 개수 컨트롤 전역 중앙화 — 4개 탭(주문·고객·상품·대기자)에 중복되던 `<select>` 옵션·change 리스너 로직을 `utils/pageSize.js` 신규 모듈로 통합. `PAGE_SIZE_OPTIONS`(10/20/50/전체) 단일 정의, `window.PageSize.attach(selectId, onChange, initialValue)` 헬퍼 제공 (onchange 할당 방식으로 중복 리스너 자동 방지). `main.js` 에서 side-effect import 로 전역 등록. 각 탭 JS(`components/product-management/product-management.js`, `js/order-management.js`, `js/customer-management.js`, `js/waitlist-management.js`)의 기존 addEventListener/onchange 직결 코드를 `window.PageSize.attach(...)` 호출로 교체. 기본값은 탭별 유지(주문 50, 나머지 20) |

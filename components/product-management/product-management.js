@@ -3,6 +3,111 @@
  * 경산다육식물농장 관리시스템
  */
 
+/**
+ * 상품 테이블 컬럼 단일 소스
+ * 헤더 <th> 와 행 <td> 둘 다 이 배열에서 파생 (header/body 불일치 원천 차단).
+ * 컬럼 추가·제거·순서 변경 시 이 배열만 수정하면 됨.
+ *
+ * 각 컬럼:
+ *   - headerCell: 커스텀 <th> HTML (체크박스 등 특수 케이스)
+ *     또는 label + thClass 로 기본 <th> 자동 생성
+ *   - render(product, nullDash): 전체 <td>...</td> HTML 반환
+ */
+const PRODUCT_COLUMNS = [
+    {
+        key: 'checkbox',
+        headerCell: '<th class="text-center w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-green-600 focus:ring-green-500"></th>',
+        render: (p) => `<td class="px-2 text-center align-middle"><input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
+    },
+    {
+        key: 'product_code',
+        label: '상품코드',
+        thClass: 'text-left w-20',
+        render: (p, dash) => {
+            const code = p.product_code ? String(p.product_code).replace(/</g, '&lt;') : null;
+            return `<td class="px-2 td-muted align-middle whitespace-nowrap">${code || dash}</td>`;
+        }
+    },
+    {
+        key: 'name',
+        label: '상품명',
+        thClass: 'text-left min-w-[200px]',
+        render: (p, dash) => {
+            const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<td class="px-2 td-primary td-link align-middle"><span class="product-name-link">${name || dash}</span></td>`;
+        }
+    },
+    {
+        key: 'category',
+        label: '카테고리',
+        thClass: 'text-left w-24',
+        render: (p, dash) => {
+            const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
+            return `<td class="px-2 align-middle">${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
+        }
+    },
+    {
+        key: 'size',
+        label: '사이즈',
+        thClass: 'text-left w-16',
+        render: (p, dash) => {
+            const s = p.size ? String(p.size).replace(/</g, '&lt;') : null;
+            return `<td class="px-2 td-secondary align-middle">${s || dash}</td>`;
+        }
+    },
+    {
+        key: 'price',
+        label: '판매가',
+        thClass: 'text-right w-24',
+        render: (p, dash) => {
+            const price = Number(p.price) || 0;
+            return `<td class="px-2 td-amount text-right text-numeric align-middle">${price > 0 ? '₩' + price.toLocaleString() : dash}</td>`;
+        }
+    },
+    {
+        key: 'stock',
+        label: '재고',
+        thClass: 'text-right w-20',
+        render: (p, dash) => {
+            const stock = Number(p.stock) || 0;
+            return `<td class="px-2 td-num text-right align-middle">${stock > 0 ? stock + '개' : dash}</td>`;
+        }
+    },
+    {
+        key: 'shipping_option',
+        label: '배송옵션',
+        thClass: 'text-left w-24',
+        render: (p, dash) => {
+            const ship = p.shipping_option ? String(p.shipping_option).replace(/</g, '&lt;') : null;
+            return `<td class="px-2 td-secondary align-middle">${ship || dash}</td>`;
+        }
+    },
+    {
+        key: 'actions',
+        headerCell: '<th class="text-center w-20">관리</th>',
+        render: (p) => `
+            <td class="px-2 text-center align-middle whitespace-nowrap">
+                <div class="btn-group">
+                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${p.id}" title="수정"><i class="fas fa-pen"></i></button>
+                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${p.id}" title="복제"><i class="fas fa-copy"></i></button>
+                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${p.id}" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>`
+    }
+];
+
+// 헤더 <th> HTML 생성 (단일 소스 → <thead>)
+function renderProductTableHeader() {
+    return PRODUCT_COLUMNS.map(c =>
+        c.headerCell || `<th class="${c.thClass || ''}">${c.label || ''}</th>`
+    ).join('');
+}
+
+// 행 <td> HTML 생성 (단일 소스 → <tr>)
+function renderProductRowCells(product, nullDash) {
+    return PRODUCT_COLUMNS.map(c => c.render(product, nullDash)).join('');
+}
+
 // ProductUI 동적 import를 위한 함수
 async function loadProductUIModule() {
     try {
@@ -318,10 +423,17 @@ class ProductManagementComponent {
     renderProducts() {
         console.log('📋 상품 목록 렌더링 시작...');
         console.log('🔍 렌더링할 상품 수:', this.filteredProducts.length);
-        
+
+        // 헤더 <tr> 을 스키마에서 주입 (단일 소스 보장 — HTML 재fetch 후에도 정합)
+        const headerRow = document.getElementById('products-table-header');
+        if (headerRow && !headerRow.dataset.rendered) {
+            headerRow.innerHTML = renderProductTableHeader();
+            headerRow.dataset.rendered = 'true';
+        }
+
         const tbody = document.getElementById('products-table-body');
         console.log('🔍 tbody 요소:', tbody);
-        
+
         if (!tbody) {
             console.error('❌ products-table-body 요소를 찾을 수 없습니다!');
             return;
@@ -375,37 +487,11 @@ class ProductManagementComponent {
         row.className = 'hover:bg-gray-50 transition-colors cursor-pointer';
         row.dataset.productId = product.id;
 
+        // PRODUCT_COLUMNS 단일 스키마에서 모든 셀 생성 — 헤더와 무조건 정합
         const nullDash = '<span class="td-null">—</span>';
-        const productCode = product.product_code ? String(product.product_code).replace(/</g, '&lt;') : null;
-        const productName = (product.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-        const category    = product.category ? String(product.category).replace(/</g, '&lt;') : null;
-        const size        = product.size ? String(product.size).replace(/</g, '&lt;') : null;
-        const shipping    = product.shipping_option ? String(product.shipping_option).replace(/</g, '&lt;') : null;
-        const price       = Number(product.price) || 0;
-        const stock       = Number(product.stock) || 0;
-
-        row.innerHTML = `
-            <td class="px-2 text-center align-middle">
-                <input type="checkbox" class="product-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1" data-product-id="${product.id}">
-            </td>
-            <td class="px-2 td-muted align-middle whitespace-nowrap">${productCode || nullDash}</td>
-            <td class="px-2 td-primary td-link align-middle"><span class="product-name-link">${productName || nullDash}</span></td>
-            <td class="px-2 align-middle">${category ? `<span class="badge badge-info">${category}</span>` : nullDash}</td>
-            <td class="px-2 td-secondary align-middle">${size || nullDash}</td>
-            <td class="px-2 td-amount text-right text-numeric align-middle">${price > 0 ? '₩' + price.toLocaleString() : nullDash}</td>
-            <td class="px-2 td-num text-right align-middle">${stock > 0 ? stock + '개' : nullDash}</td>
-            <td class="px-2 td-secondary align-middle">${shipping || nullDash}</td>
-            <td class="px-2 text-center align-middle whitespace-nowrap">
-                <div class="btn-group">
-                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정"><i class="fas fa-pen"></i></button>
-                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제"><i class="fas fa-copy"></i></button>
-                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제"><i class="fas fa-trash"></i></button>
-                </div>
-            </td>
-        `;
+        row.innerHTML = renderProductRowCells(product, nullDash);
 
         this.addRowEventListeners(row, product);
-
         return row;
     }
 

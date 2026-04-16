@@ -15,12 +15,12 @@
             <div style="display:flex;padding:0 16px;">
                 <button type="button" id="customer-tab-info"
                         onclick="window.switchCustomerTab('info')"
-                        style="padding:8px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid #16a34a;color:#16a34a;">
+                        style="padding:8px 14px;font-size:12px;font-weight:600;border:none;background:none;cursor:pointer;border-bottom:2px solid var(--primary);color:var(--primary);">
                     <i class="fas fa-user mr-1"></i>정보
                 </button>
                 <button type="button" id="customer-tab-orders"
                         onclick="window.switchCustomerTab('orders')"
-                        style="padding:8px 14px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:#6b7280;">
+                        style="padding:8px 14px;font-size:12px;font-weight:500;border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;color:var(--text-secondary);">
                     <i class="fas fa-shopping-bag mr-1"></i>주문이력
                 </button>
             </div>
@@ -158,20 +158,20 @@
                 <!-- 통계 4칸 -->
                 <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px;">
                     <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;">
-                        <div style="font-size:11px;color:#6b7280;">총 구매액</div>
-                        <div id="cmod-stat-total" style="font-size:15px;font-weight:700;color:#16a34a;">—</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">총 구매액</div>
+                        <div id="cmod-stat-total" style="font-size:15px;font-weight:700;color:var(--primary);">—</div>
                     </div>
                     <div style="background:#eff6ff;border-radius:8px;padding:10px;text-align:center;">
-                        <div style="font-size:11px;color:#6b7280;">구매 횟수</div>
-                        <div id="cmod-stat-count" style="font-size:15px;font-weight:700;color:#2563eb;">—</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">구매 횟수</div>
+                        <div id="cmod-stat-count" style="font-size:15px;font-weight:700;color:var(--info);">—</div>
                     </div>
                     <div style="background:#fffbeb;border-radius:8px;padding:10px;text-align:center;">
-                        <div style="font-size:11px;color:#6b7280;">평균 구매액</div>
-                        <div id="cmod-stat-avg" style="font-size:15px;font-weight:700;color:#d97706;">—</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">평균 구매액</div>
+                        <div id="cmod-stat-avg" style="font-size:15px;font-weight:700;color:var(--warn);">—</div>
                     </div>
                     <div style="background:#f9fafb;border-radius:8px;padding:10px;text-align:center;">
-                        <div style="font-size:11px;color:#6b7280;">마지막 구매</div>
-                        <div id="cmod-stat-last" style="font-size:13px;font-weight:600;color:#374151;">—</div>
+                        <div style="font-size:11px;color:var(--text-secondary);">마지막 구매</div>
+                        <div id="cmod-stat-last" style="font-size:13px;font-weight:600;color:var(--text-body);">—</div>
                     </div>
                 </div>
                 <!-- 주문 목록 테이블 -->

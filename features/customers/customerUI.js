@@ -780,7 +780,7 @@ function showDeleteWithOrdersModal(orders) {
                 </div>
                 <div class="modal-footer">
                     <button id="btn-cancel-del" class="btn-secondary">취소</button>
-                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:#DC2626;">선택 주문만 삭제</button>
+                    <button id="btn-del-orders-only" class="btn-secondary" style="border-color:#FCA5A5;color:var(--danger);">선택 주문만 삭제</button>
                     <button id="btn-del-all" class="btn-danger">주문 + 고객 삭제</button>
                 </div>
             </div>`;
@@ -2254,7 +2254,7 @@ window.switchCustomerTab = function(tab) {
     const ordersBtn   = document.getElementById('customer-tab-orders');
     const footer      = document.getElementById('customer-modal-footer');
 
-    const activeStyle   = 'border-bottom:2px solid #16a34a;color:#16a34a;';
+    const activeStyle   = 'border-bottom:2px solid var(--primary);color:var(--primary);';
     const inactiveStyle = 'border-bottom:2px solid transparent;color:#6b7280;';
 
     if (tab === 'info') {

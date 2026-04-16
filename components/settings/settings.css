@@ -262,8 +262,8 @@
 }
 
 .settings-action-btn-delete:hover {
-    color: #dc2626;
-    background: #fef2f2;
+    color: var(--danger);
+    background: var(--danger-bg);
 }
 
 /* 환경설정 모달 */
