@@ -110,7 +110,7 @@ async function loadQuickProductsForMinimal() {
             container.innerHTML = emptyMsg('등록된 상품이 없습니다');
             return;
         }
-        const quickBtn = `min-height:32px;min-width:32px;padding:6px 8px;border-radius:8px;border:1px solid var(--border-light);background:var(--bg-white);font-size:12px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
+        const quickBtn = `min-height:32px;min-width:32px;padding:6px 8px;border-radius:var(--radius-lg);border:1px solid var(--border-light);background:var(--bg-white);font-size:12px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         container.innerHTML = products.map(p => {
             const name = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
             const price = (parseFloat(p.price) || 0).toLocaleString();
@@ -163,8 +163,8 @@ async function loadPopularProducts() {
             return;
         }
         const sortedProducts = productsData.sort((a, b) => (productCounts[b.name] || 0) - (productCounts[a.name] || 0));
-        const popBtn = `flex-shrink:0;background:var(--bg-white);border:1px solid var(--border-light);border-radius:8px;padding:8px;transition:all .15s;cursor:pointer;`;
-        const popImg = `width:56px;height:56px;background:var(--bg-light);border-radius:6px;margin-bottom:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;`;
+        const popBtn = `flex-shrink:0;background:var(--bg-white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:8px;transition:all .15s;cursor:pointer;`;
+        const popImg = `width:56px;height:56px;background:var(--bg-light);border-radius:var(--radius-md);margin-bottom:4px;display:flex;align-items:center;justify-content:center;overflow:hidden;`;
         popularProductsContainer.innerHTML = sortedProducts.map(product => `
             <button type="button" style="${popBtn}" onclick="addPopularProduct('${product.id}', '${(product.name||'').replace(/'/g, "\\'")}', ${product.price})">
                 <div style="${popImg}">
@@ -209,7 +209,7 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-unit-price', String(unitPrice));
         tr.setAttribute('data-product-name', productName || '');
         const lineTotal = unitPrice * 1;
-        const stepBtn = `width:28px;height:28px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
+        const stepBtn = `width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
         const cellPad = `padding:6px 8px;vertical-align:top;`;
         tr.innerHTML = `
             <td class="txt-body" style="${cellPad}">${(productName || '').replace(/</g, '&lt;')}</td>
@@ -1085,11 +1085,11 @@ async function loadAllProducts() {
                 console.log('📦 첫 번째 상품:', data[0]);
                 console.log('📦 전체 상품 목록:', data.map(p => `${p.name} (${p.price}원)`).join(', '));
                 
-                const cardStyle = `background:var(--bg-white);border:1px solid var(--border-light);border-radius:8px;padding:16px;transition:box-shadow .15s;`;
-                const stepperBtn = `width:24px;height:24px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;`;
+                const cardStyle = `background:var(--bg-white);border:1px solid var(--border-light);border-radius:var(--radius-lg);padding:16px;transition:box-shadow .15s;`;
+                const stepperBtn = `width:24px;height:24px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;`;
 
                 productList.innerHTML = `
-                    <div id="selected-products-summary" class="hidden" style="background:var(--info-light,#eff6ff);border:1px solid var(--info,#60a5fa);border-radius:8px;padding:12px;margin-bottom:16px;">
+                    <div id="selected-products-summary" class="hidden" style="background:var(--info-light,#eff6ff);border:1px solid var(--info,#60a5fa);border-radius:var(--radius-lg);padding:12px;margin-bottom:16px;">
                         <div class="flex-between">
                             <span class="txt-body" style="font-weight:500;color:var(--info-dark,#1e40af);">선택된 상품: <span id="selected-count">0</span>개</span>
                             <button class="btn-text" onclick="clearAllSelections()">전체 해제</button>
@@ -1108,7 +1108,7 @@ async function loadAllProducts() {
                                                data-shipping-option="${so}"
                                                onchange="toggleProductSelection('${product.id}', '${product.name}', ${product.price}, '${so}')">
                                     </div>
-                                    <div style="width:64px;height:64px;background:var(--bg-light);border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
+                                    <div style="width:64px;height:64px;background:var(--bg-light);border-radius:var(--radius-lg);display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;">
                                         ${product.image_url
                                             ? `<img src="${product.image_url}" alt="${product.name}" style="width:100%;height:100%;object-fit:cover;">`
                                             : `<i class="fas fa-seedling" style="color:var(--text-muted);font-size:20px;"></i>`}
@@ -1723,7 +1723,7 @@ function addProductToCart(productId, productName, price, stock, event) {
             // 새 상품 추가
             const newRow = document.createElement('tr');
             newRow.setAttribute('data-product-id', productId);
-            const stepBtn2 = `width:24px;height:24px;border-radius:4px;background:var(--bg-light);border:1px solid var(--border-light);font-size:11px;cursor:pointer;`;
+            const stepBtn2 = `width:24px;height:24px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);font-size:11px;cursor:pointer;`;
             const cellPad2 = `padding:6px 12px;vertical-align:middle;`;
             newRow.innerHTML = `
                 <td class="td-primary" style="${cellPad2}font-weight:500;">${productName}</td>
@@ -2524,7 +2524,7 @@ function addExtraShipping() {
     const row = document.createElement('div');
     row.id = `extra-shipping-row-${idx}`;
     row.className = 'extra-shipping-row';
-    row.style.cssText = `margin-top:8px;padding:12px;background:var(--primary-soft,#dcfce7);border:1px solid var(--primary-accent-light,#86efac);border-radius:8px;`;
+    row.style.cssText = `margin-top:8px;padding:12px;background:var(--primary-soft,#dcfce7);border:1px solid var(--primary-accent-light,#86efac);border-radius:var(--radius-lg);`;
     row.innerHTML = `
         <div class="flex-between" style="margin-bottom:8px;">
             <span class="txt-body" style="font-size:12px;font-weight:600;color:var(--primary-accent-dark,#166534);">
@@ -2617,7 +2617,7 @@ function _openPostcodeOverlay(query, onComplete) {
     ].join(';');
 
     const wrap = document.createElement('div');
-    wrap.style.cssText = 'position:relative;width:500px;height:550px;background:#fff;border-radius:8px;overflow:hidden;';
+    wrap.style.cssText = 'position:relative;width:500px;height:550px;background:#fff;border-radius:var(--radius-lg);overflow:hidden;';
 
     const closeBtn = document.createElement('button');
     closeBtn.textContent = '✕';

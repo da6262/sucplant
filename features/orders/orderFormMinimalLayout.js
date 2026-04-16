@@ -351,7 +351,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 font-size: 14px;
                 font-weight: 600;
                 border: 1px solid #CBD5E1;
-                border-radius: 4px;
+                border-radius: var(--radius-sm);
                 cursor: pointer;
                 font-family: inherit;
             }

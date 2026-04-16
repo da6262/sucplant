@@ -974,7 +974,7 @@ async function showCustomerDetailInPanel(customer) {
                 <div style="display:flex;flex-direction:column;gap:12px;">
 
                     <!-- 프로필 카드 -->
-                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:10px;padding:16px;">
+                    <div style="background:#F9FAFB;border:1px solid #E5E7EB;border-radius:var(--radius-lg);padding:16px;">
                         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:12px;">
                             <div>
                                 <div style="font-size:18px;font-weight:700;color:#111827;margin-bottom:4px;">${escapeHtml(customer.name || '-')}</div>
@@ -994,15 +994,15 @@ async function showCustomerDetailInPanel(customer) {
 
                     <!-- 핵심 지표 3개 -->
                     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;">
-                        <div style="background:white;border:1px solid #D1FAE5;border-radius:8px;padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #D1FAE5;border-radius:var(--radius-lg);padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#059669;" id="customer-total-purchase">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">총 구매액</div>
                         </div>
-                        <div style="background:white;border:1px solid #E5E7EB;border-radius:8px;padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #E5E7EB;border-radius:var(--radius-lg);padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#374151;" id="customer-order-count">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">주문 횟수</div>
                         </div>
-                        <div style="background:white;border:1px solid #FEF3C7;border-radius:8px;padding:12px;text-align:center;">
+                        <div style="background:white;border:1px solid #FEF3C7;border-radius:var(--radius-lg);padding:12px;text-align:center;">
                             <div style="font-size:16px;font-weight:700;color:#D97706;" id="customer-loyalty-score">—</div>
                             <div style="font-size:10px;color:#9CA3AF;margin-top:3px;">단골 점수</div>
                         </div>
@@ -1030,7 +1030,7 @@ async function showCustomerDetailInPanel(customer) {
                 <div style="display:flex;flex-direction:column;gap:12px;min-width:0;">
 
                     <!-- 주문 이력 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;flex:1;">
+                    <div style="border:1px solid #E5E7EB;border-radius:var(--radius-lg);overflow:hidden;flex:1;">
                         <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
                             <i class="fas fa-receipt" style="color:#9CA3AF;margin-right:6px;"></i>주문 이력
                         </div>
@@ -1040,13 +1040,13 @@ async function showCustomerDetailInPanel(customer) {
                     </div>
 
                     <!-- 상담 기록 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
+                    <div style="border:1px solid #E5E7EB;border-radius:var(--radius-lg);overflow:hidden;">
                         <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
                             <i class="fas fa-sticky-note" style="color:#9CA3AF;margin-right:6px;"></i>상담 기록
                         </div>
                         <div style="padding:12px;background:white;">
                             <textarea id="customer-detail-memo"
-                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
+                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:var(--radius-md);font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
                                 placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
                             <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}"
                                 class="btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
