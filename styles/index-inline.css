@@ -809,6 +809,36 @@ select.form-control {
 .btn-danger:hover { background: var(--danger-hover); }
 .btn-danger i, .btn-danger .fas { font-size: 11px; }
 
+.btn-info {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: var(--info); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-info:hover { background: #1D4ED8; }
+.btn-info i, .btn-info .fas { font-size: 11px; }
+
+.btn-warn {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: var(--warn); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-warn:hover { background: #B45309; }
+.btn-warn i, .btn-warn .fas { font-size: 11px; }
+
+.btn-neutral {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 6px 14px; border-radius: 6px;
+    font-size: 12px; font-weight: 500; white-space: nowrap;
+    background: var(--text-secondary); color: #fff; border: none; cursor: pointer;
+    transition: background 0.15s;
+}
+.btn-neutral:hover { background: var(--text-body); }
+.btn-neutral i, .btn-neutral .fas { font-size: 11px; }
+
 /* =====================
    아이콘 버튼 — 테이블 행 액션 (수정·삭제·복제)   [Spec ⑤: 30×30px, 8px gap]
    ===================== */
