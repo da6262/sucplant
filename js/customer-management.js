@@ -203,11 +203,11 @@ async function saveCustomer() {
                     window.closeCustomerModal();
                 }
 
-                // 주문 모달 다시 표시
+                // 주문 모달 다시 표시 — inline display 금지 (closeOrderModal X 버튼 무효화 방지)
                 const orderModal = document.getElementById('order-modal');
                 if (orderModal) {
-                    orderModal.style.display = 'flex';
                     orderModal.classList.remove('hidden');
+                    orderModal.style.display = '';
                 }
 
                 // orderForm 의 selectCustomerFromSearch 직접 호출로 customer_id·grade·UI 완전 동기화
@@ -1603,11 +1603,13 @@ window.handleAddressInput = async function(value) {
     // 중앙 고정 크기 모달 생성 (Daum 기본 팝업보다 컴팩트)
     const overlay = document.createElement('div');
     overlay.id = 'daum-address-modal';
-    // 배경 불투명도 없음 — 뒤의 고객 등록 모달이 그대로 보이게
-    overlay.style.cssText = 'position:fixed;inset:0;background:transparent;z-index:1000000;display:flex;align-items:center;justify-content:center;pointer-events:none;';
+    // 고객 모달(modal-sm 420px 너비, 화면 중앙) 우측 옆에 나란히 배치
+    // 배경 없음 — 뒤의 고객 등록 모달이 그대로 보이게
+    // 화면 중앙에서 오른쪽으로 240px(고객모달 반너비 210px + 간격 30px) 떨어진 위치
+    overlay.style.cssText = 'position:fixed;inset:0;background:transparent;z-index:1000000;pointer-events:none;';
     overlay.innerHTML = `
-        <div style="background:#fff;border-radius:8px;width:420px;height:460px;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.35);overflow:hidden;pointer-events:auto;border:1px solid #CBD5E1;">
-            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;cursor:move;">
+        <div style="position:fixed;left:calc(50% + 240px);top:50%;transform:translateY(-50%);background:#fff;border-radius:8px;width:420px;height:460px;max-width:calc(100vw - 40px);display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,0.35);overflow:hidden;pointer-events:auto;border:1px solid #CBD5E1;">
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;border-bottom:1px solid #E2E8F0;background:#F8FAFC;font-size:12px;">
                 <strong style="color:#1E293B;">주소 검색</strong>
                 <button type="button" id="daum-address-close" aria-label="닫기"
                         style="border:none;background:transparent;font-size:16px;cursor:pointer;color:#64748B;padding:0 4px;line-height:1;">&times;</button>

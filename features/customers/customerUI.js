@@ -144,10 +144,17 @@ async function handleCustomerSave(event) {
 
         // 주문 폼으로 돌아가 고객 선택 상태 완전 동기화
         if (fromOrderFlow && fullCustomer) {
+            // Daum 주소 검색 모달이 DOM 에 남아 있으면 제거 (주문 모달 레이아웃 간섭 방지)
+            document.getElementById('daum-address-modal')?.remove();
+            // 이전 모달이 덮어씌운 body overflow 복원 (스크롤바 폭 변동으로 인한 중앙 정렬 틀어짐 방지)
+            document.body.style.overflow = '';
+
             const orderModal = document.getElementById('order-modal');
             if (orderModal) {
-                orderModal.style.display = 'flex';
+                // inline display 로 .hidden 을 덮어쓰지 말고 hidden 클래스만 제거
+                // (closeOrderModal 이 나중에 X 클릭으로 호출될 때 inline style 이 잔존해 안 닫히는 버그 방지)
                 orderModal.classList.remove('hidden');
+                orderModal.style.display = '';
             }
             setTimeout(() => {
                 if (typeof window.selectCustomerFromSearch === 'function') {
@@ -2346,14 +2353,16 @@ export function closeCustomerModal() {
             modalContentEl.classList.add('modal-sm');
         }
 
-        // 주문 폼에서 온 경우 주문 모달 다시 표시
+        // 주문 폼에서 온 경우 주문 모달 다시 표시 (고객 모달 취소 경로 전용)
+        // ※ 저장 성공 경로는 handleCustomerSave 가 처리하므로 이 블록은 '취소 닫기' 에만 의미 있음
+        //   inline display 금지 — .hidden 클래스만 토글해 closeOrderModal X 버튼과 정합
         if (window.tempCustomerName) {
             const orderModal = document.getElementById('order-modal');
             if (orderModal) {
-                orderModal.style.display = 'flex';
+                orderModal.classList.remove('hidden');
+                orderModal.style.display = '';
                 console.log('📦 주문 모달 다시 표시 (고객 모달 취소)');
             }
-            // 임시 저장된 고객명 초기화
             window.tempCustomerName = null;
         }
         

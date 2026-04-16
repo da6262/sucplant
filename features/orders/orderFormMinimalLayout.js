@@ -175,11 +175,17 @@ window.generateOrderFormHTMLMinimal = function () {
                     </tfoot>
                 </table>
 
-                <!-- 저장 버튼 -->
-                <button type="submit" form="order-form" id="order-submit-btn" disabled
-                        class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">
-                    ✓ 주문 저장
-                </button>
+                <!-- 액션 버튼: 취소(좌) · 저장(우) -->
+                <div class="xf-actions">
+                    <button type="button" id="order-cancel-btn" onclick="window.closeOrderModal()"
+                            class="xf-cancel-btn">
+                        취소
+                    </button>
+                    <button type="submit" form="order-form" id="order-submit-btn" disabled
+                            class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">
+                        ✓ 주문 저장
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -315,10 +321,15 @@ window.generateOrderFormHTMLMinimal = function () {
                 background: #e8f5e9;
                 border-color: #4caf50;
             }
+            /* ── 액션 그룹(취소·저장) ── */
+            .xf-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 6px;
+            }
             /* ── 저장 버튼 ── */
             .xf-save-btn {
-                width: 100%;
-                margin-top: 6px;
+                flex: 1;
                 padding: 9px 0;
                 background: var(--primary);
                 color: #fff;
@@ -331,6 +342,21 @@ window.generateOrderFormHTMLMinimal = function () {
             }
             .xf-save-btn:hover:not(:disabled) { background: #15803d; }
             .xf-save-btn:active:not(:disabled) { background: #166534; }
+            /* ── 취소 버튼 ── */
+            .xf-cancel-btn {
+                width: 96px;
+                padding: 9px 0;
+                background: #fff;
+                color: #64748B;
+                font-size: 14px;
+                font-weight: 600;
+                border: 1px solid #CBD5E1;
+                border-radius: 4px;
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .xf-cancel-btn:hover { background: #F8FAFC; color: #1E293B; border-color: #94A3B8; }
+            .xf-cancel-btn:active { background: #F1F5F9; }
             /* ── 수량 입력 ── */
             #order-form-minimal-wrap .quantity-input {
                 width: 40px;

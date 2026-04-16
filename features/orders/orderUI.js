@@ -247,6 +247,8 @@ export function closeOrderModal() {
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
+            // 인라인 display 스타일(재표시 경로에서 설정된 'flex')이 Tailwind .hidden 을 이기는 문제 해결
+            modal.style.display = '';
         }
 
         // ESC 리스너 제거
