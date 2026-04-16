@@ -68,6 +68,12 @@
             onchange="window.orderDataManager?.setChannelFilter(this.value)">
         <option value="">전체</option>
     </select>
+    <span class="text-gray-200 text-xs shrink-0">|</span>
+    <span class="text-[11px] font-medium text-gray-500 shrink-0">검색</span>
+    <input type="text" id="order-search-input" class="input-ui"
+           placeholder="고객명 또는 전화번호 뒷 4자리"
+           style="font-size:11px;padding:2px 8px;min-width:220px;"
+           oninput="window.orderDataManager?.setSearchTerm(this.value)">
 </div>
 
 <!-- 송장번호 일괄입력 패널 -->
@@ -110,7 +116,7 @@
         <button type="button" onclick="bulkSetStatus('상품준비')" class="btn-secondary"><i class="fas fa-box"></i>상품준비</button>
         <button type="button" onclick="bulkSetStatus('배송준비')" class="btn-secondary"><i class="fas fa-shipping-fast"></i>배송준비</button>
         <button type="button" onclick="bulkSetStatus('배송완료')" class="btn-primary"><i class="fas fa-check-circle"></i>배송완료</button>
-        <button type="button" onclick="showBulkDeleteModal()"    class="btn-secondary" style="color:#dc2626;border-color:#fca5a5;"><i class="fas fa-trash"></i>일괄 삭제</button>
+        <button type="button" onclick="showBulkDeleteModal()"    class="btn-secondary" style="color:var(--danger);border-color:#FCA5A5;"><i class="fas fa-trash"></i>일괄 삭제</button>
         <button type="button" onclick="clearSelectedOrders()"    class="btn-secondary"><i class="fas fa-times"></i>선택 해제</button>
     </div>
 </div>

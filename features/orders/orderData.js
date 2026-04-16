@@ -62,6 +62,9 @@ class OrderDataManager {
 
         // 채널 필터
         this._channelFilter = '';  // '' = 전체
+
+        // 검색어 (고객명 or 전화번호 뒷 4자리)
+        this._searchTerm = '';
         
         // Master-Detail 패턴을 위한 선택된 고객 정보
         this.selectedCustomerId = null;
@@ -460,6 +463,21 @@ class OrderDataManager {
                 filtered = filtered.filter(r =>
                     (r.order_channel || '') === this._channelFilter
                 );
+            }
+
+            // 검색어 필터 (고객명 또는 전화번호 뒷 4자리, 숫자만 남겨 비교)
+            if (this._searchTerm) {
+                const term = this._searchTerm.toLowerCase();
+                const digits = term.replace(/\D/g, '');
+                filtered = filtered.filter(r => {
+                    const name = String(r.customer_name || '').toLowerCase();
+                    if (name.includes(term)) return true;
+                    if (digits) {
+                        const last4 = String(r.customer_phone_last4 || '');
+                        if (last4.includes(digits)) return true;
+                    }
+                    return false;
+                });
             }
 
             return filtered;
@@ -1681,6 +1699,16 @@ class OrderDataManager {
         this._channelFilter = channel || '';
         const status = this.getCurrentFilterStatus();
         this.renderOrdersTable(status);
+    }
+
+    // 검색어 설정 (디바운스 적용) — 고객명 또는 전화번호 뒷 4자리
+    setSearchTerm(term) {
+        this._searchTerm = (term || '').trim();
+        clearTimeout(this._searchDebounce);
+        this._searchDebounce = setTimeout(() => {
+            const status = this.getCurrentFilterStatus();
+            this.renderOrdersTable(status);
+        }, 200);
     }
 
     // 채널 필터 셀렉트 초기화 (farm_channels DB에서 옵션 로드)
