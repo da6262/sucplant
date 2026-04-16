@@ -858,23 +858,20 @@ class OrderDataManager {
                         ${isAnySelected ? `
                             <div class="flex items-center space-x-2">
                                 <div class="relative">
-                                    <button onclick="showBulkStatusChangeModal()" 
-                                            class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2">
+                                    <button onclick="showBulkStatusChangeModal()" class="btn-info">
                                         <i class="fas fa-edit"></i>
                                         <span>상태 변경</span>
                                     </button>
                                 </div>
-                                
+
                                 <div class="relative">
-                                    <button onclick="showBulkDeleteModal()" 
-                                            class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center space-x-2">
+                                    <button onclick="showBulkDeleteModal()" class="btn-danger">
                                         <i class="fas fa-trash"></i>
                                         <span>일괄 삭제</span>
                                     </button>
                                 </div>
-                                
-                                <button onclick="clearSelectedOrders()" 
-                                        class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center space-x-2">
+
+                                <button onclick="clearSelectedOrders()" class="btn-neutral">
                                     <i class="fas fa-times"></i>
                                     <span>선택 해제</span>
                                 </button>
@@ -1594,20 +1591,17 @@ class OrderDataManager {
                         </div>
                         
                         <div class="flex items-center space-x-2">
-                            <button onclick="showBulkStatusChangeModal()" 
-                                    class="px-4 py-2 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center space-x-2 shadow-md">
+                            <button onclick="showBulkStatusChangeModal()" class="btn-info shadow-md">
                                 <i class="fas fa-edit"></i>
                                 <span>상태 변경</span>
                             </button>
-                            
-                            <button onclick="showBulkDeleteModal()" 
-                                    class="px-4 py-2 bg-red-600 text-white text-sm font-medium rounded-lg hover:bg-red-700 transition-colors duration-200 flex items-center space-x-2 shadow-md">
+
+                            <button onclick="showBulkDeleteModal()" class="btn-danger shadow-md">
                                 <i class="fas fa-trash"></i>
                                 <span>일괄 삭제</span>
                             </button>
-                            
-                            <button onclick="clearSelectedOrders()" 
-                                    class="px-4 py-2 bg-gray-500 text-white text-sm font-medium rounded-lg hover:bg-gray-600 transition-colors duration-200 flex items-center space-x-2 shadow-md">
+
+                            <button onclick="clearSelectedOrders()" class="btn-neutral shadow-md">
                                 <i class="fas fa-times"></i>
                                 <span>선택 해제</span>
                             </button>

@@ -43,7 +43,7 @@ export class ShippingManager {
                                 <p class="text-body mt-2">통합 배송 관리 및 최적화</p>
                             </div>
                             <div class="flex space-x-3">
-                                <button id="refresh-shipping-data" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                                <button id="refresh-shipping-data" class="btn-info">
                                     <i class="fas fa-sync-alt mr-2"></i>새로고침
                                 </button>
                                 <button id="export-shipping-data" class="btn-primary">
@@ -273,7 +273,7 @@ export class ShippingManager {
                             </select>
                         </div>
                         <div class="flex items-end">
-                            <button id="track-shipment-btn" class="w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                            <button id="track-shipment-btn" class="btn-info w-full">
                                 <i class="fas fa-search mr-2"></i>배송 추적
                             </button>
                         </div>
@@ -294,7 +294,7 @@ export class ShippingManager {
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="flex justify-between items-center mb-4">
                         <h3 class="text-lg font-semibold text-heading">현재 배송 중인 주문</h3>
-                        <button id="refresh-tracking" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg">
+                        <button id="refresh-tracking" class="btn-neutral">
                             <i class="fas fa-sync-alt mr-2"></i>새로고침
                         </button>
                     </div>
@@ -445,7 +445,7 @@ export class ShippingManager {
                     <div class="flex items-center space-x-2">
                         <input type="text" id="tracking-link" value="${this.generateTrackingLink(trackingData.trackingNumber, trackingData.carrier)}" 
                                class="flex-1 px-3 py-2 border border-gray-300 rounded-lg text-sm" readonly>
-                        <button onclick="copyTrackingLink()" class="bg-yellow-600 hover:bg-yellow-700 text-white px-3 py-2 rounded-lg text-sm">
+                        <button onclick="copyTrackingLink()" class="btn-warn">
                             <i class="fas fa-copy mr-1"></i>복사
                         </button>
                     </div>
@@ -539,7 +539,7 @@ export class ShippingManager {
                         <button id="generate-labels" class="btn-primary">
                             <i class="fas fa-plus mr-2"></i>라벨 생성
                         </button>
-                        <button id="print-labels" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <button id="print-labels" class="btn-info">
                             <i class="fas fa-print mr-2"></i>인쇄
                         </button>
                     </div>
@@ -612,7 +612,7 @@ export class ShippingManager {
                 <div class="flex justify-between items-center">
                     <h3 class="text-lg font-semibold">SMS 알림 관리</h3>
                     <div class="flex space-x-2">
-                        <button id="test-notification" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg">
+                        <button id="test-notification" class="btn-info">
                             <i class="fas fa-bell mr-2"></i>테스트 알림
                         </button>
                         <button id="send-bulk-sms" class="btn-primary">

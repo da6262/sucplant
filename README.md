@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.32-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.33-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -189,6 +189,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.33 | refactor(Phase 1C 본격): 진한 Tailwind 버튼 조합 → 시맨틱 단일 클래스 5파일 16건 교체 — ①`features/orders/orderData.js`(6건): 일괄 작업 바 top + 활성 두 세트 각각 상태변경(`btn-info`)·일괄삭제(`btn-danger`)·선택해제(`btn-neutral`). ②`features/orders/orderSearch.js`(1건): 상품 검색 드롭다운 '완료' 버튼 `text-xs bg-blue-600 ...` → `btn-info btn-xs`(xs 사이즈 조합). ③`features/settings/settingsUI.js`(1건): 고객등급 편집 모달 '저장' → `btn-info`. ④`features/shipping/shippingManager.js`(6건): 헤더 새로고침·추적 조회·추적 목록 새로고침·추적링크 복사·라벨 인쇄·테스트 알림 → `btn-info/info w-full/neutral/warn/info/info`. ⑤`components/modals/picking-list-modal.html`(2건): 상품별 미리보기 → `btn-info`, 닫기 → `btn-neutral`. 크기 변화: 기존 `px-4 py-2 text-sm`(16/8/14px) → `.btn-*`(14/6/12px, 약간 축소) — 앱 전체 `.btn-primary` 스케일과 일관성 확보. v3.3.31 검증 통과 후 확대 적용 |
 | v3.3.32 | fix: 환경설정 "주문상태 > 상태 추가" 버튼 비활성 + "고객등급 > 등급 추가 / 적용기간 저장" 버튼 비활성 수복 — **원인**: 해당 리스너들이 `features/settings/settingsUI.js:572` 의 `initSettingsEventListeners()` 안에 정의되어 있지만 이 함수는 `window.initSettingsEventListeners` 로 export 만 되어 있고 **어디서도 호출되지 않음**(`components/settings/settings.js` 의 `setupSettingsButtonListeners()` 는 `save-all-settings-btn`·`reset-settings-btn`·위임 리스너(save/cancel general/shipping) 만 바인딩). **수정**: 기존 동작하는 버튼들(`add-channel-btn`·`recalculate-all-grades-btn`) 과 동일 패턴으로 각 탭 load 함수 내부에서 `dataset.listenerAdded` guard 후 바인딩 — ①`loadOrderStatuses()` 에 `add-order-status-btn` 리스너(상태명 prompt → `settingsDataManager.addOrderStatus()` → 재렌더). ②`loadCustomerGrades()` 에 `add-customer-grade-btn` 리스너(등급명 prompt → `addCustomerGrade()` → 재렌더) 및 `save-grade-period-btn` 리스너(grade-period-select → `farm_settings.gradePeriod` 직접 upsert). 레거시 `initSettingsEventListeners` 제거는 후속(중복 바인딩 방지 리팩 필요) |
 | v3.3.31 | refactor(Phase 1C 검증): `features/orders/orderSMS.js` SMS 발송 모달 버튼 2종을 시맨틱 단일 클래스로 교체 — ①취소 버튼: `px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50` → `btn-secondary`. ②발송 버튼: `px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700` → `btn-info`. 검증 포인트: 기존 Tailwind 조합의 padding(`px-4 py-2 = 16/8px`)이 `.btn-*`(14/6px)보다 커서 버튼이 약간 작아짐 — 의도된 통일(앱 전체 버튼 스케일 일관성). 시각 회귀 **필요시 브라우저 확인 → SMS 템플릿 모달 열기 → 하단 버튼 크기·색·hover 체크**. 사용자 요청: 브라우저에서 검증 후 정책(브랜드 일관 축소 채택 vs 원본 크기 유지) 결정 후 본격 bulk 교체 여부 판단 |
 | v3.3.30 | feat(Phase 1C 시작): 진한 버튼 공용 시맨틱 클래스 3종 신설 — `.btn-info`·`.btn-warn`·`.btn-neutral` 추가(`styles/index-inline.css`). 기존 `.btn-primary/.btn-secondary/.btn-danger` 와 동일 사양(inline-flex·6px 14px padding·12px font·6px radius·hover 전환). 색상: `.btn-info`(bg `var(--info)` → hover `#1D4ED8`), `.btn-warn`(bg `var(--warn)` → hover `#B45309`), `.btn-neutral`(bg `var(--text-secondary)` → hover `var(--text-body)`). 기존 소스의 `bg-blue-600 text-white hover:bg-blue-700 px-4 py-2 rounded-lg` 같은 긴 Tailwind 조합을 단일 시맨틱 클래스로 교체할 수 있는 기반 완성. 본격 소스 교체는 후속(각 사용처마다 크기·padding 이 달라 시각 회귀 방지 위해 개별 검증 필요) |

@@ -127,7 +127,7 @@ function searchProducts(query) {
                         <div class="p-2 bg-blue-50 border-b border-blue-200">
                             <div class="flex justify-between items-center">
                                 <span class="text-xs text-info font-medium">여러 상품을 선택할 수 있습니다</span>
-                                <button onclick="closeProductSearch()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
+                                <button onclick="closeProductSearch()" class="btn-info btn-xs">
                                     완료
                                 </button>
                             </div>
