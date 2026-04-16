@@ -153,7 +153,14 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="xf-ft-label">배송비</td>
+                            <td colspan="3" class="xf-ft-label">
+                                배송비
+                                <label class="inline-flex items-center gap-1 ml-2 text-xs text-secondary font-normal cursor-pointer">
+                                    <input type="checkbox" id="remote-area-shipping-checkbox"
+                                           onchange="window._shippingFeeUserEdited=false; refreshOrderTotal()">
+                                    도서산간
+                                </label>
+                            </td>
                             <td class="xf-ft-val">
                                 <input type="number" id="shipping-fee-input" value="0" min="0" step="1" class="xf-num"
                                        oninput="window._shippingFeeUserEdited=true; if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()">원

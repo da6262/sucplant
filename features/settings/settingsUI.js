@@ -251,9 +251,11 @@ export function loadShippingSettings() {
         
         const defaultShippingFeeInput = document.getElementById('default-shipping-fee');
         const freeShippingThresholdInput = document.getElementById('free-shipping-threshold');
-        
+        const remoteAreaShippingFeeInput = document.getElementById('remote-area-shipping-fee');
+
         if (defaultShippingFeeInput) defaultShippingFeeInput.value = settings.shipping.defaultShippingFee || 3000;
         if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
+        if (remoteAreaShippingFeeInput) remoteAreaShippingFeeInput.value = settings.shipping.remoteAreaShippingFee ?? 5000;
 
         // 배송 방법 목록
         const methodsInput = document.getElementById('shipping-methods-input');
@@ -854,12 +856,12 @@ function initSettingsEventListeners() {
                 console.log('🔄 배송 설정 저장');
                 const defaultShippingFee = parseInt(document.getElementById('default-shipping-fee')?.value) || 3000;
                 const freeShippingThreshold = parseInt(document.getElementById('free-shipping-threshold')?.value) || 50000;
-                const expressShippingFee = parseInt(document.getElementById('express-shipping-fee')?.value) || 5000;
-                
+                const remoteAreaShippingFee = parseInt(document.getElementById('remote-area-shipping-fee')?.value) || 5000;
+
                 try {
                     await window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
                     await window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
-                    await window.settingsDataManager.updateSetting('shipping', 'expressShippingFee', expressShippingFee);
+                    await window.settingsDataManager.updateSetting('shipping', 'remoteAreaShippingFee', remoteAreaShippingFee);
                     
                     alert('✅ 배송 설정이 Supabase에 저장되었습니다.');
                 } catch (error) {

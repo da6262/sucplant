@@ -269,9 +269,13 @@ function refreshOrderTotal() {
     });
     const freeThreshold = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.freeShippingThreshold) || 50000;
     const defaultFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.defaultShippingFee) || 3000;
+    const remoteFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.remoteAreaShippingFee) || 0;
+    const remoteChecked = document.getElementById('remote-area-shipping-checkbox')?.checked === true;
+    const remoteSurcharge = remoteChecked ? Math.max(0, toIntegerWon(remoteFee)) : 0;
     let shippingFee;
     if (shippingInput && !window._shippingFeeUserEdited) {
-        shippingFee = itemsSubtotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+        const baseFee = itemsSubtotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+        shippingFee = baseFee + remoteSurcharge;
         shippingInput.value = shippingFee;
     } else {
         shippingFee = Math.max(0, toIntegerWon(shippingInput?.value));
@@ -330,7 +334,7 @@ async function initOrderForm() {
         // 대시보드형 레이아웃: 퀵상품 로드 + 채널 요약 동기화 + 모달 전체 스크롤 제거 + 하단 버튼 숨김
         if (document.getElementById('quick-product-buttons')) {
             await loadQuickProductsForMinimal();
-            window.SHIPPING_SETTINGS = window.SHIPPING_SETTINGS || { defaultShippingFee: 3000, freeShippingThreshold: 50000 };
+            window.SHIPPING_SETTINGS = window.SHIPPING_SETTINGS || { defaultShippingFee: 3000, freeShippingThreshold: 50000, remoteAreaShippingFee: 5000 };
             const modalFooterSubmit = document.querySelector('#order-modal .border-t button[form="order-form"]');
             if (modalFooterSubmit) modalFooterSubmit.style.display = 'none';
             const scrollArea = document.querySelector('#order-modal .modal-content-scroll');
@@ -619,7 +623,8 @@ async function initOrderChannelFromSettings() {
 // 전역 배송비 설정 변수
 let SHIPPING_SETTINGS = {
     defaultShippingFee: 3000,
-    freeShippingThreshold: 50000
+    freeShippingThreshold: 50000,
+    remoteAreaShippingFee: 5000
 };
 
 /** 환경설정 shippingMethods 배열로 #shipping-method 드롭다운 동적 생성 */
@@ -690,6 +695,7 @@ async function initShippingFeeFromSettings() {
             if (settings && settings.shipping) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee || 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold || 50000;
+                SHIPPING_SETTINGS.remoteAreaShippingFee = settings.shipping.remoteAreaShippingFee ?? 5000;
                 window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
                 console.log('✅ 환경설정에서 배송비 설정 로드 완료:', SHIPPING_SETTINGS);
             }
@@ -727,6 +733,7 @@ window.applyShippingFeeSuggestionForNewOrder = async function () {
             if (settings && settings.shipping != null) {
                 SHIPPING_SETTINGS.defaultShippingFee = settings.shipping.defaultShippingFee ?? 3000;
                 SHIPPING_SETTINGS.freeShippingThreshold = settings.shipping.freeShippingThreshold ?? 50000;
+                SHIPPING_SETTINGS.remoteAreaShippingFee = settings.shipping.remoteAreaShippingFee ?? 5000;
                 window.SHIPPING_SETTINGS = SHIPPING_SETTINGS;
             }
         }
@@ -778,13 +785,17 @@ function updateOrderTotalDisplay() {
             totalItems += quantity;
         });
         
-        // 배송비: 사용자가 수정 안 했으면 환경설정 제안(상품합계>=무료배송기준 → 0원, 아니면 기본배송비)
+        // 배송비: 사용자가 수정 안 했으면 환경설정 제안(상품합계>=무료배송기준 → 0원, 아니면 기본배송비) + 도서산간 체크 시 추가금
         const shippingFeeInput = document.getElementById('shipping-fee-input');
         const freeThreshold = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.freeShippingThreshold) || 50000;
         const defaultFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.defaultShippingFee) || 3000;
+        const remoteFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.remoteAreaShippingFee) || 0;
+        const remoteChecked = document.getElementById('remote-area-shipping-checkbox')?.checked === true;
+        const remoteSurcharge = remoteChecked ? Math.max(0, toIntegerWon(remoteFee)) : 0;
         let shippingFee;
         if (shippingFeeInput && !window._shippingFeeUserEdited) {
-            const suggested = productTotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+            const baseFee = productTotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+            const suggested = baseFee + remoteSurcharge;
             shippingFeeInput.value = suggested;
             shippingFee = suggested;
         } else {
@@ -2455,13 +2466,17 @@ window.updateCartTotal = async function() {
             if (lineTotalCell) lineTotalCell.textContent = subtotal.toLocaleString() + '원';
         });
 
-        // 배송비: 입력란 값만 사용. 사용자가 수정 안 했을 때만 환경설정 제안으로 한 번 설정(덮어쓰기 금지 유지)
+        // 배송비: 입력란 값만 사용. 사용자가 수정 안 했을 때만 환경설정 제안 + 도서산간 체크 시 추가금
         const shippingFeeInput = document.getElementById('shipping-fee-input');
         const freeThreshold = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.freeShippingThreshold) || 50000;
         const defaultFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.defaultShippingFee) || 3000;
+        const remoteFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.remoteAreaShippingFee) || 0;
+        const remoteChecked = document.getElementById('remote-area-shipping-checkbox')?.checked === true;
+        const remoteSurcharge = remoteChecked ? Math.max(0, toIntegerWon(remoteFee)) : 0;
         let shippingFee;
         if (shippingFeeInput && !window._shippingFeeUserEdited) {
-            const suggested = itemsSubtotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+            const baseFee = itemsSubtotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+            const suggested = baseFee + remoteSurcharge;
             shippingFeeInput.value = suggested;
             shippingFee = suggested;
         } else {

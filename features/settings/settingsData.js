@@ -37,6 +37,7 @@ class SettingsDataManager {
             shipping: {
                 defaultShippingFee: 3000,
                 freeShippingThreshold: 50000,
+                remoteAreaShippingFee: 5000,
                 shippingMethods: ['택배', '직접배송', '픽업']
             },
             

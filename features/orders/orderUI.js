@@ -520,6 +520,10 @@ export function clearOrderForm() {
                 }
             }
         });
+
+        // 도서산간 체크박스 초기화
+        const remoteAreaCheckbox = document.getElementById('remote-area-shipping-checkbox');
+        if (remoteAreaCheckbox) remoteAreaCheckbox.checked = false;
         
         // 장바구니 초기화
         const cartItemsBody = document.getElementById('cart-items-body');

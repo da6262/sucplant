@@ -237,7 +237,7 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping = window.settingsDataManager.settings.shipping || {};
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
-        window.settingsDataManager.settings.shipping.expressShippingFee = get('express-shipping-fee') ? num('express-shipping-fee') : (window.settingsDataManager.settings.shipping.expressShippingFee ?? 5000);
+        window.settingsDataManager.settings.shipping.remoteAreaShippingFee = get('remote-area-shipping-fee') ? num('remote-area-shipping-fee') : (window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000);
         // 배송 방법 목록
         const methodsInput = get('shipping-methods-input');
         if (methodsInput && methodsInput.value.trim()) {
@@ -248,6 +248,7 @@ async function saveShippingSettings() {
         if (!window.SHIPPING_SETTINGS) window.SHIPPING_SETTINGS = {};
         window.SHIPPING_SETTINGS.defaultShippingFee = window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000;
         window.SHIPPING_SETTINGS.freeShippingThreshold = window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000;
+        window.SHIPPING_SETTINGS.remoteAreaShippingFee = window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000;
         console.log('✅ 배송 설정 저장 완료:', window.SHIPPING_SETTINGS);
         alert('배송 설정이 저장되었습니다.');
     } catch (err) {
@@ -269,7 +270,7 @@ function syncFormToSettings() {
     if (get('farm-address')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.address = val('farm-address'); }
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
-    if (get('express-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.expressShippingFee = num('express-shipping-fee'); }
+    if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
     const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
     if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {
