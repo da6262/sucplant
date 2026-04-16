@@ -114,14 +114,14 @@ class CategoryDataManager {
             console.log('카테고리 데이터 로드 시작...');
             
             // Supabase에서만 로드
-            if (!window.supabase) {
+            if (!window.supabaseClient) {
                 console.warn('⚠️ Supabase 클라이언트가 없습니다. 로컬 모드로 전환합니다.');
                 // 로컬 데이터 로드 시도
                 return this.loadFromLocalStorage();
             }
             
             console.log('☁️ Supabase에서 카테고리 데이터 로드 중...');
-            const { data, error } = await window.supabase
+            const { data, error } = await window.supabaseClient
                 .from('farm_categories')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -192,7 +192,7 @@ class CategoryDataManager {
             
             // 새 데이터만 삽입 (기존 데이터는 유지)
             if (this.categories.length > 0) {
-                const { data, error } = await window.supabase
+                const { data, error } = await window.supabaseClient
                     .from('farm_categories')
                     .insert(this.categories)
                     .select();
@@ -248,13 +248,13 @@ class CategoryDataManager {
             };
             
             // Supabase에 직접 저장 (일관된 변수명 사용)
-            if (!window.supabase) {
+            if (!window.supabaseClient) {
                 throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
             }
             
             console.log('Supabase에 카테고리 저장 시도:', newCategory);
             
-            const { data, error } = await window.supabase
+            const { data, error } = await window.supabaseClient
                 .from('farm_categories')
                 .insert([newCategory])
                 .select();
@@ -300,11 +300,11 @@ class CategoryDataManager {
             }
             
             // Supabase에서 직접 수정 (일관된 변수명 사용)
-            if (!window.supabase) {
+            if (!window.supabaseClient) {
                 throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
             }
             
-            const { data, error } = await window.supabase
+            const { data, error } = await window.supabaseClient
                 .from('farm_categories')
                 .update(updateData)
                 .eq('id', categoryId)
@@ -338,11 +338,11 @@ class CategoryDataManager {
             console.log('카테고리 삭제:', categoryId);
             
             // Supabase에서 직접 삭제 (일관된 변수명 사용)
-            if (!window.supabase) {
+            if (!window.supabaseClient) {
                 throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
             }
             
-            const { error } = await window.supabase
+            const { error } = await window.supabaseClient
                 .from('farm_categories')
                 .delete()
                 .eq('id', categoryId);

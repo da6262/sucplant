@@ -81,9 +81,21 @@ export async function loadCategoryModal() {
    카테고리 목록 로드 & 렌더링
    ───────────────────────────────────────────── */
 export async function loadCategoriesList() {
+    // main.js 초기화가 outer catch 로 빠져 categoryDataManager 가 미설정된 경우를 위한 on-demand 초기화
     if (!window.categoryDataManager) {
-        console.error('❌ categoryDataManager 없음');
-        return;
+        console.warn('⚠️ categoryDataManager 없음 — 즉시 초기화 시도');
+        if (window.CategoryMgmt?.init) {
+            try {
+                await window.CategoryMgmt.init();
+            } catch (err) {
+                console.error('❌ CategoryDataManager 즉시 초기화 실패:', err);
+            }
+        }
+        if (!window.categoryDataManager) {
+            console.error('❌ categoryDataManager 여전히 없음');
+            renderCategoriesList([]);
+            return;
+        }
     }
     await window.categoryDataManager.loadCategories();
     renderCategoriesList(window.categoryDataManager.getAllCategories());
