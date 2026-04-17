@@ -32,18 +32,20 @@ const PRODUCT_COLUMNS = [
         key: 'name',
         label: '상품명',
         thClass: 'min-w-[200px]',
+        editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<td class="td-primary td-link"><span class="product-name-link">${name || dash}</span></td>`;
+            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}"><span class="product-name-link">${name || dash}</span></td>`;
         }
     },
     {
         key: 'category',
         label: '카테고리',
         thClass: 'w-24',
+        editable: true,
         render: (p, dash) => {
             const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
-            return `<td>${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
+            return `<td data-field="category" data-product-id="${p.id}">${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
         }
     },
     {
@@ -59,18 +61,20 @@ const PRODUCT_COLUMNS = [
         key: 'price',
         label: '판매가',
         thClass: 'w-24',
+        editable: true,
         render: (p, dash) => {
             const price = Number(p.price) || 0;
-            return `<td class="td-amount text-right text-numeric">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
+            return `<td class="td-amount text-right text-numeric" data-field="price" data-product-id="${p.id}">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
         }
     },
     {
         key: 'stock',
         label: '재고',
         thClass: 'w-20',
+        editable: true,
         render: (p, dash) => {
             const stock = Number(p.stock) || 0;
-            return `<td class="td-num text-right">${stock > 0 ? stock + '개' : dash}</td>`;
+            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}">${stock > 0 ? stock + '개' : dash}</td>`;
         }
     },
     {
@@ -1407,16 +1411,25 @@ class ProductManagementComponent {
     }
 
     /** 카운트 및 버튼 상태 갱신 */
+    /** 카테고리 옵션 HTML 생성 */
+    _getCategoryOptions() {
+        const fromDB = (window.categoryDataManager?.getAllCategories() || []).map(c => c.name);
+        const fromProducts = (this.products || []).map(p => p.category).filter(Boolean);
+        const cats = [...new Set([...fromDB, ...fromProducts])].sort();
+        return '<option value="">선택</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
     /** 표 입력 행 추가 */
     _addBulkRow() {
         const tbody = document.getElementById('bulk-input-tbody');
         if (!tbody) return;
         const idx = tbody.children.length + 1;
+        const catOpts = this._getCategoryOptions();
         const tr = document.createElement('tr');
         tr.innerHTML = `
             <td class="text-center text-muted">${idx}</td>
             <td><input type="text" class="bulk-name form-control" placeholder="상품명" style="font-size:11px;padding:2px 6px;" oninput="window._bulkInputChanged?.()"></td>
-            <td><input type="text" class="bulk-category form-control" placeholder="카테고리" style="font-size:11px;padding:2px 6px;"></td>
+            <td><select class="bulk-category form-control" style="font-size:11px;padding:2px 4px;">${catOpts}</select></td>
             <td><input type="number" class="bulk-price form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
             <td><input type="number" class="bulk-cost form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
             <td><input type="number" class="bulk-stock form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
@@ -1424,7 +1437,6 @@ class ProductManagementComponent {
             <td class="text-center"><button onclick="this.closest('tr').remove();window._bulkInputChanged?.()" class="text-muted hover:text-danger" style="font-size:11px;"><i class="fas fa-times"></i></button></td>
         `;
         tbody.appendChild(tr);
-        // 마지막 행의 상품명에 포커스
         tr.querySelector('.bulk-name')?.focus();
     }
 
