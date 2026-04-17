@@ -525,6 +525,7 @@ function generatePackagingOnlyHTML(pickingData) {
             <td>${rowIndex}</td>
             <td class="left">${c.name}</td>
             <td>${c.phone || ''}</td>
+            <td class="left" style="font-size:10px;max-width:150px;word-break:break-all">${c.address || ''}</td>
             <td>${order.order_number || ''}</td>
             <td class="left">${name}</td>
             <td>${size}</td>
@@ -545,7 +546,7 @@ function generatePackagingOnlyHTML(pickingData) {
         ${_pickingSummary(totalOrders, totalItems, estimatedTime)}
         <div class="section-title">고객별 피킹 목록</div>
         <table class="product-table"><thead><tr>
-            <th>순번</th><th>고객명</th><th>전화번호</th><th>주문번호</th><th>상품명</th><th>사이즈</th><th>수량</th><th>체크</th><th>단가</th>
+            <th>순번</th><th>고객명</th><th>전화번호</th><th>주소</th><th>주문번호</th><th>상품명</th><th>사이즈</th><th>수량</th><th>체크</th><th>단가</th>
         </tr></thead><tbody>${pickingTableRows}</tbody></table>
         ${_pickingFooter(farm)}
         </div></body></html>`;

@@ -886,29 +886,23 @@ async function loadOrderModal() {
 // 피킹 리스트 생성 함수
 async function generatePickingList() {
     try {
-        // 체크한 주문이 있으면 선택된 주문만, 없으면 상품준비/배송준비 전체
-        let targetOrders;
-        const selectedIds = window.orderDataManager?.getSelectedOrderIds?.() || [];
-
-        if (selectedIds.length > 0) {
-            // 선택된 주문 사용
-            const fullOrders = await Promise.all(
-                selectedIds.map(id => window.orderDataManager.fetchOrderByIdFromSupabase(id))
-            );
-            targetOrders = fullOrders.filter(Boolean);
-        } else {
-            // 기존: 상품준비/배송준비 전체
-            targetOrders = await getReadyForShippingOrders();
-        }
-
-        if (!targetOrders || targetOrders.length === 0) {
-            alert('📦 피킹 대상 주문이 없습니다.\n\n• 주문을 선택하거나\n• 상품준비/배송준비 상태 주문이 필요합니다.');
+        console.log('📋 피킹 리스트 생성 시작');
+        
+        // 상품준비 & 배송준비 상태 주문들 가져오기
+        const readyOrders = await getReadyForShippingOrders();
+        if (!readyOrders || readyOrders.length === 0) {
+            alert('📦 상품준비 또는 배송준비 상태의 주문이 없습니다.');
             return;
         }
-
-        const pickingData = await createPickingData(targetOrders);
+        
+        console.log('📦 피킹 대상 주문 수:', readyOrders.length);
+        
+        // 피킹 데이터 생성
+        const pickingData = await createPickingData(readyOrders);
+        
+        // 피킹 리스트 모달 열기
         await openPickingListModal(pickingData);
-
+        
     } catch (error) {
         console.error('❌ 피킹 리스트 생성 실패:', error);
         alert('피킹 리스트 생성 중 오류가 발생했습니다: ' + error.message);
@@ -1167,134 +1161,125 @@ async function openPickingListModal(pickingData) {
 
 // 피킹 데이터를 모달에 표시
 function displayPickingData(modal, pickingData) {
-    // Summary badge
-    const badge = modal.querySelector('#picking-summary-badge');
-    if (badge) {
-        badge.textContent = `${pickingData.totalOrders}건 \u00b7 ${pickingData.totalItems}개 \u00b7 약${pickingData.estimatedTime}`;
+    try {
+        console.log('📊 피킹 데이터 모달 표시');
+        
+        // 요약 정보 업데이트
+        const totalOrdersEl = modal.querySelector('#picking-total-orders');
+        const totalItemsEl = modal.querySelector('#picking-total-items');
+        const estimatedTimeEl = modal.querySelector('#picking-estimated-time');
+        
+        if (totalOrdersEl) totalOrdersEl.textContent = pickingData.totalOrders;
+        if (totalItemsEl) totalItemsEl.textContent = pickingData.totalItems;
+        if (estimatedTimeEl) estimatedTimeEl.textContent = pickingData.estimatedTime;
+        
+        // 상품별 피킹 리스트 표시 (테이블 형태)
+        const productListEl = modal.querySelector('#picking-product-list');
+        if (productListEl) {
+            console.log('🔍 상품별 피킹 데이터:', pickingData.productSummary);
+            productListEl.innerHTML = pickingData.productSummary.map((product, index) => {
+                console.log(`🔍 상품 ${index}:`, product);
+                return `
+                    <tr class="hover:bg-section transition-colors">
+                        <td class="border border-gray-300 px-2 text-center font-semibold bg-section">${index + 1}</td>
+                        <td class="border border-gray-300 px-2 font-medium text-left td-primary">${product.name || '상품명 없음'}</td>
+                        <td class="border border-gray-300 px-2 text-center">
+                            <span class="badge badge-info">
+                                ${product.size || '기본'}
+                            </span>
+                        </td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-info">${product.totalQuantity || 0}</td>
+                        <td class="border border-gray-300 px-2 text-center">${product.orders ? product.orders.length : 0}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-brand">${(product.totalAmount || 0).toLocaleString()}원</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // 고객별 포장 리스트 표시 (테이블 형태)
+        const customerListEl = modal.querySelector('#picking-customer-list');
+        if (customerListEl) {
+            customerListEl.innerHTML = pickingData.customerSummary.map(customer => {
+                const productList = customer.orders.map(order => {
+                    const items = order.items ?? [];
+                    return items.map(item => {
+                        const productName = item.product_name || item.name || item.title || '상품명 없음';
+                        const quantity = item.quantity || item.qty || 1;
+                        return `${productName} x${quantity}`;
+                    }).join(', ');
+                }).join(' | ');
+                
+                return `
+                    <tr class="hover:bg-section transition-colors">
+                        <td class="border border-gray-300 px-2 font-medium td-primary">${customer.name}</td>
+                        <td class="border border-gray-300 px-2 td-secondary">${customer.phone}</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-info">${customer.orders.length}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-brand">${customer.total_amount.toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 td-muted">${productList}</td>
+                    </tr>
+                `;
+            }).join('');
+        }
+        
+        // 모달 이벤트 리스너 연결
+        attachPickingModalEventListeners(modal, pickingData);
+        
+        console.log('✅ 피킹 데이터 모달 표시 완료');
+        
+    } catch (error) {
+        console.error('❌ 피킹 데이터 모달 표시 실패:', error);
     }
-
-    // Product table
-    const productList = modal.querySelector('#picking-product-list');
-    if (productList) {
-        productList.innerHTML = pickingData.productSummary.map((p, i) => `
-            <tr>
-                <td class="text-center td-num">${i + 1}</td>
-                <td class="td-primary">${p.name || '상품명 없음'}</td>
-                <td class="text-center"><span class="badge badge-info">${p.size || '기본'}</span></td>
-                <td class="text-center td-num font-semibold">${p.totalQuantity || 0}</td>
-                <td class="text-center td-num">${p.orders ? p.orders.length : 0}</td>
-                <td class="td-amount text-right">${(p.totalAmount || 0).toLocaleString()}원</td>
-                <td class="text-center"><input type="checkbox" class="checkbox-ui"></td>
-            </tr>
-        `).join('');
-    }
-
-    // Customer cards
-    const customerList = modal.querySelector('#picking-customer-list');
-    if (customerList) {
-        customerList.innerHTML = pickingData.customerSummary.map((c, ci) => {
-            const itemRows = c.orders.flatMap(order => {
-                const items = order.items ?? [];
-                return items.map(item => {
-                    const name = item.product_name || item.name || '상품';
-                    const qty = item.quantity || 1;
-                    const price = item.total_price || (item.unit_price || 0) * qty;
-                    return `<tr>
-                        <td class="td-secondary">${name}</td>
-                        <td class="text-center td-num">${qty}</td>
-                        <td class="td-amount text-right">${price.toLocaleString()}원</td>
-                        <td class="text-center"><input type="checkbox" class="checkbox-ui"></td>
-                    </tr>`;
-                });
-            });
-
-            return `
-                <div class="mb-3 border border-gray-200 rounded-lg overflow-hidden">
-                    <div class="flex items-center justify-between px-3 py-2 bg-section">
-                        <div class="flex items-center gap-2">
-                            <span class="badge badge-neutral">${ci + 1}</span>
-                            <span class="font-medium text-sm">${c.name}</span>
-                            <span class="text-xs text-muted">${c.phone || ''}</span>
-                        </div>
-                        <span class="text-xs font-semibold text-brand">${c.total_amount.toLocaleString()}원</span>
-                    </div>
-                    <table class="w-full table-ui">
-                        <thead><tr><th>상품</th><th class="w-14">수량</th><th class="w-20">금액</th><th class="w-10">✓</th></tr></thead>
-                        <tbody>${itemRows.join('')}</tbody>
-                    </table>
-                </div>
-            `;
-        }).join('');
-    }
-
-    // Tab switching
-    modal.querySelectorAll('.picking-tab').forEach(tab => {
-        tab.addEventListener('click', () => {
-            modal.querySelectorAll('.picking-tab').forEach(t => t.classList.remove('active'));
-            tab.classList.add('active');
-            const target = tab.dataset.tab;
-            modal.querySelectorAll('.picking-tab-content').forEach(c => c.classList.add('hidden'));
-            modal.querySelector(`#picking-tab-${target}`)?.classList.remove('hidden');
-        });
-    });
-
-    // Store pickingData for print
-    modal._pickingData = pickingData;
-
-    // 모달 이벤트 리스너 연결
-    attachPickingModalEventListeners(modal, pickingData);
 }
 
 // 피킹 모달 이벤트 리스너 연결
 function attachPickingModalEventListeners(modal, pickingData) {
-    const closeModal = () => {
-        modal.classList.add('hidden');
-        modal.style.display = 'none';
-    };
-
-    modal.querySelector('#close-picking-list-modal')?.addEventListener('click', closeModal);
-    modal.querySelector('#close-picking-list-modal-btn')?.addEventListener('click', closeModal);
-
-    // Background click close
-    modal.addEventListener('click', (e) => {
-        if (e.target === modal) closeModal();
-    });
-
-    // Print button — prints active tab content
-    modal.querySelector('#print-picking-list')?.addEventListener('click', () => {
-        const activeTab = modal.querySelector('.picking-tab.active')?.dataset.tab || 'product';
-        const content = modal.querySelector(`#picking-tab-${activeTab}`);
-        if (!content) return;
-
-        const printWindow = window.open('', '_blank', 'width=900,height=700');
-        const title = activeTab === 'product' ? '상품별 피킹 리스트' : '고객별 포장 리스트';
-        const data = modal._pickingData;
-        const summary = data ? `${data.totalOrders}건 \u00b7 ${data.totalItems}개` : '';
-
-        printWindow.document.write(`<!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>${title}</title>
-<style>
-body { font-family: 'Malgun Gothic', sans-serif; margin: 20px; font-size: 13px; }
-h1 { font-size: 18px; margin-bottom: 4px; }
-.summary { color: #666; font-size: 12px; margin-bottom: 16px; }
-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-th, td { border: 1px solid #ccc; padding: 6px 8px; }
-th { background: #f5f5f5; font-size: 12px; font-weight: 600; }
-td { font-size: 12px; }
-.text-right { text-align: right; }
-.text-center { text-align: center; }
-.customer-card { border: 1px solid #ddd; border-radius: 6px; margin-bottom: 12px; page-break-inside: avoid; }
-.customer-header { background: #f8f9fa; padding: 8px 12px; font-weight: 600; border-bottom: 1px solid #ddd; display: flex; justify-content: space-between; }
-input[type="checkbox"] { width: 14px; height: 14px; }
-@media print { body { margin: 10px; } }
-</style></head><body>
-<h1>${title}</h1>
-<div class="summary">${summary} \u00b7 ${new Date().toLocaleString('ko-KR')}</div>
-${content.innerHTML}
-</body></html>`);
-        printWindow.document.close();
-        setTimeout(() => printWindow.print(), 300);
-    });
+    try {
+        console.log('🔗 피킹 모달 이벤트 리스너 연결');
+        
+        // 닫기 버튼
+        const closeBtn = modal.querySelector('#close-picking-list-modal');
+        if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            });
+        }
+        
+        const closeBtn2 = modal.querySelector('#close-picking-list-modal-btn');
+        if (closeBtn2) {
+            closeBtn2.addEventListener('click', () => {
+                modal.classList.add('hidden');
+                modal.style.display = 'none';
+            });
+        }
+        
+        // 미리보기 버튼들
+        const previewPickingOnlyBtn = modal.querySelector('#preview-picking-only');
+        if (previewPickingOnlyBtn) {
+            previewPickingOnlyBtn.addEventListener('click', () => {
+                openPickingPreviewModal(pickingData, 'picking-only');
+            });
+        }
+        
+        const previewPackagingOnlyBtn = modal.querySelector('#preview-packaging-only');
+        if (previewPackagingOnlyBtn) {
+            previewPackagingOnlyBtn.addEventListener('click', () => {
+                openPickingPreviewModal(pickingData, 'packaging-only');
+            });
+        }
+        
+        const previewFullBtn = modal.querySelector('#preview-picking-list');
+        if (previewFullBtn) {
+            previewFullBtn.addEventListener('click', () => {
+                openPickingPreviewModal(pickingData, 'full');
+            });
+        }
+        
+        console.log('✅ 피킹 모달 이벤트 리스너 연결 완료');
+        
+    } catch (error) {
+        console.error('❌ 피킹 모달 이벤트 리스너 연결 실패:', error);
+    }
 }
 
 // 피킹 미리보기 모달 열기
