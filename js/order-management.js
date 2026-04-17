@@ -521,6 +521,7 @@ function attachOrderDetailEventListeners(modal, order) {
                     printWindow.focus();
                     setTimeout(() => {
                         printWindow.print();
+                        printWindow.onafterprint = () => printWindow.close();
                     }, 500);
                 } else {
                     alert('주문서 출력 기능을 사용할 수 없습니다.');
@@ -1468,9 +1469,10 @@ function printPickingList(pickingData, type) {
             printWindow.document.close();
             printWindow.focus();
 
-            // 인쇄 대화상자 열기
+            // 인쇄 대화상자 열기 → 완료 후 창 닫기
             setTimeout(() => {
                 printWindow.print();
+                printWindow.onafterprint = () => printWindow.close();
             }, 500);
         } else {
             alert('출력할 내용을 생성할 수 없습니다.');
@@ -1530,12 +1532,11 @@ function printPreviewContent() {
         printWindow.document.close();
         printWindow.focus();
 
-        // 인쇄 대화상자 열기
+        // 인쇄 대화상자 열기 → 완료 후 창 닫기
         setTimeout(() => {
             printWindow.print();
+            printWindow.onafterprint = () => printWindow.close();
         }, 500);
-        
-        console.log('✅ 미리보기 내용 인쇄 완료');
         
     } catch (error) {
         console.error('❌ 미리보기 내용 인쇄 실패:', error);

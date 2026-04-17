@@ -3,7 +3,12 @@
     "allow": [
       "mcp__8eda1e44-ef93-4608-bfeb-7a7e4b0684f8__list_projects",
       "mcp__8eda1e44-ef93-4608-bfeb-7a7e4b0684f8__execute_sql",
-      "mcp__8eda1e44-ef93-4608-bfeb-7a7e4b0684f8__apply_migration"
+      "mcp__8eda1e44-ef93-4608-bfeb-7a7e4b0684f8__apply_migration",
+      "Bash(git stash *)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git pull *)",
+      "Bash(git push *)"
     ]
   }
 }
