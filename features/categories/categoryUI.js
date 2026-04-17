@@ -119,13 +119,13 @@ export function renderCategoriesList(categories) {
                        onkeydown="if(event.key==='Enter') window.confirmEditCategory('${cat.id}')">
                 <input type="hidden" id="edit-color-${cat.id}" value="${cat.color || 'green'}">
             </div>
-            <div class="cat-view-btns flex gap-1 ml-2">
-                <button onclick="window.startEditCategory('${cat.id}')" class="text-muted hover:text-info" title="수정" style="font-size:11px;"><i class="fas fa-pen"></i></button>
-                <button onclick="window.deleteCategory('${cat.id}')" class="text-muted hover:text-danger" title="삭제" style="font-size:11px;"><i class="fas fa-trash"></i></button>
+            <div class="cat-view-btns btn-group ml-2">
+                <button onclick="window.startEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                <button onclick="window.deleteCategory('${cat.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
             </div>
-            <div class="cat-edit-btns hidden flex gap-1 ml-2">
-                <button onclick="window.confirmEditCategory('${cat.id}')" class="text-brand" title="저장" style="font-size:11px;"><i class="fas fa-check"></i></button>
-                <button onclick="window.cancelEditCategory('${cat.id}')" class="text-muted" title="취소" style="font-size:11px;"><i class="fas fa-times"></i></button>
+            <div class="cat-edit-btns hidden btn-group ml-2">
+                <button onclick="window.confirmEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="저장"><i class="fas fa-check"></i></button>
+                <button onclick="window.cancelEditCategory('${cat.id}')" class="btn-icon" title="취소"><i class="fas fa-times"></i></button>
             </div>
         </div>
     `).join('');
