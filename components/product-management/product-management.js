@@ -31,7 +31,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'name',
         label: '상품명',
-        thClass: 'min-w-[200px]',
+        thClass: 'min-w-[120px]',
         editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -310,6 +310,91 @@ class ProductManagementComponent {
 
         // 상품명 실시간 중복 체크 (모달이 로드된 후에 설정)
         this.setupProductNameDuplicateCheck();
+
+        // 테이블 인라인 편집 (더블클릭)
+        const tableBody = document.getElementById('products-table-body');
+        if (tableBody && !tableBody.dataset.inlineEdit) {
+            tableBody.dataset.inlineEdit = '1';
+            tableBody.addEventListener('dblclick', (e) => {
+                const td = e.target.closest('td[data-field]');
+                if (!td || td.querySelector('input,select')) return;
+                this._startInlineEdit(td);
+            });
+        }
+    }
+
+    /** 인라인 편집 시작 */
+    _startInlineEdit(td) {
+        const field = td.dataset.field;
+        const productId = td.dataset.productId;
+        const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+        if (!product) return;
+
+        const originalHTML = td.innerHTML;
+        const value = product[field] ?? '';
+
+        if (field === 'category') {
+            const categories = window.categoryDataManager?.getAllCategories?.() || [];
+            const options = categories.map(c =>
+                `<option value="${c.name}"${c.name === value ? ' selected' : ''}>${c.name}</option>`
+            ).join('');
+            td.innerHTML = `<select class="input-ui" style="height:26px;font-size:12px;width:100%;">
+                <option value="">선택</option>${options}</select>`;
+            const sel = td.querySelector('select');
+            sel.focus();
+            sel.addEventListener('change', () => this._saveInlineEdit(td, productId, field, sel.value, originalHTML));
+            sel.addEventListener('blur', () => { if (td.querySelector('select')) td.innerHTML = originalHTML; });
+        } else {
+            const type = (field === 'price' || field === 'stock') ? 'number' : 'text';
+            const numVal = (field === 'price' || field === 'stock') ? (Number(value) || 0) : value;
+            td.innerHTML = `<input type="${type}" class="input-ui" style="height:26px;font-size:12px;width:100%;${type === 'number' ? 'text-align:right;' : ''}" value="${numVal}">`;
+            const input = td.querySelector('input');
+            input.focus();
+            input.select();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this._saveInlineEdit(td, productId, field, input.value, originalHTML);
+                if (e.key === 'Escape') td.innerHTML = originalHTML;
+            });
+            input.addEventListener('blur', () => { if (td.querySelector('input')) this._saveInlineEdit(td, productId, field, input.value, originalHTML); });
+        }
+    }
+
+    /** 인라인 편집 저장 */
+    async _saveInlineEdit(td, productId, field, newValue, originalHTML) {
+        const parsed = (field === 'price' || field === 'stock') ? (Number(newValue) || 0) : String(newValue).trim();
+        if (!window.supabaseClient) { td.innerHTML = originalHTML; return; }
+
+        try {
+            const { error } = await window.supabaseClient
+                .from('farm_products')
+                .update({ [field]: parsed })
+                .eq('id', productId);
+
+            if (error) throw error;
+
+            // 로컬 데이터도 갱신
+            const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+            if (product) product[field] = parsed;
+
+            // 셀 다시 렌더링
+            const dash = window.fmt?.ND || '<span class="td-null">—</span>';
+            const col = PRODUCT_COLUMNS.find(c => c.key === field);
+            if (col && product) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = col.render(product, dash);
+                const newTd = tempDiv.querySelector('td');
+                td.innerHTML = newTd.innerHTML;
+                // data-field, data-product-id 유지
+            } else {
+                td.innerHTML = originalHTML;
+            }
+
+            if (window.showToast) window.showToast('수정 완료', 1500);
+        } catch (err) {
+            console.error('인라인 수정 실패:', err);
+            td.innerHTML = originalHTML;
+            if (window.showToast) window.showToast('수정 실패: ' + err.message, 2000, 'error');
+        }
     }
 
     /**
