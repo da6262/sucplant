@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.50-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.53-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -193,6 +193,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.53 | fix: 지브라 스트라이프 명도 강화 — `--tbl-zebra-bg` `#FAFAFA` → `#F5F5F5` (흰색 대비 2% → 4%, 명도 차 5→10단계). 데이터 행이 많은 탭에서 지브라 효과 육안 식별 가능하도록 개선 |
+| v3.3.52 | fix: 상품 검색 결과 클릭 장바구니 미추가 근본 수정 — `onclick` 내 `JSON.stringify(product.name)` 이 큰따옴표를 포함해 HTML 속성을 깨뜨리던 문제. `onclick` 인라인 문자열 방식 → `data-product-id/name/price/stock` 속성 + `this.dataset.*` 참조 방식으로 교체, XSS 방어(`&quot;` 이스케이프) 동시 적용 |
 | v3.3.50 | fix: `.table-ui` tbody 의 `divide-y divide-gray-100` 제거 — Tailwind `divide-gray-100` 이 `border-color: #F3F4F6`(거의 흰색)을 전체 border 에 적용하여 `.table-ui` 의 격자선 `#CBD5E1` 을 덮어씀. 대기자만 격자선 보이고 고객·주문·상품·주문상세·배송분석은 안 보이던 원인. 5파일 `<tbody>` 에서 `divide-y`/`bg-white` 제거 → `.table-ui` CSS 일원 관리 |
 | v3.3.49 | fix: 테이블 th/td 중앙통제 완성 — `<th>` font-size `11px` 하드코딩 → `var(--tbl-font-size)`(td 와 동일), padding `10px` → `8px`(td 와 동일), `vertical-align: middle` 추가. `:where(.table-ui) th { text-align: center }` (specificity 0,0,0,1) 로 기본 중앙정렬 + Tailwind `text-left`(0,1,0,0) 오버라이드 가능. `--tbl-cell-py`·`--tbl-font-size` 변수만 바꾸면 전 탭 th/td 동시 반영 |
 | v3.3.47 | refactor: 테이블 패딩·정렬 CSS 중앙통제 복원 — **근본 원인**: `.table-ui thead th { text-align: left }` (specificity 0,1,0,2) 가 Tailwind `text-center` (0,1,0,0) 을 덮어써 모든 `<th>` 강제 좌측정렬 + 모든 `<td>` 에 `px-2/2.5/3/4` 중복 지정으로 CSS `padding: 5px 8px` 무력화. **수정**: ①CSS `text-align: left` 제거 → 각 `<th>` 에서 `text-left`/`text-center` 개별 제어. ②6파일 `<td>` 의 `px-*` 전량 제거(`orderData.js` 10건·`customerUI.js` 5건·`waitlistUI.js` 9건·`shippingUI.js` 10건·`product-management.js` 9건) → CSS 중앙통제 패딩 일원화. ③`orderForm.js` 장바구니 inline `style="padding:..."` 3블록 제거 → 시맨틱 클래스(`td-primary`·`td-amount`·`text-center`). ④`align-middle` 중복 제거 (CSS `vertical-align: middle` 이미 적용) |

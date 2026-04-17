@@ -1707,12 +1707,18 @@ function searchProducts(query) {
                             const stockNum = product.stock ?? 0;
                             const stockColor = stockNum <= 0 ? 'var(--danger)' : stockNum <= 5 ? 'var(--warn)' : 'var(--primary)';
                             const stockLabel = stockNum <= 0 ? '품절' : `재고 ${stockNum}개`;
+                            const safeName = (product.name || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+                            const safeCat  = (product.category || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
                             return `
                             <div class="search-result-item"
+                                 data-product-id="${product.id}"
+                                 data-product-name="${safeName}"
+                                 data-price="${product.price}"
+                                 data-stock="${product.stock ?? 0}"
                                  onmousedown="event.preventDefault();"
-                                 onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
-                                <span class="search-result-name">${product.name}</span>
-                                <span class="search-result-cat">${(product.category||'')}</span>
+                                 onclick="addProductToCart(this.dataset.productId, this.dataset.productName, parseFloat(this.dataset.price), parseFloat(this.dataset.stock), event)">
+                                <span class="search-result-name">${safeName}</span>
+                                <span class="search-result-cat">${safeCat}</span>
                                 <span class="search-result-price">${window.fmt.won(product.price)}</span>
                                 <span class="search-result-stock" style="color:${stockColor};">${stockLabel}</span>
                             </div>
