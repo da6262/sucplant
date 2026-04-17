@@ -345,6 +345,7 @@ export async function loadCustomerGrades() {
                         color: '#6B7280',
                         icon: 'fas fa-circle'
                     });
+                    if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
                     setTimeout(() => loadCustomerGrades(), 100);
                 } catch (error) {
                     console.error('❌ 고객등급 추가 실패:', error);
@@ -878,7 +879,8 @@ function initSettingsEventListeners() {
                             color: '#6B7280',
                             icon: 'fas fa-circle'
                         });
-                        
+                        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
+
                         // 화면 새로고침
                         setTimeout(() => {
                             loadCustomerGrades();
@@ -1126,6 +1128,7 @@ window.saveInlineGrade = async function(index) {
             minAmount,
             discount
         });
+        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
         setTimeout(() => { loadCustomerGrades(); }, 100);
     } catch (error) {
         console.error('❌ 고객등급 저장 실패:', error);
@@ -1174,9 +1177,12 @@ window.saveEditGrade = async function(index) {
         };
         
         await window.settingsDataManager.updateCustomerGrade(index, updatedGrade);
-        
+
+        // 고객관리 탭 캐시 무효화
+        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
+
         console.log('✅ 고객등급 편집 완료:', updatedGrade);
-        
+
         // 모달 닫기
         closeEditGradeModal();
         
@@ -1200,6 +1206,9 @@ window.deleteCustomerGrade = async function(index) {
         if (confirm('정말로 이 등급을 삭제하시겠습니까?')) {
             // 고객등급 삭제
             await window.settingsDataManager.deleteCustomerGrade(index);
+
+            // 고객관리 탭 캐시 무효화
+            if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
 
             // 화면 새로고침
             setTimeout(() => {

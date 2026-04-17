@@ -55,7 +55,7 @@ import {
 } from './features/customers/customerData.js';
 
 // 고객 UI 모듈 import
-import { renderCustomersTable } from './features/customers/customerUI.js';
+import { renderCustomersTable, invalidateCustomerUICache } from './features/customers/customerUI.js';
 
 // 상품 데이터 모듈 import
 import { 
@@ -163,6 +163,7 @@ window.getSupabaseTableName = getSupabaseTableName;
 
 // customerDataManager 인스턴스 전역 등록
 window.customerDataManager = customerDataManager;
+window.invalidateCustomerUICache = invalidateCustomerUICache;
 
 // productDataManager 인스턴스 전역 등록 (지연 초기화)
 // initializeProductDataManager()가 호출되면 window.productDataManager에 설정됨

@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.70-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.71-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.71 | fix: 환경설정 고객등급 변경이 고객관리 탭에 반영 안 되는 버그 수정 — 원인: `customerUI.js`의 `_gradesCache`가 한 번 로드되면 환경설정 변경 후에도 갱신 안 됨. `settingsUI.js`의 등급 추가/수정/삭제 5곳에서 `window.invalidateCustomerUICache()` 호출 추가. `main.js`에서 `invalidateCustomerUICache` 전역 등록 |
 | v3.3.70 | refactor: Supabase 클라이언트 체크 중복 27건 → `ensureSupabase()` 유틸 함수로 통합 — `utils/formatters.js`에 `ensureSupabase()` 신설(없으면 throw, 있으면 client 반환), `main.js`에서 `window.ensureSupabase`로 전역 등록. features/ 6파일(categoryData·productData·waitlistData·salesChannelsData·orderData·settingsUI) throw 패턴 26건 + js/order-management.js 1건 교체. soft-return 패턴(warn+return)은 동작 차이로 유지 |
 | v3.3.69 | perf: 고객관리 탭 로딩 속도 개선 + 탭 전환 지연 제거 — ①`customerData.js` `loadCustomers()` 내 `await saveToBackup()` 블로킹 제거(fire-and-forget, 300-800ms 절감). ②`customerUI.js` `prefetchCustomerRenderData()` 신설 — `loadCustomers`와 병렬로 최근주문일·등급 쿼리 캐시 워밍(800-1500ms 병렬화). ③`customer-management.js` 재방문 시 이중 `renderCustomersTable` 제거(loadCustomers 완료 후 1회만 렌더). ④`index.html` `switchTab()` 내 불필요 `waitForDOMReady()` 제거·200ms sleep 제거·`cleanupCurrentComponent` 동기화·대시보드 초기화 100ms 지연 제거. 총 크리티컬 패스 2.5-5초 → 1-2초 |
 | v3.3.67 | refactor: 배송관리 상태 색상 매핑 중복 3곳 → `renderOrderStatusBadge` 중앙 렌더러로 통합 — ①`shippingUI.js` deprecated `getStatusColor`·`formatDate` 제거(호출처 없음). ②`shipping-management.js` 로컬 `getStatusColor`+`getStatusBadgeHtml` 제거 → `window.renderOrderStatusBadge` 교체. ③`shippingManager.js` 로컬 `getStatusColor`(bg-accent 기반) 제거 → 동일 교체. ④`utils/ui.js` MAP에 `배송지연`(danger)·`환불처리`(neutral)·`상품준비`(sky) 3종 추가. 배송 상태 뱃지 색상이 전 탭 동일한 중앙 MAP으로 일원화 |
