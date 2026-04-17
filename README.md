@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.45-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.47-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -193,6 +193,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.47 | refactor: 테이블 패딩·정렬 CSS 중앙통제 복원 — **근본 원인**: `.table-ui thead th { text-align: left }` (specificity 0,1,0,2) 가 Tailwind `text-center` (0,1,0,0) 을 덮어써 모든 `<th>` 강제 좌측정렬 + 모든 `<td>` 에 `px-2/2.5/3/4` 중복 지정으로 CSS `padding: 5px 8px` 무력화. **수정**: ①CSS `text-align: left` 제거 → 각 `<th>` 에서 `text-left`/`text-center` 개별 제어. ②6파일 `<td>` 의 `px-*` 전량 제거(`orderData.js` 10건·`customerUI.js` 5건·`waitlistUI.js` 9건·`shippingUI.js` 10건·`product-management.js` 9건) → CSS 중앙통제 패딩 일원화. ③`orderForm.js` 장바구니 inline `style="padding:..."` 3블록 제거 → 시맨틱 클래스(`td-primary`·`td-amount`·`text-center`). ④`align-middle` 중복 제거 (CSS `vertical-align: middle` 이미 적용) |
+| v3.3.46 | refactor: 데이터 표시 중앙통제 통일 — ①`utils/formatters.js` 에 `ND` 상수 추가 + `window.fmt.ND` 전역 등록, 4파일 로컬 `nullDash` 선언 제거 → 중앙 import. ②금액 ~40건 `toLocaleString()+'원'` → `window.fmt.won()`/`formatCurrency()` 교체. 테이블=`formatCurrency()`(₩), 폼 합계=`fmt.won()`(원) 정책. ③`customerUI.js` 로컬 `formatDisplayDate()` 제거 → `formatDate()` 직접 사용, `shippingUI.js` → `window.fmt.date()`. ④`renderOrderStatusBadge` MAP 에 배송 상태 6종 추가, 로컬 뱃지 매핑 → 중앙 렌더러 교체 |
 | v3.3.45 | fix: 상품 검색 장바구니 추가 블로킹 제거 + 재고 상태 색상 표시 — `addProductToCart` stock≤0 시 `alert`+`return` 차단 제거(품절 상품도 관리자 주문 등록 허용), 검색 결과 재고 표시 색상 시맨틱 변수 적용(품절=`var(--danger)` 빨강, 1~5=`var(--warn)` 주황, 6+=`var(--primary)` 초록); `.search-result-stock` CSS font-weight 인라인→클래스 이전; `farm_channels`에 "문자" 채널 추가 |
 | v3.3.42 | refactor: 데이터 표시 중앙통제 통일 — ①`utils/formatters.js`에 `ND` 상수 추가 + `window.fmt.ND` 전역 등록, 4파일(`orderData.js`·`customerUI.js`·`waitlistUI.js`·`product-management.js`)의 로컬 `nullDash` 선언 제거 → 중앙 import/window.fmt 경유. ②금액 포맷 통일: `toLocaleString()+'원'` 직접 호출 ~40건 → `window.fmt.won()`/`formatCurrency()` 교체(`orderForm.js` 19건·`orderPrint.js` 8건·`orderSearch.js` 1건·`customerUI.js` 5건·`settingsUI.js` 1건·`product-management.js` 1건·`orderData.js` 1건). 테이블 셀=`formatCurrency()`(₩12,345), 폼 합계=`window.fmt.won()`(12,345원) 정책 수립. ③날짜: `customerUI.js` 로컬 `formatDisplayDate()` 래퍼 제거 → `formatDate()` 직접 사용, `shippingUI.js` 로컬 `formatDate` → `window.fmt.date()` 교체(deprecated 마킹). ④뱃지: `shippingUI.js` 로컬 `getStatusColor()` → `window.renderOrderStatusBadge()` 교체, `waitlistUI.js` `getStatusBadgeClass()` → `getStatusBadgeVariant()` + `window.renderBadge()` 교체, `renderOrderStatusBadge` MAP에 배송 상태 6종(`입금대기`·`입금확인`·`배송준비`·`배송시작`·`수령완료`·`주문취소`) 추가 |
 | v3.3.41 | chore: 루트 디버그/테스트 파일 25개 `archive/dev-tools/` 정리 + CLAUDE.md Dead Code 기록 정정 + 빌드 시스템 상태 문서화 — ①프로덕션 참조 없는 루트 HTML·JS 25개(`auth-test.html`·`complete-debug.html`·`debug-product-registration.html`·`emergency-*`·`fix-*`·`*-test.html`·`diagnose-*`·`nuclear-*`·`qr-debug.html`·`modal-test.html`·`low-stock-modal-simple.html`·`tracking-input-test.js`·`create-tracking-inputs.js`·`fix-shipping-table.js` 등) → `archive/dev-tools/` 이동. 기능성 이름 3개(`inventory-modal.html`·`allowed-users-management.html`·`system-admin.html`) 보류. ②CLAUDE.md "Dead Code 경고" → "상품 테이블 렌더링 이중 경로 주의" 로 정정: `productUI.renderProductsTable`/`PRODUCT_TABLE_COLUMNS` 는 **활성 코드**(과거 기록 부정확), `createProductRow` 와 공존하며 수정 시 양쪽 확인 필요. ③빌드 시스템 참고 섹션 추가: `npm run build` 파일 부재·`deploy-to-production.js` 브라우저 전용·`dist/` 수동 관리 명시 |
