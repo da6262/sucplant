@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.47-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.50-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -193,6 +193,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.50 | fix: `.table-ui` tbody 의 `divide-y divide-gray-100` 제거 — Tailwind `divide-gray-100` 이 `border-color: #F3F4F6`(거의 흰색)을 전체 border 에 적용하여 `.table-ui` 의 격자선 `#CBD5E1` 을 덮어씀. 대기자만 격자선 보이고 고객·주문·상품·주문상세·배송분석은 안 보이던 원인. 5파일 `<tbody>` 에서 `divide-y`/`bg-white` 제거 → `.table-ui` CSS 일원 관리 |
+| v3.3.49 | fix: 테이블 th/td 중앙통제 완성 — `<th>` font-size `11px` 하드코딩 → `var(--tbl-font-size)`(td 와 동일), padding `10px` → `8px`(td 와 동일), `vertical-align: middle` 추가. `:where(.table-ui) th { text-align: center }` (specificity 0,0,0,1) 로 기본 중앙정렬 + Tailwind `text-left`(0,1,0,0) 오버라이드 가능. `--tbl-cell-py`·`--tbl-font-size` 변수만 바꾸면 전 탭 th/td 동시 반영 |
 | v3.3.47 | refactor: 테이블 패딩·정렬 CSS 중앙통제 복원 — **근본 원인**: `.table-ui thead th { text-align: left }` (specificity 0,1,0,2) 가 Tailwind `text-center` (0,1,0,0) 을 덮어써 모든 `<th>` 강제 좌측정렬 + 모든 `<td>` 에 `px-2/2.5/3/4` 중복 지정으로 CSS `padding: 5px 8px` 무력화. **수정**: ①CSS `text-align: left` 제거 → 각 `<th>` 에서 `text-left`/`text-center` 개별 제어. ②6파일 `<td>` 의 `px-*` 전량 제거(`orderData.js` 10건·`customerUI.js` 5건·`waitlistUI.js` 9건·`shippingUI.js` 10건·`product-management.js` 9건) → CSS 중앙통제 패딩 일원화. ③`orderForm.js` 장바구니 inline `style="padding:..."` 3블록 제거 → 시맨틱 클래스(`td-primary`·`td-amount`·`text-center`). ④`align-middle` 중복 제거 (CSS `vertical-align: middle` 이미 적용) |
 | v3.3.46 | refactor: 데이터 표시 중앙통제 통일 — ①`utils/formatters.js` 에 `ND` 상수 추가 + `window.fmt.ND` 전역 등록, 4파일 로컬 `nullDash` 선언 제거 → 중앙 import. ②금액 ~40건 `toLocaleString()+'원'` → `window.fmt.won()`/`formatCurrency()` 교체. 테이블=`formatCurrency()`(₩), 폼 합계=`fmt.won()`(원) 정책. ③`customerUI.js` 로컬 `formatDisplayDate()` 제거 → `formatDate()` 직접 사용, `shippingUI.js` → `window.fmt.date()`. ④`renderOrderStatusBadge` MAP 에 배송 상태 6종 추가, 로컬 뱃지 매핑 → 중앙 렌더러 교체 |
 | v3.3.45 | fix: 상품 검색 장바구니 추가 블로킹 제거 + 재고 상태 색상 표시 — `addProductToCart` stock≤0 시 `alert`+`return` 차단 제거(품절 상품도 관리자 주문 등록 허용), 검색 결과 재고 표시 색상 시맨틱 변수 적용(품절=`var(--danger)` 빨강, 1~5=`var(--warn)` 주황, 6+=`var(--primary)` 초록); `.search-result-stock` CSS font-weight 인라인→클래스 이전; `farm_channels`에 "문자" 채널 추가 |
