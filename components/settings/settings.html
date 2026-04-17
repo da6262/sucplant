@@ -106,6 +106,24 @@
                     </div>
                 </div>
 
+                <!-- 로젠택배 운임 (col-6) | 운임구분 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">로젠택배 운임</label>
+                    <div class="form-input-group with-unit">
+                        <input type="number" id="logen-shipping-fee" class="form-control" placeholder="3800">
+                        <span class="form-input-unit">원</span>
+                    </div>
+                    <p class="form-helper">로젠 엑셀 내보내기 시 택배운임으로 사용</p>
+                </div>
+                <div class="form-col-6">
+                    <label class="form-label">로젠 운임구분</label>
+                    <select id="logen-freight-type" class="form-control">
+                        <option value="10">선불 (10)</option>
+                        <option value="20">착불 (20)</option>
+                    </select>
+                    <p class="form-helper">로젠 엑셀 내보내기 시 운임구분 코드</p>
+                </div>
+
                 <!-- 배송 방법 목록 (col-12) -->
                 <div class="form-col-12">
                     <label class="form-label">배송 방법 목록 <span class="form-helper" style="font-weight:400;">(쉼표로 구분, 주문 등록 드롭다운에 반영됨)</span></label>

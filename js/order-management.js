@@ -2750,6 +2750,88 @@ window.toggleTrackingPanel = toggleTrackingPanel;
 window.saveOneTrackingNumber = saveOneTrackingNumber;
 window.saveAllTrackingNumbers = saveAllTrackingNumbers;
 
+// =============================================
+// 로젠택배 엑셀 내보내기
+// =============================================
+async function exportLogenExcel() {
+    if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
+    window.ensureSupabase();
+
+    try {
+        // 배송준비 + 상품준비 상태 주문 조회
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('id, order_number, customer_name, customer_phone, customer_address, order_status, shipping_fee, memo')
+            .in('order_status', ['배송준비', '상품준비'])
+            .order('order_date', { ascending: false });
+
+        if (error) throw error;
+        if (!orders || orders.length === 0) { alert('배송준비/상품준비 상태 주문이 없습니다.'); return; }
+
+        // 주문별 상품 조회
+        const ids = orders.map(o => o.id);
+        const { data: items } = await window.supabaseClient
+            .from('farm_order_items')
+            .select('order_id, product_name, quantity')
+            .in('order_id', ids);
+
+        const itemsMap = {};
+        (items || []).forEach(item => {
+            if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+            itemsMap[item.order_id].push(`${item.product_name} ${item.quantity}개`);
+        });
+
+        // 환경설정에서 로젠 운임/운임구분 읽기
+        const shippingSettings = window.settingsDataManager?.settings?.shipping || {};
+        const logenFee = shippingSettings.logenShippingFee ?? 3800;
+        const logenFreight = shippingSettings.logenFreightType ?? 10;
+
+        // 로젠 E타입(경산다육): 주문번호, 수하인명, 우편번호, 주소, 전화, 핸드폰, 수량, 운임, 운임구분, 품목명, 배송메세지
+        const rows = orders.map(order => {
+            const phone = (order.customer_phone || '').replace(/[-\s]/g, '');
+            const address = order.customer_address || '';
+            const productSummary = (itemsMap[order.id] || []).join(', ') || '-';
+
+            return [
+                order.order_number || '',
+                order.customer_name || '',
+                '',
+                address,
+                phone,
+                phone,
+                1,
+                logenFee,
+                logenFreight,
+                productSummary,
+                order.memo || ''
+            ];
+        });
+
+        const wsData = rows;
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // 컬럼 너비: 주문번호, 수하인명, 우편번호, 주소, 전화, 핸드폰, 수량, 운임, 운임구분, 품목명, 배송메세지
+        ws['!cols'] = [
+            { wch: 18 }, { wch: 12 }, { wch: 8 }, { wch: 40 }, { wch: 15 },
+            { wch: 15 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 30 }, { wch: 20 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '로젠택배');
+
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        XLSX.writeFile(wb, `로젠택배_${today}_${orders.length}건.xlsx`);
+
+        alert(`로젠택배 엑셀 다운로드 완료: ${orders.length}건`);
+
+    } catch (e) {
+        console.error('로젠 엑셀 내보내기 실패:', e);
+        alert('엑셀 내보내기 실패: ' + e.message);
+    }
+}
+
+window.exportLogenExcel = exportLogenExcel;
+
 // ──────────────────────────────────────────────
 // 날짜 필터 함수
 // ──────────────────────────────────────────────

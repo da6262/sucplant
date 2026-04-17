@@ -238,6 +238,10 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
         window.settingsDataManager.settings.shipping.remoteAreaShippingFee = get('remote-area-shipping-fee') ? num('remote-area-shipping-fee') : (window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000);
+        // 로젠택배 설정
+        window.settingsDataManager.settings.shipping.logenShippingFee = get('logen-shipping-fee') ? num('logen-shipping-fee') : (window.settingsDataManager.settings.shipping.logenShippingFee ?? 3800);
+        const logenFreightEl = get('logen-freight-type');
+        if (logenFreightEl) window.settingsDataManager.settings.shipping.logenFreightType = parseInt(logenFreightEl.value, 10) || 10;
         // 배송 방법 목록
         const methodsInput = get('shipping-methods-input');
         if (methodsInput && methodsInput.value.trim()) {
@@ -271,6 +275,8 @@ function syncFormToSettings() {
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }
+    if (get('logen-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.logenShippingFee = num('logen-shipping-fee'); }
+    if (get('logen-freight-type')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.logenFreightType = parseInt(get('logen-freight-type').value, 10) || 10; }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
     const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
     if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {

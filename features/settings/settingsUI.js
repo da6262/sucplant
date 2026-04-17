@@ -259,6 +259,12 @@ export function loadShippingSettings() {
         if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
         if (remoteAreaShippingFeeInput) remoteAreaShippingFeeInput.value = settings.shipping.remoteAreaShippingFee ?? 5000;
 
+        // 로젠택배 설정
+        const logenFeeInput = document.getElementById('logen-shipping-fee');
+        const logenFreightSelect = document.getElementById('logen-freight-type');
+        if (logenFeeInput) logenFeeInput.value = settings.shipping.logenShippingFee ?? 3800;
+        if (logenFreightSelect) logenFreightSelect.value = String(settings.shipping.logenFreightType ?? 10);
+
         // 배송 방법 목록
         const methodsInput = document.getElementById('shipping-methods-input');
         if (methodsInput) {

@@ -1049,8 +1049,8 @@ class OrderDataManager {
             const dNum = isRowSpec ? order.d_day : (ddayText !== '-' ? parseInt(ddayText.replace('D+','')) : null);
             const isOverdue = orderStatus === '입금대기' && dNum != null && dNum >= 3;
 
-            const smsStatus = isRowSpec ? { label: '미발송', tip: '클릭하여 SMS 발송' } : this.getSmsStatus(order);
-            const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
+            const smsStatus = this.getSmsStatus(order);
+            const printStatus = this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
             const nd = window.fmt.ND;

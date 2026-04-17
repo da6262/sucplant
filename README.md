@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.79-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.81-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.81 | feat: 로젠택배 엑셀 내보내기 + 환경설정 로젠 운임 관리 — ①주문관리 헤더에 "로젠 엑셀" 버튼 추가, 배송준비/상품준비 주문을 로젠 E타입 양식(주문번호·수하인명·우편번호·주소·전화·핸드폰·수량·운임·운임구분·품목명·배송메세지)으로 xlsx 다운로드. ②환경설정 배송 탭에 로젠택배 운임(기본 3800원)·운임구분(선불10/착불20) 설정 추가, 엑셀 내보내기 시 환경설정 값 사용. ③송장입력 패널에 택배사 선택 드롭다운 추가(기본 로젠택배). ④주문 상태 드롭다운 배경 투명→흰색+그림자 수정 |
 | v3.3.79 | feat: 프로필 보기 기능 구현 — 헤더 드롭다운 "프로필 보기" 클릭 시 SweetAlert2 모달로 관리자 이메일·이름·마지막 로그인 표시. 기존 `alert('추후 추가')` 스텁 대체 |
 | v3.3.78 | refactor: 잔여 raw Tailwind 색상 4건 시맨틱 교체 — header.js 연결 상태 dot `bg-green/red-400` → `bg-success/danger-accent`, dashboard.js 차트 기간 버튼 `bg/hover:bg-gray/blue-200` → `bg-section`·`text-info`·시맨틱 accent. 나머지 21건은 CSS 오버라이드 레이어가 이미 커버 |
 | v3.3.77 | fix: 환경설정 배송비 저장 시 주문 폼 캐시(`window.SHIPPING_SETTINGS`) 미갱신 — 배송비·무료배송 기준·도서산간비 변경 후 주문 폼에 옛 값 표시되던 버그. `saveSettings()`·배송 전용 저장 버튼 양쪽에 캐시 즉시 갱신 추가 |
