@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.53-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.54-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -193,6 +193,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.54 | refactor: 전 탭 `<th>` 에서 `text-left`/`text-center`/`text-right` 정렬 클래스 전량 제거 — CSS `:where(.table-ui) th { text-align: center }` 기본값에 위임. 고객·대기자·주문(송장+목록)·상품·고객모달 5파일. 개별 `<th>` 에 정렬 클래스 불필요, CSS 변수 하나로 전 탭 헤더 정렬 통제 |
 | v3.3.53 | fix: 지브라 스트라이프 명도 강화 — `--tbl-zebra-bg` `#FAFAFA` → `#F5F5F5` (흰색 대비 2% → 4%, 명도 차 5→10단계). 데이터 행이 많은 탭에서 지브라 효과 육안 식별 가능하도록 개선 |
 | v3.3.52 | fix: 상품 검색 결과 클릭 장바구니 미추가 근본 수정 — `onclick` 내 `JSON.stringify(product.name)` 이 큰따옴표를 포함해 HTML 속성을 깨뜨리던 문제. `onclick` 인라인 문자열 방식 → `data-product-id/name/price/stock` 속성 + `this.dataset.*` 참조 방식으로 교체, XSS 방어(`&quot;` 이스케이프) 동시 적용 |
 | v3.3.50 | fix: `.table-ui` tbody 의 `divide-y divide-gray-100` 제거 — Tailwind `divide-gray-100` 이 `border-color: #F3F4F6`(거의 흰색)을 전체 border 에 적용하여 `.table-ui` 의 격자선 `#CBD5E1` 을 덮어씀. 대기자만 격자선 보이고 고객·주문·상품·주문상세·배송분석은 안 보이던 원인. 5파일 `<tbody>` 에서 `divide-y`/`bg-white` 제거 → `.table-ui` CSS 일원 관리 |

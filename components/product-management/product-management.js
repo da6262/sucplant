@@ -16,13 +16,13 @@
 const PRODUCT_COLUMNS = [
     {
         key: 'checkbox',
-        headerCell: '<th class="text-center w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
+        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
         render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox rounded text-brand focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
     },
     {
         key: 'product_code',
         label: '상품코드',
-        thClass: 'text-left w-20',
+        thClass: 'w-20',
         render: (p, dash) => {
             const code = p.product_code ? String(p.product_code).replace(/</g, '&lt;') : null;
             return `<td class="td-muted whitespace-nowrap">${code || dash}</td>`;
@@ -31,7 +31,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'name',
         label: '상품명',
-        thClass: 'text-left min-w-[200px]',
+        thClass: 'min-w-[200px]',
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             return `<td class="td-primary td-link"><span class="product-name-link">${name || dash}</span></td>`;
@@ -40,7 +40,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'category',
         label: '카테고리',
-        thClass: 'text-left w-24',
+        thClass: 'w-24',
         render: (p, dash) => {
             const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
             return `<td>${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
@@ -49,7 +49,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'size',
         label: '사이즈',
-        thClass: 'text-left w-16',
+        thClass: 'w-16',
         render: (p, dash) => {
             const s = p.size ? String(p.size).replace(/</g, '&lt;') : null;
             return `<td class="td-secondary">${s || dash}</td>`;
@@ -58,7 +58,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'price',
         label: '판매가',
-        thClass: 'text-right w-24',
+        thClass: 'w-24',
         render: (p, dash) => {
             const price = Number(p.price) || 0;
             return `<td class="td-amount text-right text-numeric">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
@@ -67,7 +67,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'stock',
         label: '재고',
-        thClass: 'text-right w-20',
+        thClass: 'w-20',
         render: (p, dash) => {
             const stock = Number(p.stock) || 0;
             return `<td class="td-num text-right">${stock > 0 ? stock + '개' : dash}</td>`;
@@ -76,7 +76,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'shipping_option',
         label: '배송옵션',
-        thClass: 'text-left w-24',
+        thClass: 'w-24',
         render: (p, dash) => {
             const ship = p.shipping_option ? String(p.shipping_option).replace(/</g, '&lt;') : null;
             return `<td class="td-secondary">${ship || dash}</td>`;
@@ -84,7 +84,7 @@ const PRODUCT_COLUMNS = [
     },
     {
         key: 'actions',
-        headerCell: '<th class="text-center w-20">관리</th>',
+        headerCell: '<th class="w-20">관리</th>',
         render: (p) => `
             <td class="text-center whitespace-nowrap">
                 <div class="btn-group">

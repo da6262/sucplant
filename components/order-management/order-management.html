@@ -87,11 +87,11 @@
             <table class="w-full table-ui">
                 <thead>
                     <tr>
-                        <th class="text-left w-24">주문번호</th>
-                        <th class="text-left w-24">고객명</th>
-                        <th class="text-left">상품요약</th>
-                        <th class="text-left w-48">송장번호</th>
-                        <th class="text-center w-16">저장</th>
+                        <th class="w-24">주문번호</th>
+                        <th class="w-24">고객명</th>
+                        <th>상품요약</th>
+                        <th class="w-48">송장번호</th>
+                        <th class="w-16">저장</th>
                     </tr>
                 </thead>
                 <tbody id="tracking-input-rows">
@@ -119,18 +119,18 @@
     <table class="w-full table-auto table-ui order-list-compact">
         <thead>
             <tr>
-                <th class="text-center w-10">
+                <th class="w-10">
                     <input type="checkbox" id="select-all-orders" class="rounded text-brand focus:ring-green-500 focus:ring-1">
                 </th>
-                <th class="text-center w-12">D</th>
-                <th class="text-left min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
-                <th class="text-left min-w-[140px]">상품 요약</th>
-                <th class="text-left w-28">주문번호</th>
-                <th class="text-right w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
-                <th class="text-center w-20">상태</th>
-                <th class="text-center w-16">출력</th>
-                <th class="text-center w-16">SMS</th>
-                <th class="text-center w-14">관리</th>
+                <th class="w-12">D</th>
+                <th class="min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
+                <th class="min-w-[140px]">상품 요약</th>
+                <th class="w-28">주문번호</th>
+                <th class="w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
+                <th class="w-20">상태</th>
+                <th class="w-16">출력</th>
+                <th class="w-16">SMS</th>
+                <th class="w-14">관리</th>
             </tr>
         </thead>
         <tbody id="orders-table-body">
