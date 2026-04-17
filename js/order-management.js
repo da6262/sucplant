@@ -1346,11 +1346,12 @@ async function openPickingPreviewModal(pickingData, type) {
                 break;
         }
         
-        // 미리보기 내용 표시
+        // 미리보기 내용 표시 + 원본 HTML 저장 (인쇄 시 재사용)
         const contentEl = modal.querySelector('#picking-preview-content');
         if (contentEl) {
             contentEl.innerHTML = previewHTML;
         }
+        modal._printHTML = previewHTML;
         
         // 모달 표시
         modal.classList.remove('hidden');
@@ -1484,59 +1485,34 @@ function printPickingList(pickingData, type) {
     }
 }
 
-// 미리보기 내용 인쇄
+// 미리보기 내용 인쇄 — 저장된 원본 HTML(CSS 포함)을 숨김 iframe으로 바로 인쇄
 function printPreviewContent() {
     try {
-        console.log('🖨️ 미리보기 내용 인쇄 시작');
-        
-        // 미리보기 모달의 내용 가져오기
-        const previewContent = document.getElementById('picking-preview-content');
-        if (!previewContent) {
-            console.error('❌ 미리보기 내용을 찾을 수 없습니다');
-            alert('미리보기 내용을 찾을 수 없습니다.');
+        const modal = document.getElementById('picking-preview-modal');
+        const fullHTML = modal?._printHTML;
+        if (!fullHTML) {
+            alert('인쇄할 내용을 찾을 수 없습니다.');
             return;
         }
-        
-        // 미리보기 내용의 HTML 가져오기
-        const contentHTML = previewContent.innerHTML;
-        
-        // 새 창에서 인쇄
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
-            return;
-        }
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>피킹 리스트 인쇄</title>
-                <meta charset="UTF-8">
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: 'Malgun Gothic', sans-serif;
-                        padding: 20px;
-                        background: white;
-                    }
-                    @media print {
-                        body { margin: 0; padding: 16px; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${contentHTML}
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
 
-        // 인쇄 대화상자 열기 → 완료 후 창 닫기
+        const old = document.getElementById('_picking-print-frame');
+        if (old) old.remove();
+
+        const iframe = document.createElement('iframe');
+        iframe.id = '_picking-print-frame';
+        iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;height:600px;border:none;';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(fullHTML);
+        doc.close();
+
         setTimeout(() => {
-            printWindow.print();
-            printWindow.onafterprint = () => printWindow.close();
-        }, 500);
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            iframe.contentWindow.onafterprint = () => iframe.remove();
+        }, 300);
         
     } catch (error) {
         console.error('❌ 미리보기 내용 인쇄 실패:', error);
