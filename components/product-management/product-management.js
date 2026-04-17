@@ -31,7 +31,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'name',
         label: '상품명',
-        thClass: 'min-w-[120px]',
+        thClass: '',
         editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
@@ -45,7 +45,7 @@ const PRODUCT_COLUMNS = [
         editable: true,
         render: (p, dash) => {
             const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
-            return `<td data-field="category" data-product-id="${p.id}">${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
+            return `<td class="td-primary" data-field="category" data-product-id="${p.id}">${cat || dash}</td>`;
         }
     },
     {
