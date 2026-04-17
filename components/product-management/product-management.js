@@ -174,44 +174,12 @@ class ProductManagementComponent {
     removeEventListeners() {
         try {
             console.log('🧹 상품관리 이벤트 리스너 정리 중...');
-            
-            // 상품 등록 버튼 정리
-            const addProductBtn = document.getElementById('add-product-btn');
-            if (addProductBtn) {
-                const newBtn = addProductBtn.cloneNode(true);
-                addProductBtn.parentNode.replaceChild(newBtn, addProductBtn);
-            }
-            
-            // 카테고리 관리 버튼 정리
-            const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-            if (manageCategoriesBtn) {
-                const newBtn = manageCategoriesBtn.cloneNode(true);
-                manageCategoriesBtn.parentNode.replaceChild(newBtn, manageCategoriesBtn);
-            }
-            
-            // 일괄 등록 버튼 정리
-            const importBtn = document.getElementById('import-products-btn');
-            if (importBtn) {
-                const newBtn = importBtn.cloneNode(true);
-                importBtn.parentNode.replaceChild(newBtn, importBtn);
-            }
-            
-            // 내보내기 버튼 정리
-            const exportBtn = document.getElementById('export-products-btn');
-            if (exportBtn) {
-                const newBtn = exportBtn.cloneNode(true);
-                exportBtn.parentNode.replaceChild(newBtn, exportBtn);
-            }
-            
-            // 상품 테이블 정리
-            const productTable = document.getElementById('products-table-body');
-            if (productTable) {
-                const newTable = productTable.cloneNode(true);
-                productTable.parentNode.replaceChild(newTable, productTable);
-            }
-            
-            // 상품 모달은 document.body에 위치하므로 cloneNode 대신 클래스/스타일만 초기화
-            // (cloneNode를 쓰면 addEventListener 기반 리스너가 전부 날아가 저장 버튼 먹통 발생)
+
+            // cloneNode 제거 — DOM 교체 시 리스너 탈락 근본 원인.
+            // 대신 setupEventListeners에서 dataset.bound 플래그로 중복 방지.
+            // 버튼 리스너 해제는 하지 않음 (같은 핸들러가 재등록되어도 무해).
+
+            // 모달만 닫기
             const productModal = document.getElementById('product-modal');
             if (productModal) {
                 productModal.style.display = 'none';
@@ -238,56 +206,19 @@ class ProductManagementComponent {
      * 이벤트 리스너 설정
      */
     setupEventListeners() {
-        console.log('🔧 이벤트 리스너 설정 시작...');
-        
-        // 상품 등록 버튼
-        const addProductBtn = document.getElementById('add-product-btn');
-        console.log('🔍 add-product-btn 요소:', addProductBtn);
-        
-        if (addProductBtn) {
-            console.log('✅ 상품등록 버튼 이벤트 리스너 등록');
-            
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            addProductBtn.removeEventListener('click', this.handleAddProductClick);
-            
-            // 새로운 이벤트 리스너 추가
-            this.handleAddProductClick = () => {
-                console.log('🔄 상품등록 버튼 클릭됨!');
-                this.openProductModal();
-            };
-            
-            addProductBtn.addEventListener('click', this.handleAddProductClick);
-            console.log('✅ 상품등록 버튼 이벤트 리스너 등록 완료');
-        } else {
-            console.error('❌ add-product-btn 요소를 찾을 수 없습니다');
-            console.log('🔍 현재 DOM 상태 확인:');
-            console.log('- products-section:', document.getElementById('products-section'));
-            console.log('- 모든 버튼들:', document.querySelectorAll('button[id*="product"]'));
-        }
+        // dataset.bound 가드 — 같은 DOM 요소에 리스너 중복 등록 방지
+        const bind = (id, handler) => {
+            const el = document.getElementById(id);
+            if (el && !el.dataset.bound) {
+                el.addEventListener('click', handler);
+                el.dataset.bound = '1';
+            }
+        };
 
-        // 카테고리 관리 버튼
-        const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-        if (manageCategoriesBtn) {
-            manageCategoriesBtn.addEventListener('click', () => {
-                this.openCategoryManagement();
-            });
-        }
-
-        // 일괄 등록 버튼
-        const importBtn = document.getElementById('import-products-btn');
-        if (importBtn) {
-            importBtn.addEventListener('click', () => {
-                this.openImportModal();
-            });
-        }
-
-        // 내보내기 버튼
-        const exportBtn = document.getElementById('export-products-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                this.exportProducts();
-            });
-        }
+        bind('add-product-btn', () => this.openProductModal());
+        bind('manage-categories-btn', () => this.openCategoryManagement());
+        bind('import-products-btn', () => this.openImportModal());
+        bind('export-products-btn', () => this.exportProducts());
 
         // 검색 및 필터
         const searchInput = document.getElementById('product-search');
