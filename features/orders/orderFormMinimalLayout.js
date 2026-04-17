@@ -119,6 +119,7 @@ window.generateOrderFormHTMLMinimal = function () {
                                            placeholder="클릭하거나 상품명 검색"
                                            oninput="searchProducts(this.value)" autocomplete="off"
                                            onfocus="searchProducts(this.value)"
+                                           onclick="searchProducts(this.value)"
                                            onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}if(event.key==='Escape'){document.getElementById('product-search-results')?.classList.add('hidden');this.blur();}">
                                     <div id="product-search-results"
                                          class="xf-dropdown xf-dropdown-product hidden"></div>
