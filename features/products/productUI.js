@@ -895,7 +895,15 @@ export class ProductUI {
                     { id: 'product-form-description', value: product.description || '' },
                     { id: 'product-form-image', value: product.image_url || '' }
                 ];
-                
+
+                // 기존 이미지 미리보기 표시
+                const previewWrap = document.getElementById('product-image-preview');
+                const previewImg = document.getElementById('product-image-preview-img');
+                if (product.image_url && previewImg && previewWrap) {
+                    previewImg.src = product.image_url;
+                    previewWrap.classList.remove('hidden');
+                }
+
                 // 사이즈 처리 (기존 값이 표준 사이즈인지 확인)
                 const standardSizes = ['SX', 'S', 'M', 'L', 'XL'];
                 const productSize = product.size || '';
@@ -1002,9 +1010,13 @@ export class ProductUI {
                 return false;
             }
             
+            // 이미지 업로드 (파일 선택된 경우)
+            if (window.uploadProductImage) {
+                await window.uploadProductImage();
+            }
+
             // 폼 데이터 수집
             const productData = this.collectProductFormData();
-            console.log('📋 수집된 상품 데이터:', productData);
             
             if (!productData) {
                 console.error('❌ 상품 데이터 수집 실패');
@@ -2208,4 +2220,84 @@ window.handleSizeChange = function() {
 
 window.renderProductsTable = function() {
     productUI.renderProductsTable();
+};
+
+// ─── 상품 이미지 업로드 (Supabase Storage) ───────────────────────
+const MAX_IMAGE_SIZE = 800; // 리사이즈 최대 px
+const IMAGE_QUALITY = 0.7; // JPEG 압축 품질
+
+// 이미지 선택 시 미리보기 + 리사이즈
+window.handleProductImageSelect = function(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const nameEl = document.getElementById('product-image-filename');
+    const previewWrap = document.getElementById('product-image-preview');
+    const previewImg = document.getElementById('product-image-preview-img');
+    if (nameEl) nameEl.textContent = file.name;
+
+    // 리사이즈 후 미리보기
+    resizeImage(file, MAX_IMAGE_SIZE, IMAGE_QUALITY).then(blob => {
+        const url = URL.createObjectURL(blob);
+        if (previewImg) previewImg.src = url;
+        if (previewWrap) previewWrap.classList.remove('hidden');
+        // blob을 임시 저장 (저장 시 업로드)
+        input._resizedBlob = blob;
+    });
+};
+
+// 이미지 리사이즈 (canvas 기반, 최대 px 제한 + JPEG 압축)
+function resizeImage(file, maxSize, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxSize || h > maxSize) {
+                const ratio = Math.min(maxSize / w, maxSize / h);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// 상품 저장 전 이미지 업로드 → image_url 설정
+window.uploadProductImage = async function() {
+    const fileInput = document.getElementById('product-form-image-file');
+    const blob = fileInput?._resizedBlob;
+    if (!blob) return null; // 새 이미지 없음
+
+    if (!window.supabaseClient) {
+        console.warn('Supabase 없음 — 이미지 업로드 스킵');
+        return null;
+    }
+
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { data, error } = await window.supabaseClient.storage
+        .from('product-images')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+
+    if (error) {
+        console.error('이미지 업로드 실패:', error);
+        if (window.showToast) window.showToast('이미지 업로드 실패: ' + error.message, 3000, 'error');
+        return null;
+    }
+
+    const { data: urlData } = window.supabaseClient.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+    const publicUrl = urlData?.publicUrl;
+    // hidden input에 URL 설정
+    const hiddenInput = document.getElementById('product-form-image');
+    if (hiddenInput && publicUrl) hiddenInput.value = publicUrl;
+
+    console.log('✅ 이미지 업로드 완료:', publicUrl);
+    return publicUrl;
 };
