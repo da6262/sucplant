@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.57-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.58-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -193,6 +193,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.58 | refactor: 배포 파이프라인 재설계 — `dist/` 수동 관리 폐기, 소스→dist 화이트리스트 자동 동기화 도입. `sync-to-dist.js`(ALLOW_FILES/ALLOW_DIRS 명시된 항목만 복사) + `pre-deploy-check.js`(`server.js`·`*.bat`·`*.sql`·`.env*` 등 금지 패턴 + Supabase service_role·AWS 시크릿 등 비밀 패턴 전수 스캔) + `firebase.json` `ignore` 3중 방어. 기존 dist/ 의 2개월 drift(104 파일 차이) 해소, `dist/index.html` inline CSS 구조 폐기하고 `styles/index-inline.css` 외부 참조로 통일. `npm run sync`·`check`·`build`·`deploy` 스크립트 추가. CLAUDE.md 에 배포 워크플로우 문서화. 결과: 로컬 수정 즉시 웹 배포 가능, `server.js` 같은 개발 파일 구조적으로 유출 불가 |
 | v3.3.57 | fix: 지브라 미가시 근본 원인 3중 체인 해소 — ①`.table-ui` 에 `tr:nth-child(odd) { background: #fff }` 누락 → 부모 bg 통과(주문 탭 body `bg-slate-100` `#F1F5F9` 이 zebra `#F5F5F5` 와 근색 → 지각 불가). odd 명시로 탭 독립. ②`server.js` 가 `js/config.js` 를 startup 1회만 읽어 commit·pre-commit bump 미반영 → HTML 요청마다 `getAppVersion()` 재호출로 전환, 재시작 없이 즉시 `?v=` 갱신. ③`start-server.bat` Python 우선 → `?v=` 주입·MIME·README 동기화 기능 전체 우회. Node 우선으로 재정렬. 보너스: `--tbl-zebra-bg` `#F5F5F5` → `#E5E7EB`(gray-200, 4% → 10% 대비) 로 고휘도 모니터·주변광 무관 인지 보장 |
 | v3.3.56 | fix: 고객관리 검색창 무반응 — `cleanupCustomerEventListeners` 가 매 탭 전환마다 `customer-search` 를 `cloneNode` 로 교체해 `addEventListener` 리스너 탈락, `attachCustomerEventListeners` 재연결 타이밍 이슈 시 검색 불작동. `customer-management.html` 에 `oninput`/`onchange` 속성 추가 + `customer-management.js` 에 `window.handleCustomerSearch` 전역 헬퍼 신설 — JS 이벤트 리스너 탈락과 무관하게 항상 동작 |
 | v3.3.55 | fix: 상품 검색창 재클릭 무반응 — `onfocus`만 있어 이미 포커스된 상태에서 클릭 시 이벤트 미발생. `onclick="searchProducts(this.value)"` 추가로 포커스 여부 무관하게 클릭마다 결과 표시 |

@@ -7,24 +7,12 @@
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { DEFAULT: '#16A34A', hover: '#15803D', light: '#DCFCE7', text: '#15803D' },
-                        warn:    { DEFAULT: '#F59E0B', light: '#FEF3C7', text: '#B45309' }
-                    }
-                }
-            }
-        }
-    </script>
     
     <!-- Font Awesome -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@fortawesome/fontawesome-free@6.4.0/css/all.min.css">
     
-    <!-- Google Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Google Fonts — Noto Sans KR (한글) + Inter (숫자/영문 고가독성) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     
     <!-- SweetAlert2 -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -37,262 +25,39 @@
     
     <!-- SheetJS for Excel generation -->
     <script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
-
-    <!-- 앱 버전 설정 — 캐시 무효화용 (다른 스크립트보다 먼저 로드) -->
-    <script src="js/config.js"></script>
-
+    
     <!-- PWA Manifest -->
     <link rel="manifest" href="manifest.json">
     
-    <style>
-        /* ─── Base ─────────────────────────────────── */
-        body {
-            font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            background-color: #F3F4F6;
-            color: #111827;
+    <link rel="stylesheet" href="styles/index-inline.css">
+
+    <!-- 앱 버전 설정 — 가장 먼저 로드 (다른 스크립트보다 앞에 위치해야 함) -->
+    <script src="js/config.js"></script>
+
+    <!-- 좀비 Service Worker 자동 해제 — 과거에 등록된 sw.js 가 캐시 덮는 문제 방지 -->
+    <script>
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistrations().then(regs => {
+                if (regs.length > 0) {
+                    console.log(`🧹 기존 Service Worker ${regs.length}개 해제 중...`);
+                    Promise.all(regs.map(r => r.unregister())).then(() => {
+                        // 캐시 API 도 같이 비움
+                        if ('caches' in window) {
+                            caches.keys().then(names => Promise.all(names.map(n => caches.delete(n))))
+                                .then(() => {
+                                    console.log('✅ SW·캐시 해제 완료, 페이지 리로드');
+                                    location.reload();
+                                });
+                        } else {
+                            location.reload();
+                        }
+                    });
+                }
+            }).catch(() => {});
         }
-
-        /* ─── Modal 공통 구조 ───────────────────────── */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.5);
-            z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 16px;
-        }
-        .modal-container {
-            background: #fff; border-radius: 10px; box-shadow: 0 20px 60px rgba(0,0,0,0.15);
-            width: 100%; max-width: 680px; max-height: 90vh;
-            display: flex; flex-direction: column; overflow: hidden;
-        }
-        .modal-container-wide { max-width: 800px; }
-        .modal-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 14px 20px; border-bottom: 1px solid #E5E7EB; flex-shrink: 0; background: #fff;
-        }
-        .modal-title { font-size: 15px; font-weight: 600; color: #111827; }
-        .modal-close-btn {
-            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
-            border-radius: 6px; border: none; background: transparent; cursor: pointer;
-            color: #9CA3AF; transition: all 0.15s; flex-shrink: 0;
-        }
-        .modal-close-btn:hover { background: #F3F4F6; color: #374151; }
-        .modal-body { flex: 1; overflow-y: auto; padding: 20px; }
-        .modal-footer {
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 12px 20px; border-top: 1px solid #E5E7EB; flex-shrink: 0; background: #fff;
-        }
-        .modal-section-title {
-            font-size: 11px; font-weight: 600; color: #6B7280; text-transform: uppercase;
-            letter-spacing: 0.05em; margin-bottom: 10px;
-        }
-
-        /* ─── Buttons ──────────────────────────────── */
-        .btn-primary {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 14px; border-radius: 6px;
-            font-size: 12px; font-weight: 500; white-space: nowrap;
-            background: #16A34A; color: #fff; border: none; cursor: pointer;
-            transition: background 0.15s;
-        }
-        .btn-primary:hover { background: #15803D; }
-        .btn-primary i, .btn-primary .fas { font-size: 11px; }
-
-        .btn-secondary {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 14px; border-radius: 6px;
-            font-size: 12px; font-weight: 500; white-space: nowrap;
-            background: #fff; color: #374151; border: 1px solid #D1D5DB; cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-secondary:hover { background: #F9FAFB; border-color: #9CA3AF; }
-        .btn-secondary i, .btn-secondary .fas { font-size: 11px; }
-
-        /* app-btn → btn-primary/secondary 동일 스타일 */
-        .app-btn { display: inline-flex; align-items: center; gap: 5px; padding: 6px 14px; border-radius: 6px; font-size: 12px; font-weight: 500; white-space: nowrap; background: #fff; color: #374151; border: 1px solid #D1D5DB; cursor: pointer; transition: all 0.15s; }
-        .app-btn:hover { background: #F9FAFB; border-color: #9CA3AF; }
-        .app-btn i, .app-btn .fas { font-size: 11px; }
-        .app-btn-primary { background: #16A34A !important; color: #fff !important; border-color: #16A34A !important; }
-        .app-btn-primary:hover { background: #15803D !important; border-color: #15803D !important; transform: none !important; box-shadow: none !important; }
-        .app-btn-soft, .app-btn-muted { background: #fff !important; color: #374151 !important; border: 1px solid #D1D5DB !important; }
-        .app-btn-soft:hover, .app-btn-muted:hover { background: #F9FAFB !important; border-color: #9CA3AF !important; }
-
-        /* ─── Badge / Status pill ───────────────────── */
-        .badge {
-            display: inline-flex; align-items: center;
-            padding: 2px 8px; border-radius: 9999px;
-            font-size: 11px; font-weight: 500; white-space: nowrap; line-height: 1.6;
-        }
-        .badge-neutral { background: #F3F4F6; color: #6B7280; }
-        .badge-success { background: #DCFCE7; color: #15803D; }
-        .badge-warning { background: #FEF3C7; color: #B45309; }
-        .badge-info    { background: #DBEAFE; color: #1D4ED8; }
-        .badge-danger  { background: #FEE2E2; color: #DC2626; }
-
-        /* ─── Card ──────────────────────────────────── */
-        .card-ui {
-            background: #fff; border-radius: 8px;
-            border: 1px solid #E5E7EB; box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-        }
-
-        /* ─── Input ─────────────────────────────────── */
-        .input-ui {
-            width: 100%; padding: 7px 10px; border: 1px solid #D1D5DB; border-radius: 6px;
-            font-size: 13px; color: #111827; outline: none; background: #fff;
-            transition: border-color 0.15s; box-sizing: border-box;
-        }
-        .input-ui:focus { border-color: #16A34A; box-shadow: 0 0 0 2px rgba(22,163,74,0.12); }
-        .input-ui:read-only { background: #F9FAFB; color: #6B7280; cursor: not-allowed; }
-
-        /* ─── Table ─────────────────────────────────── */
-        .table-ui { width: 100%; border-collapse: collapse; }
-        .table-ui thead th {
-            padding: 8px 10px; text-align: left;
-            font-size: 11px; font-weight: 600; color: #6B7280;
-            background: #F9FAFB; border-bottom: 1px solid #E5E7EB; white-space: nowrap;
-        }
-        .table-ui tbody tr { border-bottom: 1px solid #F3F4F6; transition: background 0.1s; }
-        .table-ui tbody tr:hover { background: #F0FDF4; }
-        .table-ui tbody td { padding: 6px 10px; font-size: 12px; color: #374151; vertical-align: middle; }
-
-        /* ─── Page header ───────────────────────────── */
-        .page-header {
-            display: flex; align-items: center; justify-content: space-between;
-            padding-bottom: 12px; margin-bottom: 16px; border-bottom: 1px solid #E5E7EB;
-        }
-        .page-title { font-size: 15px; font-weight: 700; color: #111827; }
-        .page-desc  { font-size: 11px; color: #9CA3AF; margin-top: 2px; }
-
-        /* ─── Status tab nav ─────────────────────────── */
-        .status-tab-btn {
-            padding: 5px 10px; font-size: 11px; font-weight: 500;
-            border-radius: 6px; color: #6B7280; background: transparent;
-            border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap;
-        }
-        .status-tab-btn:hover { background: #F3F4F6; color: #374151; }
-        .status-tab-btn.active { background: #16A34A; color: #fff; font-weight: 600; }
-        .status-tab-btn.active .tab-count { background: rgba(255,255,255,0.25) !important; color: #fff !important; }
-        .tab-count {
-            display: inline-flex; align-items: center; justify-content: center;
-            margin-left: 3px; padding: 0 5px; min-width: 18px; height: 16px;
-            border-radius: 9999px; font-size: 10px; font-weight: 600;
-            background: #E5E7EB; color: #6B7280; line-height: 1;
-        }
-
-        /* ─── Date filter quick buttons ─────────────── */
-        .order-date-quick-btn {
-            padding: 3px 8px; font-size: 11px; border-radius: 4px; cursor: pointer;
-            border: 1px solid #E5E7EB; background: #fff; color: #6B7280; transition: all 0.1s;
-        }
-        .order-date-quick-btn:hover { background: #F9FAFB; border-color: #9CA3AF; }
-        .order-date-quick-btn.active-date { background: #16A34A; color: #fff; border-color: #16A34A; }
-
-        /* 사이드바 */
-        .sidebar {
-            background: linear-gradient(180deg, #0f172a 0%, #1a2744 100%);
-            border-right: 1px solid rgba(255,255,255,0.05);
-            position: fixed; top: 0; left: 0; height: 100vh; width: 180px; z-index: 20;
-            display: none; flex-direction: column;
-        }
-        @media (min-width: 768px) { .sidebar { display: flex; } }
-
-        .nav-btn {
-            width: 100%; display: flex; align-items: center; gap: 10px;
-            padding: 10px 12px; border-radius: 8px; font-size: 13.5px; font-weight: 500;
-            color: #94a3b8; background: transparent; border: none; cursor: pointer;
-            transition: all 0.15s; text-align: left; white-space: nowrap;
-        }
-        .nav-btn:hover { background: rgba(255,255,255,0.08); color: #f1f5f9; }
-        .nav-btn.active { background: linear-gradient(135deg, #059669, #047857); color: white; box-shadow: 0 2px 10px rgba(5,150,105,0.4); }
-        .nav-btn.active i { color: #6ee7b7; }
-        .nav-btn i { width: 16px; text-align: center; font-size: 13px; flex-shrink: 0; }
-
-        .mobile-nav-btn { transition: color 0.15s; }
-        .mobile-nav-btn.active { color: #059669; }
-
-        /* 앱 버튼 */
-        .app-btn {
-            display: inline-flex; align-items: center; gap: 5px;
-            padding: 6px 12px; border-radius: 7px; font-size: 12px; font-weight: 500;
-            border: none; cursor: pointer; transition: all 0.15s; white-space: nowrap; line-height: 1.4;
-        }
-        /* 위 app-btn 통일 스타일 참고 — 중복 정의 제거 */
-
-        /* 앱 패널 */
-        .app-panel { background: white; border-radius: 12px; border: 1px solid #f1f5f9; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
-        .app-section-frame { display: flex; flex-direction: column; }
-        .app-section-header { display: flex; align-items: center; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #f1f5f9; flex-shrink: 0; }
-        .app-section-heading { display: flex; align-items: center; gap: 8px; }
-        .app-section-icon { width: 28px; height: 28px; background: linear-gradient(135deg, #059669, #047857); border-radius: 7px; display: flex; align-items: center; justify-content: center; color: white; font-size: 12px; flex-shrink: 0; }
-        .app-section-title { font-size: 14px; font-weight: 700; color: #0f172a; line-height: 1.3; }
-        .app-section-subtitle { font-size: 11px; color: #64748b; margin-top: 1px; }
-        .app-toolbar { display: flex; align-items: center; gap: 8px; }
-        .app-pill-bar { display: flex; flex-wrap: wrap; gap: 6px; }
-
-        /* KPI 카드 */
-        .kpi-card { background: white; border-radius: 12px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.06); border: 1px solid #f1f5f9; transition: box-shadow 0.2s, transform 0.15s; cursor: pointer; }
-        .kpi-card:hover { box-shadow: 0 6px 18px rgba(0,0,0,0.1); transform: translateY(-2px); }
-        .kpi-icon { width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; margin-bottom: 12px; }
-        .kpi-label { font-size: 10px; font-weight: 600; color: #94a3b8; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 0.06em; }
-        .kpi-value { font-size: 28px; font-weight: 700; line-height: 1; }
-
-        /* 배지 */
-        .badge { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; line-height: 1.5; }
-        .badge-orange  { background: #fff7ed; color: #c2410c; }
-        .badge-blue    { background: #eff6ff; color: #1d4ed8; }
-        .badge-purple  { background: #faf5ff; color: #6d28d9; }
-        .badge-green   { background: #f0fdf4; color: #15803d; }
-        .badge-emerald { background: #ecfdf5; color: #059669; }
-        .badge-red     { background: #fef2f2; color: #b91c1c; }
-        .badge-yellow  { background: #fefce8; color: #a16207; }
-        .badge-gray    { background: #f8fafc; color: #475569; }
-        .badge-sky     { background: #f0f9ff; color: #0369a1; }
-
-        /* 테이블 */
-        .app-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .app-table thead { background: #f1f5f9; position: sticky; top: 0; z-index: 1; }
-        .app-table thead th { padding: 8px 10px; text-align: left; font-size: 11px; font-weight: 600; color: #374151; white-space: nowrap; border-bottom: 1px solid #e2e8f0; }
-        .app-table tbody tr { border-bottom: 1px solid #f3f4f6; transition: background 0.1s; }
-        .app-table tbody tr:nth-child(even) { background: #f8fafc; }
-        .app-table tbody tr:hover { background: #f0fdf4; }
-        .app-table tbody td { padding: 6px 8px; font-size: 12px; color: #374151; vertical-align: middle; }
-
-        /* 고객관리 레이아웃 */
-        .customer-admin-layout { display: flex; flex: 1; min-height: 0; overflow: hidden; }
-        .customer-admin-sidebar { flex: 1; width: auto; border-right: 1px solid #e4ede5; background: #f8faf8; display: flex; flex-direction: column; min-height: 0; }
-        .customer-admin-main { display: none; position: fixed; top: 80px; right: 20px; width: 380px; height: calc(100vh - 110px); min-width: 260px; min-height: 180px; flex-direction: column; background: white; border-radius: 12px; box-shadow: 0 8px 32px rgba(0,0,0,0.18), 0 2px 8px rgba(0,0,0,0.08); border: 1px solid #e2e8f0; z-index: 200; overflow: hidden; }
-        .customer-admin-layout.detail-open .customer-admin-sidebar { flex: 1; width: auto; }
-        .customer-admin-layout.detail-open .customer-admin-main { display: flex; }
-        .customer-admin-main.panel-fullpage { top: 56px !important; right: 0 !important; left: 0 !important; width: 100% !important; height: calc(100vh - 56px) !important; border-radius: 0 !important; z-index: 300; }
-        .customer-detail-drag-handle { flex-shrink: 0; display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; background: #f8fafc; border-bottom: 1px solid #e2e8f0; cursor: grab; user-select: none; }
-        .customer-detail-drag-handle:active { cursor: grabbing; }
-        .customer-detail-resize-handle { position: absolute; bottom: 0; right: 0; width: 18px; height: 18px; cursor: se-resize; z-index: 10; }
-        .customer-detail-resize-handle::after { content: ''; position: absolute; bottom: 3px; right: 3px; width: 10px; height: 10px; border-right: 2px solid #94a3b8; border-bottom: 2px solid #94a3b8; border-radius: 2px; }
-        .customer-toolbar-grid { display: flex; gap: 6px; align-items: center; }
-        .customer-search-wrap { position: relative; flex: 1; }
-        .customer-search-wrap input { width: 100%; border: 1px solid #dde6dd; border-radius: 8px; background: white; color: #334155; outline: none; transition: border-color 0.15s, box-shadow 0.15s; }
-        .customer-search-wrap input:focus { border-color: #059669; box-shadow: 0 0 0 3px rgba(5,150,105,0.1); }
-        .customer-filter-select { border: 1px solid #dde6dd; border-radius: 8px; background: white; color: #334155; font-size: 12px; outline: none; cursor: pointer; }
-        .customer-chip { padding: 2px 7px; border-radius: 20px; font-size: 10.5px; font-weight: 600; border: 1px solid #e2e8f0; background: white; color: #64748b; cursor: pointer; transition: all 0.15s; white-space: nowrap; display: inline-flex; align-items: center; gap: 3px; }
-        .customer-chip.active { background: #059669; color: white; border-color: #059669; box-shadow: 0 1px 4px rgba(5,150,105,0.3); }
-        .customer-chip:hover:not(.active) { background: #f0fdf4; border-color: #6ee7b7; color: #065f46; }
-        .customer-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .customer-table thead th { background: #f1f5f9; color: #374151; font-size: 11px; font-weight: 600; padding: 8px 10px; text-align: left; position: sticky; top: 0; border-bottom: 1px solid #e2e8f0; white-space: nowrap; z-index: 1; }
-        .customer-row { border-bottom: 1px solid #f1f5f9; cursor: pointer; transition: background 0.1s; }
-        .customer-row:hover { background: #f0fdf4; }
-        .customer-row.selected { background: #bbf7d0; border-left: 3px solid #059669; }
-        .customer-row td { padding: 3px 8px; }
-        .page-btn { min-width: 28px; height: 28px; padding: 0 6px; border: 1px solid #e2e8f0; border-radius: 6px; background: white; color: #475569; font-size: 12px; cursor: pointer; transition: all 0.1s; }
-        .page-btn:hover:not(:disabled) { background: #f1f5f9; border-color: #94a3b8; }
-        .page-btn.active { background: #059669; color: white; border-color: #059669; font-weight: 600; }
-        .page-btn:disabled { opacity: 0.35; cursor: default; }
-        .customer-checkbox { width: 14px; height: 14px; cursor: pointer; accent-color: #059669; }
-
-        /* 스크롤바 */
-        ::-webkit-scrollbar { width: 5px; height: 5px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
-    </style>
+    </script>
 </head>
-<body class="bg-gray-50 min-h-screen flex flex-col">
+<body class="bg-slate-100 min-h-screen">
     <!-- 로그인 모달 -->
     <div id="loginModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50" style="display: flex;">
         <div class="bg-white rounded-lg shadow-xl p-8 w-full max-w-md mx-4">
@@ -360,7 +125,6 @@
         <div id="customers-section" class="tab-content hidden min-h-0"></div>
         <div id="orders-section" class="tab-content hidden min-h-0"></div>
         <div id="products-section" class="tab-content hidden min-h-0"></div>
-        <div id="shipping-section" class="tab-content hidden min-h-0"></div>
         <div id="waitlist-section" class="tab-content hidden min-h-0">
             <div class="py-4">
                 <h2 class="text-lg font-semibold text-gray-800">대기자 관리</h2>
@@ -505,54 +269,37 @@
         function loadScriptsSequentially(scripts, index) {
             if (index >= scripts.length) {
                 console.log('✅ 모든 스크립트 로드 완료');
-                // 모든 스크립트 로드 완료 후 네비게이션 초기화
-                setTimeout(() => {
-                    initializeNavigationAfterScriptsLoaded();
-                }, 100);
+                initializeNavigationAfterScriptsLoaded();
                 return;
             }
-            
+
             // 무한 루프 방지를 위한 최대 재시도 횟수
             if (index > scripts.length * 2) {
                 console.error('❌ 스크립트 로드 무한 루프 감지. 강제 종료.');
                 initializeNavigationAfterScriptsLoaded();
                 return;
             }
-            
+
             const scriptInfo = scripts[index];
             console.log(`📦 스크립트 로드 중 (${index + 1}/${scripts.length}): ${scriptInfo.src}`);
-            
+
             const script  = document.createElement('script');
             const _v      = window.APP_VERSION || '';
             const _sep    = scriptInfo.src.includes('?') ? '&' : '?';
             script.src    = _v ? `${scriptInfo.src}${_sep}v=${_v}` : scriptInfo.src;
             script.type   = scriptInfo.type;
-            
+
             // 타임아웃 설정 (10초)
             const timeoutId = setTimeout(() => {
                 console.warn(`⏰ 스크립트 로드 타임아웃: ${scriptInfo.src}`);
-                // 타임아웃이 발생해도 다음 스크립트 계속 로드
-                if (index + 1 < scripts.length) {
-                    setTimeout(() => {
-                        loadScriptsSequentially(scripts, index + 1);
-                    }, 100);
-                } else {
-                    console.log('✅ 모든 스크립트 로드 완료 (타임아웃 포함)');
-                    setTimeout(() => {
-                        initializeNavigationAfterScriptsLoaded();
-                    }, 100);
-                }
+                loadScriptsSequentially(scripts, index + 1);
             }, 10000);
-            
+
             script.onload = function() {
                 clearTimeout(timeoutId);
-                console.log(`✅ 스크립트 로드 완료: ${scriptInfo.src}`);
-                // 다음 스크립트 로드
-                setTimeout(() => {
-                    loadScriptsSequentially(scripts, index + 1);
-                }, 100); // 100ms 간격으로 순차 로드
+                loadScriptsSequentially(scripts, index + 1);
             };
-            
+
             script.onerror = function() {
                 clearTimeout(timeoutId);
                 if (scriptInfo.conditional) {
@@ -560,18 +307,7 @@
                 } else {
                     console.error(`❌ 스크립트 로드 실패: ${scriptInfo.src}`);
                 }
-                // 실패해도 다음 스크립트 계속 로드 (무한 루프 방지)
-                if (index + 1 < scripts.length) {
-                    setTimeout(() => {
-                        loadScriptsSequentially(scripts, index + 1);
-                    }, 100);
-                } else {
-                    console.log('✅ 모든 스크립트 로드 완료 (일부 실패 포함)');
-                    // 모든 스크립트 로드 완료 후 네비게이션 초기화
-                    setTimeout(() => {
-                        initializeNavigationAfterScriptsLoaded();
-                    }, 100);
-                }
+                loadScriptsSequentially(scripts, index + 1);
             };
             
             document.head.appendChild(script);
@@ -592,6 +328,13 @@
             
             console.log('✅ 네비게이션 컨테이너 발견:', navContainer);
             
+            // Header 컴포넌트 초기화 (버전 배지 포함)
+            if (window.HeaderComponent) {
+                const headerComponent = new window.HeaderComponent();
+                headerComponent.init(document.getElementById('header-container'));
+                console.log('✅ Header 컴포넌트 초기화 완료');
+            }
+
             // Navigation 컴포넌트 초기화
             if (window.NavigationComponent) {
                 const navigationComponent = new window.NavigationComponent();
@@ -638,6 +381,9 @@
                     if (headerResponse.ok) {
                         headerContainer.innerHTML = await headerResponse.text();
                         console.log('✅ Header 컴포넌트 로드 완료');
+                        // 헤더 HTML 삽입 직후 버전 배지 즉시 적용
+                        const _vEl = document.getElementById('app-version-number');
+                        if (_vEl && window.APP_VERSION) _vEl.textContent = window.APP_VERSION;
                     }
                 }
                 
@@ -652,7 +398,7 @@
                 if (dashboardContainer) {
                     try {
                         // HTML만 로드 (JavaScript는 스크립트 로딩 시스템에서 이미 로드됨)
-                        const dashboardResponse = await fetch('components/dashboard/dashboard.html', { cache: 'no-store' });
+                        const dashboardResponse = await fetch('components/dashboard/dashboard.html');
                         if (dashboardResponse.ok) {
                             dashboardContainer.innerHTML = await dashboardResponse.text();
                             console.log('✅ Dashboard HTML 로드 완료');
@@ -713,7 +459,13 @@
         // 탭 전환 함수
         async function switchTab(tabId) {
             console.log('🔄 탭 전환:', tabId);
-            
+
+            // 고객 상세 플로팅 패널 숨기기 (고객관리 외 탭 전환 시)
+            if (tabId !== 'customers') {
+                const dynPanel = document.getElementById('_dyn_detail_panel');
+                if (dynPanel) dynPanel.style.display = 'none';
+            }
+
             try {
                 // 현재 로딩 중인 컴포넌트가 있으면 대기
                 if (window.currentLoadingComponent) {
@@ -727,12 +479,10 @@
                 // DOM이 완전히 로드될 때까지 대기
                 await waitForDOMReady();
                 
-                // 디버그: 현재 DOM 상태 확인
-                console.log('🔍 DOM 상태 확인 중...');
-                const allSections = document.querySelectorAll('[id$="-section"]');
-                console.log('🔍 발견된 섹션들:', Array.from(allSections).map(el => el.id));
-                
-                // 모든 섹션 숨기기 (강화된 버전)
+                // mainContent 직계 자식만 대상 (중첩 컴포넌트 div 제외)
+                const allSections = document.querySelectorAll('#mainContent > [id$="-section"]');
+
+                // 모든 섹션 숨기기
                 allSections.forEach(section => {
                     if (section.id !== `${tabId}-section`) {
                         section.classList.add('hidden');
@@ -745,6 +495,14 @@
                 document.querySelectorAll('.tab-button').forEach(button => {
                     button.classList.remove('active');
                 });
+
+                // 사이드바 네비게이션 활성 상태 동기화
+                document.querySelectorAll('.nav-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.mobile-nav-btn').forEach(btn => btn.classList.remove('active'));
+                const _activeNavBtn = document.getElementById(`nav-${tabId}`);
+                if (_activeNavBtn) _activeNavBtn.classList.add('active');
+                const _activeMobileNavBtn = document.getElementById(`mobile-nav-${tabId}`);
+                if (_activeMobileNavBtn) _activeMobileNavBtn.classList.add('active');
                 
                 // 선택된 섹션 표시
                 let targetSection = document.getElementById(`${tabId}-section`);
@@ -910,20 +668,6 @@
                             </div>
                         `;
                         break;
-                    case 'shipping':
-                        section.innerHTML = `
-                            <div class="mb-6">
-                                <h2 class="text-2xl font-bold text-gray-800">배송 관리</h2>
-                                <p class="text-gray-600 mt-1">배송 정보를 관리하세요</p>
-                            </div>
-                            <div class="text-center py-8 text-gray-500">
-                                <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                                    <i class="fas fa-truck text-green-600 text-lg"></i>
-                                </div>
-                                <p class="text-sm font-medium">배송관리 기능이 준비 중입니다...</p>
-                            </div>
-                        `;
-                        break;
                     case 'waitlist':
                         section.innerHTML = `
                             <div class="mb-6">
@@ -1012,14 +756,6 @@
                             await loadFallbackContent(tabId);
                         }
                         break;
-                    case 'shipping':
-                        if (window.loadShippingManagementComponent) {
-                            await window.loadShippingManagementComponent();
-                        } else {
-                            console.warn('⚠️ loadShippingManagementComponent 함수를 찾을 수 없습니다.');
-                            await loadFallbackContent(tabId);
-                        }
-                        break;
                     case 'waitlist':
                         if (window.loadWaitlistManagementComponent) {
                             await window.loadWaitlistManagementComponent();
@@ -1063,204 +799,27 @@
         }
         
         // 중복된 loadCustomerListComponent 함수 제거됨 - customer-management.html을 메인으로 사용
-        
-        // 고객관리 메인 시스템 로드 함수
-        async function loadCustomerManagementComponent() {
-            try {
-                console.log('🔄 고객관리 메인 시스템 로드 시작...');
-                
-                const customersContainer = document.getElementById('customers-section');
-                if (!customersContainer) {
-                    console.error('❌ customers-section 요소를 찾을 수 없습니다');
-                    return false;
-                }
-                
-                // 고객관리 HTML 로드 (캐시 방지로 항상 최신 레이아웃 적용)
-                const response = await fetch('components/customer-management/customer-management.html?v=' + Date.now(), { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const html = await response.text();
-                customersContainer.innerHTML = html;
-                console.log('✅ 고객관리 메인 시스템 로드 완료');
-                
-                // 고객관리 데이터·이벤트 초기화 (customer-management.js 로드 후 initCustomerManagementSection 호출)
-                if (typeof window.initCustomerManagementSection === 'function') {
-                    await window.initCustomerManagementSection();
-                    console.log('✅ 고객관리 초기화 완료');
-                } else {
-                    console.warn('⚠️ initCustomerManagementSection 없음 - 고객관리 JS 로드 순서 확인');
-                }
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ 고객관리 메인 시스템 로드 실패:', error);
-                return false;
-            }
-        }
-        
-        
-        async function loadProductManagementComponent() {
-            try {
-                console.log('📋 상품 관리 컴포넌트 로드 시작...');
-                
-                const productsContainer = document.getElementById('products-section');
-                if (!productsContainer) {
-                    console.error('❌ products-section 요소를 찾을 수 없습니다');
-                    return false;
-                }
-                
-                // 🆕 이미 로드되었는지 확인
-                if (productsContainer.innerHTML.trim() !== '' && 
-                    !productsContainer.innerHTML.includes('여기에 로드됩니다') &&
-                    !productsContainer.innerHTML.includes('로드할 수 없습니다')) {
-                    console.log('📋 상품 관리 컴포넌트가 이미 로드되었습니다. 재초기화합니다.');
-                    
-                    // 컴포넌트 재초기화
-                    if (window.productManagementComponent && window.productManagementComponent.init) {
-                        await window.productManagementComponent.init(productsContainer);
-                        console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
-                        return true;
-                    } else if (window.ProductManagementComponent) {
-                        console.log('🔄 기존 인스턴스가 없어서 새로 생성합니다...');
-                        const productManagementComponent = new window.ProductManagementComponent();
-                        await productManagementComponent.init(productsContainer);
-                        window.productManagementComponent = productManagementComponent;
-                        console.log('✅ 상품 관리 컴포넌트 재초기화 완료');
-                        return true;
-                    }
-                }
-                
-                // HTML 로드 (최초 로드 시에만)
-                console.log('🌐 상품 관리 HTML 최초 로드...');
-                const response = await fetch('components/product-management/product-management.html', { cache: 'no-store' });
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-                
-                const html = await response.text();
-                productsContainer.innerHTML = html;
-                console.log('✅ 상품 관리 HTML 로드 완료');
-                
-                // ProductManagementComponent 클래스가 로드될 때까지 대기
-                await waitForProductManagementComponent();
-                
-                // JavaScript 초기화
-                if (window.ProductManagementComponent) {
-                    console.log('🏗️ ProductManagementComponent 클래스 발견, 인스턴스 생성 중...');
-                    const productManagementComponent = new window.ProductManagementComponent();
-                    await productManagementComponent.init(productsContainer);
-                    console.log('✅ 상품 관리 컴포넌트 초기화 완료');
-                    
-                    // 전역에 등록
-                    window.productManagementComponent = productManagementComponent;
-                    console.log('✅ productManagementComponent 전역 등록 완료');
-                } else {
-                    console.error('❌ ProductManagementComponent 클래스를 찾을 수 없습니다');
-                    console.log('🔍 window 객체에서 사용 가능한 클래스들:', Object.keys(window).filter(key => key.includes('Component')));
-                    
-                    // 폴백: 직접 스크립트 로드 시도
-                    await loadProductManagementScript();
-                    
-                    if (window.ProductManagementComponent) {
-                        console.log('🔄 폴백 로드 성공, 컴포넌트 초기화 중...');
-                        const productManagementComponent = new window.ProductManagementComponent();
-                        await productManagementComponent.init(productsContainer);
-                        window.productManagementComponent = productManagementComponent;
-                        console.log('✅ 폴백 로드로 상품 관리 컴포넌트 초기화 완료');
-                    } else {
-                        throw new Error('ProductManagementComponent 클래스를 로드할 수 없습니다');
-                    }
-                }
-                
-                return true;
-                
-            } catch (error) {
-                console.error('❌ 상품 관리 컴포넌트 로드 실패:', error);
-                
-                // 에러 상태 표시
-                const productsContainer = document.getElementById('products-section');
-                if (productsContainer) {
-                    productsContainer.innerHTML = `
-                        <div class="text-center py-8 text-red-500">
-                            <div class="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center mx-auto mb-3">
-                                <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
-                            </div>
-                            <p class="text-sm font-medium">상품 관리 컴포넌트를 로드할 수 없습니다.</p>
-                            <p class="text-xs text-gray-500 mt-1">오류: ${error.message}</p>
-                            <button onclick="location.reload()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm hover:bg-red-700 transition-colors">
-                                페이지 새로고침
-                            </button>
-                        </div>
-                    `;
-                }
-                
-                return false;
-            }
-        }
-        
-        // ProductManagementComponent 클래스 로드 대기 함수
-        async function waitForProductManagementComponent() {
-            return new Promise((resolve, reject) => {
-                let attempts = 0;
-                const maxAttempts = 50; // 5초 대기
-                
-                const checkComponent = () => {
-                    attempts++;
-                    console.log(`🔄 ProductManagementComponent 로드 확인 ${attempts}/${maxAttempts}`);
-                    
-                    if (window.ProductManagementComponent) {
-                        console.log('✅ ProductManagementComponent 클래스 발견');
-                        resolve();
-                    } else if (attempts >= maxAttempts) {
-                        console.warn('⚠️ ProductManagementComponent 로드 시간 초과');
-                        resolve(); // 에러가 아닌 경고로 처리
-                    } else {
-                        setTimeout(checkComponent, 100);
-                    }
-                };
-                
-                checkComponent();
-            });
-        }
-        
-        // ProductManagementComponent 스크립트 직접 로드 함수
-        async function loadProductManagementScript() {
-            return new Promise((resolve, reject) => {
-                console.log('📦 ProductManagementComponent 스크립트 직접 로드 시도...');
-                
-                const script = document.createElement('script');
-                script.src = 'components/product-management/product-management.js';
-                script.type = 'text/javascript';
-                
-                script.onload = function() {
-                    console.log('✅ ProductManagementComponent 스크립트 로드 완료');
-                    resolve();
-                };
-                
-                script.onerror = function() {
-                    console.error('❌ ProductManagementComponent 스크립트 로드 실패');
-                    reject(new Error('ProductManagementComponent 스크립트 로드 실패'));
-                };
-                
-                document.head.appendChild(script);
-            });
-        }
+        // loadCustomerManagementComponent → js/customer-management.js 에서 window.loadCustomerManagementComponent 등록
+        // loadProductManagementComponent → js/product-management.js 에서 window.loadProductManagementComponent 등록
         
         async function loadWaitlistManagementComponent() {
             try {
                 console.log('📋 대기자 관리 컴포넌트 로드 시작...');
-                
+
                 const waitlistContainer = document.getElementById('waitlist-section');
                 if (!waitlistContainer) {
                     console.error('❌ waitlist-section 요소를 찾을 수 없습니다');
                     return false;
                 }
-                
+
+                // 재방문 시 재로드 건너뜀
+                if (waitlistContainer.dataset.loaded === 'true') {
+                    console.log('📋 대기자 관리 컴포넌트 이미 로드됨 — 재로드 건너뜀');
+                    return true;
+                }
+
                 // HTML 로드
-                const response = await fetch('components/waitlist-management/waitlist-management.html', { cache: 'no-store' });
+                const response = await fetch('components/waitlist-management/waitlist-management.html');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1274,7 +833,8 @@
                     await window.initializeWaitlistData();
                     console.log('✅ 대기자 관리 컴포넌트 초기화 완료');
                 }
-                
+
+                waitlistContainer.dataset.loaded = 'true';
                 return true;
                 
             } catch (error) {
@@ -1295,7 +855,7 @@
                 }
                 
                 // HTML 로드
-                const response = await fetch('components/dashboard/dashboard.html', { cache: 'no-store' });
+                const response = await fetch('components/dashboard/dashboard.html');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1303,17 +863,29 @@
                 const html = await response.text();
                 dashboardContainer.innerHTML = html;
                 console.log('✅ 대시보드 컴포넌트 로드 완료');
-
-                // DashboardComponent 초기화
-                setTimeout(() => {
+                
+                // JavaScript 로드 및 초기화
+                try {
+                    // 대시보드 JavaScript 파일 로드
+                    const scriptResponse = await fetch('components/dashboard/dashboard.js');
+                    if (scriptResponse.ok) {
+                        const scriptText = await scriptResponse.text();
+                        // 스크립트 실행
+                        eval(scriptText);
+                        console.log('✅ 대시보드 JavaScript 로드 완료');
+                    }
+                    
+                    // DashboardComponent 초기화
                     if (window.DashboardComponent) {
-                        const dc = new window.DashboardComponent();
-                        dc.init(dashboardContainer);
+                        const dashboardComponent = new window.DashboardComponent();
+                        dashboardComponent.init(dashboardContainer);
                         console.log('✅ 대시보드 컴포넌트 초기화 완료');
                     } else {
-                        console.warn('⚠️ DashboardComponent 없음');
+                        console.warn('⚠️ DashboardComponent 클래스를 찾을 수 없습니다');
                     }
-                }, 100);
+                } catch (scriptError) {
+                    console.error('❌ 대시보드 JavaScript 로드 실패:', scriptError);
+                }
                 
                 return true;
                 
@@ -1325,9 +897,9 @@
 
         // 전역 함수로 등록
         window.loadDashboardComponent = loadDashboardComponent;
-        window.loadCustomerManagementComponent = loadCustomerManagementComponent;
-        window.loadProductManagementComponent = loadProductManagementComponent;
         window.loadWaitlistManagementComponent = loadWaitlistManagementComponent;
+        // window.loadCustomerManagementComponent → js/customer-management.js에서 등록
+        // window.loadProductManagementComponent → js/product-management.js에서 등록
         
         // 폴백 콘텐츠 로드 함수 - 비활성화
         async function loadFallbackContent(tabId) {
@@ -1400,7 +972,7 @@
                 }
                 
                 // 환경설정 HTML 로드
-                const response = await fetch('components/settings/settings.html', { cache: 'no-store' });
+                const response = await fetch('components/settings/settings.html');
                 if (!response.ok) {
                     throw new Error(`HTTP error! status: ${response.status}`);
                 }
@@ -1414,22 +986,26 @@
                 cssLink.href = 'components/settings/settings.css';
                 document.head.appendChild(cssLink);
                 
-                // 환경설정 JavaScript 로드
-                const script = document.createElement('script');
-                script.src = 'components/settings/settings.js';
-                script.onload = () => {
-                    console.log('✅ 환경설정 JavaScript 로드 완료');
-                    // 환경설정 초기화
-                    if (window.SettingsComponent) {
-                        const settingsComponent = new window.SettingsComponent();
-                        settingsComponent.init(settingsContainer);
-                    }
-                };
-                script.onerror = () => {
-                    console.error('❌ 환경설정 JavaScript 로드 실패');
-                };
-                document.head.appendChild(script);
-                
+                // 환경설정 JavaScript 로드 (완료까지 대기)
+                await new Promise((resolve, reject) => {
+                    const script = document.createElement('script');
+                    script.src = 'components/settings/settings.js';
+                    script.onload = () => {
+                        console.log('✅ 환경설정 JavaScript 로드 완료');
+                        // 환경설정 초기화
+                        if (window.SettingsComponent) {
+                            const settingsComponent = new window.SettingsComponent();
+                            settingsComponent.init(settingsContainer);
+                        }
+                        resolve();
+                    };
+                    script.onerror = () => {
+                        console.error('❌ 환경설정 JavaScript 로드 실패');
+                        resolve(); // 실패해도 진행
+                    };
+                    document.head.appendChild(script);
+                });
+
                 console.log('✅ 환경설정 컴포넌트 로드 완료');
                 return true;
                 
@@ -1484,49 +1060,6 @@
             console.log('- window.sendSMS:', typeof window.sendSMS);
         }, 2000);
         
-        // 통합 배송관리 시스템 모듈 로드
-        import('./features/shipping/shippingManager.js').then(module => {
-            window.shippingManager = module.shippingManager;
-            console.log('✅ 통합 배송관리 시스템 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 통합 배송관리 시스템 모듈 로드 실패:', error);
-        });
-        
-        // 배송관리 개별 모듈들 로드
-        import('./features/shipping/trackingAPI.js').then(module => {
-            window.trackingAPI = module.trackingAPI;
-            console.log('✅ 배송 추적 API 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 추적 API 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/labelGenerator.js').then(module => {
-            window.labelGenerator = module.labelGenerator;
-            console.log('✅ 배송 라벨 생성기 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 라벨 생성기 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/analyticsDashboard.js').then(module => {
-            window.shippingAnalytics = module.shippingAnalytics;
-            console.log('✅ 배송 성과 분석 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 성과 분석 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/notificationSystem.js').then(module => {
-            window.notificationSystem = module.notificationSystem;
-            console.log('✅ 배송 알림 시스템 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 알림 시스템 모듈 로드 실패:', error);
-        });
-        
-        import('./features/shipping/routeOptimizer.js').then(module => {
-            window.routeOptimizer = module.routeOptimizer;
-            console.log('✅ 배송 경로 최적화 모듈 로드 완료');
-        }).catch(error => {
-            console.error('❌ 배송 경로 최적화 모듈 로드 실패:', error);
-        });
         
         // Supabase 클라이언트 초기화
         document.addEventListener('DOMContentLoaded', function() {
@@ -1568,7 +1101,5 @@
         });
     </script>
     
-    <!-- 배송관리 시스템 -->
-    <script type="module" src="js/shipping-management.js"></script>
 </body>
 </html>

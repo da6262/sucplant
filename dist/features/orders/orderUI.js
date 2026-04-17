@@ -27,15 +27,10 @@ export async function openOrderModal(orderId = null, customerData = null) {
             }
         }
         
-        // 기존 모달이 열려있다면 닫기
+        // 기존 모달이 열려있다면 닫고 즉시 재열기 (setTimeout 지연 제거)
         if (!modal.classList.contains('hidden')) {
             console.log('🔄 기존 모달이 열려있어서 닫습니다...');
             closeOrderModal();
-            // 잠시 대기 후 다시 열기
-            setTimeout(() => {
-                openOrderModal(orderId);
-            }, 100);
-            return;
         }
 
         const modalTitle = document.getElementById('modal-title');
@@ -75,32 +70,9 @@ export async function openOrderModal(orderId = null, customerData = null) {
         
         if (window.initOrderForm) {
             try {
-                window.initOrderForm();
+                // async 함수이므로 await — 첫 클릭에서 완료 보장 (이전에는 미await로 2회 클릭 필요 현상)
+                await window.initOrderForm();
                 console.log('✅ 주문 폼 초기화 완료');
-                
-                // 장바구니 컨테이너가 제대로 생성되었는지 확인
-                setTimeout(() => {
-                    const cartItemsBody = document.getElementById('cart-items-body');
-                    const orderForm = document.getElementById('order-form');
-                    const submitButton = document.querySelector('button[type="submit"][form="order-form"]');
-                    
-                    console.log('🔍 DOM 요소 확인:');
-                    console.log('  - order-form:', orderForm);
-                    console.log('  - cart-items-body:', cartItemsBody);
-                    console.log('  - submit-button:', submitButton);
-                    
-                    if (cartItemsBody) {
-                        console.log('✅ 장바구니 컨테이너 확인 완료');
-                    } else {
-                        console.error('❌ 장바구니 컨테이너가 생성되지 않았습니다');
-                    }
-                    
-                    if (submitButton) {
-                        console.log('✅ 주문 등록 버튼 확인 완료');
-                    } else {
-                        console.error('❌ 주문 등록 버튼이 생성되지 않았습니다');
-                    }
-                }, 200);
             } catch (error) {
                 console.error('❌ 주문 폼 초기화 실패:', error);
             }
@@ -247,6 +219,8 @@ export function closeOrderModal() {
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
+            // 인라인 display 스타일(재표시 경로에서 설정된 'flex')이 Tailwind .hidden 을 이기는 문제 해결
+            modal.style.display = '';
         }
 
         // ESC 리스너 제거
@@ -276,28 +250,6 @@ export async function loadOrderData(orderId) {
             order = await window.orderDataManager.fetchOrderByIdFromSupabase(orderId);
         }
         if (order) {
-                console.log('📋 찾은 주문 데이터:', order);
-                console.log('🔍 주문 데이터 구조 분석:');
-                console.log('  - order.items:', order.items);
-                console.log('  - order.items 타입:', typeof order.items);
-                console.log('  - order.items 길이:', order.items ? order.items.length : 'undefined');
-                console.log('  - order.order_items:', order.order_items);
-                console.log('  - order.order_items 타입:', typeof order.order_items);
-                console.log('  - order.order_date:', order.order_date);
-                console.log('  - order.customer_name:', order.customer_name);
-                
-                // order_items가 문자열인 경우 파싱 시도
-                if (order.order_items && typeof order.order_items === 'string') {
-                    try {
-                        const parsedItems = JSON.parse(order.order_items);
-                        console.log('  - 파싱된 order_items:', parsedItems);
-                        console.log('  - 파싱된 order_items 타입:', typeof parsedItems);
-                        console.log('  - 파싱된 order_items 길이:', parsedItems ? parsedItems.length : 'undefined');
-                    } catch (e) {
-                        console.log('  - order_items JSON 파싱 실패:', e.message);
-                    }
-                }
-                
                 // fillOrderForm 함수 호출 (폼 필드 및 장바구니 아이템 로드 포함)
             await fillOrderForm(order);
             console.log('✅ 주문 데이터 로드 완료');
@@ -401,7 +353,7 @@ async function loadOrderItemsToCart(items) {
         if (!items || items.length === 0) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500">
+                    <td colspan="5" class="text-center text-muted">
                         <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
@@ -528,7 +480,7 @@ function addItemToCartDirectly(item) {
             <td class="px-2 text-right tabular-nums cart-line-total">${subtotal.toLocaleString()}원</td>
             <td class="px-2 text-center">
                 <button type="button" onclick="removeFromCart(this)" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300" title="삭제">
-                    <i class="fas fa-trash text-xs text-red-600"></i>
+                    <i class="fas fa-trash text-xs text-danger"></i>
                 </button>
             </td>
         `;
@@ -568,13 +520,17 @@ export function clearOrderForm() {
                 }
             }
         });
+
+        // 도서산간 체크박스 초기화
+        const remoteAreaCheckbox = document.getElementById('remote-area-shipping-checkbox');
+        if (remoteAreaCheckbox) remoteAreaCheckbox.checked = false;
         
         // 장바구니 초기화
         const cartItemsBody = document.getElementById('cart-items-body');
         if (cartItemsBody) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-gray-500">
+                    <td colspan="5" class="text-center text-muted">
                         <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
@@ -641,7 +597,11 @@ async function fillOrderForm(orderData) {
         const orderMemo = document.getElementById('order-memo');
         
         if (orderStatus) {
-            orderStatus.value = orderData.order_status || orderData.status || '주문접수';
+            const desiredStatus = orderData.order_status || orderData.status || '주문접수';
+            if (window.populateOrderStatusSelectFromSettings) {
+                await window.populateOrderStatusSelectFromSettings(desiredStatus);
+            }
+            orderStatus.value = desiredStatus;
             console.log('✅ order-status 설정:', orderStatus.value);
         }
         if (orderChannel) {
@@ -671,8 +631,8 @@ async function fillOrderForm(orderData) {
         [customerName, customerPhone, customerAddress].forEach(field => {
             if (field && field.hasAttribute('readonly')) {
                 field.removeAttribute('readonly');
-                field.classList.remove('bg-gray-50');
-                field.classList.add('bg-white');
+                field.classList.remove('bg-section');
+                field.classList.add('bg-card');
                 console.log(`✅ ${field.id} readonly 제거됨 (수정 모드)`);
             }
         });

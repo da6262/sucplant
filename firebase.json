@@ -4,7 +4,19 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "**/server.js",
+      "**/*.bat",
+      "**/*.sh",
+      "**/*.ps1",
+      "**/*.md",
+      "**/*.sql",
+      "**/package*.json",
+      "**/*.config.js",
+      "**/.env*",
+      "**/deploy-*.js",
+      "**/data-extractor.js",
+      "**/data-importer.js"
     ],
     "rewrites": [
       {

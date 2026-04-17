@@ -391,6 +391,13 @@ class CustomerDataManager {
             if (!window.supabaseClient) {
                 throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
             }
+
+            // 외래키 제약 해제: 관련 주문의 customer_id를 null로 설정
+            await window.supabaseClient
+                .from('farm_orders')
+                .update({ customer_id: null })
+                .eq('customer_id', customerId);
+
             const { error } = await window.supabaseClient
                 .from('farm_customers')
                 .delete()

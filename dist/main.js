@@ -7,16 +7,25 @@ import './js/supabase-production-config.js';
 // 공통 유틸리티 함수들 import
 import { TABLE_MAP, mapTable, getSupabaseTableName } from './utils/helpers.js';
 
+// 페이지 표시 개수 컨트롤 — 전역 window.PageSize 등록 (side-effect import)
+import './utils/pageSize.js';
+
 // ── 공통 데이터 포맷터 (Single Source of Truth) ──────────────
 import {
     formatDate, formatDateTime,
     formatCurrency, formatWon,
     formatPhone, formatQty,
-    nullDash, emptyDash
+    nullDash, emptyDash, ND
 } from './utils/formatters.js';
 
-// ── 공통 UI 렌더러 ────────────────────────────────────────────
-import { renderPageHeader, renderFilterBar, renderEmptyRow } from './utils/ui.js';
+// ── 공통 UI 렌더러 (표준 폼 렌더러 v3.4) ─────────────────────
+import {
+    renderPageHeader, renderFilterBar, renderEmptyRow,
+    renderModal, renderField, renderFormSection, renderFormGrid, renderFormActions,
+    renderBadge, renderOrderStatusBadge, renderGradeBadge,
+    renderBtnIcon, renderBtnGroup, renderEditDeleteBtns,
+    renderConfirmDialog, renderInfoRow, renderSectionTitle
+} from './utils/ui.js';
 
 // 전역 노출 — components/* 및 레거시 코드에서 window.fmt.date() 형태로 사용
 window.fmt = {
@@ -28,6 +37,7 @@ window.fmt = {
     qty:      formatQty,
     nullDash,
     emptyDash,
+    ND,
 };
 // 개별 전역 함수 (하위 호환 — 기존 코드에서 formatDate() 직접 호출 지원)
 window.formatDate     = formatDate;
@@ -256,6 +266,8 @@ document.addEventListener('DOMContentLoaded', async () => {
                     config.anonKey
                 );
                 console.log('✅ Supabase 클라이언트 초기화 완료');
+                // [고2] 이벤트 기반 초기화 — productData/categoryData가 폴링 없이 대기 중인 Promise를 resolve
+                window.dispatchEvent(new CustomEvent('supabase-ready'));
             } catch (clientError) {
                 console.error('❌ Supabase 클라이언트 생성 실패:', clientError);
                 throw new Error('Supabase 클라이언트 생성 실패: ' + clientError.message);

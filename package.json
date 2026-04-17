@@ -5,7 +5,9 @@
   "main": "index.html",
   "scripts": {
     "dev": "vite",
-    "build": "node deploy-to-web.js",
+    "sync": "node sync-to-dist.js",
+    "check": "node pre-deploy-check.js",
+    "build": "npm run sync && npm run check",
     "build-vite": "vite build",
     "preview": "vite preview",
     "deploy": "npm run build && firebase deploy",

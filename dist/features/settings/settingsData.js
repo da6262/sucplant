@@ -37,6 +37,7 @@ class SettingsDataManager {
             shipping: {
                 defaultShippingFee: 3000,
                 freeShippingThreshold: 50000,
+                remoteAreaShippingFee: 5000,
                 shippingMethods: ['택배', '직접배송', '픽업']
             },
             
@@ -118,6 +119,12 @@ class SettingsDataManager {
     
     // 설정 로드
     async loadSettings() {
+        // 캐시: 실제로 로드된 값이 있을 때만 재사용. 빈 객체 {} 는 truthy 라서
+        // 단순 `if (this.settings)` 체크로는 DB 조회를 건너뛰는 버그 발생(v3.3.19~v3.3.23).
+        // 반드시 key 개수까지 확인해야 생성자 `this.settings = {}` 초기 상태와 구분 가능.
+        if (this.settings && Object.keys(this.settings).length > 0) {
+            return this.settings;
+        }
         try {
             const ok = await this.ensureSupabaseClient();
             if (ok && window.supabaseClient) {
@@ -126,23 +133,26 @@ class SettingsDataManager {
                         .from('farm_settings')
                         .select('*')
                         .single();
-                    
+
                     if (!error && data) {
                         console.log('✅ Supabase에서 설정 로드 완료');
-                        return this.mergeWithDefaults(data.settings);
+                        this.settings = this.mergeWithDefaults(data.settings);
+                        return this.settings;
                     } else {
                         console.log('⚠️ Supabase 설정 없음, 기본값 사용');
-                        return this.defaultSettings;
+                        this.settings = this.defaultSettings;
+                        return this.settings;
                     }
                 } catch (supabaseError) {
                     console.log('⚠️ Supabase 테이블 없음 (farm_settings), 기본값 사용');
-                    console.log('💡 farm_settings 테이블을 생성하려면 create-farm-settings-table.sql 파일을 Supabase SQL Editor에서 실행하세요');
-                    return this.defaultSettings;
+                    this.settings = this.defaultSettings;
+                    return this.settings;
                 }
             }
-            
+
             console.log('📋 기본 설정값 사용 (Supabase 미연결)');
-            return this.defaultSettings;
+            this.settings = this.defaultSettings;
+            return this.settings;
         } catch (error) {
             console.error('❌ 설정 로드 실패:', error);
             return this.defaultSettings;
@@ -272,6 +282,7 @@ class SettingsDataManager {
     async forceReloadSettings() {
         try {
             console.log('🔄 Supabase에서 설정 강제 재로드');
+            this.settings = {};                          // 캐시 무효화 — loadSettings 의 조기 반환 우회
             this.settings = await this.loadSettings();
             console.log('✅ 설정 강제 재로드 완료');
             return true;

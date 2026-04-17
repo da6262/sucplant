@@ -289,12 +289,12 @@ function showSMSTemplateModal(orderId) {
                 <div class="flex min-h-full items-center justify-center p-4">
                     <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
                         <div class="p-6">
-                            <h3 class="text-lg font-semibold text-gray-900 mb-4">SMS 발송</h3>
+                            <h3 class="text-lg font-semibold text-heading mb-4">SMS 발송</h3>
                             
                             <div class="space-y-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">템플릿 선택</label>
-                                    <select id="sms-template-select" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                    <label class="block text-sm font-medium text-body mb-2">템플릿 선택</label>
+                                    <select id="sms-template-select" class="input-ui">
                                         <option value="">직접 입력</option>
                                         <option value="orderConfirm">주문확인</option>
                                         <option value="paymentConfirm">입금확인</option>
@@ -305,19 +305,17 @@ function showSMSTemplateModal(orderId) {
                                 </div>
                                 
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">메시지 내용</label>
+                                    <label class="block text-sm font-medium text-body mb-2">메시지 내용</label>
                                     <textarea id="sms-message" rows="4" 
-                                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
+                                              class="input-ui resize-none"
                                               placeholder="SMS 메시지를 입력하세요..."></textarea>
                                 </div>
                                 
                                 <div class="flex justify-end space-x-3">
-                                    <button onclick="closeSMSTemplateModal()" 
-                                            class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">
+                                    <button onclick="closeSMSTemplateModal()" class="btn-secondary">
                                         취소
                                     </button>
-                                    <button onclick="sendOrderSMSFromModal('${orderId}')" 
-                                            class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                                    <button onclick="sendOrderSMSFromModal('${orderId}')" class="btn-info">
                                         발송
                                     </button>
                                 </div>
@@ -517,21 +515,21 @@ function openCustomerSMSModal(phone, customerName) {
     modal.innerHTML = `
         <div class="modal-container modal-sm">
             <div class="modal-header">
-                <span class="modal-title"><i class="fas fa-sms text-emerald-500 mr-2"></i>문자 발송</span>
+                <span class="modal-title"><i class="fas fa-sms text-brand mr-2"></i>문자 발송</span>
                 <button id="customer-sms-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
             </div>
             <div class="modal-body space-y-2">
-                <div class="flex items-center gap-2 text-xs text-gray-600 bg-gray-50 rounded px-3 py-2">
-                    <i class="fas fa-user text-gray-400"></i>
+                <div class="flex items-center gap-2 text-xs text-body bg-section rounded px-3 py-2">
+                    <i class="fas fa-user text-muted"></i>
                     <span class="font-medium">${escapeHtmlBasic(customerName || '')}</span>
-                    <span class="text-gray-400">·</span>
+                    <span class="text-muted">·</span>
                     <span>${escapeHtmlBasic(displayPhone)}</span>
                 </div>
                 <div>
                     <textarea id="customer-sms-message" rows="5"
                         class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
                         placeholder="[경산다육식물농장] 안녕하세요, ${escapeHtmlBasic(customerName || '고객')}님..."></textarea>
-                    <div class="text-right text-xs text-gray-400 mt-0.5"><span id="customer-sms-count">0</span>자</div>
+                    <div class="text-right text-xs text-muted mt-0.5"><span id="customer-sms-count">0</span>자</div>
                 </div>
             </div>
             <div class="modal-footer">

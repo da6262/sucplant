@@ -29,23 +29,23 @@ const PRODUCT_TABLE_COLUMNS = [
     { key: 'actions', label: '관리', width: 'w-1/12', type: 'actions' }
 ];
 
-// 공통 CSS 클래스 정의
+// 공통 CSS 클래스 정의 — 통제실 변수 기반 (반란군 제거 완료)
 const COMMON_STYLES = {
     table: {
-        row: 'hover:bg-gray-50',
-        cell: 'px-2.5 text-gray-900',
-        cellCenter: 'px-2.5 text-center'
+        row: '',           // .table-ui CSS가 hover 제어
+        cell: '',          // .table-ui tbody td CSS가 제어
+        cellCenter: 'text-center'
     },
     button: {
-        edit: 'p-1 text-blue-500 hover:text-blue-600 hover:bg-blue-50 rounded cursor-pointer border-none bg-transparent',
-        delete: 'p-1 text-red-400 hover:text-red-600 hover:bg-red-50 rounded cursor-pointer border-none bg-transparent',
+        edit: 'btn-icon btn-icon-edit',
+        delete: 'btn-icon btn-icon-delete',
         primary: 'btn-primary',
         secondary: 'btn-secondary'
     },
     form: {
-        input: 'w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent',
-        label: 'block text-sm font-medium text-gray-700 mb-1',
-        required: 'text-red-500'
+        input: 'form-control',
+        label: 'form-label',
+        required: 'req'
     }
 };
 
@@ -200,10 +200,10 @@ export class ProductUI {
             item.innerHTML = `
                 <div class="flex justify-between items-center">
                     <div>
-                        <div class="font-medium text-gray-900">${suggestion.name}</div>
-                        <div class="text-xs text-gray-500">${suggestion.category}</div>
+                        <div class="font-medium text-heading">${suggestion.name}</div>
+                        <div class="text-xs text-secondary">${suggestion.category}</div>
                     </div>
-                    <div class="text-sm text-gray-600">${suggestion.price.toLocaleString()}원</div>
+                    <div class="text-sm text-secondary">${suggestion.price.toLocaleString()}원</div>
                 </div>
             `;
             
@@ -577,14 +577,14 @@ export class ProductUI {
                 const margin = (profit / price) * 100;
                 
                 marginDisplay.innerHTML = `
-                    <span class="text-green-600 font-medium">
+                    <span class="text-brand font-medium">
                         💰 수익: ${profit.toLocaleString()}원 (${margin.toFixed(1)}%)
                     </span>
                 `;
                 console.log('✅ 수익률 계산 완료:', { profit, margin });
             } else if (price > 0) {
                 marginDisplay.innerHTML = `
-                    <span class="text-gray-500">
+                    <span class="text-secondary">
                         💰 매입가를 입력하면 수익률을 계산합니다
                     </span>
                 `;
@@ -1555,16 +1555,12 @@ export class ProductUI {
                             }
                             
                             if (column.type === 'actions') {
-                                return `
-                                    <td class="${COMMON_STYLES.table.cellCenter}">
-                                        <button data-action="edit" data-product-id="${product.id}" class="${COMMON_STYLES.button.edit}">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                                        <button data-action="delete" data-product-id="${product.id}" class="${COMMON_STYLES.button.delete}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                                `;
+                                    return `<td class="text-center">
+                                    <div class="btn-group">
+                                        <button data-action="edit" data-product-id="${product.id}" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-edit"></i></button>
+                                        <button data-action="delete" data-product-id="${product.id}" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                                    </div>
+                                </td>`;
                             }
                             
                             
@@ -1699,99 +1695,73 @@ export class ProductUI {
         const fmtDate = v => v ? new Date(v).toLocaleDateString('ko-KR') : '-';
         const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
         const status = statusMap[product.status] || product.status || '-';
-        const statusColor = product.status === 'active' ? 'text-green-600 bg-green-50' : product.status === 'soldout' ? 'text-red-500 bg-red-50' : 'text-gray-500 bg-gray-100';
+        const statusBadgeVariant = product.status === 'active' ? 'success' : product.status === 'soldout' ? 'danger' : 'neutral';
 
         const profitMargin = product.profit_margin
             ? product.profit_margin + '%'
             : (product.price && product.cost ? Math.round((1 - product.cost / product.price) * 100) + '%' : '-');
 
         const imageHtml = product.image_url
-            ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
-            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+            ? `<img src="${product.image_url}" alt="${product.name}" style="width:100%;height:160px;object-fit:cover;border-radius:var(--radius-lg);border:1px solid var(--border);">`
+            : `<div style="width:100%;height:160px;background:var(--bg-light);border-radius:var(--radius-lg);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;color:var(--text-muted);font-size:32px;"><i class="fas fa-seedling"></i></div>`;
+
+        // 정보 카드 헬퍼
+        const infoCard = (label, value, highlight = false) => `
+            <div class="card-ui p-sm" style="${highlight ? 'background:var(--badge-green-bg);' : ''}">
+                <p class="txt-xs txt-muted" style="margin-bottom:3px;">${label}</p>
+                <p class="fw-medium ${highlight ? 'txt-success' : 'txt-primary'}">${value}</p>
+            </div>`;
 
         const panel = document.createElement('div');
         panel.id = 'product-detail-panel';
-        panel.className = 'fixed inset-0 z-50 flex items-center justify-center bg-black/40';
-        panel.innerHTML = `
-            <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col max-h-[90vh]">
-                <!-- 헤더 -->
-                <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
-                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
-                    <div class="flex items-center gap-2">
-                        <button id="product-detail-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
-                            <i class="fas fa-edit mr-1"></i>수정
-                        </button>
-                        <button id="product-detail-close" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
-                            <i class="fas fa-times"></i>
-                        </button>
+        panel.innerHTML = window.renderModal({
+            id: 'product-detail-panel-inner',
+            title: '상품 상세',
+            size: 'sm',
+            closeCall: `document.getElementById('product-detail-panel')?.remove()`,
+            body: `
+                ${imageHtml}
+                <div style="margin-top:16px;">
+                    <div class="flex-between flex-gap-2" style="margin-bottom:4px;">
+                        <h2 class="txt-lg fw-bold txt-heading" style="line-height:1.3;">${fmt(product.name)}</h2>
+                        ${window.renderBadge ? window.renderBadge(status, statusBadgeVariant) : `<span class="badge badge-${statusBadgeVariant}">${status}</span>`}
+                    </div>
+                    ${product.product_code ? `<p class="txt-xs txt-muted" style="font-family:monospace;">${product.product_code}</p>` : ''}
+                </div>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;">
+                    ${infoCard('카테고리', fmt(product.category))}
+                    ${infoCard('사이즈', fmt(product.size))}
+                    ${infoCard('판매가', fmtPrice(product.price), true)}
+                    ${infoCard('매입가', fmtPrice(product.cost))}
+                    ${infoCard('재고', product.stock != null ? product.stock + '개' : '-')}
+                    ${infoCard('마진율', profitMargin)}
+                    <div class="card-ui p-sm" style="grid-column:span 2;">
+                        <p class="txt-xs txt-muted" style="margin-bottom:3px;">배송 옵션</p>
+                        <p class="fw-medium txt-primary">${shipping}</p>
                     </div>
                 </div>
-                <!-- 본문 -->
-                <div class="overflow-y-auto px-5 py-4 space-y-4">
-                    <!-- 이미지 -->
-                    ${imageHtml}
-                    <!-- 기본 정보 -->
-                    <div>
-                        <div class="flex items-start justify-between gap-2 mb-1">
-                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
-                            <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
-                        </div>
-                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
-                    </div>
-                    <!-- 정보 그리드 -->
-                    <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
-                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
-                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
-                        </div>
-                        <div class="bg-green-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
-                            <p class="font-semibold text-green-700 text-base">${fmtPrice(product.price)}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
-                            <p class="font-medium text-gray-800">${fmtPrice(product.cost)}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
-                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
-                            <p class="font-medium text-gray-800">${profitMargin}</p>
-                        </div>
-                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
-                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
-                            <p class="font-medium text-gray-800">${shipping}</p>
-                        </div>
-                    </div>
-                    <!-- 설명 -->
-                    ${product.description ? `
-                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
-                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
-                    </div>` : ''}
-                    <!-- 등록/수정일 -->
-                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
-                        <span>등록일 ${fmtDate(product.created_at)}</span>
-                        <span>수정일 ${fmtDate(product.updated_at)}</span>
-                    </div>
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(panel);
+                ${product.description ? `
+                <div class="card-ui p-sm bg-section" style="margin-top:8px;">
+                    <p class="txt-xs txt-muted" style="margin-bottom:4px;">상품 설명</p>
+                    <p class="txt-body" style="line-height:1.6;white-space:pre-wrap;">${product.description}</p>
+                </div>` : ''}
+                <div class="flex-center flex-gap-4 txt-xs txt-muted border-top" style="margin-top:12px;padding-top:8px;">
+                    <span>등록일 ${fmtDate(product.created_at)}</span>
+                    <span>수정일 ${fmtDate(product.updated_at)}</span>
+                </div>`,
+            footer: `
+                <button id="product-detail-edit-btn" class="btn-secondary"><i class="fas fa-edit"></i> 수정</button>
+                <button class="btn-secondary" onclick="document.getElementById('product-detail-panel')?.remove()">닫기</button>`
+        });
+        // modal-overlay를 직접 body에 붙이도록 외부 래퍼 제거
+        document.body.insertAdjacentHTML('beforeend', panel.innerHTML);
+        const overlayEl = document.getElementById('product-detail-panel-inner');
 
         // 닫기
-        panel.querySelector('#product-detail-close').addEventListener('click', () => panel.remove());
-        panel.addEventListener('click', e => { if (e.target === panel) panel.remove(); });
+        overlayEl?.addEventListener('click', e => { if (e.target === overlayEl) overlayEl.remove(); });
         // 수정 버튼
-        panel.querySelector('#product-detail-edit-btn').addEventListener('click', () => {
-            panel.remove();
+        overlayEl?.querySelector('#product-detail-edit-btn')?.addEventListener('click', () => {
+            overlayEl.remove();
             this.openProductModal(productId);
         });
     }

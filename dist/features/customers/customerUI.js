@@ -3,7 +3,7 @@
 
 import { customerDataManager } from './customerData.js';
 import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
-import { formatDate, formatPhone } from '../../utils/formatters.js';
+import { formatDate, formatPhone, formatCurrency, ND } from '../../utils/formatters.js';
 
 // ----------------------------
 // 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
@@ -102,11 +102,12 @@ async function handleCustomerSave(event) {
         }
 
         // 저장 (신규/수정)
+        let savedCustomer = null;
         if (customerId) {
-            await customerDataManager.updateCustomer(customerId, payload);
+            savedCustomer = await customerDataManager.updateCustomer(customerId, payload);
             if (window.showToast) window.showToast('✅ 고객 정보가 수정되었습니다.', 2500);
         } else {
-            await customerDataManager.addCustomer(payload);
+            savedCustomer = await customerDataManager.addCustomer(payload);
             if (window.showToast) window.showToast('✅ 고객이 등록되었습니다.', 2500);
         }
 
@@ -119,6 +120,13 @@ async function handleCustomerSave(event) {
         await renderCustomersTable(gradeFilter);
         if (window.updateCustomerGradeCounts) {
             await window.updateCustomerGradeCounts();
+        }
+
+        // 저장 후 호출자 콜백 실행 (예: 주문 폼에서 신규 고객 등록 흐름 복귀)
+        const cb = window.customerModalCallback;
+        window.customerModalCallback = null;
+        if (typeof cb === 'function') {
+            try { cb(savedCustomer); } catch (cbErr) { console.error('❌ customerModalCallback 실행 오류:', cbErr); }
         }
 
         // 모달 닫기
@@ -240,18 +248,17 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             const gradeDisplayName = gradeNameMap[normalized] || normalized;
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
-            const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
+            const lastOrderDate = rawDate ? formatDate(rawDate) : null;
             const tr = document.createElement('tr');
             tr.className = 'customer-row';
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = formatPhone(customer.phone);
-            const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
-                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
-                <td class="px-3 td-secondary">${phoneDisplay || nullDash}</td>
-                <td class="px-3 td-muted">${lastOrderDate || nullDash}</td>
-                <td class="px-3 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="px-3 text-center">
+                <td class="td-primary td-link">${escapeHtml(customer.name) || ND}</td>
+                <td class="td-secondary">${phoneDisplay || ND}</td>
+                <td class="td-muted text-center">${lastOrderDate || ND}</td>
+                <td class="text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="text-center">
                     <div class="btn-group">
                         <button onclick="window.addOrderForCustomer && window.addOrderForCustomer('${customer.id}', '${escapeHtml(customer.name)}', '${escapeHtml(customer.phone || '')}')" class="btn-icon btn-icon-primary" title="주문 추가"><i class="fas fa-cart-plus"></i></button>
                         <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
@@ -276,7 +283,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         const container = document.getElementById('customer-list-container');
         if (container) {
             container.innerHTML = `
-                <tr><td colspan="5" class="text-center text-red-500"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
+                <tr><td colspan="5" class="text-center text-danger"><i class="fas fa-exclamation-triangle mr-1"></i>고객 목록을 불러오는 중 오류가 발생했습니다.</td></tr>
             `;
         }
     }
@@ -287,8 +294,7 @@ function escapeHtml(str) {
     const s = String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-// formatDisplayDate → utils/formatters.js의 formatDate()로 통합됨
-function formatDisplayDate(val) { return formatDate(val); }
+// formatDate 제거됨 — formatDate() 직접 사용 (v3.3.42)
 
 /** 미납(입금대기) 고객 전화번호 집합 조회 (30초 캐시) */
 async function fetchUnpaidPhones() {
@@ -482,7 +488,7 @@ function checkPhoneDuplicate(phoneNumber) {
             
             // 메시지 표시
             messageDiv.innerHTML = `
-                <div class="flex items-center text-red-600">
+                <div class="flex items-center text-danger">
                     <i class="fas fa-exclamation-triangle mr-1"></i>
                     <span>이미 등록된 전화번호입니다. (${existingCustomer.name})</span>
                 </div>
@@ -663,7 +669,7 @@ function showDeleteWithOrdersModal(orders) {
         document.getElementById('delete-with-orders-modal')?.remove();
 
         const fmt = (d) => d ? d.slice(0, 10) : '-';
-        const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
+        const fmtAmt = (n) => n ? formatCurrency(n) : '-';
         const statusBadge = (s) => {
             // 상태 배지 색상 — orderData.js getStatusColor() 단일 소스 사용 ('취소' → '주문취소' 정규화 포함)
             const _normalizedStatus = s === '취소' ? '주문취소' : s;
@@ -674,7 +680,7 @@ function showDeleteWithOrdersModal(orders) {
         const rows = orders.map((o, i) => `
             <tr data-id="${o.id}">
                 <td class="px-2">
-                    <input type="checkbox" class="order-chk rounded border-gray-300 text-red-500 focus:ring-red-400" data-idx="${i}" checked>
+                    <input type="checkbox" class="order-chk rounded border-gray-300 text-danger focus:ring-red-400" data-idx="${i}" checked>
                 </td>
                 <td class="px-2 td-secondary">${fmt(o.created_at || o.order_date)}</td>
                 <td class="px-2 td-primary">${o.order_number || '-'}</td>
@@ -690,19 +696,19 @@ function showDeleteWithOrdersModal(orders) {
             <div class="modal-container modal-md">
                 <div class="modal-header">
                     <div class="flex items-center gap-2">
-                        <div class="w-7 h-7 bg-red-100 rounded-lg flex items-center justify-center shrink-0">
-                            <i class="fas fa-trash text-red-500 text-sm"></i>
+                        <div class="w-7 h-7 bg-danger-accent rounded-lg flex items-center justify-center shrink-0">
+                            <i class="fas fa-trash text-danger text-sm"></i>
                         </div>
                         <div>
                             <div class="modal-title">고객 삭제</div>
-                            <div class="text-xs text-gray-500">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
+                            <div class="text-xs text-muted">삭제할 주문을 선택하세요 (총 ${orders.length}건)</div>
                         </div>
                     </div>
                 </div>
                 <div class="modal-body">
                     <div class="max-h-56 overflow-y-auto rounded-lg border border-gray-200">
                         <table class="w-full table-ui">
-                            <thead class="bg-gray-50 sticky top-0">
+                            <thead class="bg-section sticky top-0">
                                 <tr>
                                     <th class="px-2"><input type="checkbox" id="chk-all" class="rounded border-gray-300" checked></th>
                                     <th class="px-2 text-left">날짜</th>
@@ -714,7 +720,7 @@ function showDeleteWithOrdersModal(orders) {
                             <tbody id="order-del-tbody">${rows}</tbody>
                         </table>
                     </div>
-                    <p class="mt-2.5 text-xs text-red-500">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
+                    <p class="mt-2.5 text-xs text-danger">⚠️ 삭제된 주문은 복구할 수 없습니다.</p>
                 </div>
                 <div class="modal-footer">
                     <button id="btn-cancel-del" class="btn-secondary">취소</button>
@@ -1031,7 +1037,7 @@ function updateCustomerTotalPurchaseDisplay(orders) {
     const totalEl = document.getElementById('customer-total-purchase');
     const countEl = document.getElementById('customer-order-count');
     const scoreEl = document.getElementById('customer-loyalty-score');
-    if (totalEl) totalEl.textContent = total > 0 ? total.toLocaleString() + '원' : '—';
+    if (totalEl) totalEl.textContent = total > 0 ? formatCurrency(total) : '—';
     if (countEl) countEl.textContent = count > 0 ? String(count) + '회' : '—';
     if (scoreEl) scoreEl.textContent = count > 0 ? String(loyaltyScore) + '점' : '—';
 }
@@ -1163,12 +1169,12 @@ async function loadCustomerOrders(customerId) {
         const ordersList = document.getElementById('customer-orders-list');
         if (ordersList) {
             ordersList.innerHTML = `
-                <div class="text-center py-8 text-red-500">
-                    <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                        <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
+                <div class="text-center py-8 text-danger">
+                    <div class="w-12 h-12 bg-danger-accent rounded-full flex items-center justify-center mx-auto mb-3">
+                        <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                     </div>
                     <p class="text-sm">주문내역을 불러올 수 없습니다.</p>
-                    <p class="text-xs text-gray-400 mt-1">오류: ${error.message}</p>
+                    <p class="text-xs text-muted mt-1">오류: ${error.message}</p>
                 </div>
             `;
         }
@@ -1181,7 +1187,7 @@ async function renderCustomerOrders(orders, container) {
         console.log('🎨 고객 주문내역 렌더링:', orders.length);
         
         if (orders.length === 0) {
-            container.innerHTML = `<p class="text-xs text-gray-500 py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
+            container.innerHTML = `<p class="text-xs text-muted py-3 px-2 text-center">주문 내역이 없습니다.</p>`;
             return;
         }
         
@@ -1200,8 +1206,8 @@ async function renderCustomerOrders(orders, container) {
         
         // 주문 이력 테이블: 주문일 | 상품명 | 금액 | 상태 (보기 링크 포함)
         const rowsHTML = ordersWithItems.map(order => {
-            const orderDate = order.order_date ? formatDisplayDate(order.order_date) : '-';
-            const totalAmount = order.total_amount != null ? Number(order.total_amount).toLocaleString() : '0';
+            const orderDate = order.order_date ? formatDate(order.order_date) : '-';
+            const totalAmount = order.total_amount != null ? formatCurrency(order.total_amount) : '₩0';
             const status = order.order_status || '주문접수';
             const orderId = order.id;
             const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 80) + (order.itemsInfo && order.itemsInfo.length > 80 ? '…' : '');
@@ -1209,10 +1215,10 @@ async function renderCustomerOrders(orders, container) {
                 <tr>
                     <td class="px-2 td-secondary whitespace-nowrap">${orderDate}</td>
                     <td class="px-2 td-primary max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
-                    <td class="px-2 td-primary whitespace-nowrap">${totalAmount}원</td>
+                    <td class="px-2 td-amount text-right text-numeric whitespace-nowrap">${totalAmount}</td>
                     <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
                     <td class="px-2 text-center whitespace-nowrap">
-                        <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-emerald-600 hover:underline text-xs">보기</button>
+                        <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-brand hover:underline text-xs">보기</button>
                     </td>
                 </tr>
             `;
@@ -1238,9 +1244,9 @@ async function renderCustomerOrders(orders, container) {
     } catch (error) {
         console.error('❌ 고객 주문내역 렌더링 실패:', error);
         container.innerHTML = `
-            <div class="text-center py-8 text-red-500">
-                <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <i class="fas fa-exclamation-triangle text-red-400 text-lg"></i>
+            <div class="text-center py-8 text-danger">
+                <div class="w-12 h-12 bg-danger-accent rounded-full flex items-center justify-center mx-auto mb-3">
+                    <i class="fas fa-exclamation-triangle text-danger text-lg"></i>
                 </div>
                 <p class="text-sm">주문내역을 표시할 수 없습니다.</p>
             </div>
@@ -1248,17 +1254,18 @@ async function renderCustomerOrders(orders, container) {
     }
 }
 
-// 주문 상태 배지 클래스 반환
+// 주문 상태 배지 — 통제실 renderOrderStatusBadge 사용
+// 이 함수는 legacy 호출 호환용으로만 유지 (클래스 반환 방식)
 function getOrderStatusBadgeClass(status) {
-    const statusClasses = {
-        '주문접수': 'bg-blue-100 text-blue-800',
-        '주문확인': 'bg-yellow-100 text-yellow-800',
-        '배송준비': 'bg-purple-100 text-purple-800',
-        '배송중': 'bg-orange-100 text-orange-800',
-        '배송완료': 'bg-green-100 text-green-800',
-        '주문취소': 'bg-red-100 text-red-800'
+    const MAP = {
+        '주문접수': 'badge-info',
+        '주문확인': 'badge-warning',
+        '배송준비': 'badge-purple',
+        '배송중':   'badge-orange',
+        '배송완료': 'badge-success',
+        '주문취소': 'badge-danger',
     };
-    return statusClasses[status] || 'bg-gray-100 text-gray-800';
+    return MAP[status] || 'badge-neutral';
 }
 
 // 고객 기본 정보 업데이트
@@ -1282,9 +1289,9 @@ async function updateCustomerBasicInfo(customer) {
     const iconElement = document.getElementById('customer-detail-icon');
     if (iconElement) {
         if (customer.grade === 'VIP') {
-            iconElement.className = 'fas fa-crown text-lg text-yellow-600';
+            iconElement.className = 'fas fa-crown text-lg text-warn';
         } else {
-            iconElement.className = 'fas fa-user text-lg text-green-600';
+            iconElement.className = 'fas fa-user text-lg text-brand';
         }
     }
     
@@ -1345,7 +1352,7 @@ function updateCustomerStats(customer) {
                 element.textContent = stats.totalOrders;
                 break;
             case 'amount':
-                element.textContent = stats.totalAmount.toLocaleString() + '원';
+                element.textContent = formatCurrency(stats.totalAmount);
                 break;
             case 'last-order':
                 element.textContent = stats.lastOrderDate;
@@ -1362,10 +1369,10 @@ function updateCustomerOrders(customer) {
     const ordersContainer = document.getElementById('customer-orders-content');
     if (ordersContainer) {
         ordersContainer.innerHTML = `
-            <div class="text-center py-8 text-gray-500">
+            <div class="text-center py-8 text-muted">
                 <i class="fas fa-shopping-cart text-4xl mb-4 text-gray-300"></i>
-                <h3 class="text-lg font-medium mb-2 text-gray-600">주문 내역이 없습니다</h3>
-                <p class="text-sm text-gray-400">${customer.name}님의 주문 기록이 아직 없습니다.</p>
+                <h3 class="text-lg font-medium mb-2 text-body">주문 내역이 없습니다</h3>
+                <p class="text-sm text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
             </div>
         `;
     }
@@ -1411,9 +1418,9 @@ async function updateCustomerModalBasicInfo(customer) {
     const iconElement = document.getElementById('customer-detail-modal-icon');
     if (iconElement) {
         if (customer.grade === 'VIP') {
-            iconElement.className = 'fas fa-crown text-lg text-yellow-600';
+            iconElement.className = 'fas fa-crown text-lg text-warn';
         } else {
-            iconElement.className = 'fas fa-user text-lg text-blue-600';
+            iconElement.className = 'fas fa-user text-lg text-info';
         }
     }
     
@@ -1472,7 +1479,7 @@ function updateCustomerModalStats(customer) {
     
     const amountElement = document.getElementById('customer-detail-modal-amount');
     if (amountElement) {
-        amountElement.textContent = stats.totalAmount.toLocaleString() + '원';
+        amountElement.textContent = formatCurrency(stats.totalAmount);
     }
     
     const lastOrderElement = document.getElementById('customer-detail-modal-last-order');
@@ -1489,10 +1496,10 @@ function updateCustomerModalOrders(customer) {
     const ordersContainer = document.getElementById('customer-detail-modal-orders-content');
     if (ordersContainer) {
         ordersContainer.innerHTML = `
-            <div class="text-center py-4 text-gray-500">
+            <div class="text-center py-4 text-muted">
                 <i class="fas fa-shopping-cart text-2xl mb-2 text-gray-300"></i>
-                <h3 class="text-sm font-medium mb-1 text-gray-600">주문 내역이 없습니다</h3>
-                <p class="text-xs text-gray-400">${customer.name}님의 주문 기록이 아직 없습니다.</p>
+                <h3 class="text-sm font-medium mb-1 text-body">주문 내역이 없습니다</h3>
+                <p class="text-xs text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
             </div>
         `;
     }
@@ -1819,10 +1826,10 @@ async function showAutocomplete(customers, searchTerm) {
                      onclick="selectAutocompleteItem(this)">
                     <div class="flex items-center justify-between">
                         <div class="flex-1">
-                            <div class="font-medium text-gray-900">${highlightedName}</div>
-                            <div class="text-xs text-gray-500">${customer.phone} • ${gradeDisplayName}</div>
+                            <div class="font-medium text-heading">${highlightedName}</div>
+                            <div class="text-xs text-secondary">${customer.phone} • ${gradeDisplayName}</div>
                         </div>
-                        <div class="text-xs text-gray-400">
+                        <div class="text-xs text-muted">
                             <i class="fas fa-user"></i>
                         </div>
                     </div>
@@ -2089,8 +2096,8 @@ window.updateMemoCharCount = function(value) {
     const len = (value || '').length;
     counter.textContent = `${len} / 200`;
     counter.className = len > 180
-        ? 'text-xs text-red-500 font-medium'
-        : 'text-xs text-gray-400';
+        ? 'text-xs text-danger font-medium'
+        : 'text-xs text-muted';
 };
 
 // 추가 정보 섹션 내부 상태 리셋 유틸
@@ -2236,11 +2243,11 @@ async function _loadCustomerOrdersForModal(customerId) {
         const avg   = count > 0 ? Math.round(total / count) : 0;
         const last  = list[0]?.order_date?.slice(0, 10) || '-';
 
-        const fmt = n => n > 0 ? n.toLocaleString() + '원' : '—';
+        const fmtA = n => n > 0 ? formatCurrency(n) : '—';
         const el = id => document.getElementById(id);
-        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmt(total);
+        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmtA(total);
         if (el('cmod-stat-count')) el('cmod-stat-count').textContent = count > 0 ? count + '회' : '—';
-        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmt(avg);
+        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmtA(avg);
         if (el('cmod-stat-last'))  el('cmod-stat-last').textContent  = last;
 
         if (list.length === 0) {
@@ -2257,13 +2264,13 @@ async function _loadCustomerOrdersForModal(customerId) {
             return `<tr>
                 <td class="td-secondary">${(o.order_date || '').slice(0, 10)}</td>
                 <td class="td-primary" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(names)}">${escapeHtml(names)}</td>
-                <td class="td-amount text-right">${o.total_amount ? Number(o.total_amount).toLocaleString() + '원' : '-'}</td>
+                <td class="td-amount text-right text-numeric">${o.total_amount ? formatCurrency(o.total_amount) : ND}</td>
                 <td class="text-center"><span class="badge ${statusCls}">${o.order_status || '-'}</span></td>
             </tr>`;
         }).join('');
     } catch (e) {
         console.error('주문이력 로드 실패:', e);
-        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-red-500" style="padding:16px;">불러오기 실패</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="4" class="text-center text-danger" style="padding:16px;">불러오기 실패</td></tr>';
     }
 }
 

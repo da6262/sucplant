@@ -262,15 +262,13 @@ function attachWaitlistEventListeners() {
         });
         console.log('✅ 대기자 상태별 필터 탭 이벤트 리스너 연결 완료');
         
-        // 페이지당 표시 수 선택
-        const waitlistPageSize = document.getElementById('waitlist-page-size');
-        if (waitlistPageSize) {
-            waitlistPageSize.addEventListener('change', function() {
+        // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용
+        if (window.PageSize) {
+            window.PageSize.attach('waitlist-page-size', () => {
                 if (window.waitlistUI && window.waitlistUI.renderWaitlistTable) {
                     window.waitlistUI.renderWaitlistTable();
                 }
-            });
-            console.log('✅ 대기자 페이지 크기 선택 이벤트 리스너 연결 완료');
+            }, 20);
         }
 
         console.log('🔗 대기자 관리 이벤트 리스너 연결 완료');

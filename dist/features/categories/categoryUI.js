@@ -81,9 +81,21 @@ export async function loadCategoryModal() {
    카테고리 목록 로드 & 렌더링
    ───────────────────────────────────────────── */
 export async function loadCategoriesList() {
+    // main.js 초기화가 outer catch 로 빠져 categoryDataManager 가 미설정된 경우를 위한 on-demand 초기화
     if (!window.categoryDataManager) {
-        console.error('❌ categoryDataManager 없음');
-        return;
+        console.warn('⚠️ categoryDataManager 없음 — 즉시 초기화 시도');
+        if (window.CategoryMgmt?.init) {
+            try {
+                await window.CategoryMgmt.init();
+            } catch (err) {
+                console.error('❌ CategoryDataManager 즉시 초기화 실패:', err);
+            }
+        }
+        if (!window.categoryDataManager) {
+            console.error('❌ categoryDataManager 여전히 없음');
+            renderCategoriesList([]);
+            return;
+        }
     }
     await window.categoryDataManager.loadCategories();
     renderCategoriesList(window.categoryDataManager.getAllCategories());
@@ -95,9 +107,9 @@ export function renderCategoriesList(categories) {
 
     if (!categories || categories.length === 0) {
         container.innerHTML = `
-            <div class="text-center py-8 text-gray-400">
-                <i class="fas fa-tag text-3xl mb-3"></i>
-                <p class="text-sm">등록된 카테고리가 없습니다. 위에서 추가해보세요.</p>
+            <div style="padding:32px 8px;text-align:center;color:var(--text-muted);font-size:13px;">
+                <i class="fas fa-tag" style="font-size:24px;display:block;margin-bottom:10px;opacity:0.4;"></i>
+                등록된 카테고리가 없습니다. 위에서 추가해보세요.
             </div>`;
         return;
     }
@@ -109,43 +121,44 @@ export function renderCategoriesList(categories) {
     };
 
     container.innerHTML = categories.map(cat => `
-        <div id="cat-row-${cat.id}" class="flex items-center justify-between px-3 py-2 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+        <div id="cat-row-${cat.id}" class="flex-between p-xs bg-card border-std r-md"
+             style="transition:background 0.1s;gap:8px;">
             <!-- 보기 모드 -->
-            <div class="cat-view flex items-center gap-3 flex-1 min-w-0">
-                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium text-white"
-                      style="background:${COLOR_MAP[cat.color] || '#6b7280'}">
+            <div class="cat-view flex-center flex-gap-2" style="flex:1;min-width:0;">
+                <span class="badge r-full fw-medium"
+                      style="background:${COLOR_MAP[cat.color] || '#6b7280'};color:#fff;">
                     ${cat.name}
                 </span>
-                <span class="text-xs text-gray-500 truncate">${cat.description || ''}</span>
+                <span class="txt-secondary txt-xs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat.description || ''}</span>
             </div>
             <!-- 수정 모드 (기본 hidden) -->
-            <div class="cat-edit hidden flex-1 flex items-center gap-2 mr-2">
+            <div class="cat-edit hidden flex-center flex-gap-2" style="flex:1;margin-right:8px;">
                 <input type="text" id="edit-name-${cat.id}" value="${cat.name}"
-                       class="input-ui text-xs" style="max-width:130px;" placeholder="카테고리명">
-                <select id="edit-color-${cat.id}" class="input-ui text-xs" style="max-width:90px;">
+                       class="input-ui" style="max-width:130px;" placeholder="카테고리명">
+                <select id="edit-color-${cat.id}" class="input-ui" style="max-width:90px;">
                     ${['green','blue','red','yellow','purple','pink','indigo','gray','brown','orange']
                         .map(c => `<option value="${c}"${c === cat.color ? ' selected' : ''}>${c}</option>`).join('')}
                 </select>
             </div>
             <!-- 버튼 -->
-            <div class="cat-view-btns flex items-center gap-2 ml-2 shrink-0">
+            <div class="cat-view-btns btn-group">
                 <button onclick="window.startEditCategory('${cat.id}')"
-                        class="text-xs text-blue-600 hover:text-blue-800 px-2 py-1 rounded hover:bg-blue-50">
-                    <i class="fas fa-edit mr-1"></i>수정
+                        class="btn-icon btn-icon-edit" title="수정">
+                    <i class="fas fa-edit"></i>
                 </button>
                 <button onclick="window.deleteCategory('${cat.id}')"
-                        class="text-xs text-red-500 hover:text-red-700 px-2 py-1 rounded hover:bg-red-50">
-                    <i class="fas fa-trash mr-1"></i>삭제
+                        class="btn-icon btn-icon-delete" title="삭제">
+                    <i class="fas fa-trash"></i>
                 </button>
             </div>
-            <div class="cat-edit-btns hidden flex items-center gap-2 ml-2 shrink-0">
+            <div class="cat-edit-btns hidden btn-group">
                 <button onclick="window.confirmEditCategory('${cat.id}')"
-                        class="text-xs text-green-600 hover:text-green-800 px-2 py-1 rounded hover:bg-green-50">
-                    <i class="fas fa-check mr-1"></i>저장
+                        class="btn-icon btn-icon-primary" title="저장">
+                    <i class="fas fa-check"></i>
                 </button>
                 <button onclick="window.cancelEditCategory('${cat.id}')"
-                        class="text-xs text-gray-500 hover:text-gray-700 px-2 py-1 rounded hover:bg-gray-100">
-                    <i class="fas fa-times mr-1"></i>취소
+                        class="btn-icon" style="color:var(--text-secondary);background:var(--bg-light);" title="취소">
+                    <i class="fas fa-times"></i>
                 </button>
             </div>
         </div>
@@ -288,7 +301,7 @@ export async function updateProductCategoryDropdown() {
         const addOpt = document.createElement('option');
         addOpt.value = '__ADD_NEW__';
         addOpt.textContent = '+ 새 카테고리 추가';
-        addOpt.className = 'text-blue-600 font-medium';
+        addOpt.className = 'text-info font-medium';
         sel.appendChild(addOpt);
 
     } catch (err) {

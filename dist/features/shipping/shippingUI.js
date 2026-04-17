@@ -30,26 +30,26 @@ export class ShippingUI {
             
             tbody.innerHTML = orders.map(order => `
                 <tr class="hover:bg-gray-50">
-                    <td class="px-4">
+                    <td>
                         <input type="checkbox" class="shipping-order-checkbox rounded text-blue-600 focus:ring-blue-500"
                                data-order-id="${order.id}">
                     </td>
-                    <td class="px-4 td-primary font-medium">${order.order_number}</td>
-                    <td class="px-4 td-secondary">${this.formatDate(order.created_at)}</td>
-                    <td class="px-4 td-primary">${order.customer_name}</td>
-                    <td class="px-4 td-secondary">${order.customer_phone}</td>
-                    <td class="px-4 td-secondary max-w-xs truncate">${order.shipping_address}</td>
-                    <td class="px-4 td-primary">${order.product_name}</td>
-                    <td class="px-4">
+                    <td class="td-primary font-medium">${order.order_number}</td>
+                    <td class="td-secondary text-center">${window.fmt.date(order.created_at)}</td>
+                    <td class="td-primary">${order.customer_name}</td>
+                    <td class="td-secondary">${order.customer_phone}</td>
+                    <td class="td-secondary max-w-xs truncate">${order.shipping_address}</td>
+                    <td class="td-primary">${order.product_name}</td>
+                    <td>
                         ${order.tracking_number ?
                             `<span class="td-primary font-mono">${order.tracking_number}</span>` :
                             '<span class="td-null">미등록</span>'
                         }
                     </td>
-                    <td class="px-4">
-                        <span class="badge ${this.getStatusColor(order.status)}">${order.status}</span>
+                    <td class="text-center">
+                        ${window.renderOrderStatusBadge(order.status)}
                     </td>
-                    <td class="px-4">
+                    <td class="text-center">
                         <div class="btn-group">
                             <button onclick="shippingUI.editTrackingNumber('${order.id}')" class="btn-icon btn-icon-edit" title="송장번호 수정"><i class="fas fa-edit"></i></button>
                             <button onclick="shippingUI.viewOrderDetails('${order.id}')" class="btn-icon btn-icon-primary" title="상세보기"><i class="fas fa-eye"></i></button>
@@ -373,21 +373,22 @@ export class ShippingUI {
     }
 
     // 유틸리티 함수들
+    /** @deprecated window.fmt.date() 사용 — v3.3.42에서 중앙 포맷터로 통일 */
     formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
+        return window.fmt?.date(dateString) || new Date(dateString).toLocaleDateString('ko-KR');
     }
 
+    /** @deprecated window.renderOrderStatusBadge() 사용 — v3.3.42에서 중앙 렌더러로 통일 */
     getStatusColor(status) {
         const colors = {
-            '주문접수': 'bg-yellow-100 text-yellow-800',
-            '입금확인': 'bg-green-100 text-green-800',
-            '배송준비': 'bg-orange-100 text-orange-800',
-            '배송시작': 'bg-purple-100 text-purple-800',
-            '배송완료': 'bg-emerald-100 text-emerald-800',
-            '주문취소': 'bg-gray-100 text-gray-800'
+            '주문접수': 'badge-warning',
+            '입금확인': 'badge-success',
+            '배송준비': 'badge-orange',
+            '배송시작': 'badge-purple',
+            '배송완료': 'badge-sky',
+            '주문취소': 'badge-neutral'
         };
-        return colors[status] || 'bg-gray-100 text-gray-800';
+        return colors[status] || 'badge-neutral';
     }
 }
 

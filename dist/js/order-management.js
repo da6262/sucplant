@@ -5,19 +5,10 @@ async function loadOrderManagementComponent() {
         
         // 기존 이벤트 리스너 정리
         cleanupOrderEventListeners();
-        
-        // 기존 주문관리 섹션 내용만 제거 (섹션 자체는 유지)
-        const existingSection = document.getElementById('orders-section');
-        if (existingSection) {
-            console.log('🗑️ 기존 주문관리 섹션 내용 제거');
-            existingSection.innerHTML = '';
-        }
-        
-        // 다른 섹션들은 제거하지 않음 (화면 전환을 위해 유지)
-        console.log('📋 다른 섹션들은 화면 전환을 위해 유지');
-        
-        // 잠시 대기하여 DOM 정리 완료
-        await new Promise(resolve => setTimeout(resolve, 100));
+
+        // 섹션 사전 비우기 + 100ms 대기 제거 — 버튼이 잠시 DOM 에서 사라져
+        // 첫 클릭이 먹히는 race condition 원인이었음. innerHTML 은 아래 fetch 완료 후
+        // 새 HTML 로 한 번에 교체 (깜빡임·공백 타이밍 제거).
         
         // 팝업 모달이므로 다른 섹션 제거 불필요
         // const mainContent = document.getElementById('mainContent');
@@ -347,22 +338,18 @@ function displayOrderDetail(modal, order) {
         if (orderNumberEl) orderNumberEl.textContent = order.order_number || order.id || '-';
         if (orderDateEl) orderDateEl.textContent = order.order_date ? new Date(order.order_date).toLocaleDateString('ko-KR') : '-';
         if (orderStatusEl) {
-            orderStatusEl.textContent = order.order_status || order.status || '-';
-            // 상태별 색상 적용
-            const statusColors = {
-                '주문접수': 'bg-blue-100 text-blue-800',
-                '고객안내': 'bg-yellow-100 text-yellow-800',
-                '입금대기': 'bg-orange-100 text-orange-800',
-                '입금확인': 'bg-green-100 text-green-800',
-                '상품준비': 'bg-purple-100 text-purple-800',
-                '배송준비': 'bg-indigo-100 text-indigo-800',
-                '배송중': 'bg-cyan-100 text-cyan-800',
-                '배송완료': 'bg-emerald-100 text-emerald-800',
-                '주문취소': 'bg-red-100 text-red-800',
-                '환불완료': 'bg-gray-100 text-gray-800'
+            // 통제실 badge 클래스 사용 — raw Tailwind 제거
+            const STATUS_BADGE = {
+                '주문접수': 'badge-info',    '고객안내': 'badge-warning',
+                '입금대기': 'badge-orange',  '입금확인': 'badge-success',
+                '상품준비': 'badge-purple',  '배송준비': 'badge-sky',
+                '배송중':   'badge-purple',  '배송완료': 'badge-success',
+                '주문취소': 'badge-danger',  '환불완료': 'badge-neutral',
             };
-            const statusClass = statusColors[order.order_status || order.status] || 'bg-gray-100 text-gray-800';
-            orderStatusEl.className = `ml-2 px-2 py-1 rounded-full text-xs font-semibold ${statusClass}`;
+            const st = order.order_status || order.status || '-';
+            const badgeVariant = STATUS_BADGE[st] || 'badge-neutral';
+            orderStatusEl.className = `badge ${badgeVariant}`;
+            orderStatusEl.textContent = st;
         }
         if (orderChannelEl) orderChannelEl.textContent = order.order_channel || order.order_source || '-';
         
@@ -408,7 +395,7 @@ function displayOrderDetail(modal, order) {
                     });
                     
                     return `
-                        <tr class="hover:bg-gray-50">
+                        <tr class="hover:bg-section">
                             <td class="px-4 td-primary">${productName}</td>
                             <td class="px-4 text-center td-primary">${quantity}개</td>
                             <td class="px-4 text-right td-primary">${price.toLocaleString()}원</td>
@@ -420,11 +407,11 @@ function displayOrderDetail(modal, order) {
                 console.warn('⚠️ 주문 상품 데이터가 없습니다');
                 orderItemsEl.innerHTML = `
                     <tr>
-                        <td colspan="4" class="px-4 text-center text-gray-500">
+                        <td colspan="4" class="px-4 text-center text-muted">
                             <div class="flex flex-col items-center">
                                 <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
-                                <p class="text-sm font-medium text-gray-600">주문 상품이 없습니다</p>
-                                <p class="text-xs text-gray-400 mt-1">데이터를 확인해주세요</p>
+                                <p class="text-sm font-medium text-body">주문 상품이 없습니다</p>
+                                <p class="text-xs text-muted mt-1">데이터를 확인해주세요</p>
                             </div>
                         </td>
                     </tr>
@@ -729,12 +716,12 @@ function attachOrderEventListeners() {
             };
         }
 
-        // 페이지당 표시 수 선택 — onchange 할당
-        const orderPageSize = document.getElementById('order-page-size');
-        if (orderPageSize) {
-            orderPageSize.onchange = function() {
+        // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)
+        if (window.PageSize) {
+            // 주문은 기본 50 유지 (orderData.js:683 default 와 정합)
+            window.PageSize.attach('order-page-size', () => {
                 if (window.orderDataManager) window.orderDataManager.renderOrdersTable();
-            };
+            }, 50);
         }
 
         // 피킹 리스트 버튼 — onclick 할당
@@ -1193,17 +1180,17 @@ function displayPickingData(modal, pickingData) {
             productListEl.innerHTML = pickingData.productSummary.map((product, index) => {
                 console.log(`🔍 상품 ${index}:`, product);
                 return `
-                    <tr class="hover:bg-gray-50 transition-colors">
-                        <td class="border border-gray-300 px-2 text-center font-semibold bg-gray-50">${index + 1}</td>
+                    <tr class="hover:bg-section transition-colors">
+                        <td class="border border-gray-300 px-2 text-center font-semibold bg-section">${index + 1}</td>
                         <td class="border border-gray-300 px-2 font-medium text-left td-primary">${product.name || '상품명 없음'}</td>
                         <td class="border border-gray-300 px-2 text-center">
                             <span class="badge badge-info">
                                 ${product.size || '기본'}
                             </span>
                         </td>
-                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${product.totalQuantity || 0}</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-info">${product.totalQuantity || 0}</td>
                         <td class="border border-gray-300 px-2 text-center">${product.orders ? product.orders.length : 0}</td>
-                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${(product.totalAmount || 0).toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-brand">${(product.totalAmount || 0).toLocaleString()}원</td>
                     </tr>
                 `;
             }).join('');
@@ -1223,11 +1210,11 @@ function displayPickingData(modal, pickingData) {
                 }).join(' | ');
                 
                 return `
-                    <tr class="hover:bg-gray-50 transition-colors">
+                    <tr class="hover:bg-section transition-colors">
                         <td class="border border-gray-300 px-2 font-medium td-primary">${customer.name}</td>
                         <td class="border border-gray-300 px-2 td-secondary">${customer.phone}</td>
-                        <td class="border border-gray-300 px-2 text-center font-semibold text-blue-600">${customer.orders.length}</td>
-                        <td class="border border-gray-300 px-2 text-right font-semibold text-green-600">${customer.total_amount.toLocaleString()}원</td>
+                        <td class="border border-gray-300 px-2 text-center font-semibold text-info">${customer.orders.length}</td>
+                        <td class="border border-gray-300 px-2 text-right font-semibold text-brand">${customer.total_amount.toLocaleString()}원</td>
                         <td class="border border-gray-300 px-2 td-muted">${productList}</td>
                     </tr>
                 `;
@@ -1326,7 +1313,7 @@ async function openPickingPreviewModal(pickingData, type) {
                     previewHTML = window.generatePickingOnlyHTML(pickingData);
                 } else {
                     console.error('❌ generatePickingOnlyHTML 함수를 찾을 수 없습니다');
-                    previewHTML = '<div class="p-4 text-center text-red-500"><p>상품별 피킹 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
+                    previewHTML = '<div class="p-4 text-center text-danger"><p>상품별 피킹 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
                 }
                 break;
             case 'packaging-only':
@@ -1340,11 +1327,11 @@ async function openPickingPreviewModal(pickingData, type) {
                         console.log('✅ 고객별 포장 미리보기 HTML 생성 성공');
                     } catch (error) {
                         console.error('❌ 고객별 포장 미리보기 HTML 생성 실패:', error);
-                        previewHTML = '<div class="p-4 text-center text-red-500"><p>고객별 포장 HTML 생성 중 오류가 발생했습니다: ' + error.message + '</p></div>';
+                        previewHTML = '<div class="p-4 text-center text-danger"><p>고객별 포장 HTML 생성 중 오류가 발생했습니다: ' + error.message + '</p></div>';
                     }
                 } else {
                     console.error('❌ generatePackagingOnlyHTML 함수를 찾을 수 없습니다');
-                    previewHTML = '<div class="p-4 text-center text-red-500"><p>고객별 포장 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
+                    previewHTML = '<div class="p-4 text-center text-danger"><p>고객별 포장 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
                 }
                 break;
             case 'full':
@@ -1353,7 +1340,7 @@ async function openPickingPreviewModal(pickingData, type) {
                     previewHTML = window.generatePickingListHTML(pickingData);
                 } else {
                     console.error('❌ generatePickingListHTML 함수를 찾을 수 없습니다');
-                    previewHTML = '<div class="p-4 text-center text-red-500"><p>전체 피킹 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
+                    previewHTML = '<div class="p-4 text-center text-danger"><p>전체 피킹 HTML 생성 함수를 찾을 수 없습니다.</p><p>orderPrint.js 파일이 로드되었는지 확인해주세요.</p></div>';
                 }
                 break;
         }
@@ -1686,19 +1673,19 @@ function createShippingSettingsSection() {
                         <div class="flex items-center justify-between">
                             <div class="flex items-center">
                                 <i class="fas fa-truck mr-2 text-purple-600"></i>
-                                <h2 class="text-xl font-semibold text-gray-800">배송비 관리</h2>
+                                <h2 class="text-xl font-semibold text-heading">배송비 관리</h2>
                             </div>
-                            <button id="add-shipping-btn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center">
+                            <button id="add-shipping-btn" class="btn-purple">
                                 <i class="fas fa-plus mr-2"></i>새 배송비 규칙 추가
                             </button>
                         </div>
-                        <p class="text-gray-600 mt-2">배송비 정책을 관리하고 설정합니다.</p>
+                        <p class="text-body mt-2">배송비 정책을 관리하고 설정합니다.</p>
                     </div>
 
                     <!-- 배송비 규칙 목록 -->
                     <div class="overflow-x-auto">
                         <table class="min-w-full table-ui">
-                            <thead class="bg-gray-50">
+                            <thead class="bg-section">
                                 <tr>
                                     <th class="px-6 text-left">규칙명</th>
                                     <th class="px-6 text-left">적용 조건</th>
@@ -1711,11 +1698,11 @@ function createShippingSettingsSection() {
                             <tbody id="shipping-rules-table-body">
                                 <!-- 배송비 규칙들이 여기에 동적으로 추가됩니다 -->
                                 <tr>
-                                    <td colspan="6" class="px-6 text-center text-gray-500">
+                                    <td colspan="6" class="px-6 text-center text-muted">
                                         <div class="flex flex-col items-center space-y-2">
-                                            <i class="fas fa-truck text-gray-400 text-2xl"></i>
+                                            <i class="fas fa-truck text-muted text-2xl"></i>
                                             <p class="text-sm">등록된 배송비 규칙이 없습니다</p>
-                                            <p class="text-xs text-gray-400">새 배송비 규칙을 추가해보세요</p>
+                                            <p class="text-xs text-muted">새 배송비 규칙을 추가해보세요</p>
                                         </div>
                                     </td>
                                 </tr>
@@ -1725,32 +1712,32 @@ function createShippingSettingsSection() {
 
                     <!-- 기본 배송비 설정 -->
                     <div class="border-t border-gray-200 p-6">
-                        <h3 class="text-lg font-medium text-gray-800 mb-4">기본 배송비 설정</h3>
+                        <h3 class="text-lg font-medium text-heading mb-4">기본 배송비 설정</h3>
                         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">기본 배송비</label>
+                            <div class="bg-section p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-body mb-2">기본 배송비</label>
                                 <div class="flex items-center">
                                     <input type="number" id="default-shipping-fee" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="4000">
-                                    <span class="ml-2 text-sm text-gray-600">원</span>
+                                    <span class="ml-2 text-sm text-body">원</span>
                                 </div>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">무료배송 기준</label>
+                            <div class="bg-section p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-body mb-2">무료배송 기준</label>
                                 <div class="flex items-center">
                                     <input type="number" id="free-shipping-threshold" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="50000">
-                                    <span class="ml-2 text-sm text-gray-600">원 이상</span>
+                                    <span class="ml-2 text-sm text-body">원 이상</span>
                                 </div>
                             </div>
-                            <div class="bg-gray-50 p-4 rounded-lg">
-                                <label class="block text-sm font-medium text-gray-700 mb-2">당일배송비</label>
+                            <div class="bg-section p-4 rounded-lg">
+                                <label class="block text-sm font-medium text-body mb-2">당일배송비</label>
                                 <div class="flex items-center">
                                     <input type="number" id="express-shipping-fee" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="8000">
-                                    <span class="ml-2 text-sm text-gray-600">원</span>
+                                    <span class="ml-2 text-sm text-body">원</span>
                                 </div>
                             </div>
                         </div>
                         <div class="mt-4 flex justify-end">
-                            <button id="save-shipping-settings" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium transition-colors">
+                            <button id="save-shipping-settings" class="btn-info">
                                 <i class="fas fa-save mr-2"></i>설정 저장
                             </button>
                         </div>
@@ -1802,10 +1789,10 @@ function setupShippingSettingsEventListeners() {
         
         // 경고 메시지 표시
         const warningDiv = document.createElement('div');
-        warningDiv.className = 'bg-red-50 border border-red-200 rounded-lg p-4 mb-4';
+        warningDiv.className = 'bg-danger border border-red-200 rounded-lg p-4 mb-4';
         warningDiv.innerHTML = `
             <div class="flex items-center">
-                <i class="fas fa-exclamation-triangle text-red-600 mr-2"></i>
+                <i class="fas fa-exclamation-triangle text-danger mr-2"></i>
                 <span class="text-red-800 text-sm">
                     데이터베이스 연결이 필요합니다. Supabase 설정을 확인해주세요.
                 </span>
@@ -2160,7 +2147,7 @@ function updateShippingRulesTable(rules) {
     if (rules.length === 0) {
         tbody.innerHTML = `
             <tr>
-                <td colspan="5" class="px-6 text-center text-gray-500">
+                <td colspan="5" class="px-6 text-center text-muted">
                     배송비 규칙이 없습니다.
                 </td>
             </tr>
@@ -2185,7 +2172,7 @@ function updateShippingRulesTable(rules) {
                 <button onclick="toggleShippingRule('${rule.id}', ${!rule.is_active})" class="text-indigo-600 hover:text-indigo-900 mr-2">
                     ${rule.is_active ? '비활성화' : '활성화'}
                 </button>
-                <button onclick="deleteShippingRule('${rule.id}')" class="text-red-600 hover:text-red-900">
+                <button onclick="deleteShippingRule('${rule.id}')" class="text-danger hover:text-red-900">
                     삭제
                 </button>
             </td>
@@ -2282,15 +2269,15 @@ function createShippingRuleModal() {
                     <!-- 모달 헤더 -->
                     <div class="flex items-center justify-between p-6 border-b border-gray-200">
                         <div class="flex items-center space-x-3">
-                            <div class="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
+                            <div class="w-10 h-10 bg-purple-accent rounded-lg flex items-center justify-center">
                                 <i class="fas fa-plus text-purple-600"></i>
                             </div>
                             <div>
-                                <h3 class="text-lg font-semibold text-gray-900">새 배송비 규칙 추가</h3>
-                                <p class="text-sm text-gray-600">배송비 규칙을 설정하세요</p>
+                                <h3 class="text-lg font-semibold text-heading">새 배송비 규칙 추가</h3>
+                                <p class="text-sm text-body">배송비 규칙을 설정하세요</p>
                             </div>
                         </div>
-                        <button id="close-shipping-rule-modal" class="text-gray-400 hover:text-gray-600 transition-colors">
+                        <button id="close-shipping-rule-modal" class="text-muted hover:text-body transition-colors">
                             <i class="fas fa-times text-xl"></i>
                         </button>
                     </div>
@@ -2300,16 +2287,16 @@ function createShippingRuleModal() {
                         <form id="shipping-rule-form" class="space-y-6">
                             <!-- 규칙명 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">규칙명 <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-medium text-body mb-2">규칙명 <span class="text-danger">*</span></label>
                                 <input type="text" id="rule-name" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="예: 서울/경기 배송비" required>
                             </div>
 
                             <!-- 적용 조건 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">적용 조건 <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-medium text-body mb-2">적용 조건 <span class="text-danger">*</span></label>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-600 mb-1">지역</label>
+                                        <label class="block text-xs text-body mb-1">지역</label>
                                         <select id="rule-region" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                             <option value="">전체 지역</option>
                                             <option value="서울">서울</option>
@@ -2326,10 +2313,10 @@ function createShippingRuleModal() {
                                         </select>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-600 mb-1">주문 금액</label>
+                                        <label class="block text-xs text-body mb-1">주문 금액</label>
                                         <div class="flex items-center space-x-2">
                                             <input type="number" id="rule-min-amount" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="0" min="0">
-                                            <span class="text-sm text-gray-600">원 이상</span>
+                                            <span class="text-sm text-body">원 이상</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2337,20 +2324,20 @@ function createShippingRuleModal() {
 
                             <!-- 배송비 설정 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">배송비 설정 <span class="text-red-500">*</span></label>
+                                <label class="block text-sm font-medium text-body mb-2">배송비 설정 <span class="text-danger">*</span></label>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs text-gray-600 mb-1">배송비</label>
+                                        <label class="block text-xs text-body mb-1">배송비</label>
                                         <div class="flex items-center space-x-2">
                                             <input type="number" id="rule-shipping-fee" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="3000" min="0" required>
-                                            <span class="text-sm text-gray-600">원</span>
+                                            <span class="text-sm text-body">원</span>
                                         </div>
                                     </div>
                                     <div>
-                                        <label class="block text-xs text-gray-600 mb-1">무료배송 기준</label>
+                                        <label class="block text-xs text-body mb-1">무료배송 기준</label>
                                         <div class="flex items-center space-x-2">
                                             <input type="number" id="rule-free-threshold" class="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="50000" min="0">
-                                            <span class="text-sm text-gray-600">원 이상</span>
+                                            <span class="text-sm text-body">원 이상</span>
                                         </div>
                                     </div>
                                 </div>
@@ -2359,7 +2346,7 @@ function createShippingRuleModal() {
                             <!-- 우선순위 및 상태 -->
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">우선순위</label>
+                                    <label class="block text-sm font-medium text-body mb-2">우선순위</label>
                                     <select id="rule-priority" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                         <option value="1">1 (최우선)</option>
                                         <option value="2">2</option>
@@ -2369,7 +2356,7 @@ function createShippingRuleModal() {
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-sm font-medium text-gray-700 mb-2">상태</label>
+                                    <label class="block text-sm font-medium text-body mb-2">상태</label>
                                     <select id="rule-status" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm">
                                         <option value="active" selected>활성</option>
                                         <option value="inactive">비활성</option>
@@ -2379,18 +2366,18 @@ function createShippingRuleModal() {
 
                             <!-- 설명 -->
                             <div>
-                                <label class="block text-sm font-medium text-gray-700 mb-2">설명</label>
+                                <label class="block text-sm font-medium text-body mb-2">설명</label>
                                 <textarea id="rule-description" rows="3" class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm" placeholder="배송비 규칙에 대한 설명을 입력하세요"></textarea>
                             </div>
                         </form>
                     </div>
 
                     <!-- 모달 푸터 -->
-                    <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-gray-50">
-                        <button id="cancel-shipping-rule" class="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-end space-x-3 p-6 border-t border-gray-200 bg-section">
+                        <button id="cancel-shipping-rule" class="px-4 py-2 text-body bg-white border border-gray-300 rounded-lg hover:bg-section transition-colors">
                             취소
                         </button>
-                        <button id="save-shipping-rule" class="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                        <button id="save-shipping-rule" class="btn-purple">
                             저장
                         </button>
                     </div>
@@ -2500,7 +2487,7 @@ function addShippingRuleToTable(ruleData) {
     
     // 새 행 생성
     const row = document.createElement('tr');
-    row.className = 'hover:bg-gray-50';
+    row.className = 'hover:bg-section';
     row.innerHTML = `
         <td class="px-6 whitespace-nowrap font-medium td-primary">${ruleData.name}</td>
         <td class="px-6 whitespace-nowrap td-secondary">
@@ -2515,7 +2502,7 @@ function addShippingRuleToTable(ruleData) {
         </td>
         <td class="px-6 whitespace-nowrap font-medium">
             <button onclick="editShippingRule(this)" class="text-indigo-600 hover:text-indigo-900 mr-3">수정</button>
-            <button onclick="deleteShippingRule(this)" class="text-red-600 hover:text-red-900">삭제</button>
+            <button onclick="deleteShippingRule(this)" class="text-danger hover:text-red-900">삭제</button>
         </td>
     `;
     
@@ -2552,9 +2539,9 @@ function deleteShippingRule(button) {
         if (tbody && tbody.children.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="6" class="px-6 text-center text-gray-500">
+                    <td colspan="6" class="px-6 text-center text-muted">
                         <div class="flex flex-col items-center space-y-2">
-                            <i class="fas fa-truck text-gray-400 text-2xl"></i>
+                            <i class="fas fa-truck text-muted text-2xl"></i>
                             <p>등록된 배송비 규칙이 없습니다</p>
                             <p class="td-muted">새 배송비 규칙을 추가해보세요</p>
                         </div>
@@ -2627,7 +2614,7 @@ async function loadTrackingPanelOrders() {
     const tbody = document.getElementById('tracking-input-rows');
     if (!tbody) return;
 
-    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
 
     try {
         if (!window.supabaseClient) throw new Error('Supabase 미연결');
@@ -2655,7 +2642,7 @@ async function loadTrackingPanelOrders() {
         }
 
         if (!orders || orders.length === 0) {
-            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-gray-400">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
+            tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted">배송준비/상품준비 상태 주문이 없습니다</td></tr>`;
             return;
         }
 
@@ -2686,7 +2673,7 @@ async function loadTrackingPanelOrders() {
 
     } catch (e) {
         console.error('송장번호 패널 로드 실패:', e);
-        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-red-400">로드 실패: ${e.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-danger">로드 실패: ${e.message}</td></tr>`;
     }
 }
 
@@ -2765,12 +2752,12 @@ function _updateDateFilterBtnState(activeId) {
     document.querySelectorAll('.order-date-quick-btn').forEach(btn => {
         btn.classList.remove('bg-gray-700', 'text-white', 'border-gray-700',
                              'bg-emerald-600', 'border-emerald-600');
-        btn.classList.add('text-gray-600', 'border-gray-200');
+        btn.classList.add('text-body', 'border-gray-200');
         btn.style.backgroundColor = '';
     });
     const active = document.getElementById(activeId);
     if (active) {
-        active.classList.remove('text-gray-600', 'border-gray-200');
+        active.classList.remove('text-body', 'border-gray-200');
         if (activeId === 'date-btn-custom') {
             active.classList.add('bg-emerald-600', 'text-white', 'border-emerald-600');
         } else {

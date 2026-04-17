@@ -237,7 +237,7 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping = window.settingsDataManager.settings.shipping || {};
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
-        window.settingsDataManager.settings.shipping.expressShippingFee = get('express-shipping-fee') ? num('express-shipping-fee') : (window.settingsDataManager.settings.shipping.expressShippingFee ?? 5000);
+        window.settingsDataManager.settings.shipping.remoteAreaShippingFee = get('remote-area-shipping-fee') ? num('remote-area-shipping-fee') : (window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000);
         // 배송 방법 목록
         const methodsInput = get('shipping-methods-input');
         if (methodsInput && methodsInput.value.trim()) {
@@ -248,6 +248,7 @@ async function saveShippingSettings() {
         if (!window.SHIPPING_SETTINGS) window.SHIPPING_SETTINGS = {};
         window.SHIPPING_SETTINGS.defaultShippingFee = window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000;
         window.SHIPPING_SETTINGS.freeShippingThreshold = window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000;
+        window.SHIPPING_SETTINGS.remoteAreaShippingFee = window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000;
         console.log('✅ 배송 설정 저장 완료:', window.SHIPPING_SETTINGS);
         alert('배송 설정이 저장되었습니다.');
     } catch (err) {
@@ -269,7 +270,7 @@ function syncFormToSettings() {
     if (get('farm-address')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.address = val('farm-address'); }
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
-    if (get('express-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.expressShippingFee = num('express-shipping-fee'); }
+    if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
     const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
     if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {
@@ -456,13 +457,13 @@ async function loadSMSSettings() {
             item.id = `sms-item-${tpl.key}`;
             item.className = 'border-b border-gray-100 last:border-0';
             item.innerHTML = `
-                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
-                    <span class="text-xs font-medium text-gray-800 w-20 shrink-0">${tpl.label}</span>
-                    <span class="sms-preview text-xs text-gray-400 flex-1 truncate">${preview}</span>
+                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-section select-none" onclick="toggleSmsTemplate('${tpl.key}')">
+                    <span class="text-xs font-medium text-heading w-20 shrink-0">${tpl.label}</span>
+                    <span class="sms-preview text-xs text-muted flex-1 truncate">${preview}</span>
                     <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
                 </div>
-                <div class="hidden px-3 pb-3 bg-gray-50" id="sms-detail-${tpl.key}">
-                    <p class="text-[11px] text-gray-400 mb-1.5">변수: ${tpl.vars}</p>
+                <div class="hidden px-3 pb-3 bg-section" id="sms-detail-${tpl.key}">
+                    <p class="text-xs text-muted mb-1.5">변수: ${tpl.vars}</p>
                     <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
                     <div class="flex justify-end mt-1.5">
                         <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>

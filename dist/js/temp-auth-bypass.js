@@ -25,11 +25,11 @@ function bypassAuth() {
         const tempUserInfo = document.createElement('div');
         tempUserInfo.className = 'temp-admin-info flex items-center space-x-4';
         tempUserInfo.innerHTML = `
-            <span class="text-sm text-yellow-600">
+            <span class="text-sm text-warn">
                 <i class="fas fa-exclamation-triangle mr-1"></i>
                 임시 관리자 모드 (개발용)
             </span>
-            <button onclick="location.reload()" class="text-sm text-blue-600 hover:text-blue-800">
+            <button onclick="location.reload()" class="text-sm text-info hover:text-blue-800">
                 <i class="fas fa-sync-alt mr-1"></i>새로고침
             </button>
         `;

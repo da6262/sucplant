@@ -68,7 +68,7 @@ async function runCustomerManagementInit() {
     console.log('🔄 고객관리 초기화 시작');
     const customerListContainer = document.getElementById('customer-list-container');
     if (customerListContainer) {
-        customerListContainer.innerHTML = '<div class="text-center py-8 text-gray-500"><div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-blue-600 text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
+        customerListContainer.innerHTML = '<div class="text-center py-8 text-muted"><div class="w-12 h-12 bg-info-accent rounded-lg flex items-center justify-center mx-auto mb-3"><i class="fas fa-spinner fa-spin text-info text-lg"></i></div><p class="text-sm font-medium">고객 데이터를 불러오는 중...</p></div>';
     }
     if (window.customerDataManager) {
         try {
@@ -77,7 +77,7 @@ async function runCustomerManagementInit() {
         } catch (error) {
             console.error('❌ 고객 데이터 로드 실패:', error);
             if (customerListContainer) {
-                customerListContainer.innerHTML = '<div class="text-center py-8 text-red-500"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="mt-3 bg-red-600 text-white px-4 py-2 rounded-lg text-sm">새로고침</button></div>';
+                customerListContainer.innerHTML = '<div class="text-center py-8 text-danger"><p class="text-sm font-medium">고객 데이터를 불러올 수 없습니다.</p><button onclick="location.reload()" class="btn-danger btn-xs mt-3">새로고침</button></div>';
             }
         }
         if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
@@ -182,45 +182,68 @@ async function saveCustomer() {
             // 주문 폼에서 온 경우 주문 폼으로 돌아가기
             if (window.tempCustomerName) {
                 console.log('🔄 주문 폼으로 돌아가기 - tempCustomerName:', window.tempCustomerName);
-                
-                // 고객 정보를 주문 폼에 자동 입력
-                const customerNameInput = document.getElementById('order-customer-name');
-                const customerPhoneInput = document.getElementById('order-customer-phone');
-                const customerAddressInput = document.getElementById('order-customer-address');
-                
-                if (customerNameInput) customerNameInput.value = customerData.name;
-                if (customerPhoneInput) customerPhoneInput.value = customerData.phone;
-                if (customerAddressInput) customerAddressInput.value = customerData.address;
-                
-                console.log('📝 주문 폼에 고객 정보 입력 완료:', {
+
+                // 저장된 고객의 실제 ID·grade 확보 (callback 및 후속 주문 생성에 필요)
+                let newCustomer = null;
+                try {
+                    const list = window.customerDataManager?.getAllCustomers?.() || window.customerDataManager?.customers || [];
+                    newCustomer = list.find(c => c?.phone === customerData.phone) || null;
+                } catch (_) {}
+                const fullCustomer = {
+                    id: newCustomer?.id || result?.id || null,
                     name: customerData.name,
                     phone: customerData.phone,
-                    address: customerData.address
-                });
-                
+                    address: customerData.address,
+                    address_detail: customerData.address_detail || '',
+                    grade: newCustomer?.grade || 'GENERAL'
+                };
+
                 // 고객 모달 닫기
                 if (window.closeCustomerModal) {
                     window.closeCustomerModal();
                 }
-                
-                // 주문 모달 다시 표시
+
+                // 주문 모달 다시 표시 — inline display 금지 (closeOrderModal X 버튼 무효화 방지)
                 const orderModal = document.getElementById('order-modal');
                 if (orderModal) {
-                    orderModal.style.display = 'flex';
                     orderModal.classList.remove('hidden');
-                    console.log('📦 주문 모달 다시 표시 완료');
-                    console.log('🔍 주문 모달 상태:', {
-                        display: orderModal.style.display,
-                        hidden: orderModal.classList.contains('hidden'),
-                        visibility: orderModal.style.visibility
-                    });
-                } else {
-                    console.error('❌ 주문 모달을 찾을 수 없습니다');
+                    orderModal.style.display = '';
                 }
-                
-                // 임시 저장된 고객명 초기화 (주문 모달이 다시 표시된 후)
+
+                // orderForm 의 selectCustomerFromSearch 직접 호출로 customer_id·grade·UI 완전 동기화
+                // (기존 callback 메커니즘이 일부 경로에서 등록되지 않는 문제 회피)
+                setTimeout(() => {
+                    if (typeof window.selectCustomerFromSearch === 'function') {
+                        try {
+                            console.log('🔄 selectCustomerFromSearch 직접 호출로 고객 완전 동기화');
+                            window.selectCustomerFromSearch(
+                                fullCustomer.id,
+                                fullCustomer.name,
+                                fullCustomer.phone,
+                                fullCustomer.address,
+                                fullCustomer.grade,
+                                fullCustomer.address_detail
+                            );
+                        } catch (err) {
+                            console.error('❌ selectCustomerFromSearch 호출 실패:', err);
+                        }
+                    } else {
+                        console.warn('⚠️ selectCustomerFromSearch 미등록 — 필드 직접 채움 폴백');
+                        const nameEl = document.getElementById('order-customer-name');
+                        const phoneEl = document.getElementById('order-customer-phone');
+                        const addrEl  = document.getElementById('order-customer-address');
+                        if (nameEl)  nameEl.value  = fullCustomer.name;
+                        if (phoneEl) phoneEl.value = fullCustomer.phone;
+                        if (addrEl)  addrEl.value  = fullCustomer.address;
+                    }
+                    // 레거시 callback 있으면 함께 실행
+                    if (window.customerModalCallback) {
+                        try { window.customerModalCallback(fullCustomer); } catch (_) {}
+                        window.customerModalCallback = null;
+                    }
+                }, 50);  // 주문 모달 재표시 직후 DOM 안정화 대기
+
                 window.tempCustomerName = null;
-                
                 console.log('✅ 주문 폼으로 돌아가기 완료');
                 return;
             }
@@ -452,7 +475,7 @@ async function loadCustomerGrades() {
         if (error) {
             console.error('❌ 고객등급 로드 실패:', error);
             const gradesList = document.getElementById('customer-grades-list');
-            if (gradesList) gradesList.innerHTML = '<p class="text-gray-500 text-center py-4">등록된 고객등급이 없습니다.</p>';
+            if (gradesList) gradesList.innerHTML = '<p class="text-muted text-center py-4">등록된 고객등급이 없습니다.</p>';
             return;
         }
         
@@ -473,22 +496,22 @@ async function loadCustomerGrades() {
                     const discount = grade.discount != null ? grade.discount : 0;
                     const id = grade.code || `grade-${index}`;
                     const gradeItem = document.createElement('div');
-                    gradeItem.className = 'flex items-center justify-between p-4 bg-gray-50 rounded-lg mb-2';
+                    gradeItem.className = 'flex items-center justify-between p-4 bg-section rounded-lg mb-2';
                     gradeItem.innerHTML = `
                         <div class="flex items-center space-x-3">
                             <div class="w-8 h-8 rounded-full flex items-center justify-center" style="background-color: ${color}">
                                 <i class="${icon} text-white text-sm"></i>
                             </div>
                             <div>
-                                <h5 class="font-medium text-gray-900">${name}</h5>
-                                <p class="text-sm text-gray-600">최소 구매액: ${Number(minAmount).toLocaleString()}원 | 할인율: ${discount}%</p>
+                                <h5 class="font-medium text-heading">${name}</h5>
+                                <p class="text-sm text-body">최소 구매액: ${Number(minAmount).toLocaleString()}원 | 할인율: ${discount}%</p>
                             </div>
                         </div>
                         <div class="flex space-x-2">
-                            <button class="edit-grade-btn text-blue-600 hover:text-blue-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
+                            <button class="edit-grade-btn text-info hover:text-blue-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
                                 <i class="fas fa-edit"></i>
                             </button>
-                            <button class="delete-grade-btn text-red-600 hover:text-red-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
+                            <button class="delete-grade-btn text-danger hover:text-red-800 text-sm" data-grade-id="${id}" data-grade-index="${index}">
                                 <i class="fas fa-trash"></i>
                             </button>
                         </div>
@@ -496,7 +519,7 @@ async function loadCustomerGrades() {
                     gradesList.appendChild(gradeItem);
                 });
             } else {
-                gradesList.innerHTML = '<p class="text-gray-500 text-center py-4">등록된 고객등급이 없습니다.</p>';
+                gradesList.innerHTML = '<p class="text-muted text-center py-4">등록된 고객등급이 없습니다.</p>';
             }
         }
         
@@ -733,16 +756,16 @@ async function loadCustomerGradesList() {
                             <i class="${grade.icon}"></i>
                         </div>
                         <div>
-                            <h4 class="font-semibold text-gray-800">${grade.name}</h4>
-                            <p class="text-sm text-gray-600">최소 구매금액: ${grade.minAmount.toLocaleString()}원</p>
-                            <p class="text-sm text-gray-600">할인율: ${grade.discount}%</p>
+                            <h4 class="font-semibold text-heading">${grade.name}</h4>
+                            <p class="text-sm text-body">최소 구매금액: ${grade.minAmount.toLocaleString()}원</p>
+                            <p class="text-sm text-body">할인율: ${grade.discount}%</p>
                         </div>
                     </div>
                     <div class="flex items-center space-x-2">
-                        <button onclick="editCustomerGrade(${index})" class="text-blue-600 hover:text-blue-800 transition-colors">
+                        <button onclick="editCustomerGrade(${index})" class="text-info hover:text-blue-800 transition-colors">
                             <i class="fas fa-edit"></i>
                         </button>
-                        <button onclick="deleteCustomerGrade(${index})" class="text-red-600 hover:text-red-800 transition-colors">
+                        <button onclick="deleteCustomerGrade(${index})" class="text-danger hover:text-red-800 transition-colors">
                             <i class="fas fa-trash"></i>
                         </button>
                     </div>
@@ -1100,16 +1123,14 @@ function attachCustomerEventListeners() {
             console.log('✅ 고객 저장 버튼 이벤트 리스너 연결 완료');
         }
         
-        // 페이지당 표시 수 선택
-        const customerPageSize = document.getElementById('customer-page-size');
-        if (customerPageSize) {
-            customerPageSize.addEventListener('change', function() {
+        // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용
+        if (window.PageSize) {
+            window.PageSize.attach('customer-page-size', () => {
                 const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
                 const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
                 const searchTerm = customerSearch ? customerSearch.value.trim() : '';
                 if (window.renderCustomersTable) window.renderCustomersTable(gradeFilter, searchTerm);
-            });
-            console.log('✅ 페이지 크기 선택 이벤트 리스너 연결 완료');
+            }, 20);
         }
 
         console.log('✅ 고객관리 이벤트 리스너 연결 완료');
@@ -1203,8 +1224,8 @@ function showCustomerManagementSettings() {
                 <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
                     <div class="p-6">
                         <div class="flex justify-between items-center mb-4">
-                            <h3 class="text-lg font-semibold text-gray-800">고객관리 설정</h3>
-                            <button onclick="closeSettingsModal()" class="text-gray-400 hover:text-gray-600">
+                            <h3 class="text-lg font-semibold text-heading">고객관리 설정</h3>
+                            <button onclick="closeSettingsModal()" class="text-muted hover:text-body">
                                 <i class="fas fa-times"></i>
                             </button>
                         </div>
@@ -1214,10 +1235,10 @@ function showCustomerManagementSettings() {
         settingsOptions.forEach((option, index) => {
             settingsHTML += `
                 <button onclick="handleSettingsOption('${option}')" 
-                        class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-gray-50 transition-colors">
+                        class="w-full text-left p-3 rounded-lg border border-gray-200 hover:bg-section transition-colors">
                     <div class="flex items-center">
-                        <i class="fas fa-cog text-gray-400 mr-3"></i>
-                        <span class="text-gray-700">${option}</span>
+                        <i class="fas fa-cog text-muted mr-3"></i>
+                        <span class="text-body">${option}</span>
                     </div>
                 </button>
             `;
@@ -1557,67 +1578,123 @@ async function openAddressSearch() {
     }
 }
 
-// 주소 입력 시 실시간 검색 (입력창에 직접 타이핑하면 Daum 검색 임베드)
-let _addressInputTimer = null;
-
+// 주소 입력 시 Enter 키 → 자체 중앙 모달(420×460)로 Daum 검색 임베드
 window.handleAddressInput = async function(value) {
-    const container = document.getElementById('address-embed-container');
-    if (!container) return;
+    const trimmed = (value || '').trim();
+    if (!trimmed) return;
 
-    // 2글자 미만이면 검색창 숨김
-    if (!value || value.trim().length < 2) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
+    try {
+        await loadDaumPostcodeService();
+    } catch (e) {
+        console.warn('Daum 우편번호 로드 실패:', e);
         return;
     }
+    if (typeof daum === 'undefined' || !daum.Postcode) return;
 
-    // 이미 주소가 완성된 것처럼 보이면 (공백 포함 10자 이상이고 숫자 포함) 닫기
-    if (value.length >= 10 && /\d/.test(value) && value.includes(' ')) {
-        container.classList.add('hidden');
-        container.innerHTML = '';
-        return;
-    }
+    // 하단 임베드 컨테이너 숨김 유지
+    const legacyContainer = document.getElementById('address-embed-container');
+    if (legacyContainer) { legacyContainer.classList.add('hidden'); legacyContainer.innerHTML = ''; }
 
-    clearTimeout(_addressInputTimer);
-    _addressInputTimer = setTimeout(async () => {
-        try {
-            await loadDaumPostcodeService();
-        } catch (e) {
-            console.warn('Daum 우편번호 로드 실패:', e);
-            return;
+    // 기존 모달 있으면 제거
+    document.getElementById('daum-address-modal')?.remove();
+
+    // 드래그 가능한 주소 검색 모달 (고객 모달 우측 옆)
+    // 고객 모달 modal-sm 420px 기준: 중앙 + 240px = 우측 옆
+    // 헤더에는 드래그 핸들만(X 제거) — Daum embed 내부에 기본 닫기 버튼 있어 중복 방지
+    const overlay = document.createElement('div');
+    overlay.id = 'daum-address-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;background:transparent;z-index:1000000;pointer-events:none;';
+    overlay.innerHTML = `
+        <div id="daum-address-box"
+             style="position:fixed;right:20px;top:60px;background:var(--bg-white);border-radius:var(--radius-lg);width:500px;height:580px;max-width:calc(100vw - 40px);max-height:calc(100vh - 80px);display:flex;flex-direction:column;box-shadow:var(--shadow-lg);pointer-events:auto;border:1px solid var(--border);">
+            <div id="daum-address-header"
+                 style="display:flex;align-items:center;justify-content:space-between;padding:6px 10px;border-bottom:1px solid var(--border);background:var(--bg-lighter);font-size:11px;cursor:move;user-select:none;flex-shrink:0;">
+                <span style="color:var(--text-muted);"><i class="fas fa-grip-lines" style="margin-right:4px;"></i>드래그로 이동</span>
+                <button type="button" id="daum-address-close" aria-label="닫기"
+                        style="border:none;background:transparent;font-size:16px;cursor:pointer;color:var(--text-secondary);padding:0 6px;line-height:1;">&times;</button>
+            </div>
+            <div id="daum-address-embed" style="flex:1;min-height:0;"></div>
+        </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const closeModal = () => overlay.remove();
+
+    // X 버튼 닫기 (내 헤더 X — Daum embed 내부에는 자체 X 없음)
+    overlay.querySelector('#daum-address-close').addEventListener('click', closeModal);
+
+    // ESC 닫기
+    const onEsc = (ev) => { if (ev.key === 'Escape') { closeModal(); document.removeEventListener('keydown', onEsc); } };
+    document.addEventListener('keydown', onEsc);
+
+    // 드래그 이동 구현
+    const box = overlay.querySelector('#daum-address-box');
+    const header = overlay.querySelector('#daum-address-header');
+    let dragState = null;
+    header.addEventListener('mousedown', (e) => {
+        if (e.button !== 0) return;
+        const rect = box.getBoundingClientRect();
+        dragState = {
+            startX: e.clientX,
+            startY: e.clientY,
+            boxLeft: rect.left,
+            boxTop: rect.top
+        };
+        box.style.left = rect.left + 'px';
+        box.style.top = rect.top + 'px';
+        e.preventDefault();
+    });
+    const onMouseMove = (e) => {
+        if (!dragState) return;
+        const nx = dragState.boxLeft + (e.clientX - dragState.startX);
+        const ny = dragState.boxTop + (e.clientY - dragState.startY);
+        // 화면 경계 안으로 제한
+        const maxX = window.innerWidth - box.offsetWidth - 4;
+        const maxY = window.innerHeight - box.offsetHeight - 4;
+        box.style.left = Math.max(4, Math.min(nx, maxX)) + 'px';
+        box.style.top  = Math.max(4, Math.min(ny, maxY)) + 'px';
+    };
+    const onMouseUp = () => { dragState = null; };
+    document.addEventListener('mousemove', onMouseMove);
+    document.addEventListener('mouseup', onMouseUp);
+
+    // 모달 제거 시 drag 리스너도 함께 제거
+    const observer = new MutationObserver(() => {
+        if (!document.contains(overlay)) {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup', onMouseUp);
+            document.removeEventListener('keydown', onEsc);
+            observer.disconnect();
         }
-        if (typeof daum === 'undefined' || !daum.Postcode) return;
+    });
+    observer.observe(document.body, { childList: true });
 
-        container.innerHTML = '';
-        container.classList.remove('hidden');
-
-        new daum.Postcode({
-            oncomplete: function(data) {
-                const addr = data.roadAddress || data.jibunAddress || '';
-                const addressField = document.getElementById('customer-form-address');
-                if (addressField) {
-                    addressField.value = addr;
-                    addressField.style.backgroundColor = '#f0f9ff';
-                    addressField.style.borderColor = '#3b82f6';
-                    setTimeout(() => {
-                        addressField.style.backgroundColor = '';
-                        addressField.style.borderColor = '';
-                    }, 2000);
-                }
-                container.classList.add('hidden');
-                container.innerHTML = '';
-                const detailField = document.getElementById('customer-form-address-detail');
-                if (detailField) {
-                    setTimeout(() => {
-                        detailField.focus();
-                        detailField.placeholder = '동, 호수 등 상세주소 입력';
-                    }, 50);
-                }
-            },
-            width: '100%',
-            height: '100%',
-        }).embed(container, { q: value, autoClose: false });
-    }, 350);
+    new daum.Postcode({
+        oncomplete: function(data) {
+            const addr = data.roadAddress || data.jibunAddress || '';
+            const addressField = document.getElementById('customer-form-address');
+            if (addressField) {
+                addressField.value = addr;
+                addressField.style.backgroundColor = '#f0f9ff';
+                addressField.style.borderColor = '#3b82f6';
+                setTimeout(() => {
+                    addressField.style.backgroundColor = '';
+                    addressField.style.borderColor = '';
+                }, 2000);
+            }
+            closeModal();
+            const detailField = document.getElementById('customer-form-address-detail');
+            if (detailField) {
+                setTimeout(() => { detailField.focus(); detailField.placeholder = '동, 호수 등 상세주소 입력'; }, 50);
+            }
+        },
+        onclose: function() {
+            // Daum 내부 닫기 버튼 클릭 시 우리 overlay 도 제거
+            closeModal();
+        },
+        width: '100%',
+        height: '100%',
+    }).embed(overlay.querySelector('#daum-address-embed'), { q: trimmed, autoClose: true });
 };
 
 // 주소 검색창 외부 클릭 시 닫기
@@ -1630,6 +1707,16 @@ document.addEventListener('click', function(e) {
         container.innerHTML = '';
     }
 });
+
+// 고객 검색 핸들러 — oninput 속성에서 직접 호출 (addEventListener 타이밍 문제 보완)
+window.handleCustomerSearch = function(value) {
+    const searchTerm = (value || '').trim();
+    const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+    const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+    if (window.renderCustomersTable) {
+        window.renderCustomersTable(gradeFilter, searchTerm);
+    }
+};
 
 // 전역 함수로 등록 (강제로 덮어쓰기)
 window.loadCustomerManagementComponent = loadCustomerManagementComponent;

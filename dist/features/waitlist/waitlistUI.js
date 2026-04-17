@@ -2,7 +2,7 @@
 // 경산다육식물농장 관리시스템 - 대기자 UI 관리
 
 import { waitlistDataManager } from './waitlistData.js';
-import { formatDate, formatPhone, formatCurrency } from '../../utils/formatters.js';
+import { formatDate, formatPhone, formatCurrency, nullDash, ND } from '../../utils/formatters.js';
 
 /**
  * 대기자관리 UI 클래스
@@ -153,19 +153,18 @@ export class WaitlistUI {
     createWaitlistRow(item, index) {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
-        const nd = '<span class="td-null">—</span>';
         row.innerHTML = `
-            <td class="px-2.5 td-muted text-center">${index + 1}</td>
-            <td class="px-2.5 td-primary td-link">${item.customer_name || nd}</td>
-            <td class="px-2.5 td-secondary">${formatPhone(item.customer_phone)}</td>
-            <td class="px-2.5 td-primary">${item.product_name || nd}</td>
-            <td class="px-2.5 td-secondary">${item.product_category || nd}</td>
-            <td class="px-2.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : nd}</td>
-            <td class="px-2.5 text-center">
-                <span class="badge ${this.getStatusBadgeClass(item.status)}">${item.status}</span>
+            <td class="td-muted text-center">${index + 1}</td>
+            <td class="td-primary td-link">${nullDash(item.customer_name)}</td>
+            <td class="td-secondary">${formatPhone(item.customer_phone)}</td>
+            <td class="td-primary">${nullDash(item.product_name)}</td>
+            <td class="td-secondary">${nullDash(item.product_category)}</td>
+            <td class="td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : ND}</td>
+            <td class="text-center">
+                ${window.renderBadge(item.status, this.getStatusBadgeVariant(item.status))}
             </td>
-            <td class="px-2.5 td-muted">${formatDate(item.register_date) || nd}</td>
-            <td class="px-2.5 text-center">
+            <td class="td-muted">${nullDash(formatDate(item.register_date))}</td>
+            <td class="text-center">
                 <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
                             class="btn-icon btn-icon-edit"
@@ -184,16 +183,16 @@ export class WaitlistUI {
     }
 
     /**
-     * 상태 배지 클래스 반환
+     * 대기자 상태 → 배지 variant 반환 (주문 상태와 별도 매핑)
      */
-    getStatusBadgeClass(status) {
-        const statusClasses = {
-            '대기중':   'badge-warning',   // 노랑 — 대기 중
-            '연락완료': 'badge-info',       // 파랑 — 연락됨
-            '주문전환': 'badge-success',    // 초록 — 완료
-            '취소':     'badge-danger',     // 빨강 — 취소
+    getStatusBadgeVariant(status) {
+        const MAP = {
+            '대기중':   'warning',
+            '연락완료': 'info',
+            '주문전환': 'success',
+            '취소':     'danger',
         };
-        return statusClasses[status] || 'badge-neutral';
+        return MAP[status] || 'neutral';
     }
 
     /**
@@ -717,10 +716,10 @@ export class WaitlistUI {
                          data-customer-name="${customer.name}" 
                          data-customer-phone="${customer.phone || ''}">
                         <div class="flex items-center">
-                            <i class="fas fa-user text-gray-400 mr-2"></i>
+                            <i class="fas fa-user text-muted mr-2"></i>
                             <div>
-                                <div class="font-medium text-gray-800">${customer.name}</div>
-                                <div class="text-sm text-gray-500">${customer.phone || '연락처 없음'}</div>
+                                <div class="font-medium text-heading">${customer.name}</div>
+                                <div class="text-sm text-secondary">${customer.phone || '연락처 없음'}</div>
                             </div>
                         </div>
                     </div>
@@ -729,14 +728,14 @@ export class WaitlistUI {
 
             // 새 고객 등록 옵션
             html += `
-                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer border-t-2 border-orange-200" 
-                     data-action="new-customer" 
+                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer border-t-2 border-orange-200"
+                     data-action="new-customer"
                      data-query="${query}">
                     <div class="flex items-center">
-                        <i class="fas fa-plus text-orange-500 mr-2"></i>
+                        <i class="fas fa-plus text-warn mr-2"></i>
                         <div>
-                            <div class="font-medium text-orange-700">"${query}" 새 고객으로 등록</div>
-                            <div class="text-sm text-orange-600">기존 고객이 없으면 새로 등록하세요</div>
+                            <div class="font-medium text-warn">"${query}" 새 고객으로 등록</div>
+                            <div class="text-sm text-warn">기존 고객이 없으면 새로 등록하세요</div>
                         </div>
                     </div>
                 </div>
@@ -762,14 +761,14 @@ export class WaitlistUI {
             if (!suggestionsDiv) return;
 
             const html = `
-                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer" 
-                     data-action="new-customer" 
+                <div class="customer-suggestion-item p-3 hover:bg-orange-50 cursor-pointer"
+                     data-action="new-customer"
                      data-query="${query}">
                     <div class="flex items-center">
-                        <i class="fas fa-plus text-orange-500 mr-2"></i>
+                        <i class="fas fa-plus text-warn mr-2"></i>
                         <div>
-                            <div class="font-medium text-orange-700">"${query}" 새 고객으로 등록</div>
-                            <div class="text-sm text-orange-600">기존 고객이 없으므로 새로 등록하세요</div>
+                            <div class="font-medium text-warn">"${query}" 새 고객으로 등록</div>
+                            <div class="text-sm text-warn">기존 고객이 없으므로 새로 등록하세요</div>
                         </div>
                     </div>
                 </div>

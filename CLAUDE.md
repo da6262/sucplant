@@ -382,11 +382,34 @@ start-server.bat
 - 프로덕션에서 참조되지 않는 루트 debug/test HTML·JS 25개는 `archive/dev-tools/` 로 이동 완료 (v3.3.41)
 - `inventory-modal.html`, `allowed-users-management.html`, `system-admin.html` 은 기능성 이름이라 보류
 
-### 빌드 시스템 참고
-- `package.json` 의 `"build": "node deploy-to-web.js"` → **파일 부재로 작동 안 함**
-- `deploy-to-production.js` 는 **브라우저 런타임 전용** (Node CLI 빌드 아님)
-- `dist/` 폴더는 수동 관리 (git 추적 중, firebase hosting public 경로)
-- 배포: `dist/` 를 수동 동기화 후 `firebase deploy` 직접 실행
+### 빌드·배포 시스템 (v3.3.58+)
+**dist/ 는 자동 생성물. 절대 수동 편집 금지.**
+
+워크플로우:
+```bash
+npm run sync      # 소스 → dist/ 화이트리스트 기반 복사
+npm run check     # dist/ 안전성 검증 (금지 패턴 스캔)
+npm run build     # sync + check 원샷
+npm run deploy    # build + firebase deploy
+```
+
+**`sync-to-dist.js` 화이트리스트 정책**:
+- `ALLOW_FILES` / `ALLOW_DIRS` 에 명시된 항목만 dist/ 에 복사됨
+- 새 파일·폴더 추가 시 이 리스트에 명시적으로 등록 필요
+- 블랙리스트가 아니므로 `server.js`·`*.bat`·`.env` 등은 구조적으로 유출 불가
+
+**`pre-deploy-check.js` 2차 방어선**:
+- dist/ 전수 스캔, 금지 경로 패턴 + 비밀 추정 내용 패턴 탐지
+- 위반 건 감지 시 exit 1 → 배포 자동 중단
+
+**이전 구조(수동 관리) 제거된 함정**:
+- `"build": "node deploy-to-web.js"` → 파일 부재로 작동 안 하던 것 → 정상 작동하는 sync+check 로 대체
+- `deploy-to-production.js` 는 **브라우저 런타임 전용** (여전히 Node CLI 빌드 아님, 무관)
+- 과거 `dist/` 는 수동 편집되어 2개월 drift 누적 → 이제 소스가 진리, dist 는 파생물
+
+**Firebase 설정**:
+- `firebase.json` 의 `hosting.ignore` 에 `server.js`·`*.bat`·`*.sh`·`*.sql`·`.env*` 등 3중 방어 추가
+- 화이트리스트(sync) + 패턴 스캐너(check) + Firebase ignore 3중으로 실수 유출 차단
 
 ## GitHub
 - https://github.com/da6262/sucplant

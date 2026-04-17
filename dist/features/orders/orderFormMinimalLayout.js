@@ -60,9 +60,9 @@ window.generateOrderFormHTMLMinimal = function () {
                         <label class="form-label">추가배송지</label>
                         <div id="extra-shipping-list" style="display:flex;flex-direction:column;gap:6px;"></div>
                         <button type="button" onclick="addExtraShipping()"
-                                style="margin-top:6px;font-size:11px;color:#2563eb;background:none;border:1px dashed #93c5fd;border-radius:4px;padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
+                                style="margin-top:6px;font-size:11px;color:var(--info);background:none;border:1px dashed #93c5fd;border-radius:var(--radius-sm);padding:4px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;">
                             + 배송지 추가
-                            <span id="extra-shipping-badge" style="display:none;background:#dbeafe;color:#1d4ed8;border-radius:9px;padding:1px 7px;font-size:10px;"></span>
+                            <span id="extra-shipping-badge" style="display:none;background:var(--badge-info-bg);color:var(--badge-info-txt);border-radius:9px;padding:1px 7px;font-size:10px;"></span>
                         </button>
                     </div>
 
@@ -119,6 +119,7 @@ window.generateOrderFormHTMLMinimal = function () {
                                            placeholder="클릭하거나 상품명 검색"
                                            oninput="searchProducts(this.value)" autocomplete="off"
                                            onfocus="searchProducts(this.value)"
+                                           onclick="searchProducts(this.value)"
                                            onkeydown="if(event.key==='Enter'){event.preventDefault();event.stopPropagation();const f=document.querySelector('#product-search-results [onclick]:not([onclick*=closeProduct])');if(f)f.click();}if(event.key==='Escape'){document.getElementById('product-search-results')?.classList.add('hidden');this.blur();}">
                                     <div id="product-search-results"
                                          class="xf-dropdown xf-dropdown-product hidden"></div>
@@ -153,7 +154,14 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="xf-ft-label">배송비</td>
+                            <td colspan="3" class="xf-ft-label">
+                                배송비
+                                <label class="inline-flex items-center gap-1 ml-2 text-xs text-secondary font-normal cursor-pointer">
+                                    <input type="checkbox" id="remote-area-shipping-checkbox"
+                                           onchange="window._shippingFeeUserEdited=false; refreshOrderTotal()">
+                                    도서산간
+                                </label>
+                            </td>
                             <td class="xf-ft-val">
                                 <input type="number" id="shipping-fee-input" value="0" min="0" step="1" class="xf-num"
                                        oninput="window._shippingFeeUserEdited=true; if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()">원
@@ -175,11 +183,17 @@ window.generateOrderFormHTMLMinimal = function () {
                     </tfoot>
                 </table>
 
-                <!-- 저장 버튼 -->
-                <button type="submit" form="order-form" id="order-submit-btn" disabled
-                        class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">
-                    ✓ 주문 저장
-                </button>
+                <!-- 액션 버튼: 취소(좌) · 저장(우) -->
+                <div class="xf-actions">
+                    <button type="button" id="order-cancel-btn" onclick="window.closeOrderModal()"
+                            class="xf-cancel-btn">
+                        취소
+                    </button>
+                    <button type="submit" form="order-form" id="order-submit-btn" disabled
+                            class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">
+                        ✓ 주문 저장
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -315,10 +329,15 @@ window.generateOrderFormHTMLMinimal = function () {
                 background: #e8f5e9;
                 border-color: #4caf50;
             }
+            /* ── 액션 그룹(취소·저장) ── */
+            .xf-actions {
+                display: flex;
+                gap: 8px;
+                margin-top: 6px;
+            }
             /* ── 저장 버튼 ── */
             .xf-save-btn {
-                width: 100%;
-                margin-top: 6px;
+                flex: 1;
                 padding: 9px 0;
                 background: var(--primary);
                 color: #fff;
@@ -329,8 +348,23 @@ window.generateOrderFormHTMLMinimal = function () {
                 letter-spacing: .03em;
                 font-family: inherit;
             }
-            .xf-save-btn:hover:not(:disabled) { background: #15803d; }
+            .xf-save-btn:hover:not(:disabled) { background: var(--primary-hover); }
             .xf-save-btn:active:not(:disabled) { background: #166534; }
+            /* ── 취소 버튼 ── */
+            .xf-cancel-btn {
+                width: 96px;
+                padding: 9px 0;
+                background: #fff;
+                color: #64748B;
+                font-size: 14px;
+                font-weight: 600;
+                border: 1px solid #CBD5E1;
+                border-radius: var(--radius-sm);
+                cursor: pointer;
+                font-family: inherit;
+            }
+            .xf-cancel-btn:hover { background: var(--bg-lighter); color: var(--text-primary); border-color: var(--text-muted); }
+            .xf-cancel-btn:active { background: #F1F5F9; }
             /* ── 수량 입력 ── */
             #order-form-minimal-wrap .quantity-input {
                 width: 40px;

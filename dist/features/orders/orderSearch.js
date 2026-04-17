@@ -26,8 +26,8 @@ function searchExistingCustomers(query) {
                     resultsDiv.innerHTML = data.map(customer => `
                         <div class="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
                              onclick="selectCustomerFromHTML('${customer.id}', '${customer.name}', '${customer.phone}', '${customer.address}')">
-                            <div class="text-xs font-medium text-gray-900">${customer.name}</div>
-                            <div class="text-xs text-gray-500">${customer.phone}</div>
+                            <div class="text-xs font-medium text-heading">${customer.name}</div>
+                            <div class="text-xs text-secondary">${customer.phone}</div>
                         </div>
                     `).join('');
                     resultsDiv.classList.remove('hidden');
@@ -36,11 +36,11 @@ function searchExistingCustomers(query) {
                     resultsDiv.innerHTML = `
                         <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0" 
                              onclick="openNewCustomerRegistration('${query}')">
-                            <div class="text-xs font-medium text-blue-600 flex items-center">
+                            <div class="text-xs font-medium text-info flex items-center">
                                 <i class="fas fa-plus mr-2"></i>
                                 "${query}" 새 고객으로 등록
                             </div>
-                            <div class="text-xs text-gray-500">기존 명단에 없는 고객입니다</div>
+                            <div class="text-xs text-secondary">기존 명단에 없는 고객입니다</div>
                         </div>
                     `;
                     resultsDiv.classList.remove('hidden');
@@ -126,8 +126,8 @@ function searchProducts(query) {
                     resultsDiv.innerHTML = `
                         <div class="p-2 bg-blue-50 border-b border-blue-200">
                             <div class="flex justify-between items-center">
-                                <span class="text-xs text-blue-600 font-medium">여러 상품을 선택할 수 있습니다</span>
-                                <button onclick="closeProductSearch()" class="text-xs bg-blue-600 text-white px-2 py-1 rounded hover:bg-blue-700">
+                                <span class="text-xs text-info font-medium">여러 상품을 선택할 수 있습니다</span>
+                                <button onclick="closeProductSearch()" class="btn-info btn-xs">
                                     완료
                                 </button>
                             </div>
@@ -138,13 +138,13 @@ function searchProducts(query) {
                                 <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
                                     ${product.image_url ? 
                                         `<img src="${product.image_url}" alt="${product.name}" class="w-full h-full object-cover">` :
-                                        `<i class="fas fa-image text-gray-400"></i>`
+                                        `<i class="fas fa-image text-muted"></i>`
                                     }
                                 </div>
                                 <div class="flex-1">
-                                    <div class="text-sm font-medium text-gray-900">${product.name}</div>
-                                    <div class="text-xs text-gray-500">${product.price.toLocaleString()}원</div>
-                                    <div class="text-xs text-gray-400">재고: ${product.stock || 0}개</div>
+                                    <div class="text-sm font-medium text-heading">${product.name}</div>
+                                    <div class="text-xs text-secondary">${window.fmt.won(product.price)}</div>
+                                    <div class="text-xs text-muted">재고: ${product.stock || 0}개</div>
                                 </div>
                             </div>
                         `).join('')}
@@ -187,16 +187,16 @@ async function selectProductFromSearch(productId, productName, price) {
             selectedProduct.classList.add('selected', 'bg-green-50', 'border-green-200');
             selectedProduct.innerHTML = `
                 <div class="w-12 h-12 bg-gray-200 rounded-lg flex items-center justify-center overflow-hidden">
-                    ${selectedProduct.querySelector('img') ? selectedProduct.querySelector('img').outerHTML : '<i class="fas fa-image text-gray-400"></i>'}
+                    ${selectedProduct.querySelector('img') ? selectedProduct.querySelector('img').outerHTML : '<i class="fas fa-image text-muted"></i>'}
                 </div>
                 <div class="flex-1">
-                    <div class="text-sm font-medium text-gray-900">${productName}</div>
-                    <div class="text-xs text-gray-500">${price.toLocaleString()}원</div>
-                    <div class="text-xs text-green-600 flex items-center">
+                    <div class="text-sm font-medium text-heading">${productName}</div>
+                    <div class="text-xs text-secondary">${price.toLocaleString()}원</div>
+                    <div class="text-xs text-brand flex items-center">
                         <i class="fas fa-check mr-1"></i>장바구니에 추가됨
                     </div>
                 </div>
-                <div class="text-green-600">
+                <div class="text-brand">
                     <i class="fas fa-check-circle"></i>
                 </div>
             `;
@@ -273,7 +273,7 @@ async function addToCart(productId, productName, price, quantity = 1) {
                     </td>
                     <td class="px-2">
                         <button onclick="removeFromCart('${productId}')" class="w-4 h-4 bg-red-200 rounded flex items-center justify-center hover:bg-red-300">
-                            <i class="fas fa-trash text-xs text-red-600"></i>
+                            <i class="fas fa-trash text-xs text-danger"></i>
                         </button>
                     </td>
                 </tr>
@@ -437,7 +437,7 @@ function checkCartEmpty() {
     if (cartItemCount === 0) {
         cartItems.innerHTML = `
             <tr>
-                <td colspan="5" class="text-center text-gray-500">
+                <td colspan="5" class="text-center text-muted">
                     <p>장바구니가 비어있습니다</p>
                 </td>
             </tr>

@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<!-- 상태 필터 탭 -->
+<!-- 상태 필터 탭 — 특수 탭(work_todo/all) 은 고정, 나머지는 settings.orderStatuses 기반으로 renderStatusTabs() 가 동적 주입 -->
 <div class="status-tab-bar">
     <nav class="flex flex-nowrap gap-0.5 overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none;" id="status-tab-nav">
         <button id="status-work_todo" class="status-tab-btn active" title="상품준비 + 배송준비">
@@ -28,22 +28,14 @@
         <button id="status-all" class="status-tab-btn">
             전체 <span class="tab-count" id="count-all">0</span>
         </button>
-        <button id="status-주문접수"  class="status-tab-btn">주문접수  <span class="tab-count" id="count-주문접수">0</span></button>
-        <button id="status-고객안내"  class="status-tab-btn">고객안내  <span class="tab-count" id="count-고객안내">0</span></button>
-        <button id="status-입금대기"  class="status-tab-btn">입금대기  <span class="tab-count" id="count-입금대기">0</span></button>
-        <button id="status-입금확인"  class="status-tab-btn">입금확인  <span class="tab-count" id="count-입금확인">0</span></button>
-        <button id="status-상품준비"  class="status-tab-btn">상품준비  <span class="tab-count" id="count-상품준비">0</span></button>
-        <button id="status-배송준비"  class="status-tab-btn">배송준비  <span class="tab-count" id="count-배송준비">0</span></button>
-        <button id="status-배송중"    class="status-tab-btn">배송중    <span class="tab-count" id="count-배송중">0</span></button>
-        <button id="status-배송완료"  class="status-tab-btn">배송완료  <span class="tab-count" id="count-배송완료">0</span></button>
-        <button id="status-주문취소"  class="status-tab-btn">주문취소  <span class="tab-count" id="count-주문취소">0</span></button>
-        <button id="status-환불완료"  class="status-tab-btn">환불완료  <span class="tab-count" id="count-환불완료">0</span></button>
+        <!-- 동적 주입 영역: renderStatusTabs() 가 여기에 개별 상태 탭을 append -->
+        <span id="status-tab-dynamic-slot" style="display:contents;"></span>
     </nav>
 </div>
 
-<!-- 날짜 필터 바 -->
-<div id="order-date-filter-bar" class="filter-bar">
-    <span class="text-[11px] font-medium text-gray-500 shrink-0">기간</span>
+<!-- 날짜 필터 바 — 기간·채널·검색을 한 줄에 유지 (공간 부족 시 가로 스크롤) -->
+<div id="order-date-filter-bar" class="filter-bar" style="flex-wrap:nowrap; overflow-x:auto;">
+    <span class="text-xs font-medium text-muted shrink-0">기간</span>
     <div class="flex items-center gap-1 flex-wrap">
         <button onclick="setOrderDateFilter('today')" id="date-btn-today" class="order-date-quick-btn">오늘</button>
         <button onclick="setOrderDateFilter('week')"  id="date-btn-week"  class="order-date-quick-btn">1주일</button>
@@ -51,20 +43,27 @@
         <button onclick="setOrderDateFilter('all')"   id="date-btn-all"   class="order-date-quick-btn active-date">전체</button>
         <span class="text-gray-200 text-xs">|</span>
         <button onclick="toggleOrderDatePicker()" id="date-btn-custom" class="order-date-quick-btn">
-            <i class="fas fa-calendar-alt text-[10px]"></i>기간설정
+            <i class="fas fa-calendar-alt text-2xs"></i>기간설정
         </button>
     </div>
     <div id="order-date-picker-wrap" class="hidden flex items-center gap-1.5">
         <input type="date" id="order-date-from" class="input-ui" style="font-size:11px;width:auto;">
-        <span class="text-[11px] text-gray-400">~</span>
+        <span class="text-xs text-muted">~</span>
         <input type="date" id="order-date-to" class="input-ui" style="font-size:11px;width:auto;">
         <button onclick="applyOrderDateRange()"     class="btn-search"   style="padding:3px 10px;font-size:11px;">적용</button>
         <button onclick="setOrderDateFilter('all')" class="btn-secondary" style="padding:3px 8px;font-size:11px;">초기화</button>
     </div>
-    <span id="order-date-label" class="text-[11px] text-green-600 font-medium ml-auto hidden"></span>
+    <span id="order-date-label" class="text-xs text-brand font-medium ml-auto hidden"></span>
     <span class="text-gray-200 text-xs shrink-0">|</span>
-    <span class="text-[11px] font-medium text-gray-500 shrink-0">채널</span>
-    <select id="order-channel-filter" class="input-ui" style="font-size:11px;padding:2px 6px;min-width:80px;"
+    <span class="text-xs font-medium text-muted shrink-0">검색</span>
+    <input type="text" id="order-search-input" class="input-ui"
+           placeholder="고객명/전화 뒷4자리"
+           style="font-size:11px;height:22px;padding:0 6px;width:150px;min-width:0;box-sizing:border-box;"
+           oninput="window.orderDataManager?.setSearchTerm(this.value)">
+    <span class="text-gray-200 text-xs shrink-0">|</span>
+    <span class="text-xs font-medium text-muted shrink-0">채널</span>
+    <select id="order-channel-filter" class="input-ui"
+            style="font-size:11px;height:22px;padding:0 22px 0 6px;width:auto;min-width:0;box-sizing:border-box;"
             onchange="window.orderDataManager?.setChannelFilter(this.value)">
         <option value="">전체</option>
     </select>
@@ -88,15 +87,15 @@
             <table class="w-full table-ui">
                 <thead>
                     <tr>
-                        <th class="text-left w-24">주문번호</th>
-                        <th class="text-left w-24">고객명</th>
-                        <th class="text-left">상품요약</th>
-                        <th class="text-left w-48">송장번호</th>
-                        <th class="text-center w-16">저장</th>
+                        <th class="w-24">주문번호</th>
+                        <th class="w-24">고객명</th>
+                        <th>상품요약</th>
+                        <th class="w-48">송장번호</th>
+                        <th class="w-16">저장</th>
                     </tr>
                 </thead>
-                <tbody id="tracking-input-rows" class="divide-y divide-gray-100">
-                    <tr><td colspan="5" class="text-center text-gray-400"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>
+                <tbody id="tracking-input-rows">
+                    <tr><td colspan="5" class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>
                 </tbody>
             </table>
         </div>
@@ -104,13 +103,13 @@
 </div>
 
 <!-- 일괄 액션 바 -->
-<div id="bulk-action-bar" class="hidden px-3 py-1.5 bg-gray-50 border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
-    <span class="text-xs font-semibold text-gray-600"><span id="bulk-selected-count">0</span>건 선택됨</span>
+<div id="bulk-action-bar" class="hidden px-3 py-1.5 bg-section border-b border-gray-200 flex items-center justify-between flex-wrap gap-2">
+    <span class="text-xs font-semibold text-body"><span id="bulk-selected-count">0</span>건 선택됨</span>
     <div class="flex flex-wrap gap-1.5">
         <button type="button" onclick="bulkSetStatus('상품준비')" class="btn-secondary"><i class="fas fa-box"></i>상품준비</button>
         <button type="button" onclick="bulkSetStatus('배송준비')" class="btn-secondary"><i class="fas fa-shipping-fast"></i>배송준비</button>
         <button type="button" onclick="bulkSetStatus('배송완료')" class="btn-primary"><i class="fas fa-check-circle"></i>배송완료</button>
-        <button type="button" onclick="showBulkDeleteModal()"    class="btn-secondary" style="color:#dc2626;border-color:#fca5a5;"><i class="fas fa-trash"></i>일괄 삭제</button>
+        <button type="button" onclick="showBulkDeleteModal()"    class="btn-secondary" style="color:var(--danger);border-color:#FCA5A5;"><i class="fas fa-trash"></i>일괄 삭제</button>
         <button type="button" onclick="clearSelectedOrders()"    class="btn-secondary"><i class="fas fa-times"></i>선택 해제</button>
     </div>
 </div>
@@ -120,31 +119,31 @@
     <table class="w-full table-auto table-ui order-list-compact">
         <thead>
             <tr>
-                <th class="text-center w-10">
-                    <input type="checkbox" id="select-all-orders" class="rounded text-green-600 focus:ring-green-500 focus:ring-1">
+                <th class="w-10">
+                    <input type="checkbox" id="select-all-orders" class="rounded text-brand focus:ring-green-500 focus:ring-1">
                 </th>
-                <th class="text-center w-12">D</th>
-                <th class="text-left min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
-                <th class="text-left min-w-[140px]">상품 요약</th>
-                <th class="text-left w-28">주문번호</th>
-                <th class="text-right w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
-                <th class="text-center w-20">상태</th>
-                <th class="text-center w-16">출력</th>
-                <th class="text-center w-16">SMS</th>
-                <th class="text-center w-14">관리</th>
+                <th class="w-12">D</th>
+                <th class="min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
+                <th class="min-w-[140px]">상품 요약</th>
+                <th class="w-28">주문번호</th>
+                <th class="w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
+                <th class="w-20">상태</th>
+                <th class="w-16">출력</th>
+                <th class="w-16">SMS</th>
+                <th class="w-14">관리</th>
             </tr>
         </thead>
-        <tbody id="orders-table-body" class="divide-y divide-gray-100">
+        <tbody id="orders-table-body">
             <!-- dynamic -->
         </tbody>
     </table>
 </div>
 
 <!-- 주문관리 하단 상태 바 -->
-<footer id="order-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-gray-50 text-xs text-gray-600 flex items-center justify-between">
+<footer id="order-status-footer" class="shrink-0 px-3 py-1 border-t border-gray-200 bg-section text-xs text-body flex items-center justify-between">
     <span>총 <strong id="order-status-total">0</strong>건 · <span id="order-list-count">0건 표시</span></span>
     <div class="flex items-center gap-2">
-        <label class="flex items-center gap-1 text-gray-500">표시
+        <label class="flex items-center gap-1 text-muted">표시
             <select id="order-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                 <option value="20">20건</option>
                 <option value="50" selected>50건</option>

@@ -3,6 +3,111 @@
  * 경산다육식물농장 관리시스템
  */
 
+/**
+ * 상품 테이블 컬럼 단일 소스
+ * 헤더 <th> 와 행 <td> 둘 다 이 배열에서 파생 (header/body 불일치 원천 차단).
+ * 컬럼 추가·제거·순서 변경 시 이 배열만 수정하면 됨.
+ *
+ * 각 컬럼:
+ *   - headerCell: 커스텀 <th> HTML (체크박스 등 특수 케이스)
+ *     또는 label + thClass 로 기본 <th> 자동 생성
+ *   - render(product, nullDash): 전체 <td>...</td> HTML 반환
+ */
+const PRODUCT_COLUMNS = [
+    {
+        key: 'checkbox',
+        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
+        render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox rounded text-brand focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
+    },
+    {
+        key: 'product_code',
+        label: '상품코드',
+        thClass: 'w-20',
+        render: (p, dash) => {
+            const code = p.product_code ? String(p.product_code).replace(/</g, '&lt;') : null;
+            return `<td class="td-muted whitespace-nowrap">${code || dash}</td>`;
+        }
+    },
+    {
+        key: 'name',
+        label: '상품명',
+        thClass: 'min-w-[200px]',
+        render: (p, dash) => {
+            const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<td class="td-primary td-link"><span class="product-name-link">${name || dash}</span></td>`;
+        }
+    },
+    {
+        key: 'category',
+        label: '카테고리',
+        thClass: 'w-24',
+        render: (p, dash) => {
+            const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
+            return `<td>${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
+        }
+    },
+    {
+        key: 'size',
+        label: '사이즈',
+        thClass: 'w-16',
+        render: (p, dash) => {
+            const s = p.size ? String(p.size).replace(/</g, '&lt;') : null;
+            return `<td class="td-secondary">${s || dash}</td>`;
+        }
+    },
+    {
+        key: 'price',
+        label: '판매가',
+        thClass: 'w-24',
+        render: (p, dash) => {
+            const price = Number(p.price) || 0;
+            return `<td class="td-amount text-right text-numeric">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
+        }
+    },
+    {
+        key: 'stock',
+        label: '재고',
+        thClass: 'w-20',
+        render: (p, dash) => {
+            const stock = Number(p.stock) || 0;
+            return `<td class="td-num text-right">${stock > 0 ? stock + '개' : dash}</td>`;
+        }
+    },
+    {
+        key: 'shipping_option',
+        label: '배송옵션',
+        thClass: 'w-24',
+        render: (p, dash) => {
+            const ship = p.shipping_option ? String(p.shipping_option).replace(/</g, '&lt;') : null;
+            return `<td class="td-secondary">${ship || dash}</td>`;
+        }
+    },
+    {
+        key: 'actions',
+        headerCell: '<th class="w-20">관리</th>',
+        render: (p) => `
+            <td class="text-center whitespace-nowrap">
+                <div class="btn-group">
+                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${p.id}" title="수정"><i class="fas fa-pen"></i></button>
+                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${p.id}" title="복제"><i class="fas fa-copy"></i></button>
+                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${p.id}" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
+            </td>`
+    }
+];
+
+// 헤더 <th> HTML 생성 (단일 소스 → <thead>)
+function renderProductTableHeader() {
+    return PRODUCT_COLUMNS.map(c =>
+        c.headerCell || `<th class="${c.thClass || ''}">${c.label || ''}</th>`
+    ).join('');
+}
+
+// 행 <td> HTML 생성 (단일 소스 → <tr>)
+function renderProductRowCells(product, nullDash) {
+    return PRODUCT_COLUMNS.map(c => c.render(product, nullDash)).join('');
+}
+
 // ProductUI 동적 import를 위한 함수
 async function loadProductUIModule() {
     try {
@@ -222,16 +327,14 @@ class ProductManagementComponent {
             });
         }
 
-        // 페이지당 표시 개수 선택
-        const itemsPerPageSel = document.getElementById('product-items-per-page');
-        if (itemsPerPageSel) {
-            itemsPerPageSel.value = String(this.itemsPerPage === 0 ? 0 : this.itemsPerPage);
-            itemsPerPageSel.addEventListener('change', () => {
-                this.itemsPerPage = parseInt(itemsPerPageSel.value) || 0;
+        // 페이지당 표시 개수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)
+        if (window.PageSize) {
+            window.PageSize.attach('product-page-size', (size) => {
+                this.itemsPerPage = size;
                 this.currentPage = 1;
                 this.updatePagination();
                 this.renderProducts();
-            });
+            }, this.itemsPerPage);
         }
 
         // 필터 초기화 버튼
@@ -282,25 +385,10 @@ class ProductManagementComponent {
         try {
             console.log('📊 상품 데이터 로드 중...');
             
-            // productDataManager가 초기화될 때까지 대기
-            if (!window.productDataManager) {
-                console.log('⏳ productDataManager 초기화 대기 중...');
-                let retryCount = 0;
-                const maxRetries = 30; // 3초 대기
-                
-                while (retryCount < maxRetries && !window.productDataManager) {
-                    await new Promise(resolve => setTimeout(resolve, 100));
-                    retryCount++;
-                }
-                
-                if (!window.productDataManager) {
-                    console.error('❌ productDataManager 초기화 타임아웃');
-                    // productDataManager 강제 초기화 시도
-                    if (window.initializeProductDataManager) {
-                        console.log('🔄 productDataManager 강제 초기화 시도...');
-                        await window.initializeProductDataManager();
-                    }
-                }
+            // productDataManager 가 없으면 즉시 강제 초기화 — polling 제거 (응답성 개선)
+            if (!window.productDataManager && window.initializeProductDataManager) {
+                console.log('🔄 productDataManager 즉시 초기화...');
+                await window.initializeProductDataManager();
             }
             
             // Supabase에서 상품 데이터 로드
@@ -335,10 +423,17 @@ class ProductManagementComponent {
     renderProducts() {
         console.log('📋 상품 목록 렌더링 시작...');
         console.log('🔍 렌더링할 상품 수:', this.filteredProducts.length);
-        
+
+        // 헤더 <tr> 을 스키마에서 주입 (단일 소스 보장 — HTML 재fetch 후에도 정합)
+        const headerRow = document.getElementById('products-table-header');
+        if (headerRow && !headerRow.dataset.rendered) {
+            headerRow.innerHTML = renderProductTableHeader();
+            headerRow.dataset.rendered = 'true';
+        }
+
         const tbody = document.getElementById('products-table-body');
         console.log('🔍 tbody 요소:', tbody);
-        
+
         if (!tbody) {
             console.error('❌ products-table-body 요소를 찾을 수 없습니다!');
             return;
@@ -356,11 +451,11 @@ class ProductManagementComponent {
         if (pageProducts.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-4 text-center text-gray-500">
+                    <td colspan="8" class="px-4 text-center text-muted">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
-                            <p class="text-sm font-medium text-gray-600">등록된 상품이 없습니다</p>
-                            <p class="text-xs text-gray-500 mt-1">새 상품을 등록해보세요</p>
+                            <p class="text-sm font-medium text-body">등록된 상품이 없습니다</p>
+                            <p class="text-xs text-muted mt-1">새 상품을 등록해보세요</p>
                         </div>
                     </td>
                 </tr>
@@ -389,43 +484,13 @@ class ProductManagementComponent {
      */
     createProductRow(product) {
         const row = document.createElement('tr');
-        row.className = 'hover:bg-gray-50 transition-colors duration-150';
+        row.className = 'hover:bg-section transition-colors cursor-pointer';
         row.dataset.productId = product.id;
 
-        // 재고 상태에 따른 색상
-        const stockStatus = this.getStockStatus(product.stock);
-        const stockColor = this.getStockColor(stockStatus);
+        // PRODUCT_COLUMNS 단일 스키마에서 모든 셀 생성 — 헤더와 무조건 정합
+        row.innerHTML = renderProductRowCells(product, window.fmt?.ND || '<span class="td-null">—</span>');
 
-        const badgeClass = stockStatus === 'out-of-stock' ? 'badge badge-red'
-                         : stockStatus === 'low-stock'   ? 'badge badge-yellow'
-                         : 'badge badge-green';
-
-        row.innerHTML = `
-            <td class="text-center">
-                <input type="checkbox" class="product-checkbox rounded border-gray-300 text-emerald-600 focus:ring-emerald-500" data-product-id="${product.id}">
-            </td>
-            <td class="td-muted">${product.product_code || '-'}</td>
-            <td class="td-primary">
-                <div class="product-name-link" data-product-id="${product.id}">${product.name}</div>
-                ${product.description ? `<div class="td-muted truncate" style="max-width:160px">${product.description}</div>` : ''}
-            </td>
-            <td><span class="badge badge-info">${product.category || '미분류'}</span></td>
-            <td class="td-secondary">${product.size || '-'}</td>
-            <td class="td-amount">${this.formatCurrency(product.price)}</td>
-            <td class="td-num"><span class="${stockColor}">${product.stock || 0}개</span></td>
-            <td class="td-secondary">${product.shipping_option || '-'}</td>
-            <td class="text-center">
-                <div class="btn-group">
-                    <button class="edit-product-btn btn-icon btn-icon-edit" data-product-id="${product.id}" title="수정"><i class="fas fa-pen"></i></button>
-                    <button class="duplicate-product-btn btn-icon btn-icon-copy" data-product-id="${product.id}" title="복제"><i class="fas fa-copy"></i></button>
-                    <button class="delete-product-btn btn-icon btn-icon-delete" data-product-id="${product.id}" title="삭제"><i class="fas fa-trash"></i></button>
-                </div>
-            </td>
-        `;
-
-        // 행 이벤트 리스너 추가
         this.addRowEventListeners(row, product);
-
         return row;
     }
 
@@ -489,11 +554,11 @@ class ProductManagementComponent {
      */
     getStockColor(status) {
         const colors = {
-            'in-stock': 'text-green-600',
-            'low-stock': 'text-yellow-600',
-            'out-of-stock': 'text-red-600'
+            'in-stock': 'text-brand',
+            'low-stock': 'text-warn',
+            'out-of-stock': 'text-danger'
         };
-        return colors[status] || 'text-gray-600';
+        return colors[status] || 'text-body';
     }
 
     /**
@@ -626,7 +691,7 @@ class ProductManagementComponent {
             pageBtn.className = `px-2 py-1 text-xs border rounded transition-colors ${
                 i === this.currentPage
                     ? 'status-tab-btn active'
-                    : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
+                    : 'bg-white border-gray-200 text-body hover:bg-section'
             }`;
             pageBtn.textContent = i;
             pageBtn.addEventListener('click', () => {
@@ -858,9 +923,9 @@ class ProductManagementComponent {
 
         const shipping = shippingMap[product.shipping_option] || product.shipping_option || '-';
         const status   = statusMap[product.status] || product.status || '-';
-        const statusColor = product.status === 'active'   ? 'text-green-600 bg-green-50'
-                          : product.status === 'soldout'  ? 'text-red-500 bg-red-50'
-                          : 'text-gray-500 bg-gray-100';
+        const statusColor = product.status === 'active'   ? 'text-brand bg-success'
+                          : product.status === 'soldout'  ? 'text-danger bg-danger'
+                          : 'text-muted bg-page';
 
         const profitMargin = product.profit_margin
             ? product.profit_margin + '%'
@@ -870,7 +935,7 @@ class ProductManagementComponent {
 
         const imageHtml = product.image_url
             ? `<img src="${product.image_url}" alt="${product.name}" class="w-full h-40 object-cover rounded-lg border border-gray-200">`
-            : `<div class="w-full h-40 bg-gray-100 rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
+            : `<div class="w-full h-40 bg-page rounded-lg border border-gray-200 flex items-center justify-center text-gray-300 text-4xl"><i class="fas fa-seedling"></i></div>`;
 
         const panel = document.createElement('div');
         panel.id = 'product-detail-panel';
@@ -879,12 +944,12 @@ class ProductManagementComponent {
             <div class="bg-white rounded-xl shadow-2xl w-full max-w-md mx-4 flex flex-col" style="max-height:90vh;">
                 <!-- 헤더 -->
                 <div class="flex items-center justify-between px-5 py-3.5 border-b border-gray-100 shrink-0">
-                    <span class="text-base font-semibold text-gray-800">상품 상세</span>
+                    <span class="text-base font-semibold text-heading">상품 상세</span>
                     <div class="flex items-center gap-2">
                         <button id="pd-edit-btn" class="btn-secondary text-xs px-3 py-1.5">
                             <i class="fas fa-edit mr-1"></i>수정
                         </button>
-                        <button id="pd-close-btn" class="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100">
+                        <button id="pd-close-btn" class="text-muted hover:text-body p-1 rounded hover:bg-page">
                             <i class="fas fa-times"></i>
                         </button>
                     </div>
@@ -894,47 +959,47 @@ class ProductManagementComponent {
                     ${imageHtml}
                     <div>
                         <div class="flex items-start justify-between gap-2 mb-1">
-                            <h2 class="text-lg font-bold text-gray-900 leading-tight">${fmt(product.name)}</h2>
+                            <h2 class="text-lg font-bold text-heading leading-tight">${fmt(product.name)}</h2>
                             <span class="shrink-0 text-xs px-2 py-0.5 rounded-full font-medium ${statusColor}">${status}</span>
                         </div>
-                        ${product.product_code ? `<p class="text-xs text-gray-400 font-mono">${product.product_code}</p>` : ''}
+                        ${product.product_code ? `<p class="text-xs text-muted font-mono">${product.product_code}</p>` : ''}
                     </div>
                     <div class="grid grid-cols-2 gap-3 text-sm">
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">카테고리</p>
-                            <p class="font-medium text-gray-800">${fmt(product.category)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">카테고리</p>
+                            <p class="font-medium text-heading">${fmt(product.category)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">사이즈</p>
-                            <p class="font-medium text-gray-800">${fmt(product.size)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">사이즈</p>
+                            <p class="font-medium text-heading">${fmt(product.size)}</p>
                         </div>
-                        <div class="bg-green-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">판매가</p>
+                        <div class="bg-success rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">판매가</p>
                             <p class="font-semibold text-green-700 text-base">${fmtP(product.price)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">매입가</p>
-                            <p class="font-medium text-gray-800">${fmtP(product.cost)}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">매입가</p>
+                            <p class="font-medium text-heading">${fmtP(product.cost)}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">재고</p>
-                            <p class="font-semibold text-gray-900">${product.stock != null ? product.stock + '개' : '-'}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">재고</p>
+                            <p class="font-semibold text-heading">${product.stock != null ? product.stock + '개' : '-'}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3">
-                            <p class="text-[11px] text-gray-400 mb-0.5">마진율</p>
-                            <p class="font-medium text-gray-800">${profitMargin}</p>
+                        <div class="bg-section rounded-lg p-3">
+                            <p class="text-xs text-muted mb-0.5">마진율</p>
+                            <p class="font-medium text-heading">${profitMargin}</p>
                         </div>
-                        <div class="bg-gray-50 rounded-lg p-3 col-span-2">
-                            <p class="text-[11px] text-gray-400 mb-0.5">배송 옵션</p>
-                            <p class="font-medium text-gray-800">${shipping}</p>
+                        <div class="bg-section rounded-lg p-3 col-span-2">
+                            <p class="text-xs text-muted mb-0.5">배송 옵션</p>
+                            <p class="font-medium text-heading">${shipping}</p>
                         </div>
                     </div>
                     ${product.description ? `
-                    <div class="bg-gray-50 rounded-lg p-3 text-sm">
-                        <p class="text-[11px] text-gray-400 mb-1">상품 설명</p>
-                        <p class="text-gray-700 leading-relaxed whitespace-pre-wrap">${product.description}</p>
+                    <div class="bg-section rounded-lg p-3 text-sm">
+                        <p class="text-xs text-muted mb-1">상품 설명</p>
+                        <p class="text-body leading-relaxed whitespace-pre-wrap">${product.description}</p>
                     </div>` : ''}
-                    <div class="flex gap-4 text-[11px] text-gray-400 pt-1 border-t border-gray-100">
+                    <div class="flex gap-4 text-xs text-muted pt-1 border-t border-gray-100">
                         <span>등록일 ${fmtD(product.created_at)}</span>
                         <span>수정일 ${fmtD(product.updated_at)}</span>
                     </div>
@@ -1335,13 +1400,13 @@ class ProductManagementComponent {
         const fileSec   = document.getElementById('product-excel-upload-section');
         const isManual  = tab === 'manual';
         manualBtn?.classList.toggle('border-green-500', isManual);
-        manualBtn?.classList.toggle('text-green-600',   isManual);
+        manualBtn?.classList.toggle('text-brand',   isManual);
         manualBtn?.classList.toggle('border-transparent', !isManual);
-        manualBtn?.classList.toggle('text-gray-400',    !isManual);
+        manualBtn?.classList.toggle('text-muted',    !isManual);
         fileBtn?.classList.toggle('border-green-500',   !isManual);
-        fileBtn?.classList.toggle('text-green-600',     !isManual);
+        fileBtn?.classList.toggle('text-brand',     !isManual);
         fileBtn?.classList.toggle('border-transparent',  isManual);
-        fileBtn?.classList.toggle('text-gray-400',       isManual);
+        fileBtn?.classList.toggle('text-muted',       isManual);
         manualSec?.classList.toggle('hidden', !isManual);
         fileSec?.classList.toggle('hidden',    isManual);
         this._refreshImportCount();
@@ -1402,7 +1467,7 @@ class ProductManagementComponent {
             `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
         ).join('');
         tbody.innerHTML = products.slice(0, 30).map((p, i) =>
-            `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-gray-50'}">` +
+            `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-section'}">` +
             keys.map(k => {
                 const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
                 return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
@@ -1420,7 +1485,7 @@ class ProductManagementComponent {
         const countEl = document.getElementById('import-row-count');
         if (countEl) {
             countEl.textContent  = count > 0 ? `${count}개 등록 예정` : '0개';
-            countEl.className    = count > 0 ? 'text-sm font-semibold text-green-600' : 'text-sm text-gray-400';
+            countEl.className    = count > 0 ? 'text-sm font-semibold text-brand' : 'text-sm text-muted';
         }
         const btn = document.getElementById('product-import-start');
         if (btn) btn.disabled = count === 0;
@@ -1450,11 +1515,11 @@ class ProductManagementComponent {
         fileInput?.addEventListener('change', (e) => {
             if (e.target.files[0]) this._handleFileUpload(e.target.files[0]);
         });
-        dropZone?.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('border-green-400','bg-green-50'); });
-        dropZone?.addEventListener('dragleave', ()  => { dropZone.classList.remove('border-green-400','bg-green-50'); });
+        dropZone?.addEventListener('dragover',  (e) => { e.preventDefault(); dropZone.classList.add('border-green-400','bg-success'); });
+        dropZone?.addEventListener('dragleave', ()  => { dropZone.classList.remove('border-green-400','bg-success'); });
         dropZone?.addEventListener('drop',      (e) => {
             e.preventDefault();
-            dropZone.classList.remove('border-green-400','bg-green-50');
+            dropZone.classList.remove('border-green-400','bg-success');
             const f = e.dataTransfer.files[0];
             if (f) this._handleFileUpload(f);
         });
@@ -1843,10 +1908,10 @@ class ProductManagementComponent {
         if (!suggestionsContainer) return;
         
         const html = suggestions.map(suggestion => `
-            <div class="px-3 py-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
+            <div class="px-3 py-2 hover:bg-page cursor-pointer border-b border-gray-100 last:border-b-0" 
                  onclick="selectProductNameSuggestion('${suggestion.name}')">
-                <div class="text-sm font-medium text-gray-900">${suggestion.name}</div>
-                <div class="text-xs text-gray-500">${suggestion.category} • ${this.formatCurrency(suggestion.price)}</div>
+                <div class="text-sm font-medium text-heading">${suggestion.name}</div>
+                <div class="text-xs text-muted">${suggestion.category} • ${this.formatCurrency(suggestion.price)}</div>
             </div>
         `).join('');
         
