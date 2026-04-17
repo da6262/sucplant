@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.89-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.91-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.91 | feat: 대시보드 운영효율·고객분석 패널 추가 — ①운영효율: 주문→배송 평균 소요일, 배송완료율, 취소율, 입금대기 3일+ 건수, 상태별 파이프라인 바 시각화. ②고객분석: 총고객·재구매고객·평균구매금액 KPI, 고객등급 분포 바차트(씨앗~VIP), VIP 고객 TOP 5 매출 랭킹(메달 표시) |
 | v3.3.89 | feat: 대시보드 전면 업그레이드 — ①매출 KPI 4열(오늘매출·이번달매출·평균주문금액·신규고객+재구매율). ②워크플로우 카드 6열. ③7일 매출 추이 라인 차트 + 1주/한달/1년 기간 전환. ④주문 상태 도넛 차트. ⑤인기 상품 TOP 5. ⑥최근 주문 피드(고객명+상태+상품+금액). ⑦빠른 액션(새주문·피킹·대기자·새고객·로젠엑셀) |
 | v3.3.87 | revert: 피킹 리스트 v3.3.86 리디자인 롤백 → 기존 2단계 모달(요약+미리보기) 복원. 인쇄 전용 HTML 생성기(`orderPrint.js`)가 핵심인데 탭 모달이 raw innerHTML 방식으로 인쇄 품질 저하. 기존 상품별/전체/고객별 3종 미리보기 + 전용 CSS 인쇄 레이아웃 복원 |
 | v3.3.85 | fix: 주문 저장 유효성 검사 "다음 항목을 확인해주세요" 알림에 누락 항목 미표시 — 원인: `validateForm()`은 전화번호 형식(10자리)까지 체크하지만 alert의 missingFields는 빈값만 체크해 불일치. 전화번호 형식·주소·상품 모든 케이스를 동기화하고, 알림에 `• 고객명` `• 전화번호 형식` `• 주소` `• 상품(장바구니 비어있음)` 항목별 표시로 개선 |

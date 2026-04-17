@@ -290,6 +290,8 @@ class DashboardComponent {
         this.updateSummaryCards();
         this.renderRecentOrders();
         this.renderTopProducts();
+        this.renderOpsEfficiency();
+        this.renderCustomerAnalysis();
         this.renderStockAlerts();
         this.setupSalesTrendChart(this._chartPeriod || 7);
         this.setupOrderStatusChart();
@@ -348,6 +350,115 @@ class DashboardComponent {
                     <div class="h-1 rounded-full bg-gray-100 mt-0.5"><div class="h-1 rounded-full bg-green-400" style="width:${Math.round((qty/max)*100)}%"></div></div>
                 </div>
             </div>`).join('');
+    }
+
+    /** 운영 효율 */
+    renderOpsEfficiency() {
+        const orders = this.data.orders || [];
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const total = orders.length;
+        const completed = orders.filter(o => o.order_status === '배송완료').length;
+        const cancelled = orders.filter(o => ['주문취소','환불완료'].includes(o.order_status)).length;
+
+        // 배송 완료율
+        const deliveryRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        set('ops-delivery-rate', `${deliveryRate}%`);
+
+        // 취소율
+        const cancelRate = total > 0 ? Math.round((cancelled / total) * 100) : 0;
+        set('ops-cancel-rate', `${cancelRate}%`);
+
+        // 주문→배송 평균 소요일 (d_day 활용)
+        const shippedOrders = orders.filter(o => o.order_status === '배송완료' && o.d_day != null);
+        const avgDays = shippedOrders.length > 0
+            ? (shippedOrders.reduce((s,o) => s + Math.abs(parseInt(o.d_day)||0), 0) / shippedOrders.length).toFixed(1)
+            : '-';
+        set('ops-avg-ship-days', `${avgDays}일`);
+
+        // 입금대기 3일+ 건수
+        const overdue = orders.filter(o => o.order_status === '입금대기' && parseInt(o.d_day) >= 3).length;
+        set('ops-overdue-count', `${overdue}건`);
+
+        // 파이프라인 바
+        const pipeline = document.getElementById('ops-pipeline');
+        if (pipeline) {
+            const statusFlow = ['주문접수','입금대기','입금확인','상품준비','배송준비','배송중','배송완료'];
+            const colors = ['bg-gray-300','bg-yellow-300','bg-yellow-400','bg-blue-300','bg-purple-300','bg-sky-400','bg-green-400'];
+            const counts = statusFlow.map(s => orders.filter(o => o.order_status === s).length);
+            const max = Math.max(...counts, 1);
+            pipeline.innerHTML = statusFlow.map((s, i) => {
+                const pct = Math.max(Math.round((counts[i] / max) * 100), counts[i] > 0 ? 8 : 2);
+                return `<div class="flex flex-col items-center flex-1">
+                    <div class="w-full ${colors[i]} rounded" style="height:${Math.max(pct * 0.3, 3)}px"></div>
+                    <span class="text-3xs text-muted mt-0.5">${s.replace('주문','').replace('배송','배')}</span>
+                    <span class="text-3xs font-bold">${counts[i]}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    /** 고객 분석 */
+    renderCustomerAnalysis() {
+        const orders = this.data.orders || [];
+        const customers = this.data.customers || [];
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const fmt = (n) => '₩' + (n||0).toLocaleString('ko-KR');
+
+        set('cust-total', customers.length);
+
+        // 고객별 총 구매금액
+        const valid = orders.filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const custSpend = {};
+        valid.forEach(o => {
+            const name = o.customer_name || '미확인';
+            custSpend[name] = (custSpend[name] || 0) + (o.total_amount || 0);
+        });
+        const buyers = Object.keys(custSpend).length;
+
+        // 재구매 고객 (2건 이상 주문)
+        const custOrderCount = {};
+        valid.forEach(o => { const n = o.customer_name || '미확인'; custOrderCount[n] = (custOrderCount[n]||0)+1; });
+        const repeatCount = Object.values(custOrderCount).filter(c => c >= 2).length;
+        set('cust-repeat', repeatCount);
+
+        // 평균 구매금액
+        const totalSpend = Object.values(custSpend).reduce((s,v) => s+v, 0);
+        const avgSpend = buyers > 0 ? Math.round(totalSpend / buyers) : 0;
+        set('cust-avg-spend', fmt(avgSpend));
+
+        // 등급 분포 바
+        const gradeContainer = document.getElementById('cust-grade-bars');
+        if (gradeContainer) {
+            const gradeCounts = {};
+            customers.forEach(c => { const g = c.grade || 'GENERAL'; gradeCounts[g] = (gradeCounts[g]||0)+1; });
+            const gradeNames = { SEED: '씨앗', SPROUT: '새싹', GREEN_LEAF: '그린', GOLD: '골드', VIP: 'VIP', GENERAL: '일반' };
+            const gradeColors = { SEED: 'bg-yellow-200', SPROUT: 'bg-green-200', GREEN_LEAF: 'bg-green-400', GOLD: 'bg-yellow-400', VIP: 'bg-purple-400', GENERAL: 'bg-gray-300' };
+            const maxG = Math.max(...Object.values(gradeCounts), 1);
+            gradeContainer.innerHTML = Object.entries(gradeCounts)
+                .sort((a,b) => b[1]-a[1])
+                .map(([g, cnt]) => {
+                    const pct = Math.round((cnt/maxG)*100);
+                    return `<div class="flex items-center gap-2">
+                        <span class="w-8 text-2xs text-right text-muted">${gradeNames[g]||g}</span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full"><div class="${gradeColors[g]||'bg-gray-300'} h-2 rounded-full" style="width:${pct}%"></div></div>
+                        <span class="w-6 text-2xs tabular-nums text-right">${cnt}</span>
+                    </div>`;
+                }).join('');
+        }
+
+        // VIP 고객 TOP 5
+        const vipContainer = document.getElementById('cust-vip-list');
+        if (vipContainer) {
+            const top5 = Object.entries(custSpend).sort((a,b) => b[1]-a[1]).slice(0,5);
+            if (top5.length === 0) { vipContainer.innerHTML = '<p class="text-muted text-center">데이터 없음</p>'; return; }
+            vipContainer.innerHTML = top5.map(([name, amount], i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+                return `<div class="flex items-center justify-between py-0.5">
+                    <span><span class="mr-1">${medal}</span><span class="text-body">${name}</span></span>
+                    <span class="tabular-nums text-muted">${fmt(amount)}</span>
+                </div>`;
+            }).join('');
+        }
     }
 
     /**
