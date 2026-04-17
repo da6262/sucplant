@@ -1610,7 +1610,7 @@ export class ProductUI {
                             : column.key === 'product_code' ? 'td-muted'
                             : 'td-secondary';
                             if (column.key === 'name') {
-                                return `<td class="${cellClass}"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
+                                return `<td class="${cellClass}" style="max-width:180px;"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline truncate block" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
                             }
                         return `<td class="${cellClass}">${formattedValue}</td>`;
                         }).join('')}

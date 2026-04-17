@@ -35,7 +35,7 @@ const PRODUCT_COLUMNS = [
         editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}"><span class="product-name-link">${name || dash}</span></td>`;
+            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;"><span class="product-name-link truncate block">${name || dash}</span></td>`;
         }
     },
     {
