@@ -31,7 +31,7 @@ const PRODUCT_COLUMNS = [
     {
         key: 'name',
         label: '상품명',
-        thClass: '',
+        thClass: 'w-36',
         editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
