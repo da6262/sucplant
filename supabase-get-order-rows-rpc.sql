@@ -52,7 +52,9 @@ RETURNS TABLE (
   total_amount NUMERIC,
   payment_status TEXT,
   order_status TEXT,
-  delivery_status TEXT
+  delivery_status TEXT,
+  sms_sent_at TIMESTAMPTZ,
+  printed_at TIMESTAMPTZ
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -117,7 +119,9 @@ BEGIN
     COALESCE(o.total_amount, 0)::NUMERIC AS total_amount,
     CASE WHEN COALESCE(o.order_status, '') = '입금대기' THEN NULL::TEXT ELSE '입금확인' END AS payment_status,
     COALESCE(NULLIF(TRIM(o.order_status), ''), '주문접수') AS order_status,
-    CASE WHEN COALESCE(o.order_status, '') = '배송완료' THEN '배송완료' ELSE '미등록' END AS delivery_status
+    CASE WHEN COALESCE(o.order_status, '') = '배송완료' THEN '배송완료' ELSE '미등록' END AS delivery_status,
+    o.sms_sent_at,
+    o.printed_at
   FROM farm_orders o
   INNER JOIN filtered f ON f.oid = o.id
   CROSS JOIN kst_today k
