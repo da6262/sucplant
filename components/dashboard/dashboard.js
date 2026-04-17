@@ -715,13 +715,13 @@ class DashboardComponent {
     handleChartPeriodChange(buttonId) {
         // 모든 버튼 비활성화
         document.querySelectorAll('[id^="chart-"]').forEach(btn => {
-            btn.className = 'px-3 py-1 text-xs bg-page text-heading rounded-full hover:bg-gray-200';
+            btn.className = 'px-3 py-1 text-xs bg-page text-heading rounded-full hover:bg-section';
         });
-        
+
         // 선택된 버튼 활성화
         const selectedBtn = document.getElementById(buttonId);
         if (selectedBtn) {
-            selectedBtn.className = 'px-3 py-1 text-xs bg-info-accent text-blue-800 rounded-full hover:bg-blue-200';
+            selectedBtn.className = 'px-3 py-1 text-xs bg-info-accent text-info rounded-full hover:bg-info-accent';
         }
         
         // 차트 업데이트

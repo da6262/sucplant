@@ -182,10 +182,10 @@ class HeaderComponent {
         
         // 상태에 따른 스타일 변경
         if (status.mode === 'api' && status.connected) {
-            statusDot.className = 'w-2 h-2 rounded-full bg-green-400';
+            statusDot.className = 'w-2 h-2 rounded-full bg-success-accent';
             statusText.textContent = 'API 연결됨';
         } else if (status.mode === 'api' && !status.connected) {
-            statusDot.className = 'w-2 h-2 rounded-full bg-red-400 animate-pulse';
+            statusDot.className = 'w-2 h-2 rounded-full bg-danger-accent animate-pulse';
             statusText.textContent = 'API 연결 실패';
         } else {
             statusDot.className = 'w-2 h-2 rounded-full bg-yellow-400 animate-pulse';
