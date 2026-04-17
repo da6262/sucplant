@@ -343,6 +343,7 @@ start-server.bat
 - `server.js`는 로컬 `.js`/`.css`에 `?v=` 쿼리 자동 주입 (캐시 버스팅, CDN URL은 제외). **HTML 요청마다 `getAppVersion()` 이 `js/config.js` 를 재읽기** → pre-commit hook bump 나 수동 수정 모두 서버 재시작 없이 다음 페이지 로드부터 반영 (v3.3.57).
 - `start-server.bat` 은 **Node.js 우선** — Python 이 떠버리면 `?v=` 주입·MIME 처리·README 동기화 전부 우회되므로 Node 없을 때만 Python 폴백 (v3.3.57).
 - 컴포넌트 HTML 파일에는 `index.html` 컨테이너와 동일 ID의 외부 wrapper div 넣지 말 것 — `index.html`의 `<div id="*-section">` 안에 또 `<div id="*-section">`이 들어가면 탭 전환 로직이 내부에 `hidden` 부여하여 빈 화면. 컴포넌트 HTML 외곽은 class만 유지하고 id 제거.
+- **크로스 컴포넌트 중복 ID 금지** — 탭 컴포넌트들은 동시에 DOM에 공존하므로 서로 다른 컴포넌트에 같은 `id` 가 있으면 `getElementById` 가 먼저 삽입된 요소를 반환. 사례(v3.3.62): `customer-management.html` 등급관리 모달 내 `id="customer-grades-list"` 와 `settings.html` 의 `id="customer-grades-list"` 충돌 → 환경설정 탭의 등급 목록이 숨겨진 고객관리 모달 안으로 렌더링되어 화면 빈 화면. **컴포넌트별 ID 에 접두사 필수** (예: `settings-customer-grades-list`).
 - 컴포넌트 동적 로딩 시 Supabase client 초기화에 대한 순환 의존 주의
 - `data-manager` polling 루프 금지. `initialize*DataManager()` 즉시 호출이 기본. 꼭 필요하면 `supabase-ready` CustomEvent 구독.
 - 과거 등록된 `sw.js` Service Worker 가 브라우저에 남아 캐시 덮는 문제 방지용 자동 해제 스크립트가 `index.html` `<head>` 에 포함되어 있음 — 제거하지 말 것.

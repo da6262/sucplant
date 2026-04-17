@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.60-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.62-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -45,6 +45,45 @@ http://localhost:8000
 ```
 
 > Supabase 연결이 없으면 데이터 조회·저장 불가. `js/supabase-config.js` 설정 필요.
+
+---
+
+## 🏠 다중 PC 사용 가이드 (집·사무실 동기)
+
+### 처음 PC 에 clone 했거나 오래 쉬었다가 pull 한 경우
+
+```bash
+git pull origin main      # 1) 최신 소스 받기
+npm install               # 2) 의존성 복구 (firebase-tools·deep-extend 등)
+start-server.bat          # 3) 서버 시작 → 콘솔의 "🌱 앱 버전: vX.X.XX" 확인
+# 4) 브라우저 접속 후 Ctrl+Shift+R (하드 리프레시, 최초 1회)
+```
+
+### 일상 작업 루틴
+
+```bash
+# 시작 시
+git pull --rebase origin main
+
+# 작업 …
+
+# 완료 시 (내가 편집한 파일만 명시 스테이징)
+git add <file1> <file2>
+git commit -m "..."        # pre-commit hook 이 js/config.js 패치 +1 자동
+git push origin main
+
+# 웹에 올리려면
+npm run deploy             # sync + check + firebase deploy 원샷
+```
+
+### "예전 버전 나와요" 증상 감별
+
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `npm run deploy` 에서 `MODULE_NOT_FOUND` | `node_modules/` 깨짐 | `npm install` |
+| 브라우저에서 옛 화면 | 브라우저 캐시 | `Ctrl+Shift+R` |
+| `git pull --rebase` 가 거부 | 커밋 안 된 로컬 변경 | `git stash → pull → stash pop` |
+| 사이드바 버전 배지가 옛 값 | 서버 재시작 없이 보고 있음 | server.js 는 HTML 요청마다 `config.js` 재읽기 (v3.3.57+) — 페이지 새로고침만 하면 최신 |
 
 ---
 
@@ -193,6 +232,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.62 | fix: 환경설정 고객등급 목록 빈 화면 — `customer-management.html` 등급관리 모달과 `settings.html` 이 `id="customer-grades-list"` 를 공유, 고객관리 탭 방문 후 환경설정 이동 시 `getElementById` 가 숨겨진 모달 안의 요소를 반환해 등급이 거기에 렌더링됨. `settings.html` ID → `settings-customer-grades-list` 로 변경, `settingsUI.js` 신 ID 우선 탐색·구형 캐시 폴백 |
+| v3.3.61 | (git hook auto-bump) |
 | v3.3.60 | docs: CLAUDE.md npm 스크립트 섹션 v3.3.58 파이프라인에 맞춰 갱신 — `sync`/`check` 엔트리 신설, `build` 를 `sync + check` 로 명시(이전 `deploy-to-web.js` 호출 제거 반영), `deploy` 설명을 "빌드·배포 시스템" 섹션으로 연결 |
 | v3.3.59 | chore: `deep-extend ^0.6.0` 의존성 명시 — `node_modules/deep-extend/lib/` 누락으로 `firebase-tools` 가 `MODULE_NOT_FOUND` 로 실패하던 현상 해소. `package.json` 에 정식 등록해 `npm install` 시 자동 복구 |
 | v3.3.58 | refactor: 배포 파이프라인 재설계 — `dist/` 수동 관리 폐기, 소스→dist 화이트리스트 자동 동기화 도입. `sync-to-dist.js`(ALLOW_FILES/ALLOW_DIRS 명시된 항목만 복사) + `pre-deploy-check.js`(`server.js`·`*.bat`·`*.sql`·`.env*` 등 금지 패턴 + Supabase service_role·AWS 시크릿 등 비밀 패턴 전수 스캔) + `firebase.json` `ignore` 3중 방어. 기존 dist/ 의 2개월 drift(104 파일 차이) 해소, `dist/index.html` inline CSS 구조 폐기하고 `styles/index-inline.css` 외부 참조로 통일. `npm run sync`·`check`·`build`·`deploy` 스크립트 추가. CLAUDE.md 에 배포 워크플로우 문서화. 결과: 로컬 수정 즉시 웹 배포 가능, `server.js` 같은 개발 파일 구조적으로 유출 불가 |
