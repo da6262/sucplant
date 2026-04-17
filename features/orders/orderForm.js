@@ -1706,7 +1706,7 @@ function searchProducts(query) {
                     if (data && data.length > 0) {
                         resultsDiv.innerHTML = data.map(product => {
                             const stockNum = product.stock ?? 0;
-                            const stockColor = stockNum <= 0 ? '#ef4444' : stockNum <= 5 ? '#f59e0b' : '#10b981';
+                            const stockColor = stockNum <= 0 ? 'var(--danger)' : stockNum <= 5 ? 'var(--warn)' : 'var(--primary)';
                             const stockLabel = stockNum <= 0 ? '품절' : `재고 ${stockNum}개`;
                             return `
                             <div class="search-result-item"
