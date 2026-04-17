@@ -1704,16 +1704,20 @@ function searchProducts(query) {
                     if (!resultsDiv) return;
 
                     if (data && data.length > 0) {
-                        resultsDiv.innerHTML = data.map(product => `
+                        resultsDiv.innerHTML = data.map(product => {
+                            const stockNum = product.stock ?? 0;
+                            const stockColor = stockNum <= 0 ? '#ef4444' : stockNum <= 5 ? '#f59e0b' : '#10b981';
+                            const stockLabel = stockNum <= 0 ? '품절' : `재고 ${stockNum}개`;
+                            return `
                             <div class="search-result-item"
                                  onmousedown="event.preventDefault();"
                                  onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
                                 <span class="search-result-name">${product.name}</span>
                                 <span class="search-result-cat">${(product.category||'')}</span>
                                 <span class="search-result-price">${window.fmt.won(product.price)}</span>
-                                <span class="search-result-stock">재고 ${product.stock}</span>
+                                <span class="search-result-stock" style="color:${stockColor};font-weight:600;font-size:11px;">${stockLabel}</span>
                             </div>
-                        `).join('');
+                        `}).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
                         resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
@@ -1733,9 +1737,10 @@ function addProductToCart(productId, productName, price, stock, event) {
             event.preventDefault();
             event.stopPropagation();
         }
-        if (stock <= 0) {
-            alert('재고가 부족합니다.');
-            return;
+        if (stock !== null && stock !== undefined && stock <= 0) {
+            // 재고 0이어도 주문 등록은 허용 (품절 상품도 관리자가 직접 주문 등록 가능)
+            // alert 대신 시각적 경고만 표시
+            console.warn(`⚠️ 재고 0 상품 주문 등록: ${productName}`);
         }
         // 최소 레이아웃: 2열 장바구니 + 퀵상품 형식으로 추가
         if (document.getElementById('quick-product-buttons') && window.addQuickProductToCart) {
