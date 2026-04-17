@@ -344,8 +344,20 @@ start-server.bat
 - `data-manager` polling 루프 금지. `initialize*DataManager()` 즉시 호출이 기본. 꼭 필요하면 `supabase-ready` CustomEvent 구독.
 - 과거 등록된 `sw.js` Service Worker 가 브라우저에 남아 캐시 덮는 문제 방지용 자동 해제 스크립트가 `index.html` `<head>` 에 포함되어 있음 — 제거하지 말 것.
 
-### Dead Code 경고
-- `features/products/productUI.js` 의 `renderProductsTable` / `PRODUCT_TABLE_COLUMNS` 는 **사용되지 않음**. 실제 상품 테이블 렌더링은 `components/product-management/product-management.js` 의 `createProductRow` 담당. 상품 테이블 수정 시 후자만 고치면 됨.
+### 상품 테이블 렌더링 이중 경로 주의
+- `features/products/productUI.js` 의 `renderProductsTable` / `PRODUCT_TABLE_COLUMNS` — **활성 코드** (과거 "Dead Code" 기록은 오래되어 부정확)
+- `components/product-management/product-management.js` 의 `createProductRow` — 동적 로드 시 사용
+- 두 경로가 공존하며 각각의 사용 시점이 다름. 상품 테이블 수정 시 **양쪽 모두 확인**
+
+### 루트 디버그/테스트 파일
+- 프로덕션에서 참조되지 않는 루트 debug/test HTML·JS 25개는 `archive/dev-tools/` 로 이동 완료 (v3.3.41)
+- `inventory-modal.html`, `allowed-users-management.html`, `system-admin.html` 은 기능성 이름이라 보류
+
+### 빌드 시스템 참고
+- `package.json` 의 `"build": "node deploy-to-web.js"` → **파일 부재로 작동 안 함**
+- `deploy-to-production.js` 는 **브라우저 런타임 전용** (Node CLI 빌드 아님)
+- `dist/` 폴더는 수동 관리 (git 추적 중, firebase hosting public 경로)
+- 배포: `dist/` 를 수동 동기화 후 `firebase deploy` 직접 실행
 
 ## GitHub
 - https://github.com/da6262/sucplant

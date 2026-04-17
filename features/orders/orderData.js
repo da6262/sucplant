@@ -184,6 +184,8 @@ class OrderDataManager {
     // 주문 데이터 로드 — get_order_rows 단일 소스. 목록·카운트 모두 이 결과로 처리.
     async loadOrders() {
         this._loadErrorMessage = null;
+        // 환경설정 기반 상태 탭 렌더를 카운트 업데이트 전에 보장 (idempotent — 기존 .dynamic 제거 후 재생성)
+        await this.renderStatusTabs();
         try {
             console.log('📋 OrderDataManager: 주문 목록 로드 (get_order_rows 단일 소스, 카운트=rows 기반)');
             if (!window.supabaseClient) {
@@ -375,10 +377,11 @@ class OrderDataManager {
         if (!Array.isArray(countRows)) return;
         const map = {};
         countRows.forEach((row) => { map[row.status_key] = Number(row.count) || 0; });
-        const statusKeys = ['all', 'work_todo', '주문접수', '고객안내', '입금대기', '입금확인', '상품준비', '배송준비', '배송중', '배송완료', '주문취소', '환불완료'];
-        statusKeys.forEach((key) => {
-            const el = document.getElementById(`count-${key}`);
-            if (el) el.textContent = map[key] != null ? map[key] : 0;
+        // 하드코딩된 statusKeys 리스트 제거 — 현재 DOM 에 존재하는 모든 count-* 엘리먼트를 동적 대상으로 업데이트.
+        // renderStatusTabs() 가 환경설정 기반으로 탭(count-XX) DOM 을 생성해 두었다면 그 대상이 그대로 갱신됨.
+        document.querySelectorAll('.tab-count[id^="count-"]').forEach((el) => {
+            const key = el.id.replace(/^count-/, '');
+            el.textContent = map[key] != null ? map[key] : 0;
         });
         // 네비게이션 '처리할 주문' 뱃지 업데이트
         const todoCount = map['work_todo'] || 0;
@@ -390,6 +393,73 @@ class OrderDataManager {
             } else {
                 navBadge.style.display = 'none';
             }
+        }
+    }
+
+    /**
+     * 환경설정 settings.orderStatuses 에 맞춰 상태 탭 동적 렌더.
+     * 특수 탭(#status-work_todo, #status-all) 은 HTML 에 정적 유지되며 이 함수는 #status-tab-dynamic-slot 뒤에
+     * 개별 상태 탭들을 교체 삽입한다. count 는 loadOrders 직후 updateFilterCountsFromRpc 가 갱신.
+     */
+    async renderStatusTabs() {
+        const slot = document.getElementById('status-tab-dynamic-slot');
+        if (!slot) return;
+        try {
+            let settings = window.settingsDataManager?.getAllSettings();
+            if (!settings || !Array.isArray(settings.orderStatuses) || settings.orderStatuses.length === 0) {
+                if (window.settingsDataManager?.loadSettings) {
+                    settings = await window.settingsDataManager.loadSettings();
+                }
+            }
+            const statuses = (settings && Array.isArray(settings.orderStatuses)) ? settings.orderStatuses : [];
+            // slot 다음 형제들 중 기존 동적 탭(.status-tab-btn.dynamic) 을 전부 제거
+            const nav = slot.parentElement;
+            if (nav) {
+                nav.querySelectorAll('.status-tab-btn.dynamic').forEach(btn => btn.remove());
+            }
+            const esc = (s) => String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+            const frag = document.createDocumentFragment();
+            statuses.forEach((s) => {
+                const key = s.value;
+                if (!key) return;
+                const btn = document.createElement('button');
+                btn.id = `status-${key}`;
+                btn.className = 'status-tab-btn dynamic';
+                btn.innerHTML = `${esc(s.label || key)} <span class="tab-count" id="count-${esc(key)}">0</span>`;
+                frag.appendChild(btn);
+            });
+            // slot 바로 뒤에 삽입 (slot.nextSibling 위치)
+            if (slot.nextSibling) {
+                nav.insertBefore(frag, slot.nextSibling);
+            } else {
+                nav.appendChild(frag);
+            }
+            // 클릭 이벤트 위임 — 정적 탭과 동적 탭 모두 nav 단 1회 바인딩으로 처리.
+            // 기존 js/order-management.js 의 onclick 직접 바인딩(정적 탭 대상)과 공존하지만 동일 로직이라 안전.
+            if (!nav.dataset.delegatedStatusClick) {
+                nav.dataset.delegatedStatusClick = '1';
+                nav.addEventListener('click', async (e) => {
+                    const btn = e.target.closest('.status-tab-btn');
+                    if (!btn || !nav.contains(btn)) return;
+                    const status = (btn.id || '').replace(/^status-/, '');
+                    if (!status) return;
+                    nav.querySelectorAll('.status-tab-btn').forEach((t) => t.classList.remove('active'));
+                    btn.classList.add('active');
+                    try {
+                        if (window.orderDataManager) {
+                            await window.orderDataManager.loadOrders();
+                            if (window.orderDataManager.renderOrdersTable) {
+                                window.orderDataManager.renderOrdersTable(status);
+                            }
+                        }
+                    } catch (err) {
+                        console.error('❌ 주문 상태 필터 전환 실패:', err);
+                    }
+                });
+            }
+            console.log('✅ 주문 상태 탭 동적 렌더 완료:', statuses.map(s => s.value));
+        } catch (e) {
+            console.warn('⚠️ 주문 상태 탭 렌더 실패:', e);
         }
     }
 

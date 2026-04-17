@@ -331,6 +331,8 @@ async function initOrderForm() {
         
         // 주문채널: 풀 레이아웃일 때만 farm_channels 로드 (최소 레이아웃은 hidden 기본값 유튜브)
         await initOrderChannelFromSettings();
+        // 주문 상태 드롭다운을 환경설정 settings.orderStatuses 로 동적 주입
+        await populateOrderStatusSelectFromSettings();
         // 대시보드형 레이아웃: 퀵상품 로드 + 채널 요약 동기화 + 모달 전체 스크롤 제거 + 하단 버튼 숨김
         if (document.getElementById('quick-product-buttons')) {
             await loadQuickProductsForMinimal();
@@ -626,6 +628,32 @@ let SHIPPING_SETTINGS = {
     freeShippingThreshold: 50000,
     remoteAreaShippingFee: 5000
 };
+
+/** 환경설정 orderStatuses 배열로 #order-status 드롭다운 동적 생성. orphan fallback 포함. */
+async function populateOrderStatusSelectFromSettings(preservedValue) {
+    const select = document.getElementById('order-status');
+    if (!select) return;
+    try {
+        let settings = window.settingsDataManager?.getAllSettings();
+        if (!settings || !Array.isArray(settings.orderStatuses) || settings.orderStatuses.length === 0) {
+            if (window.settingsDataManager?.loadSettings) settings = await window.settingsDataManager.loadSettings();
+        }
+        const statuses = (settings && Array.isArray(settings.orderStatuses)) ? settings.orderStatuses : [];
+        if (statuses.length === 0) return;
+        const current = preservedValue != null ? preservedValue : select.value;
+        const values = statuses.map(s => s.value);
+        const options = [...statuses];
+        if (current && !values.includes(current)) options.push({ value: current, label: `${current} (삭제됨)` });
+        const defaultSelect = current || (values.includes('주문접수') ? '주문접수' : values[0]);
+        select.innerHTML = options.map(s => {
+            const v = String(s.value || '').replace(/"/g, '&quot;');
+            const label = String(s.label || s.value || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<option value="${v}"${s.value === defaultSelect ? ' selected' : ''}>${label}</option>`;
+        }).join('');
+    } catch (e) {
+        console.warn('⚠️ 주문 상태 드롭다운 로드 실패:', e);
+    }
+}
 
 /** 환경설정 shippingMethods 배열로 #shipping-method 드롭다운 동적 생성 */
 async function loadShippingMethodsFromSettings() {
@@ -1436,6 +1464,7 @@ window.initOrderForm = initOrderForm;
 window.initOrderChannelOptions = initOrderChannelOptions;
 window.initShippingFeeFromSettings = initShippingFeeFromSettings;
 window.loadShippingMethodsFromSettings = loadShippingMethodsFromSettings;
+window.populateOrderStatusSelectFromSettings = populateOrderStatusSelectFromSettings;
 window.updateShippingFeeDisplay = updateShippingFeeDisplay;
 window.updateShippingMethod = updateShippingMethod;
 window.initCustomerSearch = initCustomerSearch;

@@ -597,7 +597,11 @@ async function fillOrderForm(orderData) {
         const orderMemo = document.getElementById('order-memo');
         
         if (orderStatus) {
-            orderStatus.value = orderData.order_status || orderData.status || '주문접수';
+            const desiredStatus = orderData.order_status || orderData.status || '주문접수';
+            if (window.populateOrderStatusSelectFromSettings) {
+                await window.populateOrderStatusSelectFromSettings(desiredStatus);
+            }
+            orderStatus.value = desiredStatus;
             console.log('✅ order-status 설정:', orderStatus.value);
         }
         if (orderChannel) {

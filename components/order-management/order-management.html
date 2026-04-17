@@ -19,7 +19,7 @@
     </div>
 </div>
 
-<!-- 상태 필터 탭 -->
+<!-- 상태 필터 탭 — 특수 탭(work_todo/all) 은 고정, 나머지는 settings.orderStatuses 기반으로 renderStatusTabs() 가 동적 주입 -->
 <div class="status-tab-bar">
     <nav class="flex flex-nowrap gap-0.5 overflow-x-auto" style="scrollbar-width:none;-ms-overflow-style:none;" id="status-tab-nav">
         <button id="status-work_todo" class="status-tab-btn active" title="상품준비 + 배송준비">
@@ -28,16 +28,8 @@
         <button id="status-all" class="status-tab-btn">
             전체 <span class="tab-count" id="count-all">0</span>
         </button>
-        <button id="status-주문접수"  class="status-tab-btn">주문접수  <span class="tab-count" id="count-주문접수">0</span></button>
-        <button id="status-고객안내"  class="status-tab-btn">고객안내  <span class="tab-count" id="count-고객안내">0</span></button>
-        <button id="status-입금대기"  class="status-tab-btn">입금대기  <span class="tab-count" id="count-입금대기">0</span></button>
-        <button id="status-입금확인"  class="status-tab-btn">입금확인  <span class="tab-count" id="count-입금확인">0</span></button>
-        <button id="status-상품준비"  class="status-tab-btn">상품준비  <span class="tab-count" id="count-상품준비">0</span></button>
-        <button id="status-배송준비"  class="status-tab-btn">배송준비  <span class="tab-count" id="count-배송준비">0</span></button>
-        <button id="status-배송중"    class="status-tab-btn">배송중    <span class="tab-count" id="count-배송중">0</span></button>
-        <button id="status-배송완료"  class="status-tab-btn">배송완료  <span class="tab-count" id="count-배송완료">0</span></button>
-        <button id="status-주문취소"  class="status-tab-btn">주문취소  <span class="tab-count" id="count-주문취소">0</span></button>
-        <button id="status-환불완료"  class="status-tab-btn">환불완료  <span class="tab-count" id="count-환불완료">0</span></button>
+        <!-- 동적 주입 영역: renderStatusTabs() 가 여기에 개별 상태 탭을 append -->
+        <span id="status-tab-dynamic-slot" style="display:contents;"></span>
     </nav>
 </div>
 

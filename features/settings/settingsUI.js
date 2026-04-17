@@ -590,6 +590,10 @@ export function loadOrderStatuses() {
                         description: '새로 추가된 상태'
                     });
                     loadOrderStatuses();
+                    // 주문관리 탭의 상태 필터 버튼도 즉시 반영
+                    if (window.orderDataManager?.renderStatusTabs) {
+                        await window.orderDataManager.renderStatusTabs();
+                    }
                 } catch (error) {
                     console.error('❌ 주문 상태 추가 실패:', error);
                     alert('주문 상태 추가에 실패했습니다: ' + (error.message || error));
