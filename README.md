@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.72-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.73-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.73 | fix: `showToast()` 전역 미등록 — `utils/ui-helpers.js`에 정의돼 있지만 `main.js`에서 import·`window.showToast` 등록 누락. 17곳+ 호출이 전부 silent fail(토스트 알림 안 뜸). import 추가 + 전역 등록으로 SweetAlert2 토스트 복구 |
 | v3.3.72 | fix: 고객관리 등급 필터 탭이 환경설정 변경 미반영 — 근본 원인: `customer-management.html`에 등급 버튼 5개 하드코딩(블랙/퍼플/레드/그린/일반). 환경설정에서 등급 삭제해도 HTML 고정이라 그대로 표시됨. 하드코딩 버튼 제거 → `#customer-grade-dynamic-slot` 동적 슬롯 도입, `customerUI.js#renderGradeTabs()` 신설로 환경설정 `customerGrades` 기반 동적 생성. `customer-management.js` 클릭 리스너도 "전체" 정적 + 동적 버튼 이벤트 위임으로 분리 |
 | v3.3.71 | fix: 환경설정 고객등급 변경이 고객관리 탭에 반영 안 되는 버그 수정 — 원인: `customerUI.js`의 `_gradesCache`가 한 번 로드되면 환경설정 변경 후에도 갱신 안 됨. `settingsUI.js`의 등급 추가/수정/삭제 5곳에서 `window.invalidateCustomerUICache()` 호출 추가. `main.js`에서 `invalidateCustomerUICache` 전역 등록 |
 | v3.3.70 | refactor: Supabase 클라이언트 체크 중복 27건 → `ensureSupabase()` 유틸 함수로 통합 — `utils/formatters.js`에 `ensureSupabase()` 신설(없으면 throw, 있으면 client 반환), `main.js`에서 `window.ensureSupabase`로 전역 등록. features/ 6파일(categoryData·productData·waitlistData·salesChannelsData·orderData·settingsUI) throw 패턴 26건 + js/order-management.js 1건 교체. soft-return 패턴(warn+return)은 동작 차이로 유지 |

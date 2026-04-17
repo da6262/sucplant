@@ -47,6 +47,7 @@ window.formatPhone    = formatPhone;
 window.formatQty      = formatQty;
 window.nullDash       = nullDash;
 window.ensureSupabase = ensureSupabase;
+window.showToast      = showToast;
 
 // 고객 데이터 모듈 import
 import { 
@@ -56,6 +57,7 @@ import {
 
 // 고객 UI 모듈 import
 import { renderCustomersTable, invalidateCustomerUICache } from './features/customers/customerUI.js';
+import { showToast } from './utils/ui-helpers.js';
 
 // 상품 데이터 모듈 import
 import { 
