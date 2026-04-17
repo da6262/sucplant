@@ -90,7 +90,7 @@
     --tbl-border-color:     var(--border);
     --tbl-grid-color:       #CBD5E1;          /* 엑셀 격자용 중간 톤 slate-300 */
     --tbl-hover-bg:         #F0FDF4;
-    --tbl-zebra-bg:         #FAFAFA;
+    --tbl-zebra-bg:         #F5F5F5;
     --status-badge-h:       20px;
 
     /* ══════════════════════════════════════════════
