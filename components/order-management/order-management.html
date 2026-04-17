@@ -7,11 +7,11 @@
         <button id="bulk-export-logen-btn" class="btn-secondary hidden">
             <i class="fas fa-file-excel"></i>로젠택배
         </button>
+        <button id="bulk-tracking-import-btn" class="btn-secondary" title="배송준비 주문에 송장번호 일괄 입력">
+            <i class="fas fa-barcode"></i>송장입력
+        </button>
         <button id="generate-picking-list-btn" class="btn-secondary">
             <i class="fas fa-clipboard-list"></i>피킹 리스트
-        </button>
-        <button id="generate-packaging-labels-btn" class="btn-secondary hidden">
-            <i class="fas fa-tags"></i>포장 라벨
         </button>
         <button id="add-order-btn" class="btn-primary">
             <i class="fas fa-plus"></i>새 주문
@@ -90,6 +90,7 @@
                         <th class="w-24">주문번호</th>
                         <th class="w-24">고객명</th>
                         <th>상품요약</th>
+                        <th class="w-28">택배사</th>
                         <th class="w-48">송장번호</th>
                         <th class="w-16">저장</th>
                     </tr>

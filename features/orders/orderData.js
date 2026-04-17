@@ -1072,7 +1072,7 @@ class OrderDataManager {
                     <td class="text-center relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
-                        <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-card border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
+                        <div id="status-edit-${rowId}" class="absolute left-1/2 -translate-x-1/2 top-full hidden mt-0.5 border border-gray-200 rounded-lg py-1 min-w-[140px] max-h-48 overflow-y-auto" style="z-index:9999; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.18)">
                             ${this.standardOrderStatuses.map(s => `
                                 <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}"
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>

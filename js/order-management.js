@@ -2650,23 +2650,29 @@ async function loadTrackingPanelOrders() {
 
         tbody.innerHTML = orders.map(order => {
             const summary = (itemsMap[order.id] || []).join(', ') || '-';
-            const existingCompany = order.shipping_company || '';
+            const existingCompany = order.shipping_company || 'CJ대한통운';
             const existingTracking = order.tracking_number || '';
+            const companyOpts = SHIPPING_COMPANIES.map(c =>
+                `<option value="${c}"${c === existingCompany ? ' selected' : ''}>${c}</option>`
+            ).join('');
             return `
             <tr class="hover:bg-amber-50" data-order-id="${order.id}">
                 <td class="px-3 font-mono td-secondary whitespace-nowrap">${order.order_number || '-'}</td>
                 <td class="px-3 font-medium td-primary whitespace-nowrap">${order.customer_name || '-'}</td>
                 <td class="px-3 td-muted max-w-[180px] truncate" title="${summary}">${summary}</td>
                 <td class="px-3">
-                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400"
+                    <select class="tracking-company-select input-ui" style="font-size:12px; padding:2px 4px;">
+                        ${companyOpts}
+                    </select>
+                </td>
+                <td class="px-3">
+                    <input type="text" class="tracking-number-input input-ui" style="font-size:12px; padding:2px 6px;"
                         placeholder="송장번호 입력" value="${existingTracking}"
                         onkeydown="if(event.key==='Enter'){saveOneTrackingNumber('${order.id}', this.closest('tr'))}">
                 </td>
                 <td class="px-3 text-center">
                     <button onclick="saveOneTrackingNumber('${order.id}', this.closest('tr'))"
-                        class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
-                        저장
-                    </button>
+                        class="btn-warn btn-xs">저장</button>
                 </td>
             </tr>`;
         }).join('');
