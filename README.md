@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.114-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.118-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,9 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.118 | feat: 상품 테이블 인라인 편집 — 상품명·카테고리·판매가·재고 셀 더블클릭으로 직접 수정. Enter 저장, Esc 취소. 카테고리는 등록된 목록 드롭다운. Supabase 즉시 반영 |
+| v3.3.116 | feat: 상품 내보내기 구현 — 등록된 상품을 엑셀(.xlsx)로 다운로드 |
+| v3.3.115 | fix: 상품 일괄등록 카테고리 텍스트→드롭다운 + 카테고리 아이콘 시맨틱 클래스 적용 |
 | v3.3.114 | feat: 상품 일괄등록 "직접 입력" 탭 추가 — 표 양식으로 상품명·카테고리·판매가·매입가·재고·사이즈 직접 입력. 기본 5행 + 행 추가/삭제. 상품명 입력 시 등록 건수 실시간 카운트. 기존 붙여넣기·엑셀 탭과 공존 |
 | v3.3.111 | style: 환경설정 일반 탭 컴팩트 레이아웃 + 로고·사이드바 즉시 반영 — ①로고+사이드바 설정 좌측 3열, 농장정보 우측 9열로 공간 효율화. ②표시명·설명 입력 시 사이드바 oninput 즉시 반영. ③로고 선택/삭제 시 사이드바 즉시 적용. ④사이드바 로고 56px·환경설정 미리보기 96px |
 | v3.3.104 | feat: 사이드바 로고·타이틀·설명 커스텀 — ①환경설정 일반 탭에 "사이드바 표시명"·"사이드바 설명" 필드 추가. ②사이드바 로고 자리에 환경설정 로고 이미지 자동 적용(없으면 기존 잎 아이콘 유지). ③저장 시 사이드바 즉시 반영(`applySidebarLogo`). ④`farm.sidebarTitle`·`farm.sidebarSubtitle` 설정 키 추가 |
