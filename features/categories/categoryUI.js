@@ -114,28 +114,22 @@ export function renderCategoriesList(categories) {
         return;
     }
 
+    container.className = 'flex flex-wrap gap-2';
     container.innerHTML = categories.map(cat => `
-        <div id="cat-row-${cat.id}" class="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-section transition-colors" style="gap:8px;">
-            <!-- 보기 모드 -->
-            <div class="cat-view flex items-center gap-2" style="flex:1;min-width:0;">
-                <span class="font-medium text-sm">${cat.name}</span>
-                <span class="text-xs text-muted">${cat.description || ''}</span>
-            </div>
-            <!-- 수정 모드 -->
-            <div class="cat-edit hidden flex items-center gap-2" style="flex:1;">
+        <div id="cat-row-${cat.id}" class="inline-flex items-center gap-1 px-3 py-1.5 rounded-full border border-gray-200 bg-white hover:bg-section transition-colors text-sm">
+            <span class="cat-view font-medium">${cat.name}</span>
+            <div class="cat-edit hidden">
                 <input type="text" id="edit-name-${cat.id}" value="${cat.name}"
-                       class="input-ui" style="max-width:160px;" placeholder="카테고리명">
+                       class="input-ui" style="width:100px;height:22px;font-size:12px;padding:0 6px;border-radius:9999px;">
                 <input type="hidden" id="edit-color-${cat.id}" value="${cat.color || 'green'}">
             </div>
-            <!-- 보기 버튼 -->
-            <div class="cat-view-btns btn-group">
-                <button onclick="window.startEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                <button onclick="window.deleteCategory('${cat.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+            <div class="cat-view-btns flex gap-0.5 ml-1">
+                <button onclick="window.startEditCategory('${cat.id}')" class="text-muted hover:text-info" title="수정" style="font-size:10px;"><i class="fas fa-pen"></i></button>
+                <button onclick="window.deleteCategory('${cat.id}')" class="text-muted hover:text-danger" title="삭제" style="font-size:10px;"><i class="fas fa-times"></i></button>
             </div>
-            <!-- 수정 버튼 -->
-            <div class="cat-edit-btns hidden btn-group">
-                <button onclick="window.confirmEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="저장"><i class="fas fa-check"></i></button>
-                <button onclick="window.cancelEditCategory('${cat.id}')" class="btn-icon" style="color:var(--text-muted);" title="취소"><i class="fas fa-times"></i></button>
+            <div class="cat-edit-btns hidden flex gap-0.5 ml-1">
+                <button onclick="window.confirmEditCategory('${cat.id}')" class="text-brand" title="저장" style="font-size:11px;"><i class="fas fa-check"></i></button>
+                <button onclick="window.cancelEditCategory('${cat.id}')" class="text-muted" title="취소" style="font-size:11px;"><i class="fas fa-undo"></i></button>
             </div>
         </div>
     `).join('');
