@@ -1324,21 +1324,15 @@ class ProductManagementComponent {
 
     /** 탭 전환 */
     _switchTab(tab) {
-        const manualBtn = document.getElementById('product-upload-method-manual');
-        const fileBtn   = document.getElementById('product-upload-method-excel');
-        const manualSec = document.getElementById('product-manual-input-section');
-        const fileSec   = document.getElementById('product-excel-upload-section');
-        const isManual  = tab === 'manual';
-        manualBtn?.classList.toggle('border-green-500', isManual);
-        manualBtn?.classList.toggle('text-brand',   isManual);
-        manualBtn?.classList.toggle('border-transparent', !isManual);
-        manualBtn?.classList.toggle('text-muted',    !isManual);
-        fileBtn?.classList.toggle('border-green-500',   !isManual);
-        fileBtn?.classList.toggle('text-brand',     !isManual);
-        fileBtn?.classList.toggle('border-transparent',  isManual);
-        fileBtn?.classList.toggle('text-muted',       isManual);
-        manualSec?.classList.toggle('hidden', !isManual);
-        fileSec?.classList.toggle('hidden',    isManual);
+        const isManual = tab === 'manual';
+        document.getElementById('import-tab-manual')?.classList.toggle('hidden', !isManual);
+        document.getElementById('import-tab-file')?.classList.toggle('hidden', isManual);
+        // 탭 버튼 스타일 전환
+        document.querySelectorAll('.import-tab-btn').forEach(btn => {
+            const active = btn.dataset.tab === tab;
+            btn.className = `import-tab-btn ${active ? 'btn-primary' : 'btn-secondary'} flex-1`;
+            btn.style.justifyContent = 'center';
+        });
         this._refreshImportCount();
     }
 
@@ -1362,16 +1356,15 @@ class ProductManagementComponent {
             const category = String(cols[1] || '').trim();
             // 헤더행 자동 감지 (숫자가 아닌 첫 줄 건너뜀)
             if (!name || name === '상품명') continue;
-            if (!category || category === '카테고리') continue;
             products.push({
                 name,
-                category,
+                category: category || '기타',
                 price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
-                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
-                stock:           parseInt(cols[4]) || 0,
-                size:            String(cols[5] || '').trim(),
-                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
-                description:     String(cols[7] || '').trim(),
+                stock:           parseInt(cols[3]) || 0,
+                size:            String(cols[4] || '').trim(),
+                description:     String(cols[5] || '').trim(),
+                cost: 0,
+                shipping_option: '일반배송',
             });
         }
         window.productImportData = products;
@@ -1390,8 +1383,8 @@ class ProductManagementComponent {
             section.classList.add('hidden');
             return;
         }
-        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션','설명'];
-        const keys = ['name','category','price','cost','stock','size','shipping_option','description'];
+        const cols = ['상품명','카테고리','판매가','재고','사이즈'];
+        const keys = ['name','category','price','stock','size'];
         if (countEl) countEl.textContent = `${products.length}개 상품 인식됨`;
         thead.innerHTML = cols.map(c =>
             `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
@@ -1399,12 +1392,12 @@ class ProductManagementComponent {
         tbody.innerHTML = products.slice(0, 30).map((p, i) =>
             `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-section'}">` +
             keys.map(k => {
-                const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
+                const v = k === 'price' ? (p[k] || 0).toLocaleString() : (p[k] || '-');
                 return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
             }).join('') +
             '</tr>'
         ).join('') + (products.length > 30
-            ? `<tr><td colspan="8" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
+            ? `<tr><td colspan="5" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
             : '');
         section.classList.remove('hidden');
     }

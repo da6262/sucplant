@@ -84,77 +84,89 @@
 
     <!-- 상품 일괄 등록 모달 -->
     <div id="product-import-modal" class="modal-overlay hidden">
-        <div class="modal-container modal-lg">
+        <div class="modal-container" style="max-width:800px;">
             <div class="modal-header">
-                <span class="modal-title"><i class="fas fa-upload text-brand mr-2"></i>상품 일괄 등록</span>
-                <button id="close-import-modal" class="modal-close-btn">
-                    <i class="fas fa-times"></i>
-                </button>
+                <span class="modal-title"><i class="fas fa-upload mr-2"></i>상품 일괄 등록</span>
+                <button onclick="window._closeProductImport?.()" class="modal-close-btn"><i class="fas fa-times"></i></button>
             </div>
 
-            <div class="modal-body">
-                <div class="flex gap-2 mb-4">
-                    <button id="product-upload-method-manual" class="btn-primary flex-1" style="justify-content:center;">
-                        <i class="fas fa-keyboard"></i>직접 입력
+            <div class="modal-body" style="padding:12px 16px;">
+                <!-- 탭 전환 -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-primary flex-1" data-tab="manual" style="justify-content:center;">
+                        <i class="fas fa-keyboard mr-1"></i>붙여넣기
                     </button>
-                    <button id="product-upload-method-excel" class="btn-secondary flex-1" style="justify-content:center;">
-                        <i class="fas fa-file-excel"></i>Excel 파일
+                    <button onclick="window._switchImportTab?.('file')" class="import-tab-btn btn-secondary flex-1" data-tab="file" style="justify-content:center;">
+                        <i class="fas fa-file-excel mr-1"></i>엑셀 파일
                     </button>
                 </div>
 
-                <div id="product-manual-input-section" class="space-y-3">
-                    <div>
-                        <label class="form-label">상품 정보 (한 줄에 하나씩, 쉼표 구분)</label>
-                        <textarea id="product-import-text" rows="8" class="form-control" style="font-size:12px;"
-                            placeholder="상품명,카테고리,판매가,재고,사이즈,설명
-에케베리아 치와와,에케베리아,15000,10,M,
-크라슐라 화제,크라슐라,8000,20,S,
-코노피튬 부르겐세리,코노피튬,5000,30,,
+                <!-- 붙여넣기 탭 -->
+                <div id="import-tab-manual">
+                    <p class="text-xs text-muted mb-2">엑셀에서 복사한 내용을 아래에 붙여넣기 하세요 (탭/쉼표 구분 자동 감지)</p>
+                    <textarea id="product-paste-textarea" rows="8" class="form-control" style="font-size:12px;font-family:monospace;"
+                        placeholder="상품명	카테고리	판매가	재고	사이즈
+에케베리아 치와와	에케베리아	15000	10	M
+크라슐라 화제	크라슐라	8000	20	S
+코노피튬 부르겐세리	코노피튬	5000	30	SX
 
-※ 상품명만 필수, 나머지는 비워도 됩니다
-※ 카테고리 비우면 '기타'로 등록"></textarea>
+※ 엑셀에서 Ctrl+C → 여기에 Ctrl+V
+※ 상품명만 필수, 나머지 비워도 됩니다"></textarea>
+                    <!-- 붙여넣기 미리보기 -->
+                    <div id="paste-preview-section" class="hidden mt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-body">미리보기</span>
+                            <span id="paste-preview-count" class="text-xs text-brand font-semibold"></span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:200px;overflow-y:auto;">
+                            <table class="w-full table-ui">
+                                <thead><tr id="paste-preview-thead"></tr></thead>
+                                <tbody id="paste-preview-tbody"></tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
-                <div id="product-excel-upload-section" class="hidden space-y-4">
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                        <i class="fas fa-file-excel text-brand text-4xl mb-3"></i>
-                        <p class="text-sm text-body mb-3">Excel 파일을 선택하세요</p>
+                <!-- 파일 업로드 탭 -->
+                <div id="import-tab-file" class="hidden">
+                    <div id="product-drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 transition-colors">
+                        <div id="product-upload-area-content">
+                            <i class="fas fa-file-excel text-brand text-3xl mb-2"></i>
+                            <p class="text-sm text-body mb-2">클릭하거나 파일을 드래그하세요</p>
+                            <p class="text-xs text-muted">.xlsx, .xls, .csv</p>
+                        </div>
+                        <div id="product-upload-file-info" class="hidden">
+                            <i class="fas fa-file-check text-brand text-2xl mb-1"></i>
+                            <p class="text-sm font-medium text-body"><span id="product-upload-file-name"></span></p>
+                            <p class="text-xs text-muted"><span id="product-upload-file-size"></span></p>
+                            <button id="product-remove-file-btn" class="btn-secondary mt-2" style="font-size:11px;padding:2px 8px;">파일 제거</button>
+                        </div>
                         <input type="file" id="product-excel-input" accept=".xlsx,.xls,.csv" class="hidden">
-                        <button id="product-select-excel" class="btn-primary"><i class="fas fa-folder-open"></i>파일 선택</button>
-                        <p class="text-xs text-muted mt-3">지원 형식: .xlsx, .xls, .csv</p>
                     </div>
-                    <div class="bg-section border border-gray-200 rounded-lg p-3">
-                        <h4 class="text-xs font-semibold text-body mb-2"><i class="fas fa-exclamation-triangle mr-1 text-amber-500"></i>Excel 파일 형식</h4>
-                        <ul class="text-xs text-body space-y-1">
-                            <li>• A열: 상품명 (필수) / B열: 카테고리 / C열: 가격 (필수) / D열: 재고 / E열: 설명</li>
-                        </ul>
+                    <div class="flex gap-2 mt-2">
+                        <button id="download-product-template-btn" class="btn-secondary" style="font-size:11px;">
+                            <i class="fas fa-download mr-1"></i>양식 다운로드 (.xlsx)
+                        </button>
                     </div>
-                </div>
-
-                <div id="product-import-preview" class="hidden mt-6">
-                    <h4 class="text-sm font-medium text-body mb-3">미리보기</h4>
-                    <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                        <table id="product-preview-table" class="min-w-full table-ui"></table>
+                    <!-- 파일 미리보기 -->
+                    <div id="product-import-preview" class="hidden mt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-body">미리보기</span>
+                            <span id="product-preview-count" class="text-xs text-brand font-semibold"></span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:200px;overflow-y:auto;">
+                            <div id="product-preview-content"></div>
+                        </div>
                     </div>
-                </div>
-
-                <div id="product-import-progress" class="hidden mt-6">
-                    <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-body">등록 진행 중...</span>
-                        <span id="product-import-percentage" class="text-sm font-medium text-brand">0%</span>
-                    </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="product-import-progress-bar" class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
-                    </div>
-                    <p id="product-import-info" class="text-xs text-muted mt-2">상품 정보를 입력하거나 파일을 업로드해주세요.</p>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button id="product-import-cancel" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
-                <button id="product-import-preview-btn" class="btn-secondary"><i class="fas fa-eye"></i>미리보기</button>
-                <button id="product-import-start" class="btn-primary" disabled><i class="fas fa-upload"></i>등록 시작</button>
+                <span id="import-row-count" class="text-sm text-muted">0개</span>
+                <div class="flex gap-2">
+                    <button onclick="window._closeProductImport?.()" class="btn-secondary">취소</button>
+                    <button id="product-import-start" class="btn-primary" disabled><i class="fas fa-upload mr-1"></i>등록 시작</button>
+                </div>
             </div>
         </div>
     </div>
