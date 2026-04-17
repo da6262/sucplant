@@ -12,34 +12,20 @@
 
         <!-- 바디 -->
         <div class="modal-body" style="padding:12px 16px;">
-            <div class="overflow-x-auto">
-                <table class="w-full table-ui">
-                    <thead>
-                        <tr>
-                            <th style="width:40px;">#</th>
-                            <th>카테고리명</th>
-                            <th style="width:70px;">관리</th>
-                        </tr>
-                    </thead>
-                    <tbody id="categories-list">
-                        <!-- 동적 렌더링 -->
-                    </tbody>
-                    <tfoot>
-                        <tr>
-                            <td class="text-center text-muted">+</td>
-                            <td>
-                                <input type="text" id="new-category-name" placeholder="새 카테고리명 입력 후 Enter"
-                                       class="input-ui" style="height:26px;font-size:12px;"
-                                       onkeydown="if(event.key==='Enter'){document.getElementById('add-category-btn').click();}">
-                                <input type="hidden" id="new-category-color" value="green">
-                                <input type="hidden" id="new-category-description" value="">
-                            </td>
-                            <td class="text-center">
-                                <button id="add-category-btn" class="btn-primary" style="padding:3px 10px;font-size:11px;">추가</button>
-                            </td>
-                        </tr>
-                    </tfoot>
-                </table>
+            <!-- 카테고리 2열 그리드 -->
+            <div id="categories-list" class="grid grid-cols-2 gap-2 mb-3">
+                <!-- 동적 렌더링 -->
+            </div>
+            <!-- 새 카테고리 추가 -->
+            <div class="flex gap-2">
+                <input type="text" id="new-category-name" placeholder="새 카테고리명 (Enter로 추가)"
+                       class="input-ui" style="flex:1;height:28px;font-size:12px;"
+                       onkeydown="if(event.key==='Enter'){document.getElementById('add-category-btn').click();}">
+                <input type="hidden" id="new-category-color" value="green">
+                <input type="hidden" id="new-category-description" value="">
+                <button id="add-category-btn" class="btn-primary" style="padding:3px 12px;font-size:11px;white-space:nowrap;">
+                    <i class="fas fa-plus mr-1"></i>추가
+                </button>
             </div>
         </div>
 
