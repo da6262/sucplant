@@ -1141,18 +1141,21 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     width: 100%; border-collapse: collapse; font-size: var(--tbl-font-size);
     border: 1px solid var(--tbl-grid-color);
 }
+/* ── 테이블 중앙통제: th/td 패딩·폰트·정렬·높이 단일 소스 ── */
+/* th 기본 중앙정렬: :where() 로 specificity 0 → Tailwind text-left/right 오버라이드 가능 */
+:where(.table-ui) th { text-align: center; }
 .table-ui thead th {
-    background: var(--tbl-header-bg); color: var(--text-body); font-size: 11px; font-weight: var(--tbl-header-fw);
-    padding: var(--tbl-cell-py) 10px; position: sticky; top: 0;
+    background: var(--tbl-header-bg); color: var(--text-body);
+    font-size: var(--tbl-font-size); font-weight: var(--tbl-header-fw);
+    padding: var(--tbl-cell-py) 8px;
+    position: sticky; top: 0; vertical-align: middle;
     border-right: 1px solid var(--tbl-grid-color);
     border-bottom: 1px solid var(--tbl-grid-color); white-space: nowrap; z-index: 1;
-    /* text-align 제거 — 각 <th>에서 text-left/text-center 클래스로 개별 제어 (v3.3.42) */
 }
 .table-ui thead th:last-child { border-right: none; }
 .table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-grid-color); transition: background 0.1s; }
 .table-ui tbody tr:nth-child(even) { background: var(--tbl-zebra-bg); }
 .table-ui tbody tr:hover { background: var(--tbl-hover-bg); }
-/* spec 12: py-*/px-*/text-* Tailwind 클래스(spec 10)를 이겨 CSS 변수가 최우선 제어 */
 .table-ui tbody td {
     padding: var(--tbl-cell-py) 8px; font-size: var(--tbl-font-size); vertical-align: middle;
     border-right: 1px solid var(--tbl-grid-color);
