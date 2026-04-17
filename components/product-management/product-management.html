@@ -249,8 +249,19 @@
                         </select>
                     </div>
                     <div class="form-col-6">
-                        <label class="form-label">상품 이미지 URL</label>
-                        <input type="url" id="product-form-image" placeholder="https://example.com/image.jpg" class="form-control">
+                        <label class="form-label">상품 이미지</label>
+                        <div class="flex items-center gap-2">
+                            <label class="btn-secondary cursor-pointer" style="padding:4px 10px;font-size:12px;">
+                                <i class="fas fa-camera mr-1"></i>사진 선택
+                                <input type="file" id="product-form-image-file" accept="image/*" class="hidden"
+                                       onchange="window.handleProductImageSelect(this)">
+                            </label>
+                            <span id="product-image-filename" class="text-xs text-muted truncate" style="max-width:150px;"></span>
+                        </div>
+                        <input type="hidden" id="product-form-image" value="">
+                        <div id="product-image-preview" class="mt-2 hidden">
+                            <img id="product-image-preview-img" class="w-20 h-20 object-cover rounded border border-gray-200" alt="미리보기">
+                        </div>
                     </div>
                     <div class="form-col-12">
                         <label class="form-label">상품설명</label>
