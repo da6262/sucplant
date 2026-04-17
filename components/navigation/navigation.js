@@ -308,40 +308,26 @@ class NavigationComponent {
      * 일반 설정 열기
      */
     openGeneralSettings() {
-        console.log('⚙️ 일반 설정 열기');
-        // TODO: 일반 설정 모달 구현
+        if (window.switchTab) window.switchTab('settings');
+        setTimeout(() => { if (window.showSettingsTab) window.showSettingsTab('general'); }, 200);
     }
 
-    /**
-     * 배송 설정 열기
-     */
     openShippingSettings() {
-        console.log('🚚 배송 설정 열기');
-        // TODO: 배송 설정 모달 구현
+        if (window.switchTab) window.switchTab('settings');
+        setTimeout(() => { if (window.showSettingsTab) window.showSettingsTab('shipping'); }, 200);
     }
 
-    /**
-     * 알림 설정 열기
-     */
     openNotificationSettings() {
-        console.log('🔔 알림 설정 열기');
-        // TODO: 알림 설정 모달 구현
+        if (window.switchTab) window.switchTab('settings');
+        setTimeout(() => { if (window.showSettingsTab) window.showSettingsTab('sms'); }, 200);
     }
 
-    /**
-     * 데이터 내보내기
-     */
     exportData() {
-        console.log('📤 데이터 내보내기');
-        // TODO: 데이터 내보내기 기능 구현
+        if (window.showToast) window.showToast('데이터 내보내기 기능은 준비 중입니다.', 2000, 'info');
     }
 
-    /**
-     * 데이터 가져오기
-     */
     importData() {
-        console.log('📥 데이터 가져오기');
-        // TODO: 데이터 가져오기 기능 구현
+        if (window.showToast) window.showToast('데이터 가져오기 기능은 준비 중입니다.', 2000, 'info');
     }
 
     /**
