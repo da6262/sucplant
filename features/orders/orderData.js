@@ -1809,6 +1809,11 @@ class OrderDataManager {
         return 'work_todo';
     }
     
+    // 선택된 주문 ID 배열 반환
+    getSelectedOrderIds() {
+        return Array.from(this.selectedOrders);
+    }
+
     // 선택 주문 일괄 상태 변경 (한 번에 적용, 모달 없음)
     async bulkSetStatus(newStatus) {
         const ids = Array.from(this.selectedOrders);

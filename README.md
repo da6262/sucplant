@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.85-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.86-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.86 | refactor: 피킹 리스트 모달 리디자인 — 2단계 모달(리스트→미리보기) 구조를 탭 기반 단일 모달로 통합. 상품별 피킹/고객별 포장 탭 전환, 체크박스 컬럼 추가, 고객별 카드 레이아웃 적용. 선택된 주문으로 피킹 리스트 생성 지원(getSelectedOrderIds). 인쇄 시 활성 탭 내용만 출력. 시맨틱 클래스(modal-overlay/container/header/footer, table-ui, badge 등) 적용 |
 | v3.3.85 | fix: 주문 저장 유효성 검사 "다음 항목을 확인해주세요" 알림에 누락 항목 미표시 — 원인: `validateForm()`은 전화번호 형식(10자리)까지 체크하지만 alert의 missingFields는 빈값만 체크해 불일치. 전화번호 형식·주소·상품 모든 케이스를 동기화하고, 알림에 `• 고객명` `• 전화번호 형식` `• 주소` `• 상품(장바구니 비어있음)` 항목별 표시로 개선 |
 | v3.3.83 | fix: 주문관리 출력/SMS 컬럼 항상 '출력대기'/'미발송' 표시 — 원인: RPC `get_order_rows`에 `sms_sent_at`·`printed_at` 필드 누락 + DB 컬럼 미존재 + JS에서 isRowSpec일 때 하드코딩. ①`farm_orders`에 `sms_sent_at`·`printed_at` TIMESTAMPTZ 컬럼 추가. ②RPC에 2개 필드 추가 + `::TEXT` 캐스트 타입 불일치 해결. ③JS `renderOrderRow()` 하드코딩 제거 → `getSmsStatus()`·`getPrintStatus()` 통합 사용. ④`printOrder()` 성공 시 `printed_at` DB 기록. ⑤SMS 발송 성공 시(`sendOrderSMSFromModal`·`openCustomerSMSModal`) `sms_sent_at` DB 기록 |
 | v3.3.82 | (git hook auto-bump) |
