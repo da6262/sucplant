@@ -99,8 +99,8 @@ class CustomerDataManager {
             this.farm_customers = this._dedupeCustomersByPhone(list);
             console.log(`✅ Supabase에서 고객 ${this.farm_customers.length}개 로드됨 (중복 제거 후)`);
             
-            // 성공적으로 로드된 데이터를 로컬 백업으로 저장
-            await this.saveToBackup();
+            // 백업은 비동기로 (로딩 블로킹 제거 — v3.3.67)
+            this.saveToBackup().catch(e => console.warn('⚠️ 백업 저장 실패:', e));
             
             return this.farm_customers;
             

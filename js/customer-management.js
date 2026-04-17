@@ -14,8 +14,9 @@ async function loadCustomerManagementComponent() {
             console.log('⚡ 고객관리 이미 로드됨 — 데이터 갱신 + 이벤트 재연결');
             if (typeof attachCustomerEventListeners === 'function') attachCustomerEventListeners();
             if (typeof attachCustomerGradesEventListeners === 'function') attachCustomerGradesEventListeners();
-            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            // 기존 DOM 유지 → loadCustomers 완료 후 1회만 렌더 (이중 렌더 제거 v3.3.67)
             if (window.customerDataManager) {
+                if (window.prefetchCustomerRenderData) window.prefetchCustomerRenderData();
                 window.customerDataManager.loadCustomers().then(() => {
                     if (window.renderCustomersTable) window.renderCustomersTable('all');
                     if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
@@ -72,6 +73,8 @@ async function runCustomerManagementInit() {
     }
     if (window.customerDataManager) {
         try {
+            // 렌더 쿼리(최근주문일·등급) 캐시를 loadCustomers와 병렬 워밍 (v3.3.67)
+            if (window.prefetchCustomerRenderData) window.prefetchCustomerRenderData();
             await window.customerDataManager.loadCustomers();
             if (window.renderCustomersTable) window.renderCustomersTable('all');
         } catch (error) {

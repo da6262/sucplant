@@ -406,19 +406,15 @@
                             // DashboardComponent가 로드될 때까지 대기 후 초기화
                             const initDashboard = () => {
                                 if (window.DashboardComponent) {
-                                    console.log('🏗️ Dashboard 컴포넌트 초기화 시작...');
                                     const dashboardComponent = new window.DashboardComponent();
                                     dashboardComponent.init(dashboardContainer);
                                     window.dashboardComponent = dashboardComponent;
                                     console.log('✅ Dashboard 컴포넌트 초기화 완료');
                                 } else {
-                                    console.log('⏳ DashboardComponent 로드 대기 중...');
-                                    setTimeout(initDashboard, 200);
+                                    setTimeout(initDashboard, 50);
                                 }
                             };
-                            
-                            // 약간의 지연 후 초기화 시작
-                            setTimeout(initDashboard, 100);
+                            initDashboard();
                         }
                     } catch (error) {
                         console.error('❌ Dashboard 컴포넌트 초기 로드 실패:', error);
@@ -467,17 +463,8 @@
             }
 
             try {
-                // 현재 로딩 중인 컴포넌트가 있으면 대기
-                if (window.currentLoadingComponent) {
-                    console.log('⏳ 다른 컴포넌트 로딩 중, 대기...');
-                    await new Promise(resolve => setTimeout(resolve, 200));
-                }
-                
-                // 기존 컴포넌트 정리
-                await cleanupCurrentComponent();
-                
-                // DOM이 완전히 로드될 때까지 대기
-                await waitForDOMReady();
+                // 기존 컴포넌트 정리 (동기적으로 충분)
+                cleanupCurrentComponent();
                 
                 // mainContent 직계 자식만 대상 (중첩 컴포넌트 div 제외)
                 const allSections = document.querySelectorAll('#mainContent > [id$="-section"]');
@@ -585,8 +572,8 @@
             }
         }
         
-        // 현재 컴포넌트 정리 함수
-        async function cleanupCurrentComponent() {
+        // 현재 컴포넌트 정리 함수 (동기 — 탭 전환 블로킹 제거 v3.3.67)
+        function cleanupCurrentComponent() {
             try {
                 console.log('🧹 현재 컴포넌트 정리 중...');
                 

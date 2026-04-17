@@ -27,6 +27,13 @@ export function invalidateCustomerUICache() {
     _waitlistPhonesCacheTime = 0;
 }
 
+// loadCustomers 와 병렬로 렌더 쿼리 캐시 워밍 (v3.3.67)
+export function prefetchCustomerRenderData() {
+    fetchLastOrderDatesByPhone().catch(() => {});
+    loadCustomerGradesFromSettings().catch(() => {});
+}
+window.prefetchCustomerRenderData = prefetchCustomerRenderData;
+
 // ----------------------------
 // 고객 모달 저장(중복 방지) 유틸
 // ----------------------------
