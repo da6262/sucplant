@@ -260,7 +260,7 @@ export class ShippingAnalytics {
                                     <th class="px-4 text-left">성공률</th>
                                 </tr>
                             </thead>
-                            <tbody id="carrier-stats-table" class="bg-card divide-y divide-gray-200">
+                            <tbody id="carrier-stats-table">
                                 <!-- 데이터가 동적으로 로드됩니다 -->
                             </tbody>
                         </table>
