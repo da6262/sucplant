@@ -337,8 +337,22 @@ class HeaderComponent {
             dropdown.classList.add('hidden');
         }
         
-        // TODO: 프로필 모달 구현 (향후 추가)
-        alert('프로필 기능은 추후 추가될 예정입니다.');
+        const admin = window.adminAuth?.getCurrentAdmin();
+        if (admin && typeof Swal !== 'undefined') {
+            Swal.fire({
+                title: '관리자 프로필',
+                html: `<div class="text-left text-sm" style="line-height:2">
+                    <p><b>이메일:</b> ${admin.email || '-'}</p>
+                    <p><b>이름:</b> ${admin.user_metadata?.full_name || admin.user_metadata?.name || '-'}</p>
+                    <p><b>마지막 로그인:</b> ${admin.last_sign_in_at ? new Date(admin.last_sign_in_at).toLocaleString('ko-KR') : '-'}</p>
+                </div>`,
+                icon: 'info',
+                confirmButtonText: '확인',
+                confirmButtonColor: '#16A34A'
+            });
+        } else {
+            if (window.showToast) window.showToast('관리자 정보를 불러올 수 없습니다.', 2000, 'warning');
+        }
     }
 
     /**
