@@ -93,13 +93,43 @@
             <div class="modal-body" style="padding:12px 16px;">
                 <!-- 탭 전환 -->
                 <div class="flex gap-2 mb-3">
-                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-primary flex-1" data-tab="manual" style="justify-content:center;">
+                    <button onclick="window._switchImportTab?.('table')" class="import-tab-btn btn-primary flex-1" data-tab="table" style="justify-content:center;">
+                        <i class="fas fa-table mr-1"></i>직접 입력
+                    </button>
+                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-secondary flex-1" data-tab="manual" style="justify-content:center;">
                         <i class="fas fa-keyboard mr-1"></i>붙여넣기
                     </button>
                     <button onclick="window._switchImportTab?.('file')" class="import-tab-btn btn-secondary flex-1" data-tab="file" style="justify-content:center;">
                         <i class="fas fa-file-excel mr-1"></i>엑셀 파일
                     </button>
                 </div>
+
+                <!-- 직접 입력 탭 (표 양식) -->
+                <div id="import-tab-table">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs text-muted">표에 직접 입력하세요. 상품명은 필수입니다.</p>
+                        <button onclick="window._addBulkRow?.()" class="btn-primary btn-xs"><i class="fas fa-plus mr-1"></i>행 추가</button>
+                    </div>
+                    <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:350px;overflow-y:auto;">
+                        <table class="w-full table-ui">
+                            <thead>
+                                <tr>
+                                    <th class="w-8 text-center">#</th>
+                                    <th class="min-w-[150px]">상품명 <span class="text-danger">*</span></th>
+                                    <th class="w-24">카테고리</th>
+                                    <th class="w-20">판매가</th>
+                                    <th class="w-20">매입가</th>
+                                    <th class="w-16">재고</th>
+                                    <th class="w-16">사이즈</th>
+                                    <th class="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulk-input-tbody">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
 
                 <!-- 붙여넣기 탭 -->
                 <div id="import-tab-manual">

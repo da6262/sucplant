@@ -1292,6 +1292,8 @@ class ProductManagementComponent {
         window._closeProductImport  = () => this.closeImportModal();
         window._switchImportTab     = (t) => this._switchTab(t);
         window._onPasteInput        = () => this._onPasteInput();
+        window._addBulkRow          = () => this._addBulkRow();
+        window._bulkInputChanged    = () => this._refreshImportCount();
         // 이벤트 (한 번만 등록하도록 플래그)
         if (!modal._importEventsReady) {
             modal._importEventsReady = true;
@@ -1303,8 +1305,11 @@ class ProductManagementComponent {
 
     /** 모달 상태 초기화 */
     _resetImport() {
-        // 붙여넣기 탭 활성화
-        this._switchTab('manual');
+        // 직접 입력 탭 활성화
+        this._switchTab('table');
+        // 표 초기화 — 기본 5행
+        const tbody = document.getElementById('bulk-input-tbody');
+        if (tbody) { tbody.innerHTML = ''; for (let i = 0; i < 5; i++) this._addBulkRow(); }
         // textarea 비우기
         const ta = document.getElementById('product-paste-textarea');
         if (ta) ta.value = '';
@@ -1324,10 +1329,9 @@ class ProductManagementComponent {
 
     /** 탭 전환 */
     _switchTab(tab) {
-        const isManual = tab === 'manual';
-        document.getElementById('import-tab-manual')?.classList.toggle('hidden', !isManual);
-        document.getElementById('import-tab-file')?.classList.toggle('hidden', isManual);
-        // 탭 버튼 스타일 전환
+        ['table', 'manual', 'file'].forEach(t => {
+            document.getElementById(`import-tab-${t}`)?.classList.toggle('hidden', t !== tab);
+        });
         document.querySelectorAll('.import-tab-btn').forEach(btn => {
             const active = btn.dataset.tab === tab;
             btn.className = `import-tab-btn ${active ? 'btn-primary' : 'btn-secondary'} flex-1`;
@@ -1403,7 +1407,52 @@ class ProductManagementComponent {
     }
 
     /** 카운트 및 버튼 상태 갱신 */
+    /** 표 입력 행 추가 */
+    _addBulkRow() {
+        const tbody = document.getElementById('bulk-input-tbody');
+        if (!tbody) return;
+        const idx = tbody.children.length + 1;
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="text-center text-muted">${idx}</td>
+            <td><input type="text" class="bulk-name form-control" placeholder="상품명" style="font-size:11px;padding:2px 6px;" oninput="window._bulkInputChanged?.()"></td>
+            <td><input type="text" class="bulk-category form-control" placeholder="카테고리" style="font-size:11px;padding:2px 6px;"></td>
+            <td><input type="number" class="bulk-price form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="number" class="bulk-cost form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="number" class="bulk-stock form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="text" class="bulk-size form-control" placeholder="M" style="font-size:11px;padding:2px 6px;text-align:center;"></td>
+            <td class="text-center"><button onclick="this.closest('tr').remove();window._bulkInputChanged?.()" class="text-muted hover:text-danger" style="font-size:11px;"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        // 마지막 행의 상품명에 포커스
+        tr.querySelector('.bulk-name')?.focus();
+    }
+
+    /** 표 입력 데이터 수집 */
+    _collectBulkTableData() {
+        const rows = document.querySelectorAll('#bulk-input-tbody tr');
+        const data = [];
+        rows.forEach(tr => {
+            const name = tr.querySelector('.bulk-name')?.value?.trim();
+            if (!name) return;
+            data.push({
+                name,
+                category: tr.querySelector('.bulk-category')?.value?.trim() || '',
+                price: parseInt(tr.querySelector('.bulk-price')?.value) || 0,
+                cost_price: parseInt(tr.querySelector('.bulk-cost')?.value) || 0,
+                stock: parseInt(tr.querySelector('.bulk-stock')?.value) || 0,
+                size: tr.querySelector('.bulk-size')?.value?.trim() || ''
+            });
+        });
+        return data;
+    }
+
     _refreshImportCount() {
+        // 표 입력 탭이 활성화돼 있으면 표에서 수집
+        const tableTab = document.getElementById('import-tab-table');
+        if (tableTab && !tableTab.classList.contains('hidden')) {
+            window.productImportData = this._collectBulkTableData();
+        }
         const count   = (window.productImportData || []).length;
         const countEl = document.getElementById('import-row-count');
         if (countEl) {
