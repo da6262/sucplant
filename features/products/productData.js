@@ -1,6 +1,8 @@
 // 상품 데이터 관리 모듈
 // features/products/productData.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 // LocalStorage 키 생성 함수
 function getLocalStorageKey(key) {
     return `sucplant_${key}`;
@@ -167,12 +169,10 @@ class ProductDataManager {
             console.log('- window.SUPABASE_CONFIG:', window.SUPABASE_CONFIG);
             
             // Supabase에서만 로드 (로컬 모드 완전 제거)
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다. Supabase 연결이 필요합니다.');
-            }
-            
+            ensureSupabase();
+
             console.log('🌐 Supabase에서 상품 데이터 로드 중...');
-            
+
             const { data: products, error } = await window.supabaseClient
                 .from('farm_products')
                 .select('*')
@@ -225,12 +225,10 @@ class ProductDataManager {
         try {
             console.log('카테고리 데이터 로드 시작...');
             
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다. Supabase 연결이 필요합니다.');
-            }
-            
+            ensureSupabase();
+
             console.log('🌐 Supabase에서 카테고리 데이터 로드 중...');
-            
+
             const { data: categories, error } = await window.supabaseClient
                 .from('farm_categories')
                 .select('*')
@@ -265,10 +263,8 @@ class ProductDataManager {
             console.log('상품 데이터 저장 시작...');
             
             // Supabase에만 저장 (로컬 모드 완전 제거)
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다. Supabase 연결이 필요합니다.');
-            }
-            
+            ensureSupabase();
+
             console.log('🌐 Supabase에 상품 데이터 저장 중...');
             
             // 데이터 정리 (누락된 컬럼 처리)
@@ -359,10 +355,8 @@ class ProductDataManager {
         try {
             console.log('카테고리 데이터 저장 시작...');
             
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다. Supabase 연결이 필요합니다.');
-            }
-            
+            ensureSupabase();
+
             console.log('🌐 Supabase에 카테고리 데이터 저장 중...');
             
             // 데이터 정리 (누락된 컬럼 처리)
@@ -499,9 +493,7 @@ class ProductDataManager {
             // ─────────────────────────────────────────────────────
 
             // Supabase에 직접 저장
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다.');
-            }
+            ensureSupabase();
 
             console.log('🌐 Supabase에 상품 저장 중...');
 
@@ -552,10 +544,8 @@ class ProductDataManager {
             }
             
             // Supabase에서 직접 수정
-            if (!window.supabaseClient) {
-                throw new Error('❌ Supabase 클라이언트가 없습니다.');
-            }
-            
+            ensureSupabase();
+
             // 확인된 컬럼만 Supabase에 전송 (미확인 필드 제거)
             const ALLOWED_COLUMNS = new Set([
                 'product_code','name','category','category_id','size','price','cost','stock',
@@ -616,22 +606,19 @@ class ProductDataManager {
             const deletedProduct = this.farm_products[productIndex];
             
             // Supabase에서 삭제
-            if (window.supabaseClient) {
-                console.log('🌐 Supabase에서 상품 삭제 중...');
-                
-                const { error: deleteError } = await window.supabaseClient
-                    .from('farm_products')
-                    .delete()
-                    .eq('id', productId);
-                
-                if (deleteError) {
-                    throw new Error(`❌ Supabase 삭제 실패: ${deleteError.message}`);
-                }
-                
-                console.log('✅ Supabase에서 상품 삭제 완료');
-            } else {
-                throw new Error('❌ Supabase 클라이언트가 없습니다.');
+            ensureSupabase();
+            console.log('🌐 Supabase에서 상품 삭제 중...');
+
+            const { error: deleteError } = await window.supabaseClient
+                .from('farm_products')
+                .delete()
+                .eq('id', productId);
+
+            if (deleteError) {
+                throw new Error(`❌ Supabase 삭제 실패: ${deleteError.message}`);
             }
+
+            console.log('✅ Supabase에서 상품 삭제 완료');
             
             // 메모리에서도 제거
             this.farm_products.splice(productIndex, 1);

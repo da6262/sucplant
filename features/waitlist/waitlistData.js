@@ -1,6 +1,8 @@
 // 대기자관리 데이터 모듈
 // 경산다육식물농장 관리시스템 - 대기자 데이터 관리
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 // Supabase 전용 - localStorage 제거됨
 
 /**
@@ -20,10 +22,8 @@ export class WaitlistDataManager {
         try {
             console.log('📋 대기자 목록 로드 시작...');
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
-            
+            ensureSupabase();
+
             // 최적화된 쿼리: 필요한 필드만 선택
             const { data, error } = await window.supabaseClient
                 .from('farm_waitlist')
@@ -53,10 +53,8 @@ export class WaitlistDataManager {
         try {
             console.log('💾 대기자 목록 저장 시작...');
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
-            
+            ensureSupabase();
+
             console.log('☁️ Supabase에 대기자 데이터 저장 중...');
             
             // 기존 데이터 삭제 후 새로 삽입
@@ -100,9 +98,7 @@ export class WaitlistDataManager {
         try {
             console.log('➕ 새 대기자 등록:', waitlistData);
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
+            ensureSupabase();
 
             const newWaitlist = {
                 customer_name: waitlistData.customer_name || '',
@@ -215,9 +211,7 @@ export class WaitlistDataManager {
         try {
             console.log('✏️ 대기자 정보 수정:', waitlistId, updateData);
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const payload = {
                 ...updateData,
@@ -253,9 +247,7 @@ export class WaitlistDataManager {
         try {
             console.log('🗑️ 대기자 삭제:', waitlistId);
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const { error } = await window.supabaseClient
                 .from('farm_waitlist')
@@ -378,9 +370,7 @@ export class WaitlistDataManager {
         try {
             console.log('🔄 대기자 상태 업데이트:', waitlistId, newStatus);
 
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const payload = {
                 status: newStatus,

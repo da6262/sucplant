@@ -2617,7 +2617,7 @@ async function loadTrackingPanelOrders() {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
 
     try {
-        if (!window.supabaseClient) throw new Error('Supabase 미연결');
+        window.ensureSupabase();
 
         const { data: orders, error } = await window.supabaseClient
             .from('farm_orders')

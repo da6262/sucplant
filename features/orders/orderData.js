@@ -1,6 +1,8 @@
 // 주문 데이터 관리
 // features/orders/orderData.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 /**
  * get_order_rows 결과 rows에서 탭/상태별 카운트 계산 (단일 소스, 주문관리·대시보드 공유)
  * @param {Array<{order_status?: string}>} rows - get_order_rows RPC 반환 배열
@@ -576,10 +578,8 @@ class OrderDataManager {
             console.log('💾 OrderDataManager: 주문 데이터 저장 시작');
             
             // Supabase 연결 확인
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
-            
+            ensureSupabase();
+
             console.log('☁️ Supabase에 주문 데이터 저장 중...');
             
             // 기존 데이터 삭제 후 새로 삽입 (upsert 방식)

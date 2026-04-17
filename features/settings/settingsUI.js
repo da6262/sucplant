@@ -1,6 +1,8 @@
 // 환경설정 UI 관리
 // features/settings/settingsUI.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 // 환경설정 탭 표시
 export function showSettingsTab(tabName) {
     try {
@@ -362,7 +364,7 @@ export async function loadCustomerGrades() {
                     return;
                 }
                 try {
-                    if (!window.supabaseClient) throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                    ensureSupabase();
                     const period = periodSelect.value;
                     const { data, error } = await window.supabaseClient
                         .from('farm_settings').select('settings').eq('id', 1).single();
@@ -402,10 +404,8 @@ export async function loadCustomerGrades() {
                         this.disabled = true;
                         this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
                         
-                        if (!window.supabaseClient) {
-                            throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                        }
-                        
+                        ensureSupabase();
+
                         // 1. 모든 고객 조회
                         const { data: customers, error: customersError } = await window.supabaseClient
                             .from('farm_customers')
@@ -729,10 +729,8 @@ function initSettingsEventListeners() {
                     console.log('📅 등급 적용 기간 저장:', period);
                     
                     // Supabase에 저장
-                    if (!window.supabaseClient) {
-                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                    }
-                    
+                    ensureSupabase();
+
                     const { data, error } = await window.supabaseClient
                         .from('farm_settings')
                         .select('settings')
@@ -782,10 +780,8 @@ function initSettingsEventListeners() {
                     this.disabled = true;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
                     
-                    if (!window.supabaseClient) {
-                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                    }
-                    
+                    ensureSupabase();
+
                     // 1. 모든 고객 조회
                     const { data: customers, error: customersError } = await window.supabaseClient
                         .from('farm_customers')

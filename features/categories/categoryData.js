@@ -1,6 +1,8 @@
 // 카테고리 데이터 관리 모듈
 // features/categories/categoryData.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 class CategoryDataManager {
     constructor() {
         this.categories = [];
@@ -184,10 +186,8 @@ class CategoryDataManager {
             console.log('카테고리 데이터 저장 시작...');
             
             // Supabase에만 저장
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
-            
+            ensureSupabase();
+
             console.log('☁️ Supabase에 카테고리 데이터 저장 중...');
             
             // 새 데이터만 삽입 (기존 데이터는 유지)
@@ -248,10 +248,8 @@ class CategoryDataManager {
             };
             
             // Supabase에 직접 저장 (일관된 변수명 사용)
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
-            
+            ensureSupabase();
+
             console.log('Supabase에 카테고리 저장 시도:', newCategory);
             
             const { data, error } = await window.supabaseClient
@@ -300,10 +298,8 @@ class CategoryDataManager {
             }
             
             // Supabase에서 직접 수정 (일관된 변수명 사용)
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
-            
+            ensureSupabase();
+
             const { data, error } = await window.supabaseClient
                 .from('farm_categories')
                 .update(updateData)
@@ -338,10 +334,8 @@ class CategoryDataManager {
             console.log('카테고리 삭제:', categoryId);
             
             // Supabase에서 직접 삭제 (일관된 변수명 사용)
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
-            
+            ensureSupabase();
+
             const { error } = await window.supabaseClient
                 .from('farm_categories')
                 .delete()

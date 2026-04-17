@@ -1,6 +1,8 @@
 // 판매채널 데이터 관리
 // features/settings/salesChannelsData.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 class SalesChannelsDataManager {
     constructor() {
         this.channels = [];
@@ -12,9 +14,7 @@ class SalesChannelsDataManager {
         try {
             console.log('📋 판매채널 데이터 로드 시작...');
             
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             let res = await window.supabaseClient
                 .from('farm_channels')
@@ -43,9 +43,7 @@ class SalesChannelsDataManager {
         try {
             console.log('➕ 판매채널 추가:', channelData);
             
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const { data, error } = await window.supabaseClient
                 .from('farm_channels')
@@ -79,9 +77,7 @@ class SalesChannelsDataManager {
         try {
             console.log('✏️ 판매채널 수정:', channelId, updateData);
             
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const { data, error } = await window.supabaseClient
                 .from('farm_channels')
@@ -117,9 +113,7 @@ class SalesChannelsDataManager {
         try {
             console.log('🗑️ 판매채널 삭제:', channelId);
             
-            if (!window.supabaseClient) {
-                throw new Error('Supabase 클라이언트가 연결되지 않았습니다.');
-            }
+            ensureSupabase();
 
             const { error } = await window.supabaseClient
                 .from('farm_channels')

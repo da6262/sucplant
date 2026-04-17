@@ -15,7 +15,8 @@ import {
     formatDate, formatDateTime,
     formatCurrency, formatWon,
     formatPhone, formatQty,
-    nullDash, emptyDash, ND
+    nullDash, emptyDash, ND,
+    ensureSupabase
 } from './utils/formatters.js';
 
 // ── 공통 UI 렌더러 (표준 폼 렌더러 v3.4) ─────────────────────
@@ -45,6 +46,7 @@ window.formatCurrency = formatCurrency;
 window.formatPhone    = formatPhone;
 window.formatQty      = formatQty;
 window.nullDash       = nullDash;
+window.ensureSupabase = ensureSupabase;
 
 // 고객 데이터 모듈 import
 import { 

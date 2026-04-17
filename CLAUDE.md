@@ -332,7 +332,7 @@ start-server.bat
 ### Layer 4 — 도구 유틸 (`utils/`)
 
 - `utils/pageSize.js` — `window.PageSize.attach(selectId, onChange, initialValue)` 페이지 표시 개수 컨트롤
-- `utils/formatters.js` — `formatDate`, `formatCurrency`, `formatPhone`, `formatQty`, `nullDash`, `emptyDash` + `window.fmt.*`
+- `utils/formatters.js` — `formatDate`, `formatCurrency`, `formatPhone`, `formatQty`, `nullDash`, `emptyDash`, `ensureSupabase` + `window.fmt.*` / `window.ensureSupabase`
 
 ### Layer 5 — 강제 규칙
 
