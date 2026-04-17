@@ -39,6 +39,41 @@
 - 전체 README를 읽을 필요는 없음 — 변경이력 테이블 상단만 훑기
 - 다른 AI 편집기의 최근 작업과 충돌 가능성도 이 스캔으로 감지
 
+### 6) 다중 PC 동기화 (집·사무실 전환)
+작업자가 여러 PC 를 오가므로 매 PC 첫 세팅·복귀 시 아래 순서 고정.
+
+**처음 clone / 오래 쉬었다가 복귀**
+```bash
+git pull origin main      # 1) 최신 소스
+npm install               # 2) node_modules 복구 (deep-extend 등)
+start-server.bat          # 3) 서버 시작 → "🌱 앱 버전: vX.X.XX" 확인
+# 4) 브라우저에서 Ctrl+Shift+R (하드 리프레시, 최초 1회)
+```
+
+**일상 작업 루틴**
+```bash
+# 시작
+git pull --rebase origin main
+
+# 작업 …
+
+# 완료 (내가 편집한 파일만)
+git add <file1> <file2>
+git commit -m "..."       # pre-commit hook 이 js/config.js +1 자동
+git push origin main
+
+# 웹 배포
+npm run deploy            # sync + check + firebase deploy 원샷
+```
+
+**"예전 버전 나와요" 감별 매트릭스**
+| 증상 | 원인 | 해결 |
+|---|---|---|
+| `npm run deploy` 에서 `MODULE_NOT_FOUND` | `node_modules/` 깨짐 | `npm install` |
+| 브라우저에서 옛 화면 | 브라우저 캐시 | `Ctrl+Shift+R` |
+| `git pull --rebase` 거부 | 로컬 미커밋 변경 | `git stash → pull → stash pop` |
+| 사이드바 버전 배지 옛 값 | server.js 재기동 대기 중 | v3.3.57+ 는 HTML 요청마다 `config.js` 재읽기 — 페이지 새로고침만 하면 최신 |
+
 ---
 
 ## 프로젝트 개요
