@@ -1032,6 +1032,16 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 }
 .select-page-size:focus { border-color: var(--primary); box-shadow: 0 0 0 1px rgba(22,163,74,0.12); }
 
+/* 체크박스 시맨틱 클래스 */
+.checkbox-ui {
+    width: 16px; height: 16px; border: 1px solid #D1D5DB; border-radius: 4px;
+    color: var(--primary); outline: none; cursor: pointer;
+    accent-color: var(--primary);
+}
+.checkbox-ui:focus { box-shadow: 0 0 0 2px rgba(22,163,74,0.15); }
+.checkbox-ui.chk-danger  { color: var(--danger);  accent-color: var(--danger); }
+.checkbox-ui.chk-purple  { color: #7C3AED; accent-color: #7C3AED; }
+
 /* .tbl-ui 는 제거됨 — 모든 테이블은 .table-ui 로 통일 (CLAUDE.md 107행) */
 
 /* =====================

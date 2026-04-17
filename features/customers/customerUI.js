@@ -680,7 +680,7 @@ function showDeleteWithOrdersModal(orders) {
         const rows = orders.map((o, i) => `
             <tr data-id="${o.id}">
                 <td class="px-2">
-                    <input type="checkbox" class="order-chk rounded border-gray-300 text-danger focus:ring-red-400" data-idx="${i}" checked>
+                    <input type="checkbox" class="order-chk checkbox-ui chk-danger" data-idx="${i}" checked>
                 </td>
                 <td class="px-2 td-secondary">${fmt(o.created_at || o.order_date)}</td>
                 <td class="px-2 td-primary">${o.order_number || '-'}</td>

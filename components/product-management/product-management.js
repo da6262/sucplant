@@ -16,8 +16,8 @@
 const PRODUCT_COLUMNS = [
     {
         key: 'checkbox',
-        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
-        render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox rounded text-brand focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
+        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="checkbox-ui"></th>',
+        render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox checkbox-ui" data-product-id="${p.id}"></td>`
     },
     {
         key: 'product_code',

@@ -1428,7 +1428,7 @@ export class ProductUI {
                 <tr data-product-id="${product.id}">
                     ${PRODUCT_TABLE_COLUMNS.map(column => {
                         if (column.type === 'checkbox') {
-                            return `<td class="text-center"><input type="checkbox" class="product-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500" data-product-id="${product.id}"></td>`;
+                            return `<td class="text-center"><input type="checkbox" class="product-checkbox checkbox-ui" data-product-id="${product.id}"></td>`;
                         }
 
                         if (column.type === 'actions') {
