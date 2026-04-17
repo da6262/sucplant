@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.64-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.66-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.66 | refactor(Phase 1D 확장): input/select Tailwind 복합 패턴 → 시맨틱 클래스 17건 교체 — ①`index.html` 로그인·비밀번호 변경 input 5건 → `input-ui`. ②모달 4파일 select/input 6건(일괄상태변경·포장라벨·주문서·대량프린트·modal prompt) → `input-ui`. ③page-size 미니 셀렉터 4건(주문·고객·상품·대기자) → `.select-page-size` 신설 클래스. ④`form.html` @apply focus 색상 blue→green 브랜드 정렬 2건. `.select-page-size` 는 `styles/index-inline.css` 에 추가(border var(--border), focus var(--primary), font 11px, padding 1px 4px) |
+| v3.3.65 | (git hook auto-bump) |
 | v3.3.64 | docs: 다중 PC 동기화 가이드 README·CLAUDE.md 양쪽 추가 — 첫 셋업(pull → `npm install` → `start-server.bat` → Ctrl+Shift+R), 일상 루틴, "예전 버전 나와요" 증상 감별 매트릭스. 집·사무실 전환 시 트러블슈팅 체계화 |
 | v3.3.63 | (git hook auto-bump) |
 | v3.3.62 | fix: 환경설정 고객등급 목록 빈 화면 — `customer-management.html` 등급관리 모달과 `settings.html` 이 `id="customer-grades-list"` 를 공유, 고객관리 탭 방문 후 환경설정 이동 시 `getElementById` 가 숨겨진 모달 안의 요소를 반환해 등급이 거기에 렌더링됨. `settings.html` ID → `settings-customer-grades-list` 로 변경, `settingsUI.js` 신 ID 우선 탐색·구형 캐시 폴백 |

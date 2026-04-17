@@ -305,7 +305,7 @@ start-server.bat
 | 뱃지 | `.badge` + `.badge-neutral/success/warning/danger/info/purple/sky/orange` |
 | 테이블 셀 | `.td-primary` `.td-secondary` `.td-muted` `.td-amount` `.td-num` `.td-null` `.td-link` |
 | 테이블 | `.table-ui` (전역 격자선 포함) |
-| 필터 | `.filter-bar` `.input-ui` |
+| 필터 | `.filter-bar` `.input-ui` `.select-page-size` |
 | 상태탭 | `.status-tab-bar` `.status-tab-btn` `.tab-count` |
 | 헤더 | `.page-header` `.action-group` |
 | 모달 | `.modal-overlay` `.modal-container` `.modal-sm/md/lg/xl` `.modal-header/body/footer` `.modal-title` `.modal-close-btn` |
