@@ -1107,69 +1107,206 @@ export async function loadOrders() {
 }
 
 // 주문 출력 함수
-export function printOrder(orderId) {
+export async function printOrder(orderId) {
     try {
-        console.log('🖨️ 주문 출력:', orderId);
-        
+        console.log('🖨️ 거래명세서 출력:', orderId);
+
+        // DB에서 주문 상세 조회 (메모리 캐시 miss 방지)
+        let order = null;
         if (window.orderDataManager) {
-            const order = window.orderDataManager.getOrderById(orderId);
-            if (order) {
-                // 주문 정보를 새 창에서 출력 (출력 전용)
-                console.log('🖨️ 주문서 출력용 새창 열기:', orderId);
-                const printWindow = window.open('', '_blank', 'width=800,height=600');
-                printWindow.document.write(`
-                    <!DOCTYPE html>
-                    <html>
-                    <head>
-                        <title>주문서 - ${order.customer_name}</title>
-                        <style>
-                            body { font-family: Arial, sans-serif; margin: 20px; }
-                            .header { text-align: center; margin-bottom: 30px; }
-                            .order-info { margin-bottom: 20px; }
-                            .customer-info { margin-bottom: 20px; }
-                            .order-items { margin-bottom: 20px; }
-                            table { width: 100%; border-collapse: collapse; }
-                            th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
-                            th { background-color: #f2f2f2; }
-                        </style>
-                    </head>
-                    <body>
-                        <div class="header">
-                            <h1>주문서</h1>
-                            <p>주문번호: ${order.id}</p>
-                            <p>주문일: ${order.created_at}</p>
-                        </div>
-                        
-                        <div class="customer-info">
-                            <h3>고객 정보</h3>
-                            <p><strong>고객명:</strong> ${order.customer_name}</p>
-                            <p><strong>전화번호:</strong> ${order.customer_phone}</p>
-                            <p><strong>주소:</strong> ${order.customer_address}</p>
-                        </div>
-                        
-                        <div class="order-info">
-                            <h3>주문 정보</h3>
-                            <p><strong>상태:</strong> ${order.status}</p>
-                            <p><strong>채널:</strong> ${order.channel}</p>
-                            <p><strong>배송비:</strong> ${order.shipping_fee}원</p>
-                            <p><strong>할인:</strong> ${order.discount_amount}원</p>
-                            <p><strong>메모:</strong> ${order.memo || '없음'}</p>
-                        </div>
-                    </body>
-                    </html>
-                `);
-                printWindow.document.close();
-                printWindow.print();
-            } else {
-                alert('주문을 찾을 수 없습니다.');
-            }
-        } else {
-            console.warn('⚠️ orderDataManager를 찾을 수 없습니다');
+            order = window.orderDataManager.getOrderById(orderId)
+                || await window.orderDataManager.fetchOrderByIdFromSupabase(orderId);
         }
-        
+        if (!order) { alert('주문을 찾을 수 없습니다.'); return; }
+
+        // 상품 목록 (items 배열 또는 order_items_summary)
+        let items = order.items || [];
+        if (!items.length && window.supabaseClient) {
+            const { data } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('product_name, quantity, unit_price, subtotal, size')
+                .eq('order_id', orderId);
+            items = (data || []).map(i => ({
+                product_name: i.product_name || '-',
+                quantity: i.quantity || 0,
+                price: i.unit_price || 0,
+                total: i.subtotal || 0,
+                size: i.size || ''
+            }));
+        }
+
+        // 농장 정보
+        const farm = window.settingsDataManager?.settings?.farm || {};
+        const farmName = farm.name || '경산다육식물농장';
+        const farmOwner = farm.owner || '';
+        const farmPhone = farm.phone || '';
+        const farmAddress = farm.address || '';
+
+        const fmtW = (n) => (n || 0).toLocaleString('ko-KR');
+        const orderDate = order.order_date || order.created_at || '';
+        const displayDate = orderDate ? new Date(orderDate).toLocaleDateString('ko-KR') : '-';
+        const orderNum = order.order_number || order.id?.slice(0, 12) || '-';
+        const subtotal = items.reduce((s, i) => s + (i.total || i.price * i.quantity || 0), 0);
+        const shippingFee = Number(order.shipping_fee) || 0;
+        const discount = Number(order.discount_amount) || 0;
+        const totalAmount = Number(order.total_amount) || (subtotal + shippingFee - discount);
+
+        const itemRows = items.length > 0
+            ? items.map((item, i) => `
+                <tr>
+                    <td style="text-align:center">${i + 1}</td>
+                    <td>${item.product_name}${item.size ? ' (' + item.size + ')' : ''}</td>
+                    <td style="text-align:right">${fmtW(item.price)}</td>
+                    <td style="text-align:center">${item.quantity}</td>
+                    <td style="text-align:right">${fmtW(item.total || item.price * item.quantity)}</td>
+                </tr>`).join('')
+            : '<tr><td colspan="5" style="text-align:center; color:#999;">상품 정보 없음</td></tr>';
+
+        const html = `<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<title>거래명세서 - ${order.customer_name}</title>
+<style>
+    @page { size: A4; margin: 15mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Noto Sans KR', 'Malgun Gothic', sans-serif; font-size: 12px; color: #333; }
+    .sheet { width: 100%; max-width: 720px; margin: 0 auto; }
+    .title { text-align: center; font-size: 22px; font-weight: 700; letter-spacing: 8px; border-bottom: 3px double #333; padding-bottom: 8px; margin-bottom: 16px; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px; }
+    .info-box { border: 1px solid #ccc; border-radius: 4px; padding: 10px; }
+    .info-box h4 { font-size: 11px; color: #666; margin-bottom: 6px; border-bottom: 1px solid #eee; padding-bottom: 4px; }
+    .info-row { display: flex; margin-bottom: 3px; font-size: 12px; }
+    .info-label { width: 70px; color: #666; flex-shrink: 0; }
+    .info-value { font-weight: 500; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 12px; }
+    th { background: #f5f5f5; border: 1px solid #ccc; padding: 6px 8px; font-size: 11px; font-weight: 600; }
+    td { border: 1px solid #ccc; padding: 5px 8px; font-size: 12px; }
+    .summary-table { width: 260px; margin-left: auto; }
+    .summary-table td { padding: 4px 8px; }
+    .summary-table .total { font-size: 14px; font-weight: 700; color: #16A34A; }
+    .footer { text-align: center; margin-top: 24px; font-size: 10px; color: #999; border-top: 1px solid #eee; padding-top: 8px; }
+    .memo { background: #fafafa; border: 1px solid #eee; border-radius: 4px; padding: 8px; margin-bottom: 12px; font-size: 11px; min-height: 30px; }
+    @media print { body { -webkit-print-color-adjust: exact; print-color-adjust: exact; } }
+</style>
+</head>
+<body>
+<div class="sheet">
+    <div class="title">거 래 명 세 서</div>
+
+    <div class="info-grid">
+        <div class="info-box">
+            <h4>공급자</h4>
+            <div class="info-row"><span class="info-label">상호</span><span class="info-value">${farmName}</span></div>
+            <div class="info-row"><span class="info-label">대표자</span><span class="info-value">${farmOwner}</span></div>
+            <div class="info-row"><span class="info-label">전화</span><span class="info-value">${farmPhone}</span></div>
+            <div class="info-row"><span class="info-label">주소</span><span class="info-value">${farmAddress}</span></div>
+        </div>
+        <div class="info-box">
+            <h4>공급받는자</h4>
+            <div class="info-row"><span class="info-label">고객명</span><span class="info-value">${order.customer_name || '-'}</span></div>
+            <div class="info-row"><span class="info-label">전화</span><span class="info-value">${order.customer_phone || '-'}</span></div>
+            <div class="info-row"><span class="info-label">주소</span><span class="info-value">${order.customer_address || '-'}</span></div>
+            <div class="info-row"><span class="info-label">주문번호</span><span class="info-value">${orderNum}</span></div>
+            <div class="info-row"><span class="info-label">주문일</span><span class="info-value">${displayDate}</span></div>
+        </div>
+    </div>
+
+    <table>
+        <thead>
+            <tr>
+                <th style="width:40px">No</th>
+                <th>품목명</th>
+                <th style="width:90px; text-align:right">단가</th>
+                <th style="width:50px; text-align:center">수량</th>
+                <th style="width:100px; text-align:right">금액</th>
+            </tr>
+        </thead>
+        <tbody>
+            ${itemRows}
+        </tbody>
+    </table>
+
+    <table class="summary-table">
+        <tr><td>상품 합계</td><td style="text-align:right">₩${fmtW(subtotal)}</td></tr>
+        <tr><td>배송비</td><td style="text-align:right">₩${fmtW(shippingFee)}</td></tr>
+        ${discount > 0 ? `<tr><td>할인</td><td style="text-align:right; color:#DC2626">-₩${fmtW(discount)}</td></tr>` : ''}
+        <tr style="border-top:2px solid #333"><td class="total">총 합계</td><td class="total" style="text-align:right">₩${fmtW(totalAmount)}</td></tr>
+    </table>
+
+    ${order.memo ? `<div class="memo"><strong>메모:</strong> ${order.memo}</div>` : ''}
+
+    <div class="footer">${farmName} · ${farmPhone} · ${farmAddress}</div>
+</div>
+<script>window.onload=function(){window.print();window.onafterprint=function(){window.close();}}<\/script>
+</body>
+</html>`;
+
+        // 모달로 거래명세서 미리보기 표시
+        let modal = document.getElementById('_invoice-modal');
+        if (modal) modal.remove();
+        modal = document.createElement('div');
+        modal.id = '_invoice-modal';
+        modal.className = 'modal-overlay';
+        modal.style.cssText = 'display:flex; z-index:10000;';
+
+        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<script>/);
+        const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
+        const content = bodyMatch ? bodyMatch[1] : '';
+        const style = styleMatch ? styleMatch[1] : '';
+
+        modal.innerHTML = `
+            <div class="modal-container modal-lg" style="max-height:90vh; display:flex; flex-direction:column;">
+                <div class="modal-header">
+                    <h3 class="modal-title">거래명세서 미리보기</h3>
+                    <div class="flex gap-2">
+                        <button id="_invoice-print-btn" class="btn-primary"><i class="fas fa-print mr-1"></i>인쇄</button>
+                        <button id="_invoice-close-btn" class="modal-close-btn"><i class="fas fa-times"></i></button>
+                    </div>
+                </div>
+                <div class="modal-body" style="overflow-y:auto; flex:1; padding:0;">
+                    <div id="_invoice-content" style="padding:20px;">
+                        <style>${style}</style>
+                        ${content}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(modal);
+
+        // 닫기
+        document.getElementById('_invoice-close-btn').onclick = () => modal.remove();
+        modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+        // 인쇄 — iframe 방식 (모달 내용만 인쇄)
+        document.getElementById('_invoice-print-btn').onclick = () => {
+            let iframe = document.getElementById('_print-iframe');
+            if (!iframe) {
+                iframe = document.createElement('iframe');
+                iframe.id = '_print-iframe';
+                iframe.style.cssText = 'position:fixed;width:0;height:0;border:none;left:-9999px;';
+                document.body.appendChild(iframe);
+            }
+            const iDoc = iframe.contentDocument || iframe.contentWindow.document;
+            iDoc.open();
+            iDoc.write(html.replace(/<script>[\s\S]*?<\/script>/g, ''));
+            iDoc.close();
+            setTimeout(() => { iframe.contentWindow.focus(); iframe.contentWindow.print(); }, 200);
+        };
+
+        // printed_at 기록
+        if (window.supabaseClient) {
+            window.supabaseClient.from('farm_orders')
+                .update({ printed_at: new Date().toISOString() })
+                .eq('id', orderId)
+                .then(() => console.log('✅ printed_at 기록'))
+                .catch(e => console.warn('printed_at 기록 실패:', e));
+        }
+
     } catch (error) {
-        console.error('❌ 주문 출력 실패:', error);
-        alert('주문 출력 중 오류가 발생했습니다.');
+        console.error('❌ 거래명세서 출력 실패:', error);
+        alert('출력 중 오류가 발생했습니다: ' + error.message);
     }
 }
 

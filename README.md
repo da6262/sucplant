@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.92-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.94-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.94 | fix: 거래명세서 출력 — ①출력대기 클릭 시 "주문을 찾을 수 없습니다" → DB 직접 조회(`fetchOrderByIdFromSupabase`) 폴백 추가. ②기본 주문서 → 거래명세서 양식 재설계(공급자/공급받는자 2열·상품 테이블·합계·메모). ③새 창 열기 → 모달 미리보기+인쇄 버튼 방식으로 전환. ④인쇄 성공 시 `printed_at` DB 기록 |
 | v3.3.92 | feat: 상품 이미지 직접 업로드 — Supabase Storage `product-images` 버킷 생성, 상품 등록/수정 폼에 파일 선택 버튼 추가. 선택한 사진을 canvas로 800px 리사이즈 + JPEG 70% 압축 후 업로드(장당 ~200-500KB). 미리보기 표시, 편집 시 기존 이미지 미리보기 유지. 기존 URL 입력도 호환(hidden input) |
 | v3.3.91 | feat: 대시보드 운영효율·고객분석 패널 추가 — ①운영효율: 주문→배송 평균 소요일, 배송완료율, 취소율, 입금대기 3일+ 건수, 상태별 파이프라인 바 시각화. ②고객분석: 총고객·재구매고객·평균구매금액 KPI, 고객등급 분포 바차트(씨앗~VIP), VIP 고객 TOP 5 매출 랭킹(메달 표시) |
 | v3.3.89 | feat: 대시보드 전면 업그레이드 — ①매출 KPI 4열(오늘매출·이번달매출·평균주문금액·신규고객+재구매율). ②워크플로우 카드 6열. ③7일 매출 추이 라인 차트 + 1주/한달/1년 기간 전환. ④주문 상태 도넛 차트. ⑤인기 상품 TOP 5. ⑥최근 주문 피드(고객명+상태+상품+금액). ⑦빠른 액션(새주문·피킹·대기자·새고객·로젠엑셀) |
