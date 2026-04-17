@@ -20,8 +20,8 @@ const PRODUCT_FORM_FIELDS = [
 const PRODUCT_TABLE_COLUMNS = [
     { key: 'checkbox', label: '', width: 'w-12', type: 'checkbox' },
     { key: 'product_code', label: '상품코드', width: 'w-20' },
-    { key: 'name', label: '상품명', width: 'w-1/4' },
-    { key: 'category', label: '카테고리', width: 'w-1/6' },
+    { key: 'name', label: '상품명', width: '' },
+    { key: 'category', label: '카테고리', width: 'w-20' },
     { key: 'size', label: '사이즈', width: 'w-1/6' },
     { key: 'price', label: '판매가', width: 'w-1/6', format: 'currency' },
     { key: 'stock', label: '재고', width: 'w-1/12', format: 'number' },
