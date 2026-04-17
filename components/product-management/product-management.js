@@ -1691,8 +1691,41 @@ class ProductManagementComponent {
      * 상품 데이터 내보내기
      */
     exportProducts() {
-        console.log('📤 상품 데이터 내보내기');
-        // TODO: Excel 내보내기 구현
+        if (typeof XLSX === 'undefined') {
+            alert('엑셀 라이브러리가 로드되지 않았습니다.');
+            return;
+        }
+
+        const products = window.productDataManager?.getAllProducts?.() || [];
+        if (products.length === 0) {
+            alert('내보낼 상품이 없습니다.');
+            return;
+        }
+
+        const rows = products.map(p => ({
+            '상품명': p.name || '',
+            '카테고리': p.category || '',
+            '판매가': p.price || 0,
+            '매입가': p.cost || 0,
+            '재고': p.stock || 0,
+            '사이즈': p.size || '',
+            '배송옵션': p.shipping_option || '일반배송',
+            '설명': p.description || '',
+        }));
+
+        const ws = XLSX.utils.json_to_sheet(rows);
+        ws['!cols'] = [
+            { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
+            { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 30 },
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '상품목록');
+
+        const today = new Date().toISOString().slice(0, 10);
+        XLSX.writeFile(wb, `상품목록_${today}.xlsx`);
+
+        if (window.showToast) window.showToast(`${products.length}개 상품 내보내기 완료`, 2000);
     }
 
     /**
