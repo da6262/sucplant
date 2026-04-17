@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.76-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.77-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.77 | fix: 환경설정 배송비 저장 시 주문 폼 캐시(`window.SHIPPING_SETTINGS`) 미갱신 — 배송비·무료배송 기준·도서산간비 변경 후 주문 폼에 옛 값 표시되던 버그. `saveSettings()`·배송 전용 저장 버튼 양쪽에 캐시 즉시 갱신 추가 |
 | v3.3.76 | fix: 네비게이션 메뉴 설정 바로가기 5개 스텁 → 실제 연결 — 일반설정·배송설정·알림설정 메뉴 클릭 시 환경설정 탭 해당 서브탭으로 이동(`switchTab('settings')` + `showSettingsTab()`). 데이터 내보내기/가져오기는 미구현 안내 토스트 표시 |
 | v3.3.75 | feat: 주문관리 송장입력 기능 완성 — ①헤더에 "송장입력" 버튼 추가(기존 패널은 있었으나 여는 버튼 누락). ②송장 패널에 택배사 선택 드롭다운 추가(CJ대한통운·한진·로젠·우체국·쿠팡로켓·편의점·기타). ③송장 저장 시 주문상태 자동 '배송중' 전환. ④주문 목록 상태 드롭다운 배경 투명 → 흰색 배경+그림자로 가독성 수정 |
 | v3.3.73 | fix: `showToast()` 전역 미등록 — `utils/ui-helpers.js`에 정의돼 있지만 `main.js`에서 import·`window.showToast` 등록 누락. 17곳+ 호출이 전부 silent fail(토스트 알림 안 뜸). import 추가 + 전역 등록으로 SweetAlert2 토스트 복구 |

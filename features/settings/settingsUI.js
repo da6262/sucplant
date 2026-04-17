@@ -643,7 +643,13 @@ export function saveSettings() {
         
         window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
         window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
-        
+
+        // 주문 폼 배송비 캐시 즉시 갱신
+        if (window.SHIPPING_SETTINGS) {
+            window.SHIPPING_SETTINGS.defaultShippingFee = defaultShippingFee;
+            window.SHIPPING_SETTINGS.freeShippingThreshold = freeShippingThreshold;
+        }
+
         console.log('✅ 설정 저장 완료');
         return true;
     } catch (error) {
@@ -943,7 +949,14 @@ function initSettingsEventListeners() {
                     await window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
                     await window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
                     await window.settingsDataManager.updateSetting('shipping', 'remoteAreaShippingFee', remoteAreaShippingFee);
-                    
+
+                    // 주문 폼 배송비 캐시 즉시 갱신
+                    if (window.SHIPPING_SETTINGS) {
+                        window.SHIPPING_SETTINGS.defaultShippingFee = defaultShippingFee;
+                        window.SHIPPING_SETTINGS.freeShippingThreshold = freeShippingThreshold;
+                        window.SHIPPING_SETTINGS.remoteAreaShippingFee = remoteAreaShippingFee;
+                    }
+
                     alert('✅ 배송 설정이 Supabase에 저장되었습니다.');
                 } catch (error) {
                     console.error('❌ 배송 설정 저장 실패:', error);
