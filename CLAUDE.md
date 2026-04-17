@@ -344,6 +344,29 @@ start-server.bat
 - `data-manager` polling 루프 금지. `initialize*DataManager()` 즉시 호출이 기본. 꼭 필요하면 `supabase-ready` CustomEvent 구독.
 - 과거 등록된 `sw.js` Service Worker 가 브라우저에 남아 캐시 덮는 문제 방지용 자동 해제 스크립트가 `index.html` `<head>` 에 포함되어 있음 — 제거하지 말 것.
 
+### 환경설정 데이터 구조 (farm_settings, Supabase)
+- 모든 환경설정은 Supabase `farm_settings` 테이블(id=1)의 `settings` JSONB 컬럼에 단일 JSON 으로 저장
+- 최상위 키: `farm`, `shipping`(`defaultShippingFee`/`freeShippingThreshold`/`remoteAreaShippingFee`/`shippingMethods`), `orderStatuses`(배열), `customerGrades`(배열), `smsTemplates`, `smsConfig`, `gradePeriod`, `system`
+- CRUD: `settingsDataManager.updateSetting(section, key, value)` → 메모리 변경 후 `saveSettings()` → 전체 JSON upsert
+- **캐시 주의**: `settingsDataManager.loadSettings()` 는 `Object.keys(this.settings).length > 0` 일 때 캐시 반환 → DB 강제 재조회는 `window.forceReloadSettings()` 사용 (v3.3.28 에서 빈 객체 truthy 버그 수정됨)
+
+### 환경설정 ↔ UI 연동 현황
+| 설정 키 | UI 소비처 | 연동 방식 |
+|---|---|---|
+| `shipping.*` | 주문 등록 폼 배송비 제안 | `orderForm.js#initShippingFeeFromSettings` → `SHIPPING_SETTINGS` 캐시 |
+| `shipping.shippingMethods` | 주문 등록 폼 배송방법 드롭다운 | `loadShippingMethodsFromSettings()` 동적 `<option>` 주입 |
+| `orderStatuses` | 주문 등록 폼 상태 드롭다운 | `populateOrderStatusSelectFromSettings()` 동적 `<option>` 주입 (v3.3.40) |
+| `orderStatuses` | 주문관리 상단 상태 탭 + 카운트 | `orderData.js#renderStatusTabs()` → `#status-tab-dynamic-slot` 동적 버튼 (v3.3.40) |
+| `customerGrades` | 고객등급 표시 | `customerUI.js:405` **직접 쿼리** (settingsDataManager 경유 안 함 — 별도 `_gradesCache`) |
+| `smsTemplates` | SMS 발송 모달 | `orderSMS.js` 에서 `settingsDataManager` 참조 |
+| **배송관리 상태 전이** | `shippingManager.js` 등 | **미연동 (하드코딩)** — 후속 리팩 필요 |
+
+### `initSettingsEventListeners()` 함정 (never-called)
+- `features/settings/settingsUI.js:572` 에 정의, `window.initSettingsEventListeners` 로 export 되었으나 **호출처 없음**
+- 환경설정 탭의 버튼 리스너(`add-order-status-btn`, `add-customer-grade-btn`, `save-grade-period-btn` 등)가 이 함수 안에 갇혀 있었음
+- **해결 패턴**: 각 탭 load 함수(`loadOrderStatuses`, `loadCustomerGrades`) 내부에서 `dataset.listenerAdded` guard 후 개별 바인딩 (기존 동작하는 `add-channel-btn`·`recalculate-all-grades-btn` 과 동일 패턴)
+- 새 환경설정 버튼 추가 시: `initSettingsEventListeners` 에 넣지 말고 **해당 탭의 `loadXXX()` 함수 안에서 guard 바인딩**할 것
+
 ### 상품 테이블 렌더링 이중 경로 주의
 - `features/products/productUI.js` 의 `renderProductsTable` / `PRODUCT_TABLE_COLUMNS` — **활성 코드** (과거 "Dead Code" 기록은 오래되어 부정확)
 - `components/product-management/product-management.js` 의 `createProductRow` — 동적 로드 시 사용
