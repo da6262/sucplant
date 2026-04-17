@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.62-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.64-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.64 | docs: 다중 PC 동기화 가이드 README·CLAUDE.md 양쪽 추가 — 첫 셋업(pull → `npm install` → `start-server.bat` → Ctrl+Shift+R), 일상 루틴, "예전 버전 나와요" 증상 감별 매트릭스. 집·사무실 전환 시 트러블슈팅 체계화 |
+| v3.3.63 | (git hook auto-bump) |
 | v3.3.62 | fix: 환경설정 고객등급 목록 빈 화면 — `customer-management.html` 등급관리 모달과 `settings.html` 이 `id="customer-grades-list"` 를 공유, 고객관리 탭 방문 후 환경설정 이동 시 `getElementById` 가 숨겨진 모달 안의 요소를 반환해 등급이 거기에 렌더링됨. `settings.html` ID → `settings-customer-grades-list` 로 변경, `settingsUI.js` 신 ID 우선 탐색·구형 캐시 폴백 |
 | v3.3.61 | (git hook auto-bump) |
 | v3.3.60 | docs: CLAUDE.md npm 스크립트 섹션 v3.3.58 파이프라인에 맞춰 갱신 — `sync`/`check` 엔트리 신설, `build` 를 `sync + check` 로 명시(이전 `deploy-to-web.js` 호출 제거 반영), `deploy` 설명을 "빌드·배포 시스템" 섹션으로 연결 |
