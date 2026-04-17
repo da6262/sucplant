@@ -290,7 +290,11 @@ export async function loadCustomerGrades() {
             console.log('📅 등급 적용 기간 설정 로드:', settings.gradePeriod);
         }
         
-        const container = document.getElementById('customer-grades-list');
+        // ID 충돌 방지: customer-management.html 의 customer-grades-list 와 구분하기 위해
+        // settings 전용 ID 'settings-customer-grades-list' 를 우선 사용하고,
+        // 구형 환경(ID 변경 전 HTML 캐시 등)을 위한 폴백으로 'customer-grades-list' 도 시도
+        const container = document.getElementById('settings-customer-grades-list')
+                       || document.getElementById('customer-grades-list');
         console.log('📦 컨테이너 요소:', container);
         
         if (!container) {
