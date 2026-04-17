@@ -42,10 +42,20 @@
                     <input type="text" id="farm-owner" class="form-control" placeholder="대표자명">
                 </div>
 
-                <!-- 연락처 (col-6) | (빈 col-6) -->
+                <!-- 연락처 (col-6) | 이메일 (col-6) -->
                 <div class="form-col-6">
-                    <label class="form-label">연락처</label>
+                    <label class="form-label">대표 연락처</label>
                     <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000">
+                </div>
+                <div class="form-col-6">
+                    <label class="form-label">이메일</label>
+                    <input type="email" id="farm-email" class="form-control" placeholder="example@email.com">
+                </div>
+
+                <!-- 사업자등록번호 (col-6) | (빈 col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">사업자등록번호</label>
+                    <input type="text" id="farm-business-number" class="form-control" placeholder="000-00-00000">
                 </div>
                 <div class="form-col-6"></div>
 
@@ -53,6 +63,26 @@
                 <div class="form-col-12">
                     <label class="form-label">주소</label>
                     <input type="text" id="farm-address" class="form-control" placeholder="농장 주소">
+                </div>
+
+                <!-- 계좌정보 -->
+                <div class="form-section">
+                    <div class="form-section-title">계좌 정보</div>
+                    <div class="grid grid-cols-12 gap-2">
+                        <div class="col-span-3">
+                            <label class="form-label">은행</label>
+                            <input type="text" id="farm-bank-name" class="form-control" placeholder="농협">
+                        </div>
+                        <div class="col-span-6">
+                            <label class="form-label">계좌번호</label>
+                            <input type="text" id="farm-bank-account" class="form-control" placeholder="000-0000-0000-00">
+                        </div>
+                        <div class="col-span-3">
+                            <label class="form-label">예금주</label>
+                            <input type="text" id="farm-bank-holder" class="form-control" placeholder="대표자명">
+                        </div>
+                    </div>
+                    <p class="form-helper" style="margin-top:4px;">입금 안내 SMS·거래명세서에 표시됩니다.</p>
                 </div>
 
                 <!-- 버튼 영역 -->

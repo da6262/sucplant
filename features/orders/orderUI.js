@@ -1141,6 +1141,8 @@ export async function printOrder(orderId) {
         const farmOwner = farm.owner || '';
         const farmPhone = farm.phone || '';
         const farmAddress = farm.address || '';
+        const farmBizNo = farm.businessNumber || '';
+        const farmBank = [farm.bankName, farm.bankAccount, farm.bankHolder].filter(Boolean).join(' ');
 
         const fmtW = (n) => (n || 0).toLocaleString('ko-KR');
         const orderDate = order.order_date || order.created_at || '';
@@ -1199,8 +1201,10 @@ export async function printOrder(orderId) {
             <h4>공급자</h4>
             <div class="info-row"><span class="info-label">상호</span><span class="info-value">${farmName}</span></div>
             <div class="info-row"><span class="info-label">대표자</span><span class="info-value">${farmOwner}</span></div>
+            ${farmBizNo ? `<div class="info-row"><span class="info-label">사업자번호</span><span class="info-value">${farmBizNo}</span></div>` : ''}
             <div class="info-row"><span class="info-label">전화</span><span class="info-value">${farmPhone}</span></div>
             <div class="info-row"><span class="info-label">주소</span><span class="info-value">${farmAddress}</span></div>
+            ${farmBank ? `<div class="info-row"><span class="info-label">계좌</span><span class="info-value">${farmBank}</span></div>` : ''}
         </div>
         <div class="info-box">
             <h4>공급받는자</h4>

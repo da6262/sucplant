@@ -272,6 +272,11 @@ function syncFormToSettings() {
     if (get('farm-owner')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.owner = val('farm-owner') || m.settings.farm.owner || ''; }
     if (get('farm-phone')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.phone = val('farm-phone'); }
     if (get('farm-address')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.address = val('farm-address'); }
+    if (get('farm-email')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.email = val('farm-email'); }
+    if (get('farm-business-number')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.businessNumber = val('farm-business-number'); }
+    if (get('farm-bank-name')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankName = val('farm-bank-name'); }
+    if (get('farm-bank-account')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankAccount = val('farm-bank-account'); }
+    if (get('farm-bank-holder')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankHolder = val('farm-bank-holder'); }
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }

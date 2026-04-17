@@ -398,7 +398,7 @@ start-server.bat
 
 ### 환경설정 데이터 구조 (farm_settings, Supabase)
 - 모든 환경설정은 Supabase `farm_settings` 테이블(id=1)의 `settings` JSONB 컬럼에 단일 JSON 으로 저장
-- 최상위 키: `farm`, `shipping`(`defaultShippingFee`/`freeShippingThreshold`/`remoteAreaShippingFee`/`shippingMethods`/`logenShippingFee`/`logenFreightType`), `orderStatuses`(배열), `customerGrades`(배열), `smsTemplates`, `smsConfig`, `gradePeriod`, `system`
+- 최상위 키: `farm`(`name`/`owner`/`phone`/`address`/`email`/`businessNumber`/`bankName`/`bankAccount`/`bankHolder`), `shipping`(`defaultShippingFee`/`freeShippingThreshold`/`remoteAreaShippingFee`/`shippingMethods`/`logenShippingFee`/`logenFreightType`), `orderStatuses`(배열), `customerGrades`(배열), `smsTemplates`, `smsConfig`, `gradePeriod`, `system`
 - CRUD: `settingsDataManager.updateSetting(section, key, value)` → 메모리 변경 후 `saveSettings()` → 전체 JSON upsert
 - **캐시 주의**: `settingsDataManager.loadSettings()` 는 `Object.keys(this.settings).length > 0` 일 때 캐시 반환 → DB 강제 재조회는 `window.forceReloadSettings()` 사용 (v3.3.28 에서 빈 객체 truthy 버그 수정됨)
 

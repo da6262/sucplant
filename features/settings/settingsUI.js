@@ -228,6 +228,14 @@ export function loadGeneralSettings() {
         if (farmOwnerInput) farmOwnerInput.value = settings.farm.owner || '';
         if (farmPhoneInput) farmPhoneInput.value = settings.farm.phone || '';
         if (farmAddressInput) farmAddressInput.value = settings.farm.address || '';
+
+        // 추가 필드 (v3.3.97)
+        const el = (id) => document.getElementById(id);
+        if (el('farm-email')) el('farm-email').value = settings.farm.email || '';
+        if (el('farm-business-number')) el('farm-business-number').value = settings.farm.businessNumber || '';
+        if (el('farm-bank-name')) el('farm-bank-name').value = settings.farm.bankName || '';
+        if (el('farm-bank-account')) el('farm-bank-account').value = settings.farm.bankAccount || '';
+        if (el('farm-bank-holder')) el('farm-bank-holder').value = settings.farm.bankHolder || '';
         
         // 시스템 설정 로드
         const autoBackupToggle = document.getElementById('auto-backup');
@@ -633,6 +641,11 @@ export function saveSettings() {
         window.settingsDataManager.updateSetting('farm', 'owner', farmOwner);
         window.settingsDataManager.updateSetting('farm', 'phone', farmPhone);
         window.settingsDataManager.updateSetting('farm', 'address', farmAddress);
+        window.settingsDataManager.updateSetting('farm', 'email', document.getElementById('farm-email')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'businessNumber', document.getElementById('farm-business-number')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankName', document.getElementById('farm-bank-name')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankAccount', document.getElementById('farm-bank-account')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankHolder', document.getElementById('farm-bank-holder')?.value || '');
         
         // 시스템 설정 저장
         const autoBackup = document.getElementById('auto-backup')?.checked || false;
