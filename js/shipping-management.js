@@ -270,9 +270,7 @@ async function loadBasicShippingData() {
                 <td class="px-4 td-primary">${order.customer_name || '고객명'}</td>
                 <td class="px-4 td-secondary max-w-xs truncate">${order.customer_address || order.address || '주소 없음'}</td>
                 <td class="px-4">
-                    <span class="badge ${getStatusColor(order.order_status || order.status)}">
-                        ${order.order_status || order.status || '상태 없음'}
-                    </span>
+                    ${window.renderOrderStatusBadge ? window.renderOrderStatusBadge(order.order_status || order.status) : (order.order_status || order.status || '상태 없음')}
                 </td>
                 <td class="px-4 td-secondary">${formatDate(order.order_date)}</td>
                 <td class="px-4 td-secondary">${order.tracking_number || '—'}</td>
@@ -296,21 +294,6 @@ async function loadBasicShippingData() {
     } catch (error) {
         console.error('❌ 기본 배송 데이터 로드 실패:', error);
     }
-}
-
-// 상태별 배지 변형 반환 — 통제실 badge 클래스 사용 (raw Tailwind 제거)
-function getStatusColor(status) {
-    const MAP = {
-        '배송준비': 'badge-orange',
-        '배송중':   'badge-info',
-        '배송완료': 'badge-success',
-        '배송지연': 'badge-danger',
-    };
-    return MAP[status] || 'badge-neutral';
-}
-// 배지 HTML 반환 헬퍼
-function getStatusBadgeHtml(status) {
-    return `<span class="badge ${getStatusColor(status)}">${status || '-'}</span>`;
 }
 
 // 날짜 포맷팅: utils/formatters.js의 window.formatDate 사용

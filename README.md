@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.66-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.67-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.67 | refactor: 배송관리 상태 색상 매핑 중복 3곳 → `renderOrderStatusBadge` 중앙 렌더러로 통합 — ①`shippingUI.js` deprecated `getStatusColor`·`formatDate` 제거(호출처 없음). ②`shipping-management.js` 로컬 `getStatusColor`+`getStatusBadgeHtml` 제거 → `window.renderOrderStatusBadge` 교체. ③`shippingManager.js` 로컬 `getStatusColor`(bg-accent 기반) 제거 → 동일 교체. ④`utils/ui.js` MAP에 `배송지연`(danger)·`환불처리`(neutral)·`상품준비`(sky) 3종 추가. 배송 상태 뱃지 색상이 전 탭 동일한 중앙 MAP으로 일원화 |
 | v3.3.66 | refactor(Phase 1D 완료): 체크박스 Tailwind 복합 → `.checkbox-ui` 시맨틱 클래스 6건 교체 — `.checkbox-ui` 신설(16px, border #D1D5DB, focus var(--primary), accent-color 브랜드) + 색상 변형 `.chk-danger`(삭제용)·`.chk-purple`(QR코드). 고객관리 필터 2건·QR모달 1건·상품 전체선택+행 체크 2건·주문 체크 1건. Phase 1D 프로덕션 체크박스 전량 시맨틱화 완료 |
 | v3.3.65 | refactor(Phase 1D 확장): input/select Tailwind 복합 패턴 → 시맨틱 클래스 17건 교체 — ①`index.html` 로그인·비밀번호 변경 input 5건 → `input-ui`. ②모달 4파일 select/input 6건(일괄상태변경·포장라벨·주문서·대량프린트·modal prompt) → `input-ui`. ③page-size 미니 셀렉터 4건(주문·고객·상품·대기자) → `.select-page-size` 신설 클래스. ④`form.html` @apply focus 색상 blue→green 브랜드 정렬 2건. `.select-page-size` 는 `styles/index-inline.css` 에 추가(border var(--border), focus var(--primary), font 11px, padding 1px 4px) |
 | v3.3.64 | docs: 다중 PC 동기화 가이드 README·CLAUDE.md 양쪽 추가 — 첫 셋업(pull → `npm install` → `start-server.bat` → Ctrl+Shift+R), 일상 루틴, "예전 버전 나와요" 증상 감별 매트릭스. 집·사무실 전환 시 트러블슈팅 체계화 |

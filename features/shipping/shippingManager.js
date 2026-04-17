@@ -739,9 +739,7 @@ export class ShippingManager {
                             <p class="text-sm text-muted">${order.shipping_address}</p>
                         </div>
                         <div class="text-right">
-                            <span class="px-2 py-1 rounded-full text-xs font-medium ${this.getStatusColor(order.status)}">
-                                ${order.status}
-                            </span>
+                            ${window.renderOrderStatusBadge ? window.renderOrderStatusBadge(order.status) : order.status}
                             ${order.tracking_number ? `
                                 <p class="text-sm text-body mt-1">송장: ${order.tracking_number}</p>
                             ` : ''}
@@ -753,17 +751,6 @@ export class ShippingManager {
         } catch (error) {
             console.error('❌ 배송 추적 데이터 로드 실패:', error);
         }
-    }
-
-    // 상태별 색상 반환
-    getStatusColor(status) {
-        const colors = {
-            '배송준비': 'bg-orange-accent text-orange-800',
-            '배송중': 'bg-info-accent text-blue-800',
-            '배송완료': 'bg-success-accent text-green-800',
-            '배송지연': 'bg-danger-accent text-red-800'
-        };
-        return colors[status] || 'bg-gray-100 text-heading';
     }
 
     // 배송 라벨 생성

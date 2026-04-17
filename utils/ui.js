@@ -293,6 +293,9 @@ export function renderOrderStatusBadge(status) {
         '주문취소':  ['neutral',  '주문취소'],
         '반품':      ['orange',   '반품'],
         '환불':      ['neutral',  '환불'],
+        '환불처리':  ['neutral',  '환불처리'],
+        '배송지연':  ['danger',   '배송지연'],
+        '상품준비':  ['sky',      '상품준비'],
     };
     const [v, label] = MAP[status] || ['neutral', status || '—'];
     return renderBadge(label, v);
