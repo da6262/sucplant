@@ -403,7 +403,7 @@ start-server.bat
 | `orderStatuses` | 주문관리 상단 상태 탭 + 카운트 | `orderData.js#renderStatusTabs()` → `#status-tab-dynamic-slot` 동적 버튼 (v3.3.40) |
 | `customerGrades` | 고객등급 표시 | `customerUI.js:405` **직접 쿼리** (settingsDataManager 경유 안 함 — 별도 `_gradesCache`) |
 | `smsTemplates` | SMS 발송 모달 | `orderSMS.js` 에서 `settingsDataManager` 참조 |
-| **배송관리 상태 전이** | `shippingManager.js` 등 | **미연동 (하드코딩)** — 후속 리팩 필요 |
+| **배송관리 상태 전이** | `shippingManager.js` 등 | **부분 연동** — 색상 매핑은 `renderOrderStatusBadge` 중앙 통합 완료(v3.3.67). 자동 전이(`'배송시작'`/`'배송중'` 하드코딩)·필터 배열·상태 탭은 택배 API 연동 전까지 하드코딩 유지 |
 
 ### `initSettingsEventListeners()` 함정 (never-called)
 - `features/settings/settingsUI.js:572` 에 정의, `window.initSettingsEventListeners` 로 export 되었으나 **호출처 없음**
