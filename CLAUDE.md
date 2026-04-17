@@ -58,10 +58,12 @@ start-server.bat
 
 ### npm 스크립트
 - `npm run dev` — Vite 개발 모드
-- `npm run build` — 커스텀 배포 빌드 (`deploy-to-web.js`)
-- `npm run build-vite` — Vite 프로덕션 빌드
-- `npm run deploy` — 빌드 후 Firebase Hosting 배포
-- `npm run serve` — Python http.server (포트 8000)
+- `npm run sync` — 소스 → `dist/` 화이트리스트 기반 동기화 (v3.3.58+)
+- `npm run check` — `dist/` 금지 패턴 스캔 (`server.js`·`*.bat`·`*.sql`·비밀 키 등)
+- `npm run build` — `sync + check` 원샷 (이전 `deploy-to-web.js` 호출 제거됨)
+- `npm run deploy` — `build` + `firebase deploy` (배포 파이프라인 상세는 아래 "빌드·배포 시스템")
+- `npm run build-vite` — Vite 프로덕션 빌드 (현재 미사용)
+- `npm run serve` — Python http.server (포트 8000, 로컬 임시 확인용)
 
 ### 배포/유틸 스크립트
 - `deploy-to-production.js` — 프로덕션 배포 헬퍼
