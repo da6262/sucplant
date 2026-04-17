@@ -1,10 +1,10 @@
 <!-- Dashboard main -->
-<div id="dashboard-section" class="section-content active app-section-frame flex flex-col" style="height:calc(100vh - 131px); overflow:hidden;">
+<div id="dashboard-section" class="section-content active app-section-frame flex flex-col" style="height:calc(100vh - 131px); overflow-y:auto;">
 
     <div class="page-header">
         <div>
-            <h2>오늘 현황</h2>
-            <p class="page-subtitle">오늘 업무 흐름을 한눈에 확인합니다 <span id="last-updated"></span></p>
+            <h2>대시보드</h2>
+            <p class="page-subtitle"><span id="last-updated"></span></p>
         </div>
         <div class="action-group">
             <span class="text-xs text-muted tabular-nums" id="current-time"></span>
@@ -14,66 +14,125 @@
         </div>
     </div>
 
-    <div class="grid grid-cols-3 gap-2 px-3 mb-2 flex-shrink-0">
-        <div id="pack-waiting-card" class="app-panel border-l-4 border-orange-400 px-2 py-1.5 cursor-pointer hover:bg-orange-50 flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">포장대기</p>
-            <p class="text-lg font-bold text-orange-500 leading-none" id="pack-waiting-count">0</p>
-        </div>
-        <div id="packing-card" class="app-panel border-l-4 border-blue-400 px-2 py-1.5 cursor-pointer hover:bg-info flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">포장중</p>
-            <p class="text-lg font-bold text-info leading-none" id="packing-count">0</p>
-        </div>
-        <div id="ship-ready-card" class="app-panel border-l-4 border-purple-400 px-2 py-1.5 cursor-pointer hover:bg-purple-50 flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">배송대기</p>
-            <p class="text-lg font-bold text-purple-500 leading-none" id="ship-ready-count">0</p>
-        </div>
-        <div id="low-stock-card" class="app-panel border-l-4 border-red-400 px-2 py-1.5 cursor-pointer hover:bg-danger flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">재고부족</p>
-            <p class="text-lg font-bold text-danger leading-none" id="low-stock-count">0</p>
-        </div>
-        <div id="contact-waitlist-card" class="app-panel border-l-4 border-yellow-400 px-2 py-1.5 cursor-pointer hover:bg-warn flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">연락대기</p>
-            <p class="text-lg font-bold text-warn leading-none" id="contact-waitlist-count">0</p>
-        </div>
-        <div id="new-customers-card" class="app-panel border-l-4 border-green-400 px-2 py-1.5 cursor-pointer hover:bg-success flex items-center justify-between">
-            <p class="text-2xs text-muted leading-tight">신규고객</p>
-            <p class="text-lg font-bold text-brand leading-none" id="new-customers-count">0</p>
-        </div>
-    </div>
+    <div class="px-3 space-y-3 pb-4">
 
-    <div class="flex gap-1.5 px-3 mb-2 flex-shrink-0 overflow-x-auto scrollbar-none">
-        <button id="quick-new-order" class="app-btn app-btn-primary flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-plus text-3xs"></i>새 주문
-        </button>
-        <button id="quick-packaging-labels" class="app-btn app-btn-soft flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-tags text-3xs"></i>포장 라벨
-        </button>
-        <button id="quick-picking-list" class="app-btn app-btn-soft flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-clipboard-list text-3xs"></i>피킹
-        </button>
-        <button id="quick-add-waitlist" class="app-btn app-btn-soft flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-clock text-3xs"></i>대기자
-        </button>
-        <button id="quick-new-customer" class="app-btn app-btn-muted flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-user-plus text-3xs"></i>새 고객
-        </button>
-        <button id="quick-excel-export" class="app-btn app-btn-muted flex-shrink-0 whitespace-nowrap text-xs">
-            <i class="fas fa-file-excel text-3xs"></i>엑셀
-        </button>
-    </div>
+        <!-- 매출 KPI 카드 (4열) -->
+        <div class="grid grid-cols-4 gap-2">
+            <div class="app-panel px-3 py-2">
+                <p class="text-2xs text-muted">오늘 매출</p>
+                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-today-sales">₩0</p>
+                <p class="text-2xs text-muted" id="kpi-today-orders">0건</p>
+            </div>
+            <div class="app-panel px-3 py-2">
+                <p class="text-2xs text-muted">이번 달 매출</p>
+                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-month-sales">₩0</p>
+                <p class="text-2xs text-muted" id="kpi-month-orders">0건</p>
+            </div>
+            <div class="app-panel px-3 py-2">
+                <p class="text-2xs text-muted">평균 주문금액</p>
+                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-avg-order">₩0</p>
+                <p class="text-2xs text-muted" id="kpi-total-customers">고객 0명</p>
+            </div>
+            <div class="app-panel px-3 py-2">
+                <p class="text-2xs text-muted">이번 달 신규고객</p>
+                <p class="text-lg font-bold text-brand tabular-nums" id="kpi-new-customers">0명</p>
+                <p class="text-2xs text-muted" id="kpi-repeat-rate">재구매 0%</p>
+            </div>
+        </div>
 
-    <div class="app-panel mx-3 mb-3 flex flex-col flex-1 overflow-hidden">
-        <div class="flex items-center justify-between px-3 py-2 border-b border-gray-100 flex-shrink-0">
-            <h3 class="text-xs font-semibold text-body">최근 주문</h3>
-            <span class="text-2xs text-muted">실시간</span>
+        <!-- 워크플로우 카드 (6열) -->
+        <div class="grid grid-cols-6 gap-1.5">
+            <div id="pack-waiting-card" class="app-panel border-l-4 border-orange-400 px-2 py-1.5 cursor-pointer hover:bg-orange-50 text-center">
+                <p class="text-2xs text-muted">포장대기</p>
+                <p class="text-lg font-bold text-orange-500" id="pack-waiting-count">0</p>
+            </div>
+            <div id="packing-card" class="app-panel border-l-4 border-blue-400 px-2 py-1.5 cursor-pointer hover:bg-info text-center">
+                <p class="text-2xs text-muted">포장중</p>
+                <p class="text-lg font-bold text-info" id="packing-count">0</p>
+            </div>
+            <div id="ship-ready-card" class="app-panel border-l-4 border-purple-400 px-2 py-1.5 cursor-pointer hover:bg-purple-50 text-center">
+                <p class="text-2xs text-muted">배송대기</p>
+                <p class="text-lg font-bold text-purple-500" id="ship-ready-count">0</p>
+            </div>
+            <div id="low-stock-card" class="app-panel border-l-4 border-red-400 px-2 py-1.5 cursor-pointer hover:bg-danger text-center">
+                <p class="text-2xs text-muted">재고부족</p>
+                <p class="text-lg font-bold text-danger" id="low-stock-count">0</p>
+            </div>
+            <div id="contact-waitlist-card" class="app-panel border-l-4 border-yellow-400 px-2 py-1.5 cursor-pointer hover:bg-warn text-center">
+                <p class="text-2xs text-muted">연락대기</p>
+                <p class="text-lg font-bold text-warn" id="contact-waitlist-count">0</p>
+            </div>
+            <div id="new-customers-card" class="app-panel border-l-4 border-green-400 px-2 py-1.5 cursor-pointer hover:bg-success text-center">
+                <p class="text-2xs text-muted">신규고객</p>
+                <p class="text-lg font-bold text-brand" id="new-customers-count">0</p>
+            </div>
         </div>
-        <div id="recent-orders-list" class="overflow-y-auto flex-1 text-xs px-2 py-1 space-y-1">
-            <!-- dynamic -->
+
+        <!-- 차트 영역 (2열) -->
+        <div class="grid grid-cols-2 gap-2">
+            <div class="app-panel px-3 py-2">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-body">매출 추이</h3>
+                    <div class="flex gap-1" id="chart-period-btns">
+                        <button class="chart-period-btn active" data-period="7">1주</button>
+                        <button class="chart-period-btn" data-period="30">한달</button>
+                        <button class="chart-period-btn" data-period="365">1년</button>
+                    </div>
+                </div>
+                <div style="height:180px;">
+                    <canvas id="sales-trend-chart"></canvas>
+                </div>
+            </div>
+            <div class="app-panel px-3 py-2">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-body">주문 상태 분포</h3>
+                </div>
+                <div style="height:180px;">
+                    <canvas id="order-status-chart"></canvas>
+                </div>
+            </div>
         </div>
+
+        <!-- 하단 3열: 인기상품 / 최근주문 / 빠른액션 -->
+        <div class="grid grid-cols-3 gap-2">
+            <div class="app-panel px-3 py-2 flex flex-col" style="max-height:260px;">
+                <h3 class="text-xs font-semibold text-body mb-2">인기 상품 TOP 5</h3>
+                <div id="top-products-list" class="overflow-y-auto flex-1 text-xs space-y-1">
+                </div>
+            </div>
+            <div class="app-panel px-3 py-2 flex flex-col" style="max-height:260px;">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-body">최근 주문</h3>
+                    <span class="text-2xs text-muted">실시간</span>
+                </div>
+                <div id="recent-orders-list" class="overflow-y-auto flex-1 text-xs space-y-1">
+                </div>
+            </div>
+            <div class="app-panel px-3 py-2 flex flex-col" style="max-height:260px;">
+                <h3 class="text-xs font-semibold text-body mb-2">빠른 액션</h3>
+                <div class="space-y-1.5">
+                    <button id="quick-new-order" class="w-full text-left px-2 py-1.5 rounded hover:bg-success text-xs flex items-center gap-2">
+                        <i class="fas fa-plus text-brand w-4"></i>새 주문 등록
+                    </button>
+                    <button id="quick-picking-list" class="w-full text-left px-2 py-1.5 rounded hover:bg-section text-xs flex items-center gap-2">
+                        <i class="fas fa-clipboard-list text-info w-4"></i>피킹 리스트
+                    </button>
+                    <button id="quick-add-waitlist" class="w-full text-left px-2 py-1.5 rounded hover:bg-section text-xs flex items-center gap-2">
+                        <i class="fas fa-clock text-warn w-4"></i>대기자 등록
+                    </button>
+                    <button id="quick-new-customer" class="w-full text-left px-2 py-1.5 rounded hover:bg-section text-xs flex items-center gap-2">
+                        <i class="fas fa-user-plus text-muted w-4"></i>새 고객 등록
+                    </button>
+                    <button id="quick-excel-export" class="w-full text-left px-2 py-1.5 rounded hover:bg-section text-xs flex items-center gap-2">
+                        <i class="fas fa-file-excel text-brand w-4"></i>로젠 엑셀 내보내기
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </div>
 
     <div id="stock-alerts-list" class="hidden"></div>
     <div id="system-status-list" class="hidden"></div>
-    <div class="hidden" style="display:none!important"><canvas id="sales-trend-chart" width="1" height="1"></canvas><canvas id="order-status-chart" width="1" height="1"></canvas></div>
 
 </div>
