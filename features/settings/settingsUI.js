@@ -313,7 +313,7 @@ export async function loadCustomerGrades() {
             row.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             row.innerHTML = `
                 <span class="flex-1 text-xs font-medium text-body">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary w-36 text-right">${(grade.minAmount||0).toLocaleString()}원 이상</span>
+                <span class="text-xs text-secondary w-36 text-right">${window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원'} 이상</span>
                 <span class="text-xs text-secondary w-10 text-right">${grade.discount||0}%</span>
                 <button onclick="startEditGrade(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
                 <button onclick="deleteCustomerGrade(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>

@@ -1053,7 +1053,7 @@ class OrderDataManager {
             const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
-            const nullDash = '<span class="td-null">—</span>';
+            const nd = window.fmt.ND;
             const rowBg = isSelected ? 'row-selected' : (isOverdue ? 'row-overdue' : '');
             return `
                 <tr class="${rowBg} transition-colors cursor-pointer"
@@ -1064,11 +1064,11 @@ class OrderDataManager {
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${ddayText === '-' ? nullDash : ddayText}${isOverdue ? ' ⚠' : ''}</td>
-                    <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nullDash : customerName}</td>
-                    <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${productSummary || nullDash}</div></td>
-                    <td class="px-2 td-muted whitespace-nowrap">${orderNumber === '-' ? nullDash : orderNumber}</td>
-                    <td class="px-2 td-amount text-right text-numeric">${totalAmount > 0 ? '₩' + totalAmount.toLocaleString() : nullDash}</td>
+                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${window.fmt.nullDash(ddayText)}${isOverdue ? ' ⚠' : ''}</td>
+                    <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nd : customerName}</td>
+                    <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${window.fmt.nullDash(productSummary)}</div></td>
+                    <td class="px-2 td-muted whitespace-nowrap">${window.fmt.nullDash(orderNumber)}</td>
+                    <td class="px-2 td-amount text-right text-numeric">${totalAmount > 0 ? window.fmt.currency(totalAmount) : nd}</td>
                     <td class="px-2 text-center align-middle relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>

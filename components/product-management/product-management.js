@@ -61,7 +61,7 @@ const PRODUCT_COLUMNS = [
         thClass: 'text-right w-24',
         render: (p, dash) => {
             const price = Number(p.price) || 0;
-            return `<td class="px-2 td-amount text-right text-numeric align-middle">${price > 0 ? '₩' + price.toLocaleString() : dash}</td>`;
+            return `<td class="px-2 td-amount text-right text-numeric align-middle">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
         }
     },
     {
@@ -488,8 +488,7 @@ class ProductManagementComponent {
         row.dataset.productId = product.id;
 
         // PRODUCT_COLUMNS 단일 스키마에서 모든 셀 생성 — 헤더와 무조건 정합
-        const nullDash = '<span class="td-null">—</span>';
-        row.innerHTML = renderProductRowCells(product, nullDash);
+        row.innerHTML = renderProductRowCells(product, window.fmt?.ND || '<span class="td-null">—</span>');
 
         this.addRowEventListeners(row, product);
         return row;

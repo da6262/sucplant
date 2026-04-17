@@ -23,8 +23,8 @@ function generateOrderPrintHTML(order) {
             <tr>
                 <td>${item.product_name || item.name || item.title || item.productName || item.product_title || item.item_name || item.goods_name || '상품명 없음'}</td>
                 <td>${item.quantity || 0}</td>
-                <td>${(item.price || 0).toLocaleString()}원</td>
-                <td>${((item.quantity || 0) * (item.price || 0)).toLocaleString()}원</td>
+                <td>${window.fmt.won(item.price || 0)}</td>
+                <td>${window.fmt.won((item.quantity || 0) * (item.price || 0))}</td>
             </tr>
         `).join('');
     } else {
@@ -243,19 +243,19 @@ function generateOrderPrintHTML(order) {
                     <table class="total-table">
                         <tr>
                             <td>상품금액</td>
-                            <td>${(order.product_amount || 0).toLocaleString()}원</td>
+                            <td>${window.fmt.won(order.product_amount || 0)}</td>
                         </tr>
                         <tr>
                             <td>배송비</td>
-                            <td>${(order.shipping_fee || 0).toLocaleString()}원</td>
+                            <td>${window.fmt.won(order.shipping_fee || 0)}</td>
                         </tr>
                         <tr>
                             <td>할인액</td>
-                            <td>-${(order.discount_amount || 0).toLocaleString()}원</td>
+                            <td>${window.fmt.won(-(order.discount_amount || 0))}</td>
                         </tr>
                         <tr class="final-total">
                             <td>총 금액</td>
-                            <td>${(order.total_amount || 0).toLocaleString()}원</td>
+                            <td>${window.fmt.won(order.total_amount || 0)}</td>
                         </tr>
                     </table>
                 </div>
@@ -435,7 +435,7 @@ function generatePickingListHTML(pickingData) {
             <td>${p.size || '기본'}</td>
             <td>${p.totalQuantity}</td>
             <td>${p.orders.length}</td>
-            <td class="right">${p.totalAmount.toLocaleString()}원</td>
+            <td class="right">${window.fmt.won(p.totalAmount)}</td>
         </tr>`).join('');
 
     const customerRows = customerSummary.flatMap((c, ci) =>
@@ -452,7 +452,7 @@ function generatePickingListHTML(pickingData) {
             <td class="left">${c.address || ''}</td>
             <td>${order.order_number || ''}</td>
             <td class="left">${items}</td>
-            <td class="right">${(order.total_amount || 0).toLocaleString()}원</td>
+            <td class="right">${window.fmt.won(order.total_amount || 0)}</td>
         </tr>`;
         })
     ).join('');
@@ -488,7 +488,7 @@ function generatePickingOnlyHTML(pickingData) {
             <td>${p.size || '기본'}</td>
             <td>${p.totalQuantity}</td>
             <td>${p.orders.length}</td>
-            <td class="right">${p.totalAmount.toLocaleString()}원</td>
+            <td class="right">${window.fmt.won(p.totalAmount)}</td>
         </tr>`).join('');
 
     return `<!DOCTYPE html><html><head>
@@ -530,7 +530,7 @@ function generatePackagingOnlyHTML(pickingData) {
             <td>${size}</td>
             <td>${qty}</td>
             <td style="text-align:center"><input type="checkbox" style="width:14px;height:14px"></td>
-            <td class="right">${price.toLocaleString()}원</td>
+            <td class="right">${window.fmt.won(price)}</td>
         </tr>`;
             })
         )

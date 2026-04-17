@@ -143,7 +143,7 @@ function searchProducts(query) {
                                 </div>
                                 <div class="flex-1">
                                     <div class="text-sm font-medium text-heading">${product.name}</div>
-                                    <div class="text-xs text-secondary">${product.price.toLocaleString()}원</div>
+                                    <div class="text-xs text-secondary">${window.fmt.won(product.price)}</div>
                                     <div class="text-xs text-muted">재고: ${product.stock || 0}개</div>
                                 </div>
                             </div>

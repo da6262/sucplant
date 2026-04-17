@@ -84,10 +84,10 @@ function updateOrderSummary() {
         const totalItemsCount = document.getElementById('total-items-count');
         const totalAmountDisplay = document.getElementById('total-amount-display');
         
-        if (summaryTotal) summaryTotal.textContent = totalAmount.toLocaleString() + '원';
+        if (summaryTotal) summaryTotal.textContent = window.fmt.won(totalAmount);
         if (summaryItems) summaryItems.textContent = totalItems + '개';
         if (totalItemsCount) totalItemsCount.textContent = totalItems;
-        if (totalAmountDisplay) totalAmountDisplay.textContent = totalAmount.toLocaleString() + '원';
+        if (totalAmountDisplay) totalAmountDisplay.textContent = window.fmt.won(totalAmount);
         
     } catch (error) {
         console.error('❌ 주문 요약 업데이트 실패:', error);
@@ -113,8 +113,7 @@ async function loadQuickProductsForMinimal() {
         const quickBtn = `min-height:32px;min-width:32px;padding:6px 8px;border-radius:var(--radius-lg);border:1px solid var(--border-light);background:var(--bg-white);font-size:12px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         container.innerHTML = products.map(p => {
             const name = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            const price = (parseFloat(p.price) || 0).toLocaleString();
-            return `<button type="button" class="truncate" style="${quickBtn}" onclick="addQuickProductToCart('${p.id}','${name}',${parseFloat(p.price)||0})">${(p.name || '').substring(0, 12)} <span class="tabular-nums">${price}원</span></button>`;
+            return `<button type="button" class="truncate" style="${quickBtn}" onclick="addQuickProductToCart('${p.id}','${name}',${parseFloat(p.price)||0})">${(p.name || '').substring(0, 12)} <span class="tabular-nums">${window.fmt.won(p.price)}</span></button>`;
         }).join('');
     } catch (e) {
         container.innerHTML = `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:8px 0;">로드 실패</div>`;
@@ -174,7 +173,7 @@ async function loadPopularProducts() {
                 </div>
                 <div style="width:80px;text-align:center;">
                     <div class="txt-body truncate" style="font-size:12px;font-weight:500;">${product.name}</div>
-                    <div class="tabular-nums" style="font-size:12px;font-weight:600;color:var(--primary-accent);">${product.price.toLocaleString()}원</div>
+                    <div class="tabular-nums" style="font-size:12px;font-weight:600;color:var(--primary-accent);">${window.fmt.won(product.price)}</div>
                 </div>
             </button>
         `).join('');
@@ -213,13 +212,13 @@ function addQuickProductToCart(productId, productName, price) {
         const cellPad = `padding:6px 8px;vertical-align:top;`;
         tr.innerHTML = `
             <td class="txt-body" style="${cellPad}">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="td-secondary tabular-nums" style="${cellPad}text-align:right;">${unitPrice.toLocaleString()}원</td>
+            <td class="td-secondary tabular-nums" style="${cellPad}text-align:right;">${window.fmt.won(unitPrice)}</td>
             <td style="${cellPad}text-align:center;white-space:nowrap;">
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', -1)">−</button>
                 <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;display:inline-block;margin:0 2px;padding:4px;" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
-            <td class="cart-line-total tabular-nums" style="${cellPad}text-align:right;font-weight:500;">${lineTotal.toLocaleString()}원</td>
+            <td class="cart-line-total tabular-nums" style="${cellPad}text-align:right;font-weight:500;">${window.fmt.won(lineTotal)}</td>
         `;
         cartBody.appendChild(tr);
     }
@@ -264,7 +263,7 @@ function refreshOrderTotal() {
         const unitPrice = toIntegerWon(tr.getAttribute('data-unit-price') || tr.getAttribute('data-price'));
         const lineTotal = unitPrice * q;
         const lineEl = tr.querySelector('.cart-line-total');
-        if (lineEl) lineEl.textContent = lineTotal.toLocaleString() + '원';
+        if (lineEl) lineEl.textContent = window.fmt.won(lineTotal);
         itemsSubtotal += lineTotal;
     });
     const freeThreshold = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.freeShippingThreshold) || 50000;
@@ -285,10 +284,10 @@ function refreshOrderTotal() {
     if (discountEl && String(discountEl.value) !== String(discount)) discountEl.value = discount;
     const totalAmount = Math.max(0, itemsSubtotal + shippingFee - discount);
     const rawTotal = itemsSubtotal + shippingFee - discount;
-    if (productTotalEl) productTotalEl.textContent = itemsSubtotal.toLocaleString() + '원';
-    if (shippingTotalEl) shippingTotalEl.textContent = shippingFee.toLocaleString() + '원';
-    if (discountTotalEl) discountTotalEl.textContent = '-' + discount.toLocaleString() + '원';
-    if (finalTotalEl) finalTotalEl.textContent = totalAmount.toLocaleString() + '원';
+    if (productTotalEl) productTotalEl.textContent = window.fmt.won(itemsSubtotal);
+    if (shippingTotalEl) shippingTotalEl.textContent = window.fmt.won(shippingFee);
+    if (discountTotalEl) discountTotalEl.textContent = window.fmt.won(-discount);
+    if (finalTotalEl) finalTotalEl.textContent = window.fmt.won(totalAmount);
     if (zeroWarning) zeroWarning.classList.toggle('hidden', rawTotal >= 0);
     if (totalSummary) {
         if (itemsSubtotal > 0) totalSummary.classList.remove('hidden');
@@ -844,10 +843,10 @@ function updateOrderTotalDisplay() {
         const finalTotalElement = document.getElementById('final-total-amount');
         const zeroWarning = document.getElementById('order-total-zero-warning');
         
-        if (productTotalElement) productTotalElement.textContent = productTotal.toLocaleString() + '원';
-        if (shippingTotalElement) shippingTotalElement.textContent = shippingFee.toLocaleString() + '원';
-        if (discountTotalElement) discountTotalElement.textContent = '-' + discountAmount.toLocaleString() + '원';
-        if (finalTotalElement) finalTotalElement.textContent = finalTotal.toLocaleString() + '원';
+        if (productTotalElement) productTotalElement.textContent = window.fmt.won(productTotal);
+        if (shippingTotalElement) shippingTotalElement.textContent = window.fmt.won(shippingFee);
+        if (discountTotalElement) discountTotalElement.textContent = window.fmt.won(-discountAmount);
+        if (finalTotalElement) finalTotalElement.textContent = window.fmt.won(finalTotal);
         if (zeroWarning) {
             zeroWarning.classList.toggle('hidden', rawTotal >= 0);
         }
@@ -1154,7 +1153,7 @@ async function loadAllProducts() {
                                     </div>
                                     <div style="flex:1;min-width:0;">
                                         <h3 class="txt-body" style="font-weight:600;margin-bottom:4px;">${product.name}</h3>
-                                        <p style="font-size:17px;font-weight:700;color:var(--primary-accent);">${product.price.toLocaleString()}원</p>
+                                        <p style="font-size:17px;font-weight:700;color:var(--primary-accent);">${window.fmt.won(product.price)}</p>
                                     </div>
                                 </div>
 
@@ -1711,7 +1710,7 @@ function searchProducts(query) {
                                  onclick="addProductToCart('${product.id}', ${JSON.stringify(product.name)}, ${product.price}, ${product.stock}, event)">
                                 <span class="search-result-name">${product.name}</span>
                                 <span class="search-result-cat">${(product.category||'')}</span>
-                                <span class="search-result-price">${product.price.toLocaleString()}원</span>
+                                <span class="search-result-price">${window.fmt.won(product.price)}</span>
                                 <span class="search-result-stock">재고 ${product.stock}</span>
                             </div>
                         `).join('');
@@ -1767,7 +1766,7 @@ function addProductToCart(productId, productName, price, stock, event) {
             const cellPad2 = `padding:6px 12px;vertical-align:middle;`;
             newRow.innerHTML = `
                 <td class="td-primary" style="${cellPad2}font-weight:500;">${productName}</td>
-                <td class="td-secondary tabular-nums" style="${cellPad2}text-align:right;">${price.toLocaleString()}원</td>
+                <td class="td-secondary tabular-nums" style="${cellPad2}text-align:right;">${window.fmt.won(price)}</td>
                 <td style="${cellPad2}text-align:center;">
                     <div style="display:inline-flex;align-items:center;gap:4px;">
                         <button type="button" style="${stepBtn2}" onclick="decreaseQuantity('${productId}')">-</button>
@@ -1777,7 +1776,7 @@ function addProductToCart(productId, productName, price, stock, event) {
                     </div>
                 </td>
                 <td class="tabular-nums" style="${cellPad2}text-align:right;">
-                    <span class="cart-item-total" style="font-weight:600;color:var(--primary-accent);">${price.toLocaleString()}원</span>
+                    <span class="cart-item-total" style="font-weight:600;color:var(--primary-accent);">${window.fmt.won(price)}</span>
                 </td>
                 <td style="${cellPad2}text-align:center;">
                     ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: `removeCartItem('${productId}')` })}
@@ -2408,13 +2407,13 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         const cellPad3 = `padding:6px 8px;vertical-align:middle;`;
         row.innerHTML = `
             <td class="txt-body" style="${cellPad3}">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="td-secondary tabular-nums" style="${cellPad3}text-align:right;">${unitPrice.toLocaleString()}</td>
+            <td class="td-secondary tabular-nums" style="${cellPad3}text-align:right;">${window.fmt.won(unitPrice)}</td>
             <td style="${cellPad3}text-align:center;">
                 <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;padding:4px;"
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput(this); updateCartTotal()" onchange="updateCartTotal()">
             </td>
-            <td class="cart-line-total tabular-nums" style="${cellPad3}text-align:right;font-weight:500;">${subtotal.toLocaleString()}원</td>
+            <td class="cart-line-total tabular-nums" style="${cellPad3}text-align:right;font-weight:500;">${window.fmt.won(subtotal)}</td>
             <td style="${cellPad3}text-align:center;">
                 ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: 'removeFromCart(this)' })}
             </td>
@@ -2492,7 +2491,7 @@ window.updateCartTotal = async function() {
             itemsSubtotal += subtotal;
 
             const lineTotalCell = item.querySelector('.cart-line-total');
-            if (lineTotalCell) lineTotalCell.textContent = subtotal.toLocaleString() + '원';
+            if (lineTotalCell) lineTotalCell.textContent = window.fmt.won(subtotal);
         });
 
         // 배송비: 입력란 값만 사용. 사용자가 수정 안 했을 때만 환경설정 제안 + 도서산간 체크 시 추가금
@@ -2526,10 +2525,10 @@ window.updateCartTotal = async function() {
         const finalTotalElement = document.getElementById('final-total-amount');
         const zeroWarning = document.getElementById('order-total-zero-warning');
 
-        if (productTotalElement) productTotalElement.textContent = itemsSubtotal.toLocaleString() + '원';
-        if (shippingTotalElement) shippingTotalElement.textContent = shippingFee.toLocaleString() + '원';
-        if (discountTotalElement) discountTotalElement.textContent = '-' + discountAmount.toLocaleString() + '원';
-        if (finalTotalElement) finalTotalElement.textContent = totalAmount.toLocaleString() + '원';
+        if (productTotalElement) productTotalElement.textContent = window.fmt.won(itemsSubtotal);
+        if (shippingTotalElement) shippingTotalElement.textContent = window.fmt.won(shippingFee);
+        if (discountTotalElement) discountTotalElement.textContent = window.fmt.won(-discountAmount);
+        if (finalTotalElement) finalTotalElement.textContent = window.fmt.won(totalAmount);
         if (zeroWarning) zeroWarning.classList.toggle('hidden', rawTotal >= 0);
 
         const totalSummary = document.getElementById('order-total-summary');

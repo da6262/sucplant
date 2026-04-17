@@ -97,6 +97,9 @@ export function formatPhone(phone, fallback = '-') {
 // 빈 값 처리
 // ─────────────────────────────────────────────────────────
 
+/** 빈값 대시 HTML 상수 — 조건부 fallback 용 (`${value || ND}` 패턴) */
+export const ND = '<span class="td-null">—</span>';
+
 /**
  * null/undefined/빈 문자열 → HTML '—' 대시 스팬 반환
  * @param {*} val

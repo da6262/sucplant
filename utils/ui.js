@@ -280,11 +280,17 @@ export function renderBadge(text, variant = 'neutral') {
 export function renderOrderStatusBadge(status) {
     const MAP = {
         '주문접수':  ['warning',  '주문접수'],
+        '입금대기':  ['warning',  '입금대기'],
+        '입금확인':  ['success',  '입금확인'],
         '결제완료':  ['info',     '결제완료'],
         '준비중':    ['sky',      '준비중'],
+        '배송준비':  ['orange',   '배송준비'],
         '배송중':    ['purple',   '배송중'],
-        '배송완료':  ['success',  '배송완료'],
+        '배송시작':  ['purple',   '배송시작'],
+        '배송완료':  ['sky',      '배송완료'],
+        '수령완료':  ['success',  '수령완료'],
         '취소':      ['danger',   '취소'],
+        '주문취소':  ['neutral',  '주문취소'],
         '반품':      ['orange',   '반품'],
         '환불':      ['neutral',  '환불'],
     };

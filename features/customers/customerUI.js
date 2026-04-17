@@ -3,7 +3,7 @@
 
 import { customerDataManager } from './customerData.js';
 import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
-import { formatDate, formatPhone } from '../../utils/formatters.js';
+import { formatDate, formatPhone, formatCurrency, ND } from '../../utils/formatters.js';
 
 // ----------------------------
 // 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
@@ -248,16 +248,15 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             const gradeDisplayName = gradeNameMap[normalized] || normalized;
             const phoneKey = normalizePhoneForOrder(customer.phone);
             const rawDate = lastOrderMap.get(phoneKey) || customer.last_order_date;
-            const lastOrderDate = rawDate ? formatDisplayDate(rawDate) : '-';
+            const lastOrderDate = rawDate ? formatDate(rawDate) : null;
             const tr = document.createElement('tr');
             tr.className = 'customer-row';
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = formatPhone(customer.phone);
-            const nullDash = '<span class="td-null">—</span>';
             tr.innerHTML = `
-                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || nullDash}</td>
-                <td class="px-3 td-secondary">${phoneDisplay || nullDash}</td>
-                <td class="px-3 td-muted">${lastOrderDate || nullDash}</td>
+                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || ND}</td>
+                <td class="px-3 td-secondary">${phoneDisplay || ND}</td>
+                <td class="px-3 td-muted">${lastOrderDate || ND}</td>
                 <td class="px-3 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
                 <td class="px-3 text-center">
                     <div class="btn-group">
@@ -295,8 +294,7 @@ function escapeHtml(str) {
     const s = String(str);
     return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
-// formatDisplayDate → utils/formatters.js의 formatDate()로 통합됨
-function formatDisplayDate(val) { return formatDate(val); }
+// formatDate 제거됨 — formatDate() 직접 사용 (v3.3.42)
 
 /** 미납(입금대기) 고객 전화번호 집합 조회 (30초 캐시) */
 async function fetchUnpaidPhones() {
@@ -671,7 +669,7 @@ function showDeleteWithOrdersModal(orders) {
         document.getElementById('delete-with-orders-modal')?.remove();
 
         const fmt = (d) => d ? d.slice(0, 10) : '-';
-        const fmtAmt = (n) => n ? Number(n).toLocaleString() + '원' : '-';
+        const fmtAmt = (n) => n ? formatCurrency(n) : '-';
         const statusBadge = (s) => {
             // 상태 배지 색상 — orderData.js getStatusColor() 단일 소스 사용 ('취소' → '주문취소' 정규화 포함)
             const _normalizedStatus = s === '취소' ? '주문취소' : s;
@@ -1039,7 +1037,7 @@ function updateCustomerTotalPurchaseDisplay(orders) {
     const totalEl = document.getElementById('customer-total-purchase');
     const countEl = document.getElementById('customer-order-count');
     const scoreEl = document.getElementById('customer-loyalty-score');
-    if (totalEl) totalEl.textContent = total > 0 ? total.toLocaleString() + '원' : '—';
+    if (totalEl) totalEl.textContent = total > 0 ? formatCurrency(total) : '—';
     if (countEl) countEl.textContent = count > 0 ? String(count) + '회' : '—';
     if (scoreEl) scoreEl.textContent = count > 0 ? String(loyaltyScore) + '점' : '—';
 }
@@ -1208,8 +1206,8 @@ async function renderCustomerOrders(orders, container) {
         
         // 주문 이력 테이블: 주문일 | 상품명 | 금액 | 상태 (보기 링크 포함)
         const rowsHTML = ordersWithItems.map(order => {
-            const orderDate = order.order_date ? formatDisplayDate(order.order_date) : '-';
-            const totalAmount = order.total_amount != null ? Number(order.total_amount).toLocaleString() : '0';
+            const orderDate = order.order_date ? formatDate(order.order_date) : '-';
+            const totalAmount = order.total_amount != null ? formatCurrency(order.total_amount) : '₩0';
             const status = order.order_status || '주문접수';
             const orderId = order.id;
             const productSummary = (order.itemsInfo || '상품 정보 없음').slice(0, 80) + (order.itemsInfo && order.itemsInfo.length > 80 ? '…' : '');
@@ -1217,7 +1215,7 @@ async function renderCustomerOrders(orders, container) {
                 <tr>
                     <td class="px-2 td-secondary whitespace-nowrap">${orderDate}</td>
                     <td class="px-2 td-primary max-w-[180px] truncate" title="${escapeHtml(order.itemsInfo || '')}">${escapeHtml(productSummary)}</td>
-                    <td class="px-2 td-primary whitespace-nowrap">${totalAmount}원</td>
+                    <td class="px-2 td-amount text-right text-numeric whitespace-nowrap">${totalAmount}</td>
                     <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
                     <td class="px-2 text-center whitespace-nowrap">
                         <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-brand hover:underline text-xs">보기</button>
@@ -1354,7 +1352,7 @@ function updateCustomerStats(customer) {
                 element.textContent = stats.totalOrders;
                 break;
             case 'amount':
-                element.textContent = stats.totalAmount.toLocaleString() + '원';
+                element.textContent = formatCurrency(stats.totalAmount);
                 break;
             case 'last-order':
                 element.textContent = stats.lastOrderDate;
@@ -1481,7 +1479,7 @@ function updateCustomerModalStats(customer) {
     
     const amountElement = document.getElementById('customer-detail-modal-amount');
     if (amountElement) {
-        amountElement.textContent = stats.totalAmount.toLocaleString() + '원';
+        amountElement.textContent = formatCurrency(stats.totalAmount);
     }
     
     const lastOrderElement = document.getElementById('customer-detail-modal-last-order');
@@ -2245,11 +2243,11 @@ async function _loadCustomerOrdersForModal(customerId) {
         const avg   = count > 0 ? Math.round(total / count) : 0;
         const last  = list[0]?.order_date?.slice(0, 10) || '-';
 
-        const fmt = n => n > 0 ? n.toLocaleString() + '원' : '—';
+        const fmtA = n => n > 0 ? formatCurrency(n) : '—';
         const el = id => document.getElementById(id);
-        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmt(total);
+        if (el('cmod-stat-total')) el('cmod-stat-total').textContent = fmtA(total);
         if (el('cmod-stat-count')) el('cmod-stat-count').textContent = count > 0 ? count + '회' : '—';
-        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmt(avg);
+        if (el('cmod-stat-avg'))   el('cmod-stat-avg').textContent   = fmtA(avg);
         if (el('cmod-stat-last'))  el('cmod-stat-last').textContent  = last;
 
         if (list.length === 0) {
@@ -2266,7 +2264,7 @@ async function _loadCustomerOrdersForModal(customerId) {
             return `<tr>
                 <td class="td-secondary">${(o.order_date || '').slice(0, 10)}</td>
                 <td class="td-primary" style="max-width:130px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${escapeHtml(names)}">${escapeHtml(names)}</td>
-                <td class="td-amount text-right">${o.total_amount ? Number(o.total_amount).toLocaleString() + '원' : '-'}</td>
+                <td class="td-amount text-right text-numeric">${o.total_amount ? formatCurrency(o.total_amount) : ND}</td>
                 <td class="text-center"><span class="badge ${statusCls}">${o.order_status || '-'}</span></td>
             </tr>`;
         }).join('');

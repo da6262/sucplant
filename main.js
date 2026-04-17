@@ -15,7 +15,7 @@ import {
     formatDate, formatDateTime,
     formatCurrency, formatWon,
     formatPhone, formatQty,
-    nullDash, emptyDash
+    nullDash, emptyDash, ND
 } from './utils/formatters.js';
 
 // ── 공통 UI 렌더러 (표준 폼 렌더러 v3.4) ─────────────────────
@@ -37,6 +37,7 @@ window.fmt = {
     qty:      formatQty,
     nullDash,
     emptyDash,
+    ND,
 };
 // 개별 전역 함수 (하위 호환 — 기존 코드에서 formatDate() 직접 호출 지원)
 window.formatDate     = formatDate;

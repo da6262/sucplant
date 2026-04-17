@@ -35,7 +35,7 @@ export class ShippingUI {
                                data-order-id="${order.id}">
                     </td>
                     <td class="px-4 td-primary font-medium">${order.order_number}</td>
-                    <td class="px-4 td-secondary">${this.formatDate(order.created_at)}</td>
+                    <td class="px-4 td-secondary">${window.fmt.date(order.created_at)}</td>
                     <td class="px-4 td-primary">${order.customer_name}</td>
                     <td class="px-4 td-secondary">${order.customer_phone}</td>
                     <td class="px-4 td-secondary max-w-xs truncate">${order.shipping_address}</td>
@@ -47,7 +47,7 @@ export class ShippingUI {
                         }
                     </td>
                     <td class="px-4">
-                        <span class="badge ${this.getStatusColor(order.status)}">${order.status}</span>
+                        ${window.renderOrderStatusBadge(order.status)}
                     </td>
                     <td class="px-4">
                         <div class="btn-group">
@@ -373,11 +373,12 @@ export class ShippingUI {
     }
 
     // 유틸리티 함수들
+    /** @deprecated window.fmt.date() 사용 — v3.3.42에서 중앙 포맷터로 통일 */
     formatDate(dateString) {
-        const date = new Date(dateString);
-        return date.toLocaleDateString('ko-KR');
+        return window.fmt?.date(dateString) || new Date(dateString).toLocaleDateString('ko-KR');
     }
 
+    /** @deprecated window.renderOrderStatusBadge() 사용 — v3.3.42에서 중앙 렌더러로 통일 */
     getStatusColor(status) {
         const colors = {
             '주문접수': 'badge-warning',
