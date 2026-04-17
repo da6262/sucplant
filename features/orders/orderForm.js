@@ -2005,14 +2005,16 @@ async function handleOrderSubmit(event) {
             const customerAddress = document.getElementById('order-customer-address')?.value?.trim();
             const cartItemsBody = document.getElementById('cart-items-body');
             const hasCartItems = cartItemsBody && cartItemsBody.querySelectorAll('tr[data-product-id]').length > 0;
-            
+            const phonePattern = /^[0-9-+\s()]+$/;
+
             if (!customerName) missingFields.push('고객명');
             if (!customerPhone) missingFields.push('전화번호');
+            else if (!phonePattern.test(customerPhone) || customerPhone.replace(/\D/g, '').length < 10) missingFields.push('전화번호 형식 (10자리 이상)');
             if (!customerAddress) missingFields.push('주소');
-            if (!hasCartItems) missingFields.push('상품');
-            
+            if (!hasCartItems) missingFields.push('상품 (장바구니가 비어있음)');
+
             console.log('❌ 누락된 필드:', missingFields);
-            alert(`다음 항목을 확인해주세요:\n${missingFields.join(', ')}`);
+            alert(`다음 항목을 확인해주세요:\n\n${missingFields.map(f => '• ' + f).join('\n')}`);
             return false; // 명시적으로 false 반환
         }
         

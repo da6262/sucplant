@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.83-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.85-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.85 | fix: 주문 저장 유효성 검사 "다음 항목을 확인해주세요" 알림에 누락 항목 미표시 — 원인: `validateForm()`은 전화번호 형식(10자리)까지 체크하지만 alert의 missingFields는 빈값만 체크해 불일치. 전화번호 형식·주소·상품 모든 케이스를 동기화하고, 알림에 `• 고객명` `• 전화번호 형식` `• 주소` `• 상품(장바구니 비어있음)` 항목별 표시로 개선 |
 | v3.3.83 | fix: 주문관리 출력/SMS 컬럼 항상 '출력대기'/'미발송' 표시 — 원인: RPC `get_order_rows`에 `sms_sent_at`·`printed_at` 필드 누락 + DB 컬럼 미존재 + JS에서 isRowSpec일 때 하드코딩. ①`farm_orders`에 `sms_sent_at`·`printed_at` TIMESTAMPTZ 컬럼 추가. ②RPC에 2개 필드 추가 + `::TEXT` 캐스트 타입 불일치 해결. ③JS `renderOrderRow()` 하드코딩 제거 → `getSmsStatus()`·`getPrintStatus()` 통합 사용. ④`printOrder()` 성공 시 `printed_at` DB 기록. ⑤SMS 발송 성공 시(`sendOrderSMSFromModal`·`openCustomerSMSModal`) `sms_sent_at` DB 기록 |
 | v3.3.82 | (git hook auto-bump) |
 | v3.3.81 | feat: 로젠택배 엑셀 내보내기 + 환경설정 로젠 운임 관리 — ①주문관리 헤더에 "로젠 엑셀" 버튼 추가, 배송준비/상품준비 주문을 로젠 E타입 양식(주문번호·수하인명·우편번호·주소·전화·핸드폰·수량·운임·운임구분·품목명·배송메세지)으로 xlsx 다운로드. ②환경설정 배송 탭에 로젠택배 운임(기본 3800원)·운임구분(선불10/착불20) 설정 추가, 엑셀 내보내기 시 환경설정 값 사용. ③송장입력 패널에 택배사 선택 드롭다운 추가(기본 로젠택배). ④주문 상태 드롭다운 배경 투명→흰색+그림자 수정 |
