@@ -30,102 +30,71 @@
 
         <!-- 일반 설정 -->
         <div id="settings-general-section" class="settings-content">
-            <div class="form-grid">
+            <div class="grid grid-cols-12 gap-x-3 gap-y-2 px-3 py-3">
 
-                <!-- 로고 (col-12) -->
-                <div class="form-col-12">
-                    <label class="form-label">농장 로고</label>
-                    <div class="flex items-center gap-3">
-                        <div id="farm-logo-preview" class="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden bg-section" style="border-color:var(--border);">
-                            <i class="fas fa-image text-muted text-xl" id="farm-logo-placeholder"></i>
-                            <img id="farm-logo-img" class="w-full h-full object-contain hidden" alt="로고">
-                        </div>
-                        <div class="flex-1">
-                            <input type="file" id="farm-logo-file" accept="image/*" class="hidden"
-                                   onchange="window._handleFarmLogoSelect(this)">
-                            <button type="button" class="btn-secondary" onclick="document.getElementById('farm-logo-file').click()">
-                                <i class="fas fa-upload mr-1"></i>이미지 선택
-                            </button>
-                            <button type="button" id="farm-logo-remove" class="btn-secondary hidden" onclick="window._removeFarmLogo()">
-                                <i class="fas fa-times mr-1"></i>삭제
-                            </button>
-                            <p class="form-helper" style="margin-top:4px;">거래명세서·사이드바에 표시됩니다. 정사각형 권장.</p>
-                        </div>
-                        <input type="hidden" id="farm-logo-url">
+                <!-- 좌측: 로고 + 사이드바 설정 (col-3) -->
+                <div class="col-span-3 flex flex-col items-center gap-2 border-r pr-3" style="border-color:var(--border);">
+                    <div id="farm-logo-preview" class="w-14 h-14 rounded-lg border flex items-center justify-center overflow-hidden bg-section" style="border-color:var(--border);">
+                        <i class="fas fa-image text-muted" id="farm-logo-placeholder"></i>
+                        <img id="farm-logo-img" class="w-full h-full object-contain hidden" alt="로고">
                     </div>
-                </div>
-
-                <!-- 사이드바 표시명 (col-6) | 사이드바 설명 (col-6) -->
-                <div class="form-col-6">
-                    <label class="form-label">사이드바 표시명</label>
-                    <input type="text" id="farm-sidebar-title" class="form-control" placeholder="경산다육"
+                    <input type="file" id="farm-logo-file" accept="image/*" class="hidden" onchange="window._handleFarmLogoSelect(this)">
+                    <div class="flex gap-1">
+                        <button type="button" class="btn-secondary btn-xs" onclick="document.getElementById('farm-logo-file').click()"><i class="fas fa-upload"></i></button>
+                        <button type="button" id="farm-logo-remove" class="btn-secondary btn-xs hidden" onclick="window._removeFarmLogo()"><i class="fas fa-times"></i></button>
+                    </div>
+                    <input type="hidden" id="farm-logo-url">
+                    <input type="text" id="farm-sidebar-title" class="form-control text-center" placeholder="경산다육" style="font-size:11px;"
                            oninput="const el=document.getElementById('sidebar-title');if(el)el.textContent=this.value||'경산다육';">
-                    <p class="form-helper">사이드바 상단에 표시되는 이름</p>
-                </div>
-                <div class="form-col-6">
-                    <label class="form-label">사이드바 설명</label>
-                    <input type="text" id="farm-sidebar-subtitle" class="form-control" placeholder="식물농장 관리"
+                    <input type="text" id="farm-sidebar-subtitle" class="form-control text-center" placeholder="식물농장 관리" style="font-size:10px;"
                            oninput="const el=document.getElementById('sidebar-subtitle');if(el)el.textContent=this.value||'식물농장 관리';">
-                    <p class="form-helper">사이드바 로고 아래 작은 텍스트</p>
                 </div>
 
-                <!-- 농장명 (col-6) | 대표자명 (col-6) -->
-                <div class="form-col-6">
-                    <label class="form-label">농장명 (공식)</label>
-                    <input type="text" id="farm-name" class="form-control" placeholder="경산다육식물농장">
-                </div>
-                <div class="form-col-6">
-                    <label class="form-label">대표자명</label>
-                    <input type="text" id="farm-owner" class="form-control" placeholder="대표자명">
-                </div>
-
-                <!-- 연락처 (col-6) | 이메일 (col-6) -->
-                <div class="form-col-6">
-                    <label class="form-label">대표 연락처</label>
-                    <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000" maxlength="13"
-                           oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=7)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>7)v=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);this.value=v;">
-                </div>
-                <div class="form-col-6">
-                    <label class="form-label">이메일</label>
-                    <input type="email" id="farm-email" class="form-control" placeholder="example@email.com">
-                </div>
-
-                <!-- 사업자등록번호 (col-6) | (빈 col-6) -->
-                <div class="form-col-6">
-                    <label class="form-label">사업자등록번호</label>
-                    <input type="text" id="farm-business-number" class="form-control" placeholder="000-00-00000" maxlength="12"
-                           oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=5)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>5)v=v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,10);this.value=v;">
-                </div>
-                <div class="form-col-6"></div>
-
-                <!-- 주소 (col-12) -->
-                <div class="form-col-12">
-                    <label class="form-label">주소</label>
-                    <input type="text" id="farm-address" class="form-control" placeholder="농장 주소">
-                </div>
-
-                <!-- 계좌정보 -->
-                <div class="form-section">
-                    <div class="form-section-title">계좌 정보</div>
-                    <div class="grid grid-cols-12 gap-2">
-                        <div class="col-span-3">
-                            <label class="form-label">은행</label>
-                            <input type="text" id="farm-bank-name" class="form-control" placeholder="농협">
-                        </div>
-                        <div class="col-span-6">
-                            <label class="form-label">계좌번호</label>
-                            <input type="text" id="farm-bank-account" class="form-control" placeholder="000-0000-0000-00">
-                        </div>
-                        <div class="col-span-3">
-                            <label class="form-label">예금주</label>
-                            <input type="text" id="farm-bank-holder" class="form-control" placeholder="대표자명">
-                        </div>
+                <!-- 우측: 농장 정보 (col-9) -->
+                <div class="col-span-9 grid grid-cols-12 gap-x-3 gap-y-1.5">
+                    <div class="col-span-4">
+                        <label class="form-label">농장명</label>
+                        <input type="text" id="farm-name" class="form-control" placeholder="경산다육식물농장">
                     </div>
-                    <p class="form-helper" style="margin-top:4px;">입금 안내 SMS·거래명세서에 표시됩니다.</p>
+                    <div class="col-span-4">
+                        <label class="form-label">대표자명</label>
+                        <input type="text" id="farm-owner" class="form-control" placeholder="대표자명">
+                    </div>
+                    <div class="col-span-4">
+                        <label class="form-label">사업자등록번호</label>
+                        <input type="text" id="farm-business-number" class="form-control" placeholder="000-00-00000" maxlength="12"
+                               oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=5)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>5)v=v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,10);this.value=v;">
+                    </div>
+                    <div class="col-span-4">
+                        <label class="form-label">대표 연락처</label>
+                        <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000" maxlength="13"
+                               oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=7)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>7)v=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);this.value=v;">
+                    </div>
+                    <div class="col-span-4">
+                        <label class="form-label">이메일</label>
+                        <input type="email" id="farm-email" class="form-control" placeholder="example@email.com">
+                    </div>
+                    <div class="col-span-4"></div>
+                    <div class="col-span-12">
+                        <label class="form-label">주소</label>
+                        <input type="text" id="farm-address" class="form-control" placeholder="농장 주소">
+                    </div>
+                    <div class="col-span-3">
+                        <label class="form-label">은행</label>
+                        <input type="text" id="farm-bank-name" class="form-control" placeholder="농협">
+                    </div>
+                    <div class="col-span-5">
+                        <label class="form-label">계좌번호</label>
+                        <input type="text" id="farm-bank-account" class="form-control" placeholder="000-0000-0000-00">
+                    </div>
+                    <div class="col-span-4">
+                        <label class="form-label">예금주</label>
+                        <input type="text" id="farm-bank-holder" class="form-control" placeholder="대표자명">
+                    </div>
                 </div>
 
-                <!-- 버튼 영역 -->
-                <div class="form-actions">
+                <!-- 버튼 (col-12) -->
+                <div class="col-span-12 flex justify-end gap-2 pt-2 border-t" style="border-color:var(--border);">
                     <button id="cancel-general-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
                     <button id="save-general-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
                 </div>
