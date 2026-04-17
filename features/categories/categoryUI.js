@@ -114,52 +114,28 @@ export function renderCategoriesList(categories) {
         return;
     }
 
-    const COLOR_MAP = {
-        green: '#16a34a', blue: '#2563eb', red: '#dc2626', yellow: '#ca8a04',
-        purple: '#9333ea', pink: '#db2777', indigo: '#4338ca', gray: '#6b7280',
-        brown: '#92400e', orange: '#ea580c'
-    };
-
     container.innerHTML = categories.map(cat => `
-        <div id="cat-row-${cat.id}" class="flex-between p-xs bg-card border-std r-md"
-             style="transition:background 0.1s;gap:8px;">
+        <div id="cat-row-${cat.id}" class="flex items-center justify-between px-3 py-2 rounded-lg border border-gray-200 hover:bg-section transition-colors" style="gap:8px;">
             <!-- 보기 모드 -->
-            <div class="cat-view flex-center flex-gap-2" style="flex:1;min-width:0;">
-                <span class="badge r-full fw-medium"
-                      style="background:${COLOR_MAP[cat.color] || '#6b7280'};color:#fff;">
-                    ${cat.name}
-                </span>
-                <span class="txt-secondary txt-xs" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${cat.description || ''}</span>
+            <div class="cat-view flex items-center gap-2" style="flex:1;min-width:0;">
+                <span class="font-medium text-sm">${cat.name}</span>
+                <span class="text-xs text-muted">${cat.description || ''}</span>
             </div>
-            <!-- 수정 모드 (기본 hidden) -->
-            <div class="cat-edit hidden flex-center flex-gap-2" style="flex:1;margin-right:8px;">
+            <!-- 수정 모드 -->
+            <div class="cat-edit hidden flex items-center gap-2" style="flex:1;">
                 <input type="text" id="edit-name-${cat.id}" value="${cat.name}"
-                       class="input-ui" style="max-width:130px;" placeholder="카테고리명">
-                <select id="edit-color-${cat.id}" class="input-ui" style="max-width:90px;">
-                    ${['green','blue','red','yellow','purple','pink','indigo','gray','brown','orange']
-                        .map(c => `<option value="${c}"${c === cat.color ? ' selected' : ''}>${c}</option>`).join('')}
-                </select>
+                       class="input-ui" style="max-width:160px;" placeholder="카테고리명">
+                <input type="hidden" id="edit-color-${cat.id}" value="${cat.color || 'green'}">
             </div>
-            <!-- 버튼 -->
+            <!-- 보기 버튼 -->
             <div class="cat-view-btns btn-group">
-                <button onclick="window.startEditCategory('${cat.id}')"
-                        class="btn-icon btn-icon-edit" title="수정">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button onclick="window.deleteCategory('${cat.id}')"
-                        class="btn-icon btn-icon-delete" title="삭제">
-                    <i class="fas fa-trash"></i>
-                </button>
+                <button onclick="window.startEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                <button onclick="window.deleteCategory('${cat.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
             </div>
+            <!-- 수정 버튼 -->
             <div class="cat-edit-btns hidden btn-group">
-                <button onclick="window.confirmEditCategory('${cat.id}')"
-                        class="btn-icon btn-icon-primary" title="저장">
-                    <i class="fas fa-check"></i>
-                </button>
-                <button onclick="window.cancelEditCategory('${cat.id}')"
-                        class="btn-icon" style="color:var(--text-secondary);background:var(--bg-light);" title="취소">
-                    <i class="fas fa-times"></i>
-                </button>
+                <button onclick="window.confirmEditCategory('${cat.id}')" class="btn-icon btn-icon-edit" title="저장"><i class="fas fa-check"></i></button>
+                <button onclick="window.cancelEditCategory('${cat.id}')" class="btn-icon" style="color:var(--text-muted);" title="취소"><i class="fas fa-times"></i></button>
             </div>
         </div>
     `).join('');
