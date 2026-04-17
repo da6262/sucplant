@@ -193,6 +193,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.56 | fix: 고객관리 검색창 무반응 — `cleanupCustomerEventListeners` 가 매 탭 전환마다 `customer-search` 를 `cloneNode` 로 교체해 `addEventListener` 리스너 탈락, `attachCustomerEventListeners` 재연결 타이밍 이슈 시 검색 불작동. `customer-management.html` 에 `oninput`/`onchange` 속성 추가 + `customer-management.js` 에 `window.handleCustomerSearch` 전역 헬퍼 신설 — JS 이벤트 리스너 탈락과 무관하게 항상 동작 |
 | v3.3.55 | fix: 상품 검색창 재클릭 무반응 — `onfocus`만 있어 이미 포커스된 상태에서 클릭 시 이벤트 미발생. `onclick="searchProducts(this.value)"` 추가로 포커스 여부 무관하게 클릭마다 결과 표시 |
 | v3.3.54 | refactor: 전 탭 `<th>` 에서 `text-left`/`text-center`/`text-right` 정렬 클래스 전량 제거 — CSS `:where(.table-ui) th { text-align: center }` 기본값에 위임. 고객·대기자·주문(송장+목록)·상품·고객모달 5파일. 개별 `<th>` 에 정렬 클래스 불필요, CSS 변수 하나로 전 탭 헤더 정렬 통제 |
 | v3.3.53 | fix: 지브라 스트라이프 명도 강화 — `--tbl-zebra-bg` `#FAFAFA` → `#F5F5F5` (흰색 대비 2% → 4%, 명도 차 5→10단계). 데이터 행이 많은 탭에서 지브라 효과 육안 식별 가능하도록 개선 |

@@ -15,7 +15,9 @@
     <div class="filter-bar">
         <div class="relative">
             <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
-                   class="input-ui" style="max-width:240px;padding-right:28px;" autocomplete="off">
+                   class="input-ui" style="max-width:240px;padding-right:28px;" autocomplete="off"
+                   oninput="if(window.handleCustomerSearch) handleCustomerSearch(this.value);"
+                   onchange="if(window.handleCustomerSearch) handleCustomerSearch(this.value);">
             <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-muted text-xs pointer-events-none"></i>
             <div id="customer-search-suggestions" class="absolute left-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden" style="min-width:200px;"></div>
         </div>

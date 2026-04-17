@@ -1708,6 +1708,16 @@ document.addEventListener('click', function(e) {
     }
 });
 
+// 고객 검색 핸들러 — oninput 속성에서 직접 호출 (addEventListener 타이밍 문제 보완)
+window.handleCustomerSearch = function(value) {
+    const searchTerm = (value || '').trim();
+    const activeGradeBtn = document.querySelector('.customer-tab-btn.active');
+    const gradeFilter = activeGradeBtn ? activeGradeBtn.id.replace('customer-grade-', '') : 'all';
+    if (window.renderCustomersTable) {
+        window.renderCustomersTable(gradeFilter, searchTerm);
+    }
+};
+
 // 전역 함수로 등록 (강제로 덮어쓰기)
 window.loadCustomerManagementComponent = loadCustomerManagementComponent;
 window.saveCustomer = saveCustomer; // 🔥 이 함수가 실제로 고객을 저장합니다
