@@ -5,39 +5,37 @@ echo 📍 서버 주소: http://localhost:8000
 echo 📍 중지하려면 Ctrl+C를 누르세요
 echo.
 
-REM Python이 설치되어 있는지 확인
-python --version >nul 2>&1
-if %errorlevel% equ 0 (
-    echo ✅ Python으로 서버 시작...
-    python -m http.server 8000
-    goto :end
-)
-
-REM Node.js가 설치되어 있는지 확인
+REM Node.js 우선 — server.js 가 버전 주입·MIME 처리·README 동기화 수행
 node --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✅ Node.js로 서버 시작 (MIME 타입 문제 해결)...
+    echo ✅ Node.js로 서버 시작 (버전 주입·MIME·README 동기화)...
     node server.js
     goto :end
 )
 
-REM PHP가 설치되어 있는지 확인
+REM Node.js 없을 때만 Python 폴백 (?v= 주입 없음 주의)
+python --version >nul 2>&1
+if %errorlevel% equ 0 (
+    echo ⚠️  Node.js 없음 — Python 폴백 (버전 주입·캐시 버스팅 미동작)
+    python -m http.server 8000
+    goto :end
+)
+
+REM 최후 폴백 PHP
 php --version >nul 2>&1
 if %errorlevel% equ 0 (
-    echo ✅ PHP로 서버 시작...
+    echo ⚠️  Node.js/Python 없음 — PHP 폴백
     php -S localhost:8000
     goto :end
 )
 
-echo ❌ Python, Node.js, PHP 중 하나를 설치해주세요.
+echo ❌ Node.js, Python, PHP 중 하나를 설치해주세요.
 echo.
-echo 💡 설치 방법:
-echo    - Python: https://python.org
+echo 💡 권장: Node.js (커스텀 server.js 기능 전체 동작)
 echo    - Node.js: https://nodejs.org
-echo    - PHP: https://php.net
+echo    - Python:  https://python.org
+echo    - PHP:     https://php.net
 echo.
 pause
 
 :end
-
-

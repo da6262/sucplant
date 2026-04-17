@@ -236,7 +236,7 @@ start-server.bat
 --tbl-row-height   30px    --tbl-cell-py       5px
 --tbl-font-size    13px    --tbl-header-bg     var(--bg-lighter)
 --tbl-header-fw    600     --tbl-grid-color    #CBD5E1 (엑셀 격자선)
---tbl-hover-bg     #F0FDF4 --tbl-zebra-bg      #FAFAFA
+--tbl-hover-bg     #F0FDF4 --tbl-zebra-bg      #E5E7EB (gray-200, 10% 대비)
 ```
 
 **뱃지 (배경/텍스트 쌍)**
@@ -338,11 +338,17 @@ start-server.bat
 대기중 → 연락완료 → 주문전환
 
 ## 개발 시 주의사항
-- `server.js`는 로컬 `.js`/`.css`에 `?v=` 쿼리 자동 주입 (캐시 버스팅, CDN URL은 제외)
+- `server.js`는 로컬 `.js`/`.css`에 `?v=` 쿼리 자동 주입 (캐시 버스팅, CDN URL은 제외). **HTML 요청마다 `getAppVersion()` 이 `js/config.js` 를 재읽기** → pre-commit hook bump 나 수동 수정 모두 서버 재시작 없이 다음 페이지 로드부터 반영 (v3.3.57).
+- `start-server.bat` 은 **Node.js 우선** — Python 이 떠버리면 `?v=` 주입·MIME 처리·README 동기화 전부 우회되므로 Node 없을 때만 Python 폴백 (v3.3.57).
 - 컴포넌트 HTML 파일에는 `index.html` 컨테이너와 동일 ID의 외부 wrapper div 넣지 말 것 — `index.html`의 `<div id="*-section">` 안에 또 `<div id="*-section">`이 들어가면 탭 전환 로직이 내부에 `hidden` 부여하여 빈 화면. 컴포넌트 HTML 외곽은 class만 유지하고 id 제거.
 - 컴포넌트 동적 로딩 시 Supabase client 초기화에 대한 순환 의존 주의
 - `data-manager` polling 루프 금지. `initialize*DataManager()` 즉시 호출이 기본. 꼭 필요하면 `supabase-ready` CustomEvent 구독.
 - 과거 등록된 `sw.js` Service Worker 가 브라우저에 남아 캐시 덮는 문제 방지용 자동 해제 스크립트가 `index.html` `<head>` 에 포함되어 있음 — 제거하지 말 것.
+
+### 테이블 지브라(`.table-ui`) 함정
+- **odd row 명시 필수** — `tr:nth-child(odd) { background: #fff }` 없으면 홀수 행이 부모 배경을 통과시켜 탭마다 결과 상이. 주문 탭은 `bg-white` 외곽 래퍼 없어 body `bg-slate-100` (`#F1F5F9`) 이 짝수 zebra 와 근색 → 지브라 완전 증발. (v3.3.57 수정)
+- **대비 4% 이하는 고휘도·주변광 환경에서 지각 불가** — `#FAFAFA`(2%)·`#F5F5F5`(4%) 는 OLED/고밝기 LCD에서 flatten. `--tbl-zebra-bg` 는 `#E5E7EB`(gray-200, 10%) 유지. 더 낮추려면 DevTools 로 Weber 대비 확인 후.
+- 증상 감별: 화면 dim(캡처 overlay, 절전 전이) 때만 보이면 색상 대비 문제. 부모 bg 따라 탭마다 차이나면 odd 명시 누락.
 
 ### 환경설정 데이터 구조 (farm_settings, Supabase)
 - 모든 환경설정은 Supabase `farm_settings` 테이블(id=1)의 `settings` JSONB 컬럼에 단일 JSON 으로 저장

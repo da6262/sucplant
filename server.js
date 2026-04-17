@@ -7,16 +7,25 @@ const url  = require('url');
 const port = 8000;
 
 // ─────────────────────────────────────────────
-// 1. js/config.js에서 버전 한 번만 읽기
+// 1. js/config.js에서 버전 읽기 (HTML 요청마다 호출되어 최신 값 반영)
+//    pre-commit hook 이 config.js 를 bump 한 직후에도 서버 재시작 없이
+//    다음 페이지 로드부터 새 ?v= 쿼리가 주입되도록 함.
 // ─────────────────────────────────────────────
-let APP_VERSION = '3.2.3'; // 파일 읽기 실패 시 폴백
-try {
-    const configSrc = fs.readFileSync(path.join(__dirname, 'js', 'config.js'), 'utf8');
-    const m = configSrc.match(/_APP_VER\s*=\s*['"]([^'"]+)['"]/);
-    if (m) APP_VERSION = m[1];
-} catch (e) {
-    console.warn('⚠️  config.js 읽기 실패 — 폴백 버전 사용:', APP_VERSION);
+const CONFIG_PATH = path.join(__dirname, 'js', 'config.js');
+const FALLBACK_VERSION = '3.2.3';
+
+function getAppVersion() {
+    try {
+        const configSrc = fs.readFileSync(CONFIG_PATH, 'utf8');
+        const m = configSrc.match(/_APP_VER\s*=\s*['"]([^'"]+)['"]/);
+        return m ? m[1] : FALLBACK_VERSION;
+    } catch (e) {
+        return FALLBACK_VERSION;
+    }
 }
+
+// startup 시점 버전 — 로그·README 배지 동기화용 (매 요청 재읽기는 HTML 응답 경로에서 수행)
+const STARTUP_VERSION = getAppVersion();
 
 // ─────────────────────────────────────────────
 // 2. README.md 배지 자동 동기화
@@ -27,11 +36,11 @@ try {
     const readme     = fs.readFileSync(readmePath, 'utf8');
     const synced     = readme.replace(
         /!\[버전\]\(https:\/\/img\.shields\.io\/badge\/version-[^-]+-brightgreen\)/,
-        `![버전](https://img.shields.io/badge/version-${APP_VERSION}-brightgreen)`
+        `![버전](https://img.shields.io/badge/version-${STARTUP_VERSION}-brightgreen)`
     );
     if (synced !== readme) {
         fs.writeFileSync(readmePath, synced, 'utf8');
-        console.log(`📝 README.md 버전 배지 자동 동기화 → v${APP_VERSION}`);
+        console.log(`📝 README.md 버전 배지 자동 동기화 → v${STARTUP_VERSION}`);
     }
 } catch (e) {
     console.warn('⚠️  README.md 배지 동기화 실패:', e.message);
@@ -109,9 +118,9 @@ const server = http.createServer((req, res) => {
             res.setHeader('Pragma', 'no-cache');
             res.setHeader('Expires', '0');
 
-            // HTML: 버전 주입 후 서빙
+            // HTML: 버전 주입 후 서빙 (매 요청마다 config.js 재읽기 → 최신 버전 반영)
             if (ext === '.html') {
-                const html = injectVersion(data.toString('utf8'), APP_VERSION);
+                const html = injectVersion(data.toString('utf8'), getAppVersion());
                 res.writeHead(200, { 'Content-Type': mimeType });
                 res.end(html, 'utf8');
             } else {
@@ -124,6 +133,6 @@ const server = http.createServer((req, res) => {
 
 server.listen(port, () => {
     console.log(`🚀 서버가 http://localhost:${port} 에서 실행 중입니다`);
-    console.log(`🌱 앱 버전: v${APP_VERSION}`);
+    console.log(`🌱 앱 버전: v${STARTUP_VERSION} (HTML 요청마다 config.js 재읽기)`);
     console.log('📁 정적 파일 서빙 + 캐시 버스팅 활성화');
 });

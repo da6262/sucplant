@@ -90,7 +90,7 @@
     --tbl-border-color:     var(--border);
     --tbl-grid-color:       #CBD5E1;          /* 엑셀 격자용 중간 톤 slate-300 */
     --tbl-hover-bg:         #F0FDF4;
-    --tbl-zebra-bg:         #F5F5F5;
+    --tbl-zebra-bg:         #E5E7EB;          /* gray-200, 흰색 대비 10% — 모니터·밝기 무관 인지 보장 */
     --status-badge-h:       20px;
 
     /* ══════════════════════════════════════════════
@@ -1154,6 +1154,8 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 }
 .table-ui thead th:last-child { border-right: none; }
 .table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-grid-color); transition: background 0.1s; }
+/* 지브라 — odd 를 명시적 #fff 로 지정해 부모 배경 비침 차단 (주문 탭 bg-slate-100 이 #F5F5F5 와 거의 동색인 문제 해결) */
+.table-ui tbody tr:nth-child(odd)  { background: #fff; }
 .table-ui tbody tr:nth-child(even) { background: var(--tbl-zebra-bg); }
 .table-ui tbody tr:hover { background: var(--tbl-hover-bg); }
 .table-ui tbody td {
