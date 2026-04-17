@@ -1059,33 +1059,33 @@ class OrderDataManager {
                 <tr class="${rowBg} transition-colors cursor-pointer"
                     onclick="openOrderDetailModal('${rowId}')"
                     title="클릭하여 주문 상세 보기">
-                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="text-center" onclick="event.stopPropagation()">
                         <input type="checkbox" class="order-checkbox rounded text-green-600 focus:ring-green-500 focus:ring-1"
                                data-order-id="${rowId}" ${isSelected ? 'checked' : ''}
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
-                    <td class="px-2 text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${window.fmt.nullDash(ddayText)}${isOverdue ? ' ⚠' : ''}</td>
-                    <td class="px-2 td-primary td-link">${customerName === '고객명 없음' ? nd : customerName}</td>
-                    <td class="px-2 td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${window.fmt.nullDash(productSummary)}</div></td>
-                    <td class="px-2 td-muted whitespace-nowrap">${window.fmt.nullDash(orderNumber)}</td>
-                    <td class="px-2 td-amount text-right text-numeric">${totalAmount > 0 ? window.fmt.currency(totalAmount) : nd}</td>
-                    <td class="px-2 text-center align-middle relative" onclick="event.stopPropagation()">
+                    <td class="text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${window.fmt.nullDash(ddayText)}${isOverdue ? ' ⚠' : ''}</td>
+                    <td class="td-primary td-link">${customerName === '고객명 없음' ? nd : customerName}</td>
+                    <td class="td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${window.fmt.nullDash(productSummary)}</div></td>
+                    <td class="td-muted whitespace-nowrap">${window.fmt.nullDash(orderNumber)}</td>
+                    <td class="td-amount text-right text-numeric">${totalAmount > 0 ? window.fmt.currency(totalAmount) : nd}</td>
+                    <td class="text-center relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
                         <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-card border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
                             ${this.standardOrderStatuses.map(s => `
-                                <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}" 
+                                <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}"
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>
                             `).join('')}
                         </div>
                     </td>
-                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="text-center" onclick="event.stopPropagation()">
                         <span class="text-xs text-body cursor-pointer hover:text-blue-600" title="${printStatus.tip}" onclick="printOrder('${rowId}')">${printStatus.label}</span>
                     </td>
-                    <td class="px-2 text-center align-middle" onclick="event.stopPropagation()">
+                    <td class="text-center" onclick="event.stopPropagation()">
                         <span class="text-xs text-body cursor-pointer hover:text-green-600" title="${smsStatus.tip}" onclick="sendSms('${rowId}')">${smsStatus.label}</span>
                     </td>
-                    <td class="px-2 text-center align-middle whitespace-nowrap" onclick="event.stopPropagation()">
+                    <td class="text-center whitespace-nowrap" onclick="event.stopPropagation()">
                         <div class="btn-group">
                             <button class="btn-icon btn-icon-edit" onclick="editOrder('${rowId}')" title="수정"><i class="fas fa-pen"></i></button>
                             <button class="btn-icon btn-icon-delete" onclick="deleteOrder('${rowId}')" title="삭제"><i class="fas fa-trash"></i></button>

@@ -154,17 +154,17 @@ export class WaitlistUI {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
         row.innerHTML = `
-            <td class="px-2.5 td-muted text-center">${index + 1}</td>
-            <td class="px-2.5 td-primary td-link">${nullDash(item.customer_name)}</td>
-            <td class="px-2.5 td-secondary">${formatPhone(item.customer_phone)}</td>
-            <td class="px-2.5 td-primary">${nullDash(item.product_name)}</td>
-            <td class="px-2.5 td-secondary">${nullDash(item.product_category)}</td>
-            <td class="px-2.5 td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : ND}</td>
-            <td class="px-2.5 text-center">
+            <td class="td-muted text-center">${index + 1}</td>
+            <td class="td-primary td-link">${nullDash(item.customer_name)}</td>
+            <td class="td-secondary">${formatPhone(item.customer_phone)}</td>
+            <td class="td-primary">${nullDash(item.product_name)}</td>
+            <td class="td-secondary">${nullDash(item.product_category)}</td>
+            <td class="td-amount text-right text-numeric">${item.expected_price ? formatCurrency(item.expected_price) : ND}</td>
+            <td class="text-center">
                 ${window.renderBadge(item.status, this.getStatusBadgeVariant(item.status))}
             </td>
-            <td class="px-2.5 td-muted">${nullDash(formatDate(item.register_date))}</td>
-            <td class="px-2.5 text-center">
+            <td class="td-muted">${nullDash(formatDate(item.register_date))}</td>
+            <td class="text-center">
                 <div class="btn-group">
                     <button onclick="waitlistUI.editWaitlist('${item.id}')"
                             class="btn-icon btn-icon-edit"

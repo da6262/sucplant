@@ -1143,9 +1143,10 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 }
 .table-ui thead th {
     background: var(--tbl-header-bg); color: var(--text-body); font-size: 11px; font-weight: var(--tbl-header-fw);
-    padding: var(--tbl-cell-py) 10px; text-align: left; position: sticky; top: 0;
+    padding: var(--tbl-cell-py) 10px; position: sticky; top: 0;
     border-right: 1px solid var(--tbl-grid-color);
     border-bottom: 1px solid var(--tbl-grid-color); white-space: nowrap; z-index: 1;
+    /* text-align 제거 — 각 <th>에서 text-left/text-center 클래스로 개별 제어 (v3.3.42) */
 }
 .table-ui thead th:last-child { border-right: none; }
 .table-ui tbody tr { height: var(--tbl-row-height); border-bottom: 1px solid var(--tbl-grid-color); transition: background 0.1s; }
@@ -1226,7 +1227,7 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     font-size: 12px; font-weight: 600; color: var(--primary-accent); white-space: nowrap;
 }
 .search-result-stock {
-    font-size: 11px; color: var(--text-muted); white-space: nowrap;
+    font-size: 11px; font-weight: 600; color: var(--text-muted); white-space: nowrap;
 }
 .search-result-empty {
     padding: 10px; text-align: center; color: #999; font-size: 12px;

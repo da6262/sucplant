@@ -254,11 +254,11 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = formatPhone(customer.phone);
             tr.innerHTML = `
-                <td class="px-3 td-primary td-link">${escapeHtml(customer.name) || ND}</td>
-                <td class="px-3 td-secondary">${phoneDisplay || ND}</td>
-                <td class="px-3 td-muted">${lastOrderDate || ND}</td>
-                <td class="px-3 text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
-                <td class="px-3 text-center">
+                <td class="td-primary td-link">${escapeHtml(customer.name) || ND}</td>
+                <td class="td-secondary">${phoneDisplay || ND}</td>
+                <td class="td-muted text-center">${lastOrderDate || ND}</td>
+                <td class="text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
+                <td class="text-center">
                     <div class="btn-group">
                         <button onclick="window.addOrderForCustomer && window.addOrderForCustomer('${customer.id}', '${escapeHtml(customer.name)}', '${escapeHtml(customer.phone || '')}')" class="btn-icon btn-icon-primary" title="주문 추가"><i class="fas fa-cart-plus"></i></button>
                         <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>

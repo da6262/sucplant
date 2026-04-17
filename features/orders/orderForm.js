@@ -209,16 +209,15 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-product-name', productName || '');
         const lineTotal = unitPrice * 1;
         const stepBtn = `width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
-        const cellPad = `padding:6px 8px;vertical-align:top;`;
         tr.innerHTML = `
-            <td class="txt-body" style="${cellPad}">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="td-secondary tabular-nums" style="${cellPad}text-align:right;">${window.fmt.won(unitPrice)}</td>
-            <td style="${cellPad}text-align:center;white-space:nowrap;">
+            <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="td-amount text-right text-numeric">${window.fmt.won(unitPrice)}</td>
+            <td class="text-center whitespace-nowrap">
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', -1)">−</button>
                 <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;display:inline-block;margin:0 2px;padding:4px;" value="1" min="0" onchange="cartQuantityChange('${productId}', 0)">
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
-            <td class="cart-line-total tabular-nums" style="${cellPad}text-align:right;font-weight:500;">${window.fmt.won(lineTotal)}</td>
+            <td class="cart-line-total td-amount text-right text-numeric">${window.fmt.won(lineTotal)}</td>
         `;
         cartBody.appendChild(tr);
     }
@@ -1715,7 +1714,7 @@ function searchProducts(query) {
                                 <span class="search-result-name">${product.name}</span>
                                 <span class="search-result-cat">${(product.category||'')}</span>
                                 <span class="search-result-price">${window.fmt.won(product.price)}</span>
-                                <span class="search-result-stock" style="color:${stockColor};font-weight:600;font-size:11px;">${stockLabel}</span>
+                                <span class="search-result-stock" style="color:${stockColor};">${stockLabel}</span>
                             </div>
                         `}).join('');
                         resultsDiv.classList.remove('hidden');
@@ -1768,11 +1767,10 @@ function addProductToCart(productId, productName, price, stock, event) {
             const newRow = document.createElement('tr');
             newRow.setAttribute('data-product-id', productId);
             const stepBtn2 = `width:24px;height:24px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);font-size:11px;cursor:pointer;`;
-            const cellPad2 = `padding:6px 12px;vertical-align:middle;`;
             newRow.innerHTML = `
-                <td class="td-primary" style="${cellPad2}font-weight:500;">${productName}</td>
-                <td class="td-secondary tabular-nums" style="${cellPad2}text-align:right;">${window.fmt.won(price)}</td>
-                <td style="${cellPad2}text-align:center;">
+                <td class="td-primary font-medium">${productName}</td>
+                <td class="td-amount text-right text-numeric">${window.fmt.won(price)}</td>
+                <td class="text-center">
                     <div style="display:inline-flex;align-items:center;gap:4px;">
                         <button type="button" style="${stepBtn2}" onclick="decreaseQuantity('${productId}')">-</button>
                         <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;padding:4px;"
@@ -1780,10 +1778,10 @@ function addProductToCart(productId, productName, price, stock, event) {
                         <button type="button" style="${stepBtn2}" onclick="increaseQuantity('${productId}')">+</button>
                     </div>
                 </td>
-                <td class="tabular-nums" style="${cellPad2}text-align:right;">
-                    <span class="cart-item-total" style="font-weight:600;color:var(--primary-accent);">${window.fmt.won(price)}</span>
+                <td class="text-right">
+                    <span class="cart-item-total td-amount text-numeric">${window.fmt.won(price)}</span>
                 </td>
-                <td style="${cellPad2}text-align:center;">
+                <td class="text-center">
                     ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: `removeCartItem('${productId}')` })}
                 </td>
             `;
@@ -2409,17 +2407,16 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         row.setAttribute('data-price', unitPrice);
         row.setAttribute('data-shipping-option', shippingOption);
         const subtotal = unitPrice * qty;
-        const cellPad3 = `padding:6px 8px;vertical-align:middle;`;
         row.innerHTML = `
-            <td class="txt-body" style="${cellPad3}">${(productName || '').replace(/</g, '&lt;')}</td>
-            <td class="td-secondary tabular-nums" style="${cellPad3}text-align:right;">${window.fmt.won(unitPrice)}</td>
-            <td style="${cellPad3}text-align:center;">
+            <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="td-amount text-right text-numeric">${window.fmt.won(unitPrice)}</td>
+            <td class="text-center">
                 <input type="number" class="quantity-input form-control" style="width:52px;text-align:center;padding:4px;"
                        value="${qty}" min="1" step="1"
                        oninput="window.normalizeQuantityInput(this); updateCartTotal()" onchange="updateCartTotal()">
             </td>
-            <td class="cart-line-total tabular-nums" style="${cellPad3}text-align:right;font-weight:500;">${window.fmt.won(subtotal)}</td>
-            <td style="${cellPad3}text-align:center;">
+            <td class="cart-line-total td-amount text-right text-numeric">${window.fmt.won(subtotal)}</td>
+            <td class="text-center">
                 ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: 'removeFromCart(this)' })}
             </td>
         `;
