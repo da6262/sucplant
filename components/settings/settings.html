@@ -90,12 +90,12 @@
                     <div class="space-y-2">
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="free-shipping-type" value="total-order"
-                                   class="text-brand focus:ring-emerald-500" checked>
+                                   class="checkbox-ui" checked>
                             <span class="text-xs text-body">전체 주문금액 기준</span>
                         </label>
                         <label class="flex items-center gap-2 cursor-pointer">
                             <input type="radio" name="free-shipping-type" value="single-item"
-                                   class="text-brand focus:ring-emerald-500">
+                                   class="checkbox-ui">
                             <span class="text-xs text-body">단일 상품금액 기준</span>
                         </label>
                         <div class="form-input-group with-unit" style="max-width:240px;margin-top:6px;">
@@ -187,9 +187,9 @@
         <!-- SMS 설정 -->
         <div id="settings-sms-section" class="settings-content hidden">
             <!-- 솔라피 API 인증정보 -->
-            <div class="form-grid" style="border-bottom:1px solid #E5E7EB;">
+            <div class="form-grid border-b" style="border-color:var(--border);">
                 <div class="form-col-12">
-                    <span class="form-section-title" style="margin-bottom:0;">솔라피 API 인증정보</span>
+                    <span class="form-section-title">솔라피 API 인증정보</span>
                 </div>
                 <div class="form-col-12">
                     <label class="form-label">API Key</label>

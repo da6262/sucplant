@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.94-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.96-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.96 | refactor: 환경설정 CSS 중앙통제 정리 — `settings.css` 하드코딩 색상 30건+(#6B7280·#3b82f6·#10b981 등) → CSS 변수(`var(--text-secondary)`·`var(--primary)`·`var(--info)` 등) 전환. 미사용 레거시 클래스 250줄 삭제(settings-form-input·settings-section·settings-modal 등 — 실제 HTML에서 미참조). radio `focus:ring-emerald-500` → `.checkbox-ui`. SMS 인라인 `style="border-bottom:1px solid #E5E7EB"` → CSS 변수 |
 | v3.3.94 | fix: 거래명세서 출력 — ①출력대기 클릭 시 "주문을 찾을 수 없습니다" → DB 직접 조회(`fetchOrderByIdFromSupabase`) 폴백 추가. ②기본 주문서 → 거래명세서 양식 재설계(공급자/공급받는자 2열·상품 테이블·합계·메모). ③새 창 열기 → 모달 미리보기+인쇄 버튼 방식으로 전환. ④인쇄 성공 시 `printed_at` DB 기록 |
 | v3.3.92 | feat: 상품 이미지 직접 업로드 — Supabase Storage `product-images` 버킷 생성, 상품 등록/수정 폼에 파일 선택 버튼 추가. 선택한 사진을 canvas로 800px 리사이즈 + JPEG 70% 압축 후 업로드(장당 ~200-500KB). 미리보기 표시, 편집 시 기존 이미지 미리보기 유지. 기존 URL 입력도 호환(hidden input) |
 | v3.3.91 | feat: 대시보드 운영효율·고객분석 패널 추가 — ①운영효율: 주문→배송 평균 소요일, 배송완료율, 취소율, 입금대기 3일+ 건수, 상태별 파이프라인 바 시각화. ②고객분석: 총고객·재구매고객·평균구매금액 KPI, 고객등급 분포 바차트(씨앗~VIP), VIP 고객 TOP 5 매출 랭킹(메달 표시) |
