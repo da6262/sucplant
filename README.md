@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.101-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.104-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.104 | feat: 사이드바 로고·타이틀·설명 커스텀 — ①환경설정 일반 탭에 "사이드바 표시명"·"사이드바 설명" 필드 추가. ②사이드바 로고 자리에 환경설정 로고 이미지 자동 적용(없으면 기존 잎 아이콘 유지). ③저장 시 사이드바 즉시 반영(`applySidebarLogo`). ④`farm.sidebarTitle`·`farm.sidebarSubtitle` 설정 키 추가 |
 | v3.3.101 | feat: 농장 로고 업로드 + 전화번호·사업자번호 자동 포맷 — ①환경설정 일반 탭에 로고 이미지 업로드(Supabase Storage, 400px 리사이즈·JPEG 80%), 미리보기·삭제·`farm.logoUrl` 저장/로드. ②대표연락처 `010-0000-0000` 자동 하이픈. ③사업자등록번호 `000-00-00000` 자동 하이픈 |
 | v3.3.98 | feat: 환경설정 일반 탭 확장 — 사업자등록번호·이메일·계좌정보(은행·계좌번호·예금주) 필드 추가. 저장/로드/동기화 전 경로 연동. 거래명세서에 사업자번호·계좌 자동 표시. CLAUDE.md farm 설정 키 문서 갱신 |
 | v3.3.96 | refactor: 환경설정 CSS 중앙통제 정리 — `settings.css` 하드코딩 색상 30건+(#6B7280·#3b82f6·#10b981 등) → CSS 변수(`var(--text-secondary)`·`var(--primary)`·`var(--info)` 등) 전환. 미사용 레거시 클래스 250줄 삭제(settings-form-input·settings-section·settings-modal 등 — 실제 HTML에서 미참조). radio `focus:ring-emerald-500` → `.checkbox-ui`. SMS 인라인 `style="border-bottom:1px solid #E5E7EB"` → CSS 변수 |

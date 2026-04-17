@@ -222,7 +222,11 @@ async function saveGeneralSettings() {
         m.settings.farm.bankAccount = val('farm-bank-account');
         m.settings.farm.bankHolder = val('farm-bank-holder');
         m.settings.farm.logoUrl = val('farm-logo-url');
+        m.settings.farm.sidebarTitle = val('farm-sidebar-title');
+        m.settings.farm.sidebarSubtitle = val('farm-sidebar-subtitle');
         await m.saveSettings();
+        // 사이드바 즉시 반영
+        if (window.applySidebarLogo) window.applySidebarLogo();
         alert('일반 설정이 저장되었습니다.');
     } catch (err) {
         console.error('❌ 일반 설정 저장 실패:', err);
@@ -284,6 +288,8 @@ function syncFormToSettings() {
     if (get('farm-bank-account')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankAccount = val('farm-bank-account'); }
     if (get('farm-bank-holder')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankHolder = val('farm-bank-holder'); }
     if (get('farm-logo-url')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.logoUrl = val('farm-logo-url'); }
+    if (get('farm-sidebar-title')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.sidebarTitle = val('farm-sidebar-title'); }
+    if (get('farm-sidebar-subtitle')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.sidebarSubtitle = val('farm-sidebar-subtitle'); }
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }

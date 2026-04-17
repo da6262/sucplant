@@ -237,6 +237,10 @@ export function loadGeneralSettings() {
         if (el('farm-bank-account')) el('farm-bank-account').value = settings.farm.bankAccount || '';
         if (el('farm-bank-holder')) el('farm-bank-holder').value = settings.farm.bankHolder || '';
 
+        // 사이드바 표시명/설명
+        if (el('farm-sidebar-title')) el('farm-sidebar-title').value = settings.farm.sidebarTitle || '';
+        if (el('farm-sidebar-subtitle')) el('farm-sidebar-subtitle').value = settings.farm.sidebarSubtitle || '';
+
         // 로고
         const logoUrl = settings.farm.logoUrl || '';
         if (el('farm-logo-url')) el('farm-logo-url').value = logoUrl;
@@ -659,6 +663,8 @@ export function saveSettings() {
         window.settingsDataManager.updateSetting('farm', 'bankAccount', document.getElementById('farm-bank-account')?.value || '');
         window.settingsDataManager.updateSetting('farm', 'bankHolder', document.getElementById('farm-bank-holder')?.value || '');
         window.settingsDataManager.updateSetting('farm', 'logoUrl', document.getElementById('farm-logo-url')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'sidebarTitle', document.getElementById('farm-sidebar-title')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'sidebarSubtitle', document.getElementById('farm-sidebar-subtitle')?.value || '');
 
         // 시스템 설정 저장
         const autoBackup = document.getElementById('auto-backup')?.checked || false;

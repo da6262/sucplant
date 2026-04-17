@@ -380,4 +380,30 @@ if (window.componentLoader) {
     });
 }
 
+// 사이드바 로고 적용 (환경설정 farm.logoUrl)
+function applySidebarLogo() {
+    const farm = window.settingsDataManager?.settings?.farm || {};
+    // 로고
+    const img = document.getElementById('sidebar-logo-img');
+    const icon = document.getElementById('sidebar-logo-icon');
+    if (farm.logoUrl && img) {
+        img.src = farm.logoUrl;
+        img.classList.remove('hidden');
+        if (icon) icon.classList.add('hidden');
+    } else if (img) {
+        img.classList.add('hidden');
+        if (icon) icon.classList.remove('hidden');
+    }
+    // 타이틀/서브타이틀
+    const titleEl = document.getElementById('sidebar-title');
+    const subtitleEl = document.getElementById('sidebar-subtitle');
+    if (titleEl && farm.sidebarTitle) titleEl.textContent = farm.sidebarTitle;
+    if (subtitleEl && farm.sidebarSubtitle) subtitleEl.textContent = farm.sidebarSubtitle;
+}
+// 설정 로드 후 적용 (약간 지연 — settingsDataManager 초기화 대기)
+setTimeout(applySidebarLogo, 1500);
+// 탭 변경 시에도 재적용 (설정 변경 후 돌아올 때)
+document.addEventListener('tabChanged', applySidebarLogo);
+window.applySidebarLogo = applySidebarLogo;
+
 console.log('✅ Header 컴포넌트 스크립트 로드 완료');
