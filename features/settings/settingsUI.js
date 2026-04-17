@@ -1348,6 +1348,11 @@ window._handleFarmLogoSelect = async function(input) {
         if (img) { img.src = e.target.result; img.classList.remove('hidden'); }
         if (placeholder) placeholder.classList.add('hidden');
         if (removeBtn) removeBtn.classList.remove('hidden');
+        // 사이드바에도 즉시 반영
+        const sidebarImg = document.getElementById('sidebar-logo-img');
+        const sidebarIcon = document.getElementById('sidebar-logo-icon');
+        if (sidebarImg) { sidebarImg.src = e.target.result; sidebarImg.classList.remove('hidden'); }
+        if (sidebarIcon) sidebarIcon.classList.add('hidden');
     };
     reader.readAsDataURL(file);
 
@@ -1394,4 +1399,9 @@ window._removeFarmLogo = function() {
     if (placeholder) placeholder.classList.remove('hidden');
     if (removeBtn) removeBtn.classList.add('hidden');
     if (urlInput) urlInput.value = '';
+    // 사이드바 원복
+    const sidebarImg = document.getElementById('sidebar-logo-img');
+    const sidebarIcon = document.getElementById('sidebar-logo-icon');
+    if (sidebarImg) { sidebarImg.src = ''; sidebarImg.classList.add('hidden'); }
+    if (sidebarIcon) sidebarIcon.classList.remove('hidden');
 };

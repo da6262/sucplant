@@ -58,12 +58,14 @@
                 <!-- 사이드바 표시명 (col-6) | 사이드바 설명 (col-6) -->
                 <div class="form-col-6">
                     <label class="form-label">사이드바 표시명</label>
-                    <input type="text" id="farm-sidebar-title" class="form-control" placeholder="경산다육">
+                    <input type="text" id="farm-sidebar-title" class="form-control" placeholder="경산다육"
+                           oninput="const el=document.getElementById('sidebar-title');if(el)el.textContent=this.value||'경산다육';">
                     <p class="form-helper">사이드바 상단에 표시되는 이름</p>
                 </div>
                 <div class="form-col-6">
                     <label class="form-label">사이드바 설명</label>
-                    <input type="text" id="farm-sidebar-subtitle" class="form-control" placeholder="식물농장 관리">
+                    <input type="text" id="farm-sidebar-subtitle" class="form-control" placeholder="식물농장 관리"
+                           oninput="const el=document.getElementById('sidebar-subtitle');if(el)el.textContent=this.value||'식물농장 관리';">
                     <p class="form-helper">사이드바 로고 아래 작은 텍스트</p>
                 </div>
 
