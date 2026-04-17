@@ -1465,21 +1465,49 @@ class ProductManagementComponent {
         document.getElementById('download-product-template-btn')?.addEventListener('click', () => this._downloadTemplate());
     }
 
-    /** CSV 양식 다운로드 */
+    /** 엑셀 양식 다운로드 (.xlsx) */
     _downloadTemplate() {
-        const bom = '\uFEFF';
-        const header = '상품명,카테고리,판매가,매입가,재고,사이즈,배송옵션,설명';
-        const rows = [
-            'White Platter 대,다육식물,15000,8000,20,대,일반배송,예쁜 화이트 플래터',
-            '에케베리아 소,다육식물,5000,2000,50,소,일반배송,소형 에케베리아',
-            '세덤 혼합,다육식물,3000,1500,100,,일반배송,',
+        if (typeof XLSX === 'undefined') {
+            alert('엑셀 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+            return;
+        }
+
+        // 등록된 카테고리 목록
+        const categories = window.categoryDataManager?.getAllCategories?.() || [];
+        const catNames = categories.map(c => c.name);
+
+        // 헤더 + 예시 데이터
+        const data = [
+            ['상품명', '카테고리', '판매가', '재고', '사이즈', '설명'],
+            ['에케베리아 치와와', catNames[0] || '에케베리아', 15000, 10, 'M', ''],
+            ['크라슐라 화제', catNames.length > 1 ? catNames[1] : '크라슐라', 8000, 20, 'S', ''],
+            ['코노피튬 부르겐세리', catNames.length > 2 ? catNames[2] : '코노피튬', 5000, 30, 'SX', ''],
         ];
-        const blob = new Blob([bom + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = '상품_일괄등록_양식.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
+
+        const ws = XLSX.utils.aoa_to_sheet(data);
+
+        // 컬럼 너비 설정
+        ws['!cols'] = [
+            { wch: 25 }, // 상품명
+            { wch: 15 }, // 카테고리
+            { wch: 10 }, // 판매가
+            { wch: 8 },  // 재고
+            { wch: 8 },  // 사이즈
+            { wch: 30 }, // 설명
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '상품등록');
+
+        // 카테고리 목록 시트 추가 (참고용)
+        if (catNames.length > 0) {
+            const catData = [['등록된 카테고리'], ...catNames.map(n => [n])];
+            const catWs = XLSX.utils.aoa_to_sheet(catData);
+            catWs['!cols'] = [{ wch: 20 }];
+            XLSX.utils.book_append_sheet(wb, catWs, '카테고리 목록');
+        }
+
+        XLSX.writeFile(wb, '상품_일괄등록_양식.xlsx');
     }
 
     /** 파일 업로드 처리 */
@@ -1524,15 +1552,16 @@ class ProductManagementComponent {
             const name     = String(cols[0] || '').trim();
             const category = String(cols[1] || '').trim();
             if (!name || name === '상품명') continue;
-            if (!category || category === '카테고리') continue;
+            // 카테고리 없으면 '기타'
             products.push({
-                name, category,
+                name,
+                category: category || '기타',
                 price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
-                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
-                stock:           parseInt(cols[4]) || 0,
-                size:            String(cols[5] || '').trim(),
-                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
-                description:     String(cols[7] || '').trim(),
+                stock:           parseInt(cols[3]) || 0,
+                size:            String(cols[4] || '').trim(),
+                description:     String(cols[5] || '').trim(),
+                cost: 0,
+                shipping_option: '일반배송',
             });
         }
         window.productImportData = products;
@@ -1546,8 +1575,8 @@ class ProductManagementComponent {
         const countEl  = document.getElementById('product-preview-count');
         if (!section || !content) return;
         if (countEl) countEl.textContent = `총 ${products.length}개`;
-        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션'];
-        const keys = ['name','category','price','cost','stock','size','shipping_option'];
+        const cols = ['상품명','카테고리','판매가','재고','사이즈'];
+        const keys = ['name','category','price','stock','size'];
         let html = `<table class="table-ui"><thead><tr>` +
             cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
             `</tr></thead><tbody>` +
@@ -1556,7 +1585,7 @@ class ProductManagementComponent {
                 keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
                 `</tr>`
             ).join('') +
-            (products.length > 20 ? `<tr><td colspan="7" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
+            (products.length > 20 ? `<tr><td colspan="5" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
             `</tbody></table>`;
         content.innerHTML = html;
         section.classList.remove('hidden');
