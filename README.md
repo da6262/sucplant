@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.118-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.124-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.124 | fix: 상품 테이블 상품명 너비 근본 수정 — `table min-w-full`(auto) → `table-fixed`로 전환, `<th>` width 클래스 정확 적용. 상품명 w-36 고정. 카테고리 배지 제거·글자 스타일 통일. PRODUCT_TABLE_COLUMNS 분수 너비 → 고정 너비 동기화 |
 | v3.3.118 | feat: 상품 테이블 인라인 편집 — 상품명·카테고리·판매가·재고 셀 더블클릭으로 직접 수정. Enter 저장, Esc 취소. 카테고리는 등록된 목록 드롭다운. Supabase 즉시 반영 |
 | v3.3.116 | feat: 상품 내보내기 구현 — 등록된 상품을 엑셀(.xlsx)로 다운로드 |
 | v3.3.115 | fix: 상품 일괄등록 카테고리 텍스트→드롭다운 + 카테고리 아이콘 시맨틱 클래스 적용 |
