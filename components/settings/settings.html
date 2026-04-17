@@ -32,6 +32,29 @@
         <div id="settings-general-section" class="settings-content">
             <div class="form-grid">
 
+                <!-- 로고 (col-12) -->
+                <div class="form-col-12">
+                    <label class="form-label">농장 로고</label>
+                    <div class="flex items-center gap-3">
+                        <div id="farm-logo-preview" class="w-16 h-16 rounded-lg border flex items-center justify-center overflow-hidden bg-section" style="border-color:var(--border);">
+                            <i class="fas fa-image text-muted text-xl" id="farm-logo-placeholder"></i>
+                            <img id="farm-logo-img" class="w-full h-full object-contain hidden" alt="로고">
+                        </div>
+                        <div class="flex-1">
+                            <input type="file" id="farm-logo-file" accept="image/*" class="hidden"
+                                   onchange="window._handleFarmLogoSelect(this)">
+                            <button type="button" class="btn-secondary" onclick="document.getElementById('farm-logo-file').click()">
+                                <i class="fas fa-upload mr-1"></i>이미지 선택
+                            </button>
+                            <button type="button" id="farm-logo-remove" class="btn-secondary hidden" onclick="window._removeFarmLogo()">
+                                <i class="fas fa-times mr-1"></i>삭제
+                            </button>
+                            <p class="form-helper" style="margin-top:4px;">거래명세서·사이드바에 표시됩니다. 정사각형 권장.</p>
+                        </div>
+                        <input type="hidden" id="farm-logo-url">
+                    </div>
+                </div>
+
                 <!-- 농장명 (col-6) | 대표자명 (col-6) -->
                 <div class="form-col-6">
                     <label class="form-label">농장명</label>
@@ -45,7 +68,8 @@
                 <!-- 연락처 (col-6) | 이메일 (col-6) -->
                 <div class="form-col-6">
                     <label class="form-label">대표 연락처</label>
-                    <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000">
+                    <input type="tel" id="farm-phone" class="form-control" placeholder="010-0000-0000" maxlength="13"
+                           oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=7)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>7)v=v.slice(0,3)+'-'+v.slice(3,7)+'-'+v.slice(7,11);this.value=v;">
                 </div>
                 <div class="form-col-6">
                     <label class="form-label">이메일</label>
@@ -55,7 +79,8 @@
                 <!-- 사업자등록번호 (col-6) | (빈 col-6) -->
                 <div class="form-col-6">
                     <label class="form-label">사업자등록번호</label>
-                    <input type="text" id="farm-business-number" class="form-control" placeholder="000-00-00000">
+                    <input type="text" id="farm-business-number" class="form-control" placeholder="000-00-00000" maxlength="12"
+                           oninput="let v=this.value.replace(/[^0-9]/g,'');if(v.length>3&&v.length<=5)v=v.slice(0,3)+'-'+v.slice(3);else if(v.length>5)v=v.slice(0,3)+'-'+v.slice(3,5)+'-'+v.slice(5,10);this.value=v;">
                 </div>
                 <div class="form-col-6"></div>
 

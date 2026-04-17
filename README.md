@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.98-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.101-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.101 | feat: 농장 로고 업로드 + 전화번호·사업자번호 자동 포맷 — ①환경설정 일반 탭에 로고 이미지 업로드(Supabase Storage, 400px 리사이즈·JPEG 80%), 미리보기·삭제·`farm.logoUrl` 저장/로드. ②대표연락처 `010-0000-0000` 자동 하이픈. ③사업자등록번호 `000-00-00000` 자동 하이픈 |
 | v3.3.98 | feat: 환경설정 일반 탭 확장 — 사업자등록번호·이메일·계좌정보(은행·계좌번호·예금주) 필드 추가. 저장/로드/동기화 전 경로 연동. 거래명세서에 사업자번호·계좌 자동 표시. CLAUDE.md farm 설정 키 문서 갱신 |
 | v3.3.96 | refactor: 환경설정 CSS 중앙통제 정리 — `settings.css` 하드코딩 색상 30건+(#6B7280·#3b82f6·#10b981 등) → CSS 변수(`var(--text-secondary)`·`var(--primary)`·`var(--info)` 등) 전환. 미사용 레거시 클래스 250줄 삭제(settings-form-input·settings-section·settings-modal 등 — 실제 HTML에서 미참조). radio `focus:ring-emerald-500` → `.checkbox-ui`. SMS 인라인 `style="border-bottom:1px solid #E5E7EB"` → CSS 변수 |
 | v3.3.94 | fix: 거래명세서 출력 — ①출력대기 클릭 시 "주문을 찾을 수 없습니다" → DB 직접 조회(`fetchOrderByIdFromSupabase`) 폴백 추가. ②기본 주문서 → 거래명세서 양식 재설계(공급자/공급받는자 2열·상품 테이블·합계·메모). ③새 창 열기 → 모달 미리보기+인쇄 버튼 방식으로 전환. ④인쇄 성공 시 `printed_at` DB 기록 |

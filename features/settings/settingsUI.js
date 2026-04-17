@@ -236,7 +236,19 @@ export function loadGeneralSettings() {
         if (el('farm-bank-name')) el('farm-bank-name').value = settings.farm.bankName || '';
         if (el('farm-bank-account')) el('farm-bank-account').value = settings.farm.bankAccount || '';
         if (el('farm-bank-holder')) el('farm-bank-holder').value = settings.farm.bankHolder || '';
-        
+
+        // 로고
+        const logoUrl = settings.farm.logoUrl || '';
+        if (el('farm-logo-url')) el('farm-logo-url').value = logoUrl;
+        const logoImg = el('farm-logo-img');
+        const logoPlaceholder = el('farm-logo-placeholder');
+        const logoRemoveBtn = el('farm-logo-remove');
+        if (logoUrl && logoImg) {
+            logoImg.src = logoUrl; logoImg.classList.remove('hidden');
+            if (logoPlaceholder) logoPlaceholder.classList.add('hidden');
+            if (logoRemoveBtn) logoRemoveBtn.classList.remove('hidden');
+        }
+
         // 시스템 설정 로드
         const autoBackupToggle = document.getElementById('auto-backup');
         const systemLogsToggle = document.getElementById('system-logs');
@@ -646,7 +658,8 @@ export function saveSettings() {
         window.settingsDataManager.updateSetting('farm', 'bankName', document.getElementById('farm-bank-name')?.value || '');
         window.settingsDataManager.updateSetting('farm', 'bankAccount', document.getElementById('farm-bank-account')?.value || '');
         window.settingsDataManager.updateSetting('farm', 'bankHolder', document.getElementById('farm-bank-holder')?.value || '');
-        
+        window.settingsDataManager.updateSetting('farm', 'logoUrl', document.getElementById('farm-logo-url')?.value || '');
+
         // 시스템 설정 저장
         const autoBackup = document.getElementById('auto-backup')?.checked || false;
         const systemLogs = document.getElementById('system-logs')?.checked || false;
@@ -1313,4 +1326,66 @@ window.saveSingleSmsTemplate = async function(key, fieldId) {
         console.error('❌ SMS 템플릿 저장 실패:', error);
         alert('저장에 실패했습니다.');
     }
+};
+
+// ── 농장 로고 업로드 ──
+window._handleFarmLogoSelect = async function(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // 미리보기
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = document.getElementById('farm-logo-img');
+        const placeholder = document.getElementById('farm-logo-placeholder');
+        const removeBtn = document.getElementById('farm-logo-remove');
+        if (img) { img.src = e.target.result; img.classList.remove('hidden'); }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    // 리사이즈 + 업로드
+    try {
+        if (!window.supabaseClient) { alert('Supabase 미연결'); return; }
+        const blob = await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = Math.min(img.width, img.height, 400);
+                const canvas = document.createElement('canvas');
+                canvas.width = size; canvas.height = size;
+                canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+                canvas.toBlob(b => resolve(b), 'image/jpeg', 0.8);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+
+        const fileName = `farm-logo-${Date.now()}.jpg`;
+        const { error } = await window.supabaseClient.storage
+            .from('product-images')
+            .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+        if (error) throw error;
+
+        const { data: urlData } = window.supabaseClient.storage
+            .from('product-images')
+            .getPublicUrl(fileName);
+
+        const url = urlData?.publicUrl || '';
+        document.getElementById('farm-logo-url').value = url;
+        console.log('✅ 로고 업로드:', url);
+    } catch (e) {
+        console.error('로고 업로드 실패:', e);
+        alert('로고 업로드 실패: ' + e.message);
+    }
+};
+
+window._removeFarmLogo = function() {
+    const img = document.getElementById('farm-logo-img');
+    const placeholder = document.getElementById('farm-logo-placeholder');
+    const removeBtn = document.getElementById('farm-logo-remove');
+    const urlInput = document.getElementById('farm-logo-url');
+    if (img) { img.src = ''; img.classList.add('hidden'); }
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (removeBtn) removeBtn.classList.add('hidden');
+    if (urlInput) urlInput.value = '';
 };
