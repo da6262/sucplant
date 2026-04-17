@@ -363,7 +363,15 @@ start-server.bat
 ## 데이터베이스
 - Supabase 전용 (localStorage 없음)
 - **DB 쿼리는 오직 `window.supabaseClient` 로만 접근**. `window.supabase` 사용 금지 — 초기화 경로(index.html inline vs supabase-config.js)에 따라 `window.supabase` 가 라이브러리 namespace(`.from()` 없음) 이거나 client 이거나 타이밍 의존적. `window.supabaseClient` 는 항상 client 인스턴스로만 설정되므로 안전. 함정 사례: v3.3.9 에서 categoryData.js 가 `window.supabase.from(...)` 호출로 일부 init 경로에서 silent fail 하던 버그 수정
-- 주요 테이블: farm_customers, farm_orders, farm_products, farm_categories
+- 주요 테이블: farm_customers, farm_orders, farm_products, farm_categories, farm_order_items, farm_settings
+- **farm_orders 추가 컬럼**: `sms_sent_at` TIMESTAMPTZ (SMS 발송 시각), `printed_at` TIMESTAMPTZ (주문서 출력 시각) — v3.3.83 추가
+
+### RPC: `get_order_rows`
+- 주문관리 목록의 **단일 데이터 소스** — 목록 렌더링 + 탭 카운트 모두 이 결과 사용
+- SQL 정의: `supabase-get-order-rows-rpc.sql` (변경 시 Supabase SQL Editor에서 실행 필요)
+- 반환 필드: `order_id`, `order_number`, `order_created_at`, `d_day`, `customer_name`, `customer_phone_last4`, `order_items_summary`, `items_subtotal`, `shipping_fee`, `discount_amount`, `total_amount`, `payment_status`, `order_status`, `delivery_status`, `sms_sent_at`, `printed_at`
+- **RPC 필드 추가 시**: SQL 파일의 `RETURNS TABLE` + `SELECT` 양쪽 수정 → Supabase 실행 → JS `renderOrderRow()`에서 사용
+- **타입 주의**: `farm_orders.order_number`은 `varchar` — RPC에서 `::TEXT` 캐스트 필수 (v3.3.83에서 타입 불일치 오류 해결)
 - 프로덕션 활성화: `window.enableSupabaseProduction()`
 - `supabase-production-config.js`에 `migrationMode: true`, `autoSync: true` 설정됨
 - Supabase Realtime 구독 사용 (실시간 알림)
