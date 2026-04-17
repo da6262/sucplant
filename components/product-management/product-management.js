@@ -152,18 +152,17 @@ class ProductManagementComponent {
             console.error('❌ ProductUI 인스턴스 생성 실패:', error);
         }
         
-        // 기존 이벤트 리스너 제거 (중복 방지)
+        // 기존 이벤트 리스너 제거 후 즉시 재바인딩 (데이터 로드 전에 버튼 활성화)
         this.removeEventListeners();
-        
-        // Supabase에서 상품 데이터 로드
+        this.setupPagination();
+        this.setupEventListeners();
+
+        // Supabase에서 상품 데이터 로드 (버튼은 이미 동작하는 상태)
         try {
             await this.loadProducts();
         } catch (error) {
             console.error('❌ 상품 데이터 로드 실패:', error);
         }
-        
-        this.setupPagination();
-        this.setupEventListeners();
 
         this.isInitialized = true;
         console.log('✅ ProductManagement 컴포넌트 초기화 완료');
