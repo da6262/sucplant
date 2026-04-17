@@ -17,16 +17,17 @@ const PRODUCT_FORM_FIELDS = [
 ];
 
 // 상품 테이블 컬럼 정의 (실제 화면에 표시되는 구조에 맞게 수정)
+// ⚠️ PRODUCT_COLUMNS (product-management.js)와 이중 경로 — 너비·컬럼 변경 시 양쪽 동기화 필수
 const PRODUCT_TABLE_COLUMNS = [
-    { key: 'checkbox', label: '', width: 'w-12', type: 'checkbox' },
+    { key: 'checkbox', label: '', width: 'w-10', type: 'checkbox' },
     { key: 'product_code', label: '상품코드', width: 'w-20' },
     { key: 'name', label: '상품명', width: '' },
-    { key: 'category', label: '카테고리', width: 'w-20' },
-    { key: 'size', label: '사이즈', width: 'w-1/6' },
-    { key: 'price', label: '판매가', width: 'w-1/6', format: 'currency' },
-    { key: 'stock', label: '재고', width: 'w-1/12', format: 'number' },
-    { key: 'shipping_option', label: '배송옵션', width: 'w-1/6' },
-    { key: 'actions', label: '관리', width: 'w-1/12', type: 'actions' }
+    { key: 'category', label: '카테고리', width: 'w-24' },
+    { key: 'size', label: '사이즈', width: 'w-16' },
+    { key: 'price', label: '판매가', width: 'w-24', format: 'currency' },
+    { key: 'stock', label: '재고', width: 'w-20', format: 'number' },
+    { key: 'shipping_option', label: '배송옵션', width: 'w-24' },
+    { key: 'actions', label: '관리', width: 'w-20', type: 'actions' }
 ];
 
 // 공통 CSS 클래스 정의 — 통제실 변수 기반 (반란군 제거 완료)
