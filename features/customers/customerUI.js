@@ -2327,47 +2327,67 @@ window.openCustomerModal = openCustomerModal;
 window.closeCustomerModal = closeCustomerModal;
 window.renderCustomersTable = renderCustomersTable;
 
+// 등급 탭 버튼 동적 생성 (환경설정 customerGrades 기반)
+async function renderGradeTabs() {
+    const slot = document.getElementById('customer-grade-dynamic-slot');
+    if (!slot) return;
+
+    const grades = await loadCustomerGradesFromSettings();
+    slot.innerHTML = grades.map(g => {
+        const colorStyle = g.color ? `style="color:${g.color}"` : '';
+        return `<button id="customer-grade-${g.code}" class="customer-tab-btn px-2 py-0.5 rounded text-xs text-body hover:opacity-80" data-grade="${g.code}" ${colorStyle}>${g.name} <span id="customer-count-${g.code}">0</span></button>`;
+    }).join('');
+
+    // 이벤트 위임 (1회만)
+    if (!slot.dataset.delegated) {
+        slot.addEventListener('click', (e) => {
+            const btn = e.target.closest('.customer-tab-btn');
+            if (!btn) return;
+            document.querySelectorAll('.customer-tab-btn').forEach(b => b.classList.remove('active', 'font-medium', 'bg-success'));
+            btn.classList.add('active', 'font-medium', 'bg-success');
+            const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
+            renderCustomersTable(btn.dataset.grade || 'all', searchTerm);
+        });
+        slot.dataset.delegated = 'true';
+    }
+}
+
 // 고객 등급별 카운트 업데이트 함수 (환경설정 연동)
 async function updateCustomerGradeCounts() {
     try {
         console.log('📊 고객 등급별 카운트 업데이트 시작...');
-        
+
         if (!window.customerDataManager) {
             console.warn('⚠️ customerDataManager를 찾을 수 없습니다');
             return;
         }
-        
+
+        // 등급 탭 동적 생성 (DOM 보장)
+        await renderGradeTabs();
+
         const customers = window.customerDataManager.getAllCustomers();
-        console.log(`📋 전체 고객 수: ${customers.length}`);
-        
+
         // 환경설정에서 고객등급 정보 로드
         const grades = await loadCustomerGradesFromSettings();
-        
+
         // 등급별 카운트 계산
-        const gradeCounts = {
-            'all': customers.length
-        };
-        
-        // 환경설정의 등급별로 카운트 계산
+        const gradeCounts = { 'all': customers.length };
         grades.forEach(grade => {
             gradeCounts[grade.code] = customers.filter(c => c.grade === grade.code).length;
         });
-        
-        console.log('📊 등급별 카운트:', gradeCounts);
-        
+
         // 각 등급별 카운트 업데이트
         Object.keys(gradeCounts).forEach(grade => {
             const countElement = document.getElementById(`customer-count-${grade}`);
             if (countElement) {
                 countElement.textContent = gradeCounts[grade];
-                console.log(`✅ ${grade} 카운트 업데이트: ${gradeCounts[grade]}`);
-            } else {
-                console.warn(`⚠️ customer-count-${grade} 요소를 찾을 수 없습니다`);
             }
         });
-        
-        console.log('✅ 고객 등급별 카운트 업데이트 완료');
-        
+
+        // "전체" 카운트
+        const allCount = document.getElementById('customer-count-all');
+        if (allCount) allCount.textContent = customers.length;
+
     } catch (error) {
         console.error('❌ 고객 등급별 카운트 업데이트 실패:', error);
     }

@@ -847,12 +847,12 @@ function cleanupCustomerEventListeners() {
             }
         });
         
-        // 고객 등급 탭 버튼들 정리
-        const gradeTabs = document.querySelectorAll('.customer-tab-btn');
-        gradeTabs.forEach(tab => {
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
-        });
+        // 고객 등급 "전체" 탭 리스너 정리 (동적 등급 탭은 renderGradeTabs()에서 관리)
+        const allTab = document.getElementById('customer-grade-all');
+        if (allTab) {
+            const newTab = allTab.cloneNode(true);
+            allTab.parentNode.replaceChild(newTab, allTab);
+        }
         
         // 고객 테이블 관련 이벤트 리스너 정리
         const customerTable = document.getElementById('customers-table');
@@ -1040,24 +1040,18 @@ function attachCustomerEventListeners() {
             console.log('✅ 고객 정렬 이벤트 리스너 연결 완료');
         }
         
-        // 고객 등급별 필터 탭
-        const gradeTabs = document.querySelectorAll('.customer-tab-btn');
-        gradeTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const grade = this.id.replace('customer-grade-', '');
-                console.log('🏷️ 고객 등급 필터:', grade);
-                
-                // 활성 탭 표시
-                gradeTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // 테이블 필터링 (검색어 유지)
+        // "전체" 등급 탭 리스너 (동적 등급 탭은 renderGradeTabs() 이벤트 위임으로 처리)
+        const gradeAllTab = document.getElementById('customer-grade-all');
+        if (gradeAllTab) {
+            gradeAllTab.addEventListener('click', function() {
+                document.querySelectorAll('.customer-tab-btn').forEach(t => t.classList.remove('active', 'font-medium', 'bg-success'));
+                this.classList.add('active', 'font-medium', 'bg-success');
                 const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(grade, searchTerm);
+                    window.renderCustomersTable('all', searchTerm);
                 }
             });
-        });
+        }
         console.log('✅ 고객 등급 필터 이벤트 리스너 연결 완료');
         
         // 검색 초기화 버튼
