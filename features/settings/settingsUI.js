@@ -106,25 +106,27 @@ async function loadSMSSettings() {
             card.dataset.key = tpl.key;
 
             const varsHtml = tpl.vars.map(v => `<code>${esc(v)}</code>`).join('');
-            const bodyHtml = isEmpty
-                ? '<div class="sms-card-empty"><i class="fas fa-pen-to-square"></i> 템플릿이 비어있습니다 — 클릭해서 작성</div>'
-                : `<pre class="sms-card-content">${esc(value)}</pre>`;
+            const bubbleHtml = isEmpty
+                ? `<div class="sms-phone-empty"><i class="fas fa-pen-to-square"></i> 빈 템플릿 — 클릭해서 작성</div>`
+                : `<div class="sms-bubble">${esc(value)}</div>`;
 
+            // 폰 메시지 말풍선 형태로 렌더 (받는 사람 관점: 왼쪽 정렬 회색 버블)
             card.innerHTML = `
-                <div class="sms-card-header">
-                    <span class="sms-card-icon"><i class="fas ${tpl.icon}"></i></span>
-                    <div class="sms-card-title-wrap">
-                        <div class="sms-card-title">${esc(tpl.label)}</div>
-                        <div class="sms-card-desc">${esc(tpl.desc)}</div>
-                    </div>
+                <div class="sms-card-tab">
+                    <span class="sms-tab-icon"><i class="fas ${tpl.icon}"></i></span>
+                    <span class="sms-tab-label">${esc(tpl.label)}</span>
+                    <span class="sms-tab-desc">${esc(tpl.desc)}</span>
                     <button type="button" class="btn-icon btn-icon-edit sms-card-edit" title="수정"
                         onclick="event.stopPropagation(); editSmsTemplate('${tpl.key}','${tpl.fieldId}','${tpl.vars.join(' ').replace(/'/g,'\\\'')}')">
                         <i class="fas fa-pen"></i>
                     </button>
                 </div>
-                <div class="sms-card-body">${bodyHtml}</div>
+                <div class="sms-phone-screen">
+                    <div class="sms-phone-sender">경산다육식물농장</div>
+                    ${bubbleHtml}
+                </div>
                 <div class="sms-card-vars">
-                    <span class="sms-card-vars-label">치환 변수</span>
+                    <span class="sms-card-vars-label">치환</span>
                     ${varsHtml}
                 </div>
             `;

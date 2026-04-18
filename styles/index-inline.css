@@ -1689,86 +1689,145 @@ table tbody td [class*="shrink-0"] {
 }
 
 /* =====================================================
-   SMS 템플릿 — 용도별 카드 그리드 (v3.3.139+)
+   SMS 템플릿 — 폰 메시지 말풍선 카드 (v3.3.141+)
+   실제 핸드폰 수신 화면 모양으로 표시
    ===================================================== */
 .sms-card-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-    gap: 12px;
-    padding: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 16px;
+    padding: 16px;
 }
 
+/* 카드: 폰 스크린 프레임 */
 .sms-card {
+    background: #f1f5f9;                 /* 폰 배경 톤 */
     border: 1px solid var(--border);
-    border-radius: 10px;
-    background: #fff;
+    border-radius: 18px;                 /* 폰 라운드 */
     overflow: hidden;
     display: flex;
     flex-direction: column;
     cursor: pointer;
     transition: box-shadow 0.15s, transform 0.15s;
+    position: relative;
 }
 .sms-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
 }
 
-.sms-card-header {
+/* 상단 라벨 탭 (용도 + 편집 버튼) — 폰 상태바 역할 */
+.sms-card-tab {
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 12px;
+    gap: 8px;
+    padding: 8px 14px;
+    background: #fff;
     border-bottom: 1px solid var(--border-light);
-    background: var(--bg-lighter);
+    font-size: 11.5px;
 }
-.sms-card-icon {
-    width: 32px; height: 32px;
+.sms-tab-icon {
+    width: 20px; height: 20px;
     border-radius: 50%;
-    display: flex;
+    display: inline-flex;
     align-items: center;
     justify-content: center;
-    font-size: 13px;
-    flex: 0 0 32px;
+    font-size: 10px;
+    flex: 0 0 20px;
 }
-.sms-variant-info .sms-card-icon    { background: var(--badge-info-bg);    color: var(--badge-info-txt); }
-.sms-variant-success .sms-card-icon { background: var(--badge-green-bg);   color: var(--primary); }
-.sms-variant-warn .sms-card-icon    { background: var(--badge-warning-bg); color: var(--badge-warning-txt); }
-.sms-variant-purple .sms-card-icon  { background: var(--badge-purple-bg);  color: var(--badge-purple-txt); }
-.sms-variant-danger .sms-card-icon  { background: var(--badge-danger-bg);  color: var(--danger); }
+.sms-variant-info .sms-tab-icon    { background: var(--badge-info-bg);    color: var(--badge-info-txt); }
+.sms-variant-success .sms-tab-icon { background: var(--badge-green-bg);   color: var(--primary); }
+.sms-variant-warn .sms-tab-icon    { background: var(--badge-warning-bg); color: var(--badge-warning-txt); }
+.sms-variant-purple .sms-tab-icon  { background: var(--badge-purple-bg);  color: var(--badge-purple-txt); }
+.sms-variant-danger .sms-tab-icon  { background: var(--badge-danger-bg);  color: var(--danger); }
 
-.sms-card-title-wrap { flex: 1; min-width: 0; }
-.sms-card-title {
-    font-size: 13px;
-    font-weight: 600;
+.sms-tab-label {
+    font-size: 12px;
+    font-weight: 700;
     color: var(--text-heading);
-    line-height: 1.3;
 }
-.sms-card-desc {
+.sms-tab-desc {
     font-size: 10.5px;
     color: var(--text-muted);
-    margin-top: 1px;
-    line-height: 1.3;
-}
-.sms-card-edit { margin-left: auto; }
-
-.sms-card-body {
-    padding: 10px 12px;
     flex: 1;
-    min-height: 90px;
-    max-height: 200px;
-    overflow: auto;
-    background: #fff;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
 }
-.sms-card-content {
-    font-family: inherit;
-    font-size: 12px;
-    color: var(--text-body);
-    line-height: 1.6;
+.sms-card-edit { margin-left: auto; flex: 0 0 auto; }
+
+/* 폰 스크린: 말풍선이 얹히는 영역 */
+.sms-phone-screen {
+    padding: 14px 12px 16px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+    min-height: 100px;
+}
+.sms-phone-sender {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    padding-left: 6px;
+    margin-bottom: 2px;
+}
+
+/* 실제 메시지 말풍선 — iOS/Samsung 수신 스타일 (왼쪽 정렬, 회색) */
+.sms-bubble {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    color: var(--text-primary);
+    font-size: 12.5px;
+    line-height: 1.55;
     white-space: pre-wrap;
     word-break: break-word;
-    margin: 0;
+    padding: 10px 13px;
+    border-radius: 16px;
+    border-top-left-radius: 4px;         /* 말풍선 꼬리 쪽 각짐 */
+    max-width: 88%;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    position: relative;
+    font-family: -apple-system, 'Apple SD Gothic Neo', 'Malgun Gothic', system-ui, sans-serif;
 }
-.sms-card-empty {
+/* variant 별 말풍선 색 (은은한 brand accent) */
+.sms-variant-info .sms-bubble    { background: #EFF6FF; border-color: #DBEAFE; }
+.sms-variant-success .sms-bubble { background: #F0FDF4; border-color: #DCFCE7; }
+.sms-variant-warn .sms-bubble    { background: #FFFBEB; border-color: #FEF3C7; }
+.sms-variant-purple .sms-bubble  { background: #FAF5FF; border-color: #F3E8FF; }
+.sms-variant-danger .sms-bubble  { background: #FEF2F2; border-color: #FEE2E2; }
+
+/* 말풍선 꼬리 (작은 삼각형) */
+.sms-bubble::before {
+    content: '';
+    position: absolute;
+    left: -6px;
+    top: 8px;
+    width: 0; height: 0;
+    border-top: 6px solid transparent;
+    border-bottom: 6px solid transparent;
+    border-right: 6px solid var(--border);
+}
+.sms-bubble::after {
+    content: '';
+    position: absolute;
+    left: -4px;
+    top: 9px;
+    width: 0; height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-right: 5px solid inherit;
+}
+.sms-variant-info .sms-bubble::after    { border-right-color: #EFF6FF; }
+.sms-variant-success .sms-bubble::after { border-right-color: #F0FDF4; }
+.sms-variant-warn .sms-bubble::after    { border-right-color: #FFFBEB; }
+.sms-variant-purple .sms-bubble::after  { border-right-color: #FAF5FF; }
+.sms-variant-danger .sms-bubble::after  { border-right-color: #FEF2F2; }
+
+/* 빈 상태 */
+.sms-phone-empty {
+    width: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -1776,19 +1835,22 @@ table tbody td [class*="shrink-0"] {
     font-size: 12px;
     color: var(--text-muted);
     font-style: italic;
-    min-height: 70px;
-    height: 100%;
+    min-height: 80px;
+    border: 1px dashed var(--border);
+    border-radius: 10px;
+    background: #fff;
 }
-.sms-card-empty i { font-size: 11px; opacity: 0.6; }
+.sms-phone-empty i { font-size: 11px; opacity: 0.6; }
 
+/* 하단 변수 스트립 — 컴팩트 */
 .sms-card-vars {
-    padding: 8px 12px;
-    background: var(--bg-section);
+    padding: 6px 12px 8px;
+    background: #fff;
     border-top: 1px solid var(--border-light);
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 4px;
+    gap: 3px;
     font-size: 10px;
 }
 .sms-card-vars-label {
@@ -1797,7 +1859,7 @@ table tbody td [class*="shrink-0"] {
     font-weight: 500;
 }
 .sms-card-vars code {
-    background: #fff;
+    background: var(--bg-section);
     border: 1px solid var(--border);
     padding: 1px 5px;
     border-radius: var(--radius-sm);
