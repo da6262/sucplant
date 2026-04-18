@@ -28,6 +28,23 @@
 - 충돌 발생 시에만 사용자에게 알림. 그 외 자율적으로 푸시까지 완료.
 - 원격에 반영돼야 다른 AI 편집기가 최신 규칙·변경을 즉시 받음.
 
+### 3-1) 배포 (푸시 후 즉시)
+- 푸시 완료 후 즉시 다음 시퀀스 실행:
+  ```
+  npm run deploy
+  ```
+- `npm run deploy` = `npm run sync` (소스→dist 복사) + `npm run check` (금지 패턴 스캔) + `firebase deploy`
+- 배포 실패 시 사용자에게 알림. 성공 시 "✅ 배포 완료" 메시지 출력.
+- **배포 없이 푸시만 하면 Firebase 호스팅에 반영 안 됨** — 반드시 deploy 까지 완료
+
+### 3-2) 충돌 해결 (rebase 시)
+- `git pull --rebase origin main` 에서 충돌 발생 시:
+  1. 충돌 파일 열어서 수동 해결 (원격 = HEAD, 로컬 = 내 커밋)
+  2. `config.js` 버전 충돌은 **항상 원격(높은 버전) 유지** — pre-commit hook 이 다시 +1
+  3. `README.md` 변경이력 충돌은 **양쪽 모두 보존** (원격 행 + 내 행 합치기)
+  4. `git add <해결파일>` → `git rebase --continue`
+  5. 해결 불가 시 `git rebase --abort` 후 사용자에게 알림
+
 ### 4) CLAUDE.md 업데이트 시점
 - 디자인 규칙·아키텍처 함정·Dead code 등 **재사용 가능한 지식**을 발견하면 즉시 이 문서에 추가
 - 같은 주제로 두 번 이상 브리핑해야 할 정황이면 규칙화 후 커밋

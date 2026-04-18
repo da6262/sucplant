@@ -2005,14 +2005,16 @@ async function handleOrderSubmit(event) {
             const customerAddress = document.getElementById('order-customer-address')?.value?.trim();
             const cartItemsBody = document.getElementById('cart-items-body');
             const hasCartItems = cartItemsBody && cartItemsBody.querySelectorAll('tr[data-product-id]').length > 0;
-            
+            const phonePattern = /^[0-9-+\s()]+$/;
+
             if (!customerName) missingFields.push('고객명');
             if (!customerPhone) missingFields.push('전화번호');
+            else if (!phonePattern.test(customerPhone) || customerPhone.replace(/\D/g, '').length < 10) missingFields.push('전화번호 형식 (10자리 이상)');
             if (!customerAddress) missingFields.push('주소');
-            if (!hasCartItems) missingFields.push('상품');
-            
+            if (!hasCartItems) missingFields.push('상품 (장바구니가 비어있음)');
+
             console.log('❌ 누락된 필드:', missingFields);
-            alert(`다음 항목을 확인해주세요:\n${missingFields.join(', ')}`);
+            alert(`다음 항목을 확인해주세요:\n\n${missingFields.map(f => '• ' + f).join('\n')}`);
             return false; // 명시적으로 false 반환
         }
         
@@ -2740,6 +2742,241 @@ window.removeExtraShipping = removeExtraShipping;
 window.resetExtraShipping  = resetExtraShipping;
 window.openExtraShippingAddressSearch = openExtraShippingAddressSearch;
 window._preloadDaumPostcode = _preloadDaumPostcode;
+
+// ─────────────────────────────────────────────
+
+// ─────────────────────────────────────────────
+// 문자 붙여넣기 → 주문 폼 자동 입력
+// ─────────────────────────────────────────────
+
+/**
+ * SMS / 카톡 메시지를 파싱하여 고객명, 전화번호, 주소를 추출한다.
+ * 다양한 형식을 지원:
+ *   - 라벨형: "이름: 홍길동", "연락처: 010-1234-5678", "주소: ..."
+ *   - 줄별 나열: 첫 줄 이름, 둘째 줄 전화, 셋째 줄 주소
+ *   - 혼합: 아무 순서로 이름/전화/주소가 섞여 있어도 패턴으로 추출
+ */
+function parseSmsText(text) {
+    if (!text || !text.trim()) return null;
+
+    const lines = text.trim().split(/\n/).map(l => l.trim()).filter(Boolean);
+    let name = '';
+    let phone = '';
+    let address = '';
+    let addressDetail = '';
+    let memo = '';
+    const usedLines = new Set();
+
+    // ── 1단계: 라벨 기반 추출 ("이름:", "연락처:", "주소:" 등) ──
+    const labelPatterns = [
+        { field: 'name',    re: /(?:이름|성함|고객명|받는\s*분|수령인|수취인)\s*[:：]\s*(.+)/i },
+        { field: 'phone',   re: /(?:전화|연락처|휴대폰|핸드폰|번호|폰)\s*[:：]\s*(.+)/i },
+        { field: 'address', re: /(?:주소|배송지|배송\s*주소)\s*[:：]\s*(.+)/i },
+        { field: 'detail',  re: /(?:상세\s*주소|상세)\s*[:：]\s*(.+)/i },
+        { field: 'memo',    re: /(?:메모|요청\s*사항|배송\s*메모|비고)\s*[:：]\s*(.+)/i },
+    ];
+
+    for (let i = 0; i < lines.length; i++) {
+        for (const { field, re } of labelPatterns) {
+            const m = lines[i].match(re);
+            if (m) {
+                const val = m[1].trim();
+                if (field === 'name' && !name) { name = val; usedLines.add(i); }
+                else if (field === 'phone' && !phone) { phone = val.replace(/[^0-9]/g, ''); usedLines.add(i); }
+                else if (field === 'address' && !address) { address = val; usedLines.add(i); }
+                else if (field === 'detail' && !addressDetail) { addressDetail = val; usedLines.add(i); }
+                else if (field === 'memo' && !memo) { memo = val; usedLines.add(i); }
+            }
+        }
+    }
+
+    // ── 2단계: 패턴 기반 추출 (라벨 없는 경우) ──
+    const phoneRe = /(?:^|[\s,])?(01[016789]\d{7,8}|01[016789]-\d{3,4}-\d{4})(?:[\s,]|$)/;
+    const addrRe = /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)|(?:[\uAC00-\uD7A3]+(?:시|도|군|구|읍|면|동|리|로|길)\s)/;
+
+    for (let i = 0; i < lines.length; i++) {
+        if (usedLines.has(i)) continue;
+        const line = lines[i];
+
+        // 전화번호 추출
+        if (!phone) {
+            const pm = line.match(phoneRe);
+            if (pm) {
+                phone = (pm[1] || pm[0]).replace(/[^0-9]/g, '');
+                // 전화번호만 있는 줄이면 소비
+                if (line.replace(/[\s\-()]/g, '').replace(phone, '').length < 3) {
+                    usedLines.add(i);
+                    continue;
+                }
+            }
+        }
+
+        // 주소 추출
+        if (!address && addrRe.test(line)) {
+            address = line;
+            usedLines.add(i);
+            continue;
+        }
+    }
+
+    // ── 3단계: 이름 추론 (아직 못 찾았으면) ──
+    if (!name) {
+        for (let i = 0; i < lines.length; i++) {
+            if (usedLines.has(i)) continue;
+            const line = lines[i];
+            // 한글 2~5자 이름 패턴 (숫자·특수문자 없음)
+            if (/^[가-힣]{2,5}$/.test(line)) {
+                name = line;
+                usedLines.add(i);
+                break;
+            }
+        }
+    }
+
+    // ── 4단계: 남은 줄 → 메모로 수집 ──
+    if (!memo) {
+        const remaining = lines.filter((_, i) => !usedLines.has(i)).join(' ').trim();
+        if (remaining) memo = remaining;
+    }
+
+    // 전화번호 포맷 정리 (01012345678 → 010-1234-5678)
+    if (phone && phone.length >= 10) {
+        phone = phone.replace(/^(01[016789])(\d{3,4})(\d{4})$/, '$1-$2-$3');
+    }
+
+    return { name, phone, address, addressDetail, memo };
+}
+
+/**
+ * SMS 붙여넣기 모달 열기
+ */
+function openSmsPasteModal() {
+    // 기존 모달 제거
+    const existing = document.getElementById('sms-paste-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'sms-paste-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '700';
+    modal.innerHTML = `
+        <div class="modal-container modal-md" style="max-width:520px;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-paste text-info mr-2"></i>문자 붙여넣기</span>
+                <button id="sms-paste-close" class="modal-close-btn"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+                <p class="text-secondary text-sm mb-2">고객이 보낸 문자·카톡을 그대로 붙여넣으세요. 이름·전화·주소를 자동으로 인식합니다.</p>
+                <textarea id="sms-paste-input" rows="8"
+                    class="w-full px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-emerald-400 resize-none"
+                    placeholder="예시:&#10;홍길동&#10;010-1234-5678&#10;경북 경산시 하양읍 대학로 123&#10;에케베리아 2개 주문합니다"></textarea>
+                <div id="sms-parse-preview" class="mt-3 hidden">
+                    <div class="text-xs font-semibold text-heading mb-1">인식 결과:</div>
+                    <div id="sms-preview-content" class="text-sm bg-section rounded-lg p-3 space-y-1"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="sms-paste-cancel" class="btn-secondary">취소</button>
+                <button id="sms-paste-preview-btn" class="btn-info btn-xs" style="font-size:13px;padding:6px 14px;">
+                    <i class="fas fa-search mr-1"></i>미리보기
+                </button>
+                <button id="sms-paste-apply-btn" class="btn-primary" disabled>
+                    <i class="fas fa-check mr-1"></i>적용
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const textarea = modal.querySelector('#sms-paste-input');
+    const previewArea = modal.querySelector('#sms-parse-preview');
+    const previewContent = modal.querySelector('#sms-preview-content');
+    const previewBtn = modal.querySelector('#sms-paste-preview-btn');
+    const applyBtn = modal.querySelector('#sms-paste-apply-btn');
+    let parsedResult = null;
+
+    const close = () => modal.remove();
+    modal.querySelector('#sms-paste-close').addEventListener('click', close);
+    modal.querySelector('#sms-paste-cancel').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    // 미리보기
+    previewBtn.addEventListener('click', () => {
+        parsedResult = parseSmsText(textarea.value);
+        if (!parsedResult || (!parsedResult.name && !parsedResult.phone && !parsedResult.address)) {
+            previewContent.innerHTML = '<span class="text-danger">인식할 수 없습니다. 문자 내용을 확인해주세요.</span>';
+            previewArea.classList.remove('hidden');
+            applyBtn.disabled = true;
+            return;
+        }
+        const nullDash = '<span class="text-muted">—</span>';
+        previewContent.innerHTML = `
+            <div><strong>이름:</strong> ${parsedResult.name || nullDash}</div>
+            <div><strong>전화:</strong> ${parsedResult.phone || nullDash}</div>
+            <div><strong>주소:</strong> ${parsedResult.address || nullDash}</div>
+            ${parsedResult.addressDetail ? `<div><strong>상세주소:</strong> ${parsedResult.addressDetail}</div>` : ''}
+            ${parsedResult.memo ? `<div><strong>메모:</strong> ${parsedResult.memo}</div>` : ''}
+        `;
+        previewArea.classList.remove('hidden');
+        applyBtn.disabled = false;
+    });
+
+    // 붙여넣기 시 자동 미리보기
+    textarea.addEventListener('paste', () => {
+        setTimeout(() => previewBtn.click(), 100);
+    });
+
+    // 적용
+    applyBtn.addEventListener('click', async () => {
+        if (!parsedResult) return;
+
+        // 폼 필드에 값 채우기
+        const nameEl = document.getElementById('order-customer-name');
+        const phoneEl = document.getElementById('order-customer-phone');
+        const addressEl = document.getElementById('order-customer-address');
+        const addressDetailEl = document.getElementById('order-customer-address-detail');
+        const memoEl = document.getElementById('order-memo');
+
+        if (nameEl && parsedResult.name) nameEl.value = parsedResult.name;
+        if (phoneEl && parsedResult.phone) phoneEl.value = parsedResult.phone;
+        if (addressEl && parsedResult.address) addressEl.value = parsedResult.address;
+        if (addressDetailEl && parsedResult.addressDetail) addressDetailEl.value = parsedResult.addressDetail;
+        if (memoEl && parsedResult.memo) memoEl.value = parsedResult.memo;
+
+        // 기존 고객 자동 매칭 (전화번호로 검색)
+        if (parsedResult.phone && window.supabaseClient) {
+            try {
+                const normalizedPhone = parsedResult.phone.replace(/[^0-9]/g, '');
+                const { data: customers } = await window.supabaseClient
+                    .from('farm_customers')
+                    .select('id, name, phone, address, address_detail, grade')
+                    .or(`phone.eq.${normalizedPhone},phone.eq.${parsedResult.phone}`);
+
+                if (customers && customers.length > 0) {
+                    const c = customers[0];
+                    const customerIdEl = document.getElementById('order-customer-id');
+                    if (customerIdEl) customerIdEl.value = c.id;
+                    // DB에 주소가 있고 폼에 주소가 비었으면 DB 주소 사용
+                    if (!parsedResult.address && c.address && addressEl) addressEl.value = c.address;
+                    if (!parsedResult.addressDetail && c.address_detail && addressDetailEl) addressDetailEl.value = c.address_detail;
+                    console.log('✅ 기존 고객 매칭:', c.name, c.id);
+                }
+            } catch (e) {
+                console.warn('고객 매칭 실패:', e);
+            }
+        }
+
+        // 저장 버튼 상태 업데이트
+        if (window.updateOrderSubmitButtonState) window.updateOrderSubmitButtonState();
+
+        close();
+    });
+
+    textarea.focus();
+}
+
+window.openSmsPasteModal = openSmsPasteModal;
+window.parseSmsText = parseSmsText;
 
 // ─────────────────────────────────────────────
 

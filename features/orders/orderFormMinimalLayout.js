@@ -14,10 +14,17 @@ window.generateOrderFormHTMLMinimal = function () {
                     <!-- 고객 검색 (col-12) -->
                     <div class="form-col-12" style="position:relative;">
                         <label class="form-label">고객 검색</label>
-                        <input type="text" id="order-customer-search" class="form-control"
-                               placeholder="이름 또는 연락처 뒷자리"
-                               oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
-                               autocomplete="off">
+                        <div style="display:flex;gap:6px;">
+                            <input type="text" id="order-customer-search" class="form-control" style="flex:1;"
+                                   placeholder="이름 또는 연락처 뒷자리"
+                                   oninput="searchExistingCustomers(this.value); if(window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();"
+                                   autocomplete="off">
+                            <button type="button" onclick="window.openSmsPasteModal()"
+                                    class="btn-secondary" style="white-space:nowrap;font-size:12px;padding:4px 10px;"
+                                    title="받은 문자를 붙여넣어 자동 입력">
+                                <i class="fas fa-paste"></i> 문자입력
+                            </button>
+                        </div>
                         <div id="customer-search-results" class="xf-dropdown hidden"></div>
                     </div>
 
