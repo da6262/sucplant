@@ -351,12 +351,12 @@ export async function loadCustomerGrades() {
                 : `<span class="badge badge-neutral shrink-0">할인 없음</span>`;
             const row = document.createElement('div');
             row.id = `grade-row-${index}`;
-            row.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            row.className = 'flex items-center gap-2 px-4 py-2 hover:bg-section group border-b last:border-0';
             row.style.borderColor = 'var(--border-light)';
             row.innerHTML = `
-                <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs" style="background:${color}18;color:${color};"><i class="${grade.icon||'fas fa-circle'}"></i></span>
+                <span class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs" style="background:${color}18;color:${color};"><i class="${grade.icon||'fas fa-circle'} text-2xs"></i></span>
                 <span class="text-sm font-semibold text-body w-14 shrink-0">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary flex-1">${amountStr} 이상 구매</span>
+                <span class="text-xs text-secondary flex-1 whitespace-nowrap">${amountStr} 이상</span>
                 ${discountBadge}
                 <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                     <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
@@ -548,7 +548,7 @@ export async function loadSalesChannels() {
             const isActive = channel.is_active !== false;
             const desc = esc2(channel.description||'');
             const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            channelElement.className = 'flex items-center gap-3 px-4 py-2 hover:bg-section group border-b last:border-0';
             channelElement.style.borderColor = 'var(--border-light)';
             channelElement.innerHTML = `
                 <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'} shrink-0">${isActive ? '활성' : '비활성'}</span>
@@ -613,7 +613,7 @@ export function loadOrderStatuses() {
         settings.orderStatuses.forEach((status, index) => {
             const color = status.color || '#6B7280';
             const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            statusElement.className = 'flex items-center gap-3 px-4 py-2 hover:bg-section group border-b last:border-0';
             statusElement.style.borderColor = 'var(--border-light)';
             statusElement.innerHTML = `
                 <span class="badge shrink-0" style="background:${color}18;color:${color};border:1px solid ${color}35;min-width:72px;text-align:center;">${status.label||''}</span>
