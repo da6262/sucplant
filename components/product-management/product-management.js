@@ -5,7 +5,7 @@
 
 // 테이블 내 바코드 SVG 렌더링
 function renderBarcodeSVGs() {
-    const svgs = document.querySelectorAll('#products-tbody .barcode-img[data-barcode]');
+    const svgs = document.querySelectorAll('.barcode-img[data-barcode]');
     if (!svgs.length) return;
     function doRender() {
         svgs.forEach(svg => {
