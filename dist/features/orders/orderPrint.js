@@ -66,19 +66,13 @@ body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:1
 /* ── 타이틀 ── */
 .doc-title { text-align:center; font-size:22px; font-weight:800; letter-spacing:6px; color:#1a1a1a; border-bottom:3px double #222; padding-bottom:10px; margin-bottom:18px; }
 
-/* ── 공급자 / 공급받는자 2단 ── */
-.parties { display:flex; gap:0; margin-bottom:16px; border:1.5px solid #222; }
-.party { flex:1; }
-.party + .party { border-left:1.5px solid #222; }
-.party-head { background:#f0f0f0; text-align:center; font-weight:700; font-size:12px; padding:5px 0; border-bottom:1px solid #ccc; }
-.party table { width:100%; border-collapse:collapse; }
-.party td { padding:4px 8px; font-size:11px; border-bottom:1px solid #e0e0e0; }
-.party td.label { width:70px; background:#fafafa; font-weight:600; color:#555; text-align:center; border-right:1px solid #e0e0e0; }
-
-/* ── 주문 메타 ── */
-.meta-row { display:flex; justify-content:space-between; margin-bottom:12px; font-size:11px; color:#555; }
-.meta-row span { }
-.meta-row strong { color:#222; }
+/* ── 공급자 / 공급받는자 표 ── */
+.info-tbl { width:100%; border-collapse:collapse; border:2px solid #222; margin-bottom:16px; }
+.info-tbl td, .info-tbl th { border:1px solid #999; padding:5px 8px; font-size:11px; vertical-align:middle; }
+.info-tbl .side-header { width:28px; background:#e8e8e8; text-align:center; font-weight:800; font-size:12px; writing-mode:vertical-lr; letter-spacing:4px; color:#333; }
+.info-tbl .field-label { width:68px; background:#f5f5f5; font-weight:600; text-align:center; color:#444; white-space:nowrap; }
+.info-tbl .field-value { font-size:11px; color:#222; }
+.info-tbl .field-value.addr { font-size:10px; }
 
 /* ── 상품 테이블 ── */
 .items { width:100%; border-collapse:collapse; border:1.5px solid #222; margin-bottom:0; }
@@ -116,35 +110,49 @@ body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:1
 <div class="sheet">
     <div class="doc-title">거 래 명 세 서</div>
 
-    <!-- 공급자 / 공급받는자 -->
-    <div class="parties">
-        <div class="party">
-            <div class="party-head">공 급 자</div>
-            <table>
-                <tr><td class="label">상 호</td><td>${farm.name}</td></tr>
-                <tr><td class="label">대 표</td><td>${farm.owner || '-'}</td></tr>
-                <tr><td class="label">사업자번호</td><td>${farm.businessNumber || '-'}</td></tr>
-                <tr><td class="label">주 소</td><td>${farm.address || '-'}</td></tr>
-                <tr><td class="label">전 화</td><td>${farm.phone || '-'}</td></tr>
-            </table>
-        </div>
-        <div class="party">
-            <div class="party-head">공 급 받 는 자</div>
-            <table>
-                <tr><td class="label">성 명</td><td>${order.customer_name || '-'}</td></tr>
-                <tr><td class="label">연 락 처</td><td>${order.customer_phone || '-'}</td></tr>
-                <tr><td class="label">주 소</td><td colspan="3" style="font-size:10px;">${order.customer_address || '-'}</td></tr>
-                ${bankInfo}
-            </table>
-        </div>
-    </div>
-
-    <!-- 주문 메타 -->
-    <div class="meta-row">
-        <span>주문번호: <strong>${order.order_number || '-'}</strong></span>
-        <span>주문일자: <strong>${dateStr}</strong></span>
-        <span>상태: <strong>${order.order_status || order.status || '주문접수'}</strong></span>
-    </div>
+    <!-- 공급자 / 공급받는자 표 -->
+    <table class="info-tbl">
+        <tr>
+            <td class="side-header" rowspan="4">공급자</td>
+            <td class="field-label">상 호</td>
+            <td class="field-value" style="min-width:140px;">${farm.name}</td>
+            <td class="field-label">대 표</td>
+            <td class="field-value">${farm.owner || '-'}</td>
+        </tr>
+        <tr>
+            <td class="field-label">사업자번호</td>
+            <td class="field-value">${farm.businessNumber || '-'}</td>
+            <td class="field-label">전 화</td>
+            <td class="field-value">${farm.phone || '-'}</td>
+        </tr>
+        <tr>
+            <td class="field-label">주 소</td>
+            <td class="field-value addr" colspan="3">${farm.address || '-'}</td>
+        </tr>
+        <tr>
+            <td class="field-label">계 좌</td>
+            <td class="field-value" colspan="3">${farm.bankName && farm.bankAccount ? farm.bankName + ' ' + farm.bankAccount + (farm.bankHolder ? ' (' + farm.bankHolder + ')' : '') : '-'}</td>
+        </tr>
+    </table>
+    <table class="info-tbl">
+        <tr>
+            <td class="side-header" rowspan="3">공급<br>받는<br>자</td>
+            <td class="field-label">성 명</td>
+            <td class="field-value" style="min-width:140px;">${order.customer_name || '-'}</td>
+            <td class="field-label">연 락 처</td>
+            <td class="field-value">${order.customer_phone || '-'}</td>
+        </tr>
+        <tr>
+            <td class="field-label">주 소</td>
+            <td class="field-value addr" colspan="3">${order.customer_address || '-'}</td>
+        </tr>
+        <tr>
+            <td class="field-label">주문번호</td>
+            <td class="field-value">${order.order_number || '-'}</td>
+            <td class="field-label">주문일자</td>
+            <td class="field-value">${dateStr}</td>
+        </tr>
+    </table>
 
     <!-- 상품 목록 -->
     <table class="items">
@@ -167,7 +175,7 @@ body { font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif; font-size:1
         <tr class="grand"><td class="label" style="background:#2d2d2d;text-align:right;">합 계 금 액</td><td class="value" colspan="3" style="text-align:right;">${won(totalAmount)}</td></tr>
     </table>
 
-    <!-- 입금 안내 -->
+    <!-- 입금 안내 (계좌 정보가 있으면 표시) -->
     ${(farm.bankName && farm.bankAccount) ? `
     <div class="bank-box">
         <strong>입금계좌</strong><span>${farm.bankName} ${farm.bankAccount}${farm.bankHolder ? ' (' + farm.bankHolder + ')' : ''}</span>
