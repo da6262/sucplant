@@ -1998,3 +1998,36 @@ table tbody td [class*="shrink-0"] {
     background: var(--primary);
     transition: width 0.2s;
 }
+
+/* =====================================================
+   주문/배송 행의 고객 태그 칩 (v3.4.2+)
+   고객 체계화 결과(RFM 자동 태그·수동 태그)를 업무 화면에 노출
+   ===================================================== */
+.order-row-customer {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    flex-wrap: wrap;
+}
+.order-row-tag {
+    display: inline-flex;
+    align-items: center;
+    font-size: 9px;
+    font-weight: 600;
+    padding: 0 5px;
+    border-radius: var(--radius-full);
+    line-height: 15px;
+    height: 15px;
+    letter-spacing: -0.2px;
+}
+.order-row-tag-danger  { background: var(--badge-danger-bg);  color: var(--danger); }
+.order-row-tag-purple  { background: var(--badge-purple-bg);  color: var(--badge-purple-txt); }
+.order-row-tag-success { background: var(--badge-green-bg);   color: var(--primary); }
+.order-row-tag-info    { background: var(--badge-info-bg);    color: var(--badge-info-txt); }
+.order-row-tag-neutral { background: var(--badge-neutral-bg); color: var(--badge-gray-txt); }
+.order-row-tag-more {
+    font-size: 9px;
+    color: var(--text-muted);
+    font-weight: 500;
+    line-height: 15px;
+}

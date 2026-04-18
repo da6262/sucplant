@@ -36,7 +36,9 @@ export class ShippingUI {
                     </td>
                     <td class="td-primary font-medium">${order.order_number}</td>
                     <td class="td-secondary text-center">${window.fmt.date(order.created_at)}</td>
-                    <td class="td-primary">${order.customer_name}</td>
+                    <td class="td-primary">${window.orderDataManager?._renderCustomerCellWithTags
+                        ? window.orderDataManager._renderCustomerCellWithTags(String(order.customer_name || '').replace(/</g,'&lt;').replace(/>/g,'&gt;'), order)
+                        : order.customer_name}</td>
                     <td class="td-secondary">${order.customer_phone}</td>
                     <td class="td-secondary max-w-xs truncate">${order.shipping_address}</td>
                     <td class="td-primary">${order.product_name}</td>

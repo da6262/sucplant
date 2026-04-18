@@ -1000,6 +1000,53 @@ class OrderDataManager {
         } catch (e) { return { label: '출력완료', tip: '' }; }
     }
 
+    // 고객명 + 태그 칩 렌더 (최대 2개 + 나머지 개수) — 주문 행·배송 행 공용 (v3.4.2+)
+    _renderCustomerCellWithTags(customerNameHtml, order) {
+        const tags = this._getCustomerTagsForOrder(order);
+        if (tags.length === 0) return customerNameHtml;
+        const VARIANT = {
+            '이탈위험': 'danger',
+            'VIP후보':  'purple',
+            '단골':     'success',
+            '신규':     'info',
+            '재구매':   'neutral',
+            '미구매':   'neutral',
+        };
+        const MAX = 2;
+        const visible = tags.slice(0, MAX);
+        const rest = tags.length - visible.length;
+        const chipsHtml = visible.map(t => {
+            const v = VARIANT[t] || 'neutral';
+            const safe = String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<span class="order-row-tag order-row-tag-${v}">${safe}</span>`;
+        }).join('') + (rest > 0 ? `<span class="order-row-tag-more">+${rest}</span>` : '');
+        return `<span class="order-row-customer">${customerNameHtml}${chipsHtml}</span>`;
+    }
+
+    // 주문 행의 고객을 farm_customers 에서 찾아 태그 배열 반환 (v3.4.2+)
+    // - 우선순위: 전화번호 전체 → 이름+last4 폴백
+    // - RPC 경로(isRowSpec)는 phone 없이 last4 만 있을 수 있어 이름 매칭으로 폴백
+    _getCustomerTagsForOrder(order) {
+        try {
+            const list = window.customerDataManager?.farm_customers;
+            if (!Array.isArray(list) || list.length === 0) return [];
+            const phone = String(order.customer_phone || '').replace(/\D/g, '');
+            const last4 = order.customer_phone_last4 || (phone ? phone.slice(-4) : '');
+            const name  = (order.customer_name || '').trim();
+            let customer = null;
+            if (phone) {
+                customer = list.find(c => String(c.phone || '').replace(/\D/g, '') === phone);
+            }
+            if (!customer && last4 && name) {
+                customer = list.find(c => {
+                    const cd = String(c.phone || '').replace(/\D/g, '');
+                    return c.name === name && cd.endsWith(last4);
+                });
+            }
+            return Array.isArray(customer?.tags) ? customer.tags : [];
+        } catch { return []; }
+    }
+
     // 주문 행 렌더링 (운영자 작업 화면: 고객명·상품요약 중심, D-Day, SMS/출력 상태, 밀도 조정)
     // ORDER_ROW_DATA_SPEC 10필드 row 객체(order_id, order_items_summary 등)와 legacy 주문 객체 모두 지원
     renderOrderRow(order) {
@@ -1065,7 +1112,7 @@ class OrderDataManager {
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
                     <td class="text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${window.fmt.nullDash(ddayText)}${isOverdue ? ' ⚠' : ''}</td>
-                    <td class="td-primary td-link">${customerName === '고객명 없음' ? nd : customerName}</td>
+                    <td class="td-primary td-link">${customerName === '고객명 없음' ? nd : this._renderCustomerCellWithTags(customerName, order)}</td>
                     <td class="td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${window.fmt.nullDash(productSummary)}</div></td>
                     <td class="td-muted whitespace-nowrap">${window.fmt.nullDash(orderNumber)}</td>
                     <td class="td-amount text-right text-numeric">${totalAmount > 0 ? window.fmt.currency(totalAmount) : nd}</td>
