@@ -338,6 +338,20 @@ function attachCustomerGradesEventListeners() {
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
 
+    // 일괄 문자 발송 버튼 (Phase E — 세그먼트 SMS)
+    const bulkSMSBtn = document.getElementById('open-bulk-sms-btn');
+    if (bulkSMSBtn && !bulkSMSBtn.dataset.listenerAdded) {
+        bulkSMSBtn.dataset.listenerAdded = 'true';
+        bulkSMSBtn.onclick = () => {
+            if (typeof window.openBulkSMSModal !== 'function') {
+                alert('일괄 문자 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            window.openBulkSMSModal();
+        };
+        console.log('✅ 일괄 문자 버튼 연결');
+    }
+
     // 자동 태그 재계산 버튼 (Phase D — RFM 기반)
     const recalcAutoTagsBtn = document.getElementById('recalc-auto-tags-btn');
     if (recalcAutoTagsBtn && !recalcAutoTagsBtn.dataset.listenerAdded) {

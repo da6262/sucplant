@@ -67,6 +67,10 @@ window.CustomerLogsManager = CustomerLogsManager;
 // RFM 분석 + 자동 태그 재계산 모듈 (window.customerRfm 로 전역 노출)
 import './features/customers/customerRfmData.js';
 
+// 세그먼트 필터 + 일괄 SMS (Phase E)
+import './features/customers/customerSegment.js';
+import './features/customers/customerSegmentUI.js';
+
 // 상품 데이터 모듈 import
 import { 
     ProductDataManager,

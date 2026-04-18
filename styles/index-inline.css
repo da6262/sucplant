@@ -1867,3 +1867,134 @@ table tbody td [class*="shrink-0"] {
     color: var(--text-secondary);
     font-family: ui-monospace, Consolas, Menlo, monospace;
 }
+
+/* =====================================================
+   일괄 SMS 모달 (Phase E) — 세그먼트 필터 + 발송
+   ===================================================== */
+.bulk-sms-section {
+    border: 1px solid var(--border-light);
+    border-radius: 8px;
+    padding: 10px 12px;
+    background: var(--bg-lighter);
+}
+.bulk-sms-section-title {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--text-heading);
+    margin-bottom: 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.bulk-sms-chip-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 6px 8px;
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    min-height: 36px;
+    max-height: 140px;
+    overflow-y: auto;
+}
+.bulk-sms-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    font-size: 11.5px;
+    color: var(--text-body);
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.bulk-sms-chip:hover { background: var(--bg-light); }
+.bulk-sms-chip input[type="checkbox"] {
+    margin: 0;
+    accent-color: var(--primary);
+    cursor: pointer;
+}
+.bulk-sms-chip:has(input:checked) {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+
+.bulk-sms-count-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--primary);
+    background: var(--badge-green-bg);
+    border-radius: var(--radius-full);
+    margin-left: 6px;
+}
+
+.bulk-sms-preview {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px 10px;
+    max-height: 120px;
+    overflow-y: auto;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 11.5px;
+    line-height: 1.6;
+    min-height: 40px;
+}
+.bulk-sms-preview-chip {
+    display: inline-flex;
+    align-items: baseline;
+    gap: 4px;
+    padding: 2px 8px;
+    background: var(--bg-section);
+    border-radius: var(--radius-full);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+.bulk-sms-preview-phone {
+    font-size: 10px;
+    color: var(--text-muted);
+    font-family: ui-monospace, Consolas, monospace;
+}
+.bulk-sms-preview-more {
+    padding: 2px 8px;
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 11px;
+}
+
+/* 진행률 바 */
+.bulk-sms-progress {
+    padding: 10px 12px;
+    background: var(--badge-info-bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+}
+.bulk-sms-progress-text {
+    font-size: 12px;
+    color: var(--text-body);
+    margin-bottom: 6px;
+    font-variant-numeric: tabular-nums;
+}
+.bulk-sms-progress-bar {
+    height: 8px;
+    background: #fff;
+    border-radius: var(--radius-full);
+    overflow: hidden;
+    border: 1px solid var(--border);
+}
+.bulk-sms-progress-fill {
+    height: 100%;
+    width: 0%;
+    background: var(--primary);
+    transition: width 0.2s;
+}
