@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.152-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.157-brightgreen)](https://github.com/da6262/sucplant)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,7 +233,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
-| v3.3.152 | fix: 바코드 인쇄·카메라 스캔 버튼 작동 안 하던 버그 수정 — innerHTML 로드 시 <script> 미실행 문제로 openBarcodePrintModal 등 전역 함수 미등록됐던 것을, product-management.js 로 이전하고 setupEventListeners에서 버튼 바인딩으로 해결 |
+| v3.3.157 | fix: Payhere 내보내기 카테고리 매핑 변경 — 식물류→다육이, 화분→화분, 용토·기타→기타 |
+| v3.3.156 | fix: 바코드 인쇄·카메라 스캔 버튼 작동 안 하던 버그 수정 — innerHTML 로드 시 <script> 미실행 문제로 openBarcodePrintModal 등 전역 함수 미등록됐던 것을, product-management.js 로 이전하고 setupEventListeners에서 버튼 바인딩으로 해결 |
 | v3.3.151 | feat: 상품 내보내기·일괄등록 Payhere 양식 전환 — 내보내기: Payhere 18컬럼(상품명·카테고리·색설정·판매탭노출·재고관리·옵션1~3·SKU·바코드·판매가·부가세·원가·수량·안전재고) 형식으로 출력, 없는 값 빈칸. 일괄등록: Payhere 양식 자동 감지(col0=상품명+col11=SKU) → name·category·price·cost·stock·product_code·barcode 매핑. 양식 템플릿도 Payhere 형식으로 교체 |
 | v3.3.150 | feat(고객관리 Phase F): **엑셀 가져오기 / 내보내기** — 고객관리 체계화 완성. ①`features/customers/customerImportExport.js` 신규 — `exportCustomersToExcel()` (farm_customers 전체를 "고객목록_YYYY-MM-DD.xlsx" 로 10컬럼 내보내기: 이름·전화·이메일·주소·상세주소·등급(표시명)·태그(쉼표)·메모·등록일·가입일시, 컬럼폭 자동), `parseCustomerExcelFile(file)` SheetJS 로 XLSX/XLS/CSV 파싱 + 한글 헤더 → 필드 매핑(`고객명/이름`→name, `전화번호/연락처/휴대폰`→phone, `주소/상세주소/이메일/등급/태그/메모/등록일`), 필수(name·phone) 없는 행 스킵. `importCustomerRows(rows,{mergeStrategy,onProgress})` 전화번호 정규화 기준 upsert — mergeStrategy `preserveEmpty`(기본: 엑셀 빈 값이면 기존 유지) / `overwrite`, 태그는 기존+신규 합집합. `openImportDialog(file)` 미리보기(신규 N · 업데이트 M · 건너뜀 K) 확인 후 실행, 결과 알림(상위 5건 오류 상세 포함). ②고객관리 헤더에 "📥 가져오기" · "📤 내보내기" 버튼 신설(기존 다운로드 placeholder 활성화), 숨은 파일 input `#import-customers-file`(`.xlsx,.xls,.csv`) 트리거 패턴. ③`js/customer-management.js` 에 이벤트 바인딩 + `dataset.listenerAdded` guard. ④`main.js` side-effect import. SheetJS 는 index.html 기존 CDN 로드 재사용. ⑤ Phase A~F 완결 — 고객관리 체계화 1차 사이클 완료 |
 | v3.3.149 | feat: 고객관리·대기자관리 전체선택 체크박스 추가 — 헤더 체크박스(select-all-customers, select-all-waitlist) + 행별 customer-checkbox/waitlist-checkbox, SelectAll.attach로 전체선택·해제·indeterminate 연동 |

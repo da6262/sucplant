@@ -427,6 +427,14 @@ start-server.bat
 - **해결 패턴**: 각 탭 load 함수(`loadOrderStatuses`, `loadCustomerGrades`) 내부에서 `dataset.listenerAdded` guard 후 개별 바인딩 (기존 동작하는 `add-channel-btn`·`recalculate-all-grades-btn` 과 동일 패턴)
 - 새 환경설정 버튼 추가 시: `initSettingsEventListeners` 에 넣지 말고 **해당 탭의 `loadXXX()` 함수 안에서 guard 바인딩**할 것
 
+### 바코드 관련 함수 위치 (v3.3.156+)
+- `openBarcodePrintModal`, `printBarcodeLabels`, `openBarcodeScanner`, `stopBarcodeScanner`, `processBarcodeResult` — **`components/product-management/product-management.js`** 맨 아래 전역 등록
+- 과거 `product-management.html` 의 `<script>` 블록에 있었으나 `innerHTML` 로드 시 미실행 문제로 이전 (v3.3.156). HTML `<script>` 블록에 이 함수들 재삽입 금지.
+
+### Payhere 내보내기 카테고리 매핑 규칙 (v3.3.157+)
+- `exportProducts()` 내 `payhereCategory(c)` 함수: 식물 속명(그랩토페들럼·두들레야·에오니움·에케베리아·코노피튬·크라슐라·포퀘리아) → `'다육이'`, `'화분'` → `'화분'`, 나머지(용토·기타 등) → `'기타'`
+- 새 카테고리 추가 시 이 매핑 함수도 함께 업데이트할 것
+
 ### 상품 테이블 렌더링 이중 경로 주의
 - `features/products/productUI.js` 의 `renderProductsTable` / `PRODUCT_TABLE_COLUMNS` — **활성 코드** (과거 "Dead Code" 기록은 오래되어 부정확)
 - `components/product-management/product-management.js` 의 `createProductRow` — 동적 로드 시 사용
