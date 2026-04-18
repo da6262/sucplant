@@ -385,9 +385,10 @@ async function sendOrderSMSFromModal(orderId) {
                 console.warn('⚠️ window.updateOrderStatus 미등록 — 입금대기 자동 전환 불가. orderData.js 로드 확인 필요.');
             }
             alert('SMS가 발송되었습니다.\n주문 상태가 [입금대기]로 변경되었습니다.');
-            // 주문 목록 새로고침
-            if (window.orderDataManager?.renderOrdersTable) {
-                window.orderDataManager.renderOrdersTable();
+            // 주문 목록 새로고침 (RPC 재호출 후 렌더)
+            if (window.orderDataManager?.loadOrders) {
+                await window.orderDataManager.loadOrders();
+                if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
             }
         } else {
             alert('SMS가 발송되었습니다.');

@@ -990,10 +990,11 @@ export async function updateOrderStatus(orderId, newStatus) {
             }
             
             console.log('✅ 주문 상태 업데이트 완료');
-            
-            // 주문 목록 새로고침
+
+            // 주문 목록 새로고침 (RPC 재호출 후 렌더)
             if (window.orderDataManager && window.orderDataManager.loadOrders) {
-                window.orderDataManager.loadOrders();
+                await window.orderDataManager.loadOrders();
+                if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
             }
             
         } else {
