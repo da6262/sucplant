@@ -346,22 +346,17 @@ export async function loadCustomerGrades() {
         settings.customerGrades.forEach((grade, index) => {
             const color = grade.color || '#6B7280';
             const amountStr = window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원';
-            const discountBadge = (grade.discount||0) > 0
-                ? `<span class="badge badge-info shrink-0">${grade.discount}% 할인</span>`
-                : `<span class="badge badge-neutral shrink-0">할인 없음</span>`;
             const row = document.createElement('div');
             row.id = `grade-row-${index}`;
-            row.className = 'flex items-center gap-2 px-4 py-2 hover:bg-section group border-b last:border-0';
+            row.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
             row.style.borderColor = 'var(--border-light)';
             row.innerHTML = `
-                <span class="w-6 h-6 rounded-full flex items-center justify-center shrink-0 text-xs" style="background:${color}18;color:${color};"><i class="${grade.icon||'fas fa-circle'} text-2xs"></i></span>
-                <span class="text-sm font-semibold text-body w-14 shrink-0">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary flex-1 whitespace-nowrap">${amountStr} 이상</span>
-                ${discountBadge}
-                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                    <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
-                </div>
+                <span class="w-2 h-2 rounded-full shrink-0" style="background:${color};"></span>
+                <span class="text-xs font-semibold text-body w-12 shrink-0">${_esc(grade.name)}</span>
+                <span class="text-xs text-secondary flex-1">${amountStr} 이상</span>
+                <span class="text-xs text-muted shrink-0 whitespace-nowrap">${grade.discount||0}% 할인</span>
+                <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
             `;
             container.appendChild(row);
         });
@@ -548,17 +543,15 @@ export async function loadSalesChannels() {
             const isActive = channel.is_active !== false;
             const desc = esc2(channel.description||'');
             const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center gap-3 px-4 py-2 hover:bg-section group border-b last:border-0';
+            channelElement.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
             channelElement.style.borderColor = 'var(--border-light)';
             channelElement.innerHTML = `
-                <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'} shrink-0">${isActive ? '활성' : '비활성'}</span>
-                <span class="text-sm font-medium text-body flex-1">${esc2(channel.name||'')}</span>
-                ${desc ? `<span class="text-xs text-muted max-w-[200px] truncate">${desc}</span>` : ''}
-                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
-                    <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
-                    <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
-                </div>
+                <span class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></span>
+                <span class="text-xs font-medium text-body w-20 shrink-0">${esc2(channel.name||'')}</span>
+                ${desc ? `<span class="text-xs text-muted flex-1 truncate">${desc}</span>` : '<span class="flex-1"></span>'}
+                <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
+                <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
             `;
             container.appendChild(channelElement);
         });
@@ -613,15 +606,14 @@ export function loadOrderStatuses() {
         settings.orderStatuses.forEach((status, index) => {
             const color = status.color || '#6B7280';
             const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center gap-3 px-4 py-2 hover:bg-section group border-b last:border-0';
+            statusElement.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
             statusElement.style.borderColor = 'var(--border-light)';
             statusElement.innerHTML = `
-                <span class="badge shrink-0" style="background:${color}18;color:${color};border:1px solid ${color}35;min-width:72px;text-align:center;">${status.label||''}</span>
+                <span class="w-2 h-2 rounded-full shrink-0" style="background:${color};"></span>
+                <span class="text-xs font-medium text-body w-20 shrink-0">${status.label||''}</span>
                 <span class="text-xs text-secondary flex-1">${status.description||'—'}</span>
-                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                    <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
-                </div>
+                <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
             `;
             container.appendChild(statusElement);
         });

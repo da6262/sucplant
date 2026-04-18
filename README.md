@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.127-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.128-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.128 | style: 환경설정 리스트 기능 우선 재설계 — group-hover 버튼 제거·항상 표시, py-1.5 조밀, dot 색상 표시, 할인률 whitespace-nowrap |
 | v3.3.127 | style: 환경설정 리스트 행 높이 축소 — py-3→py-2, 아이콘 w-8→w-6, 금액 whitespace-nowrap으로 줄바꿈 방지 |
 | v3.3.125 | style: 환경설정 주문상태·고객등급·판매채널 리스트 행 디자인 개선 — 색상 배지 pill, 아이콘 원형, 호버 시 버튼 표시(`group-hover`), `window.editOrderStatus`·`deleteOrderStatus` 전역 함수 추가 |
 | v3.3.124 | fix: 상품 테이블 상품명 너비 근본 수정 — `table min-w-full`(auto) → `table-fixed`로 전환, `<th>` width 클래스 정확 적용. 상품명 w-36 고정. 카테고리 배지 제거·글자 스타일 통일. PRODUCT_TABLE_COLUMNS 분수 너비 → 고정 너비 동기화 |
