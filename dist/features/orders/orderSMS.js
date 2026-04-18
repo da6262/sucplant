@@ -288,10 +288,16 @@ async function getOrderById(orderId) {
 }
 
 // SMS 템플릿 선택 모달 표시
-function showSMSTemplateModal(orderId) {
+async function showSMSTemplateModal(orderId) {
     try {
         console.log('📱 SMS 템플릿 모달 표시:', orderId);
-        
+
+        // 주문 정보 먼저 조회
+        const order = await getOrderById(orderId);
+        const customerName = order ? (order.customer_name || '고객') : '고객';
+        const customerPhone = order ? (order.customer_phone || '-') : '-';
+        const phoneFormatted = customerPhone.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+
         // 모달 HTML 생성
         const modalHTML = `
             <div id="sms-template-modal" class="fixed inset-0 z-50 overflow-y-auto">
@@ -300,7 +306,14 @@ function showSMSTemplateModal(orderId) {
                     <div class="relative bg-white rounded-lg shadow-xl w-full max-w-md">
                         <div class="p-6">
                             <h3 class="text-lg font-semibold text-heading mb-4">SMS 발송</h3>
-                            
+
+                            <div class="mb-4 px-3 py-2 rounded-lg" style="background:var(--bg-light);border:1px solid var(--border);">
+                                <div class="flex items-center gap-3 text-sm">
+                                    <div><i class="fas fa-user text-muted mr-1"></i><strong>${escapeHtmlBasic(customerName)}</strong></div>
+                                    <div><i class="fas fa-phone text-muted mr-1"></i>${escapeHtmlBasic(phoneFormatted)}</div>
+                                </div>
+                            </div>
+
                             <div class="space-y-4">
                                 <div>
                                     <label class="block text-sm font-medium text-body mb-2">템플릿 선택</label>
@@ -313,14 +326,14 @@ function showSMSTemplateModal(orderId) {
                                         <option value="outOfStock">품절안내</option>
                                     </select>
                                 </div>
-                                
+
                                 <div>
                                     <label class="block text-sm font-medium text-body mb-2">메시지 내용</label>
-                                    <textarea id="sms-message" rows="4" 
+                                    <textarea id="sms-message" rows="4"
                                               class="input-ui resize-none"
                                               placeholder="SMS 메시지를 입력하세요..."></textarea>
                                 </div>
-                                
+
                                 <div class="flex justify-end space-x-3">
                                     <button onclick="closeSMSTemplateModal()" class="btn-secondary">
                                         취소
@@ -335,21 +348,21 @@ function showSMSTemplateModal(orderId) {
                 </div>
             </div>
         `;
-        
+
         // 모달 추가
         document.body.insertAdjacentHTML('beforeend', modalHTML);
-        
+
         // 템플릿 선택 이벤트
         const templateSelect = document.getElementById('sms-template-select');
         const messageTextarea = document.getElementById('sms-message');
-        
+
         templateSelect.addEventListener('change', async (e) => {
             if (e.target.value) {
-                const order = await getOrderById(orderId);
-                if (order) {
+                const o = order || await getOrderById(orderId);
+                if (o) {
                     const smsTemplates = getSMSTemplates();
                     const template = smsTemplates[e.target.value];
-                    const formattedMessage = formatSMSTemplate(template.template, order);
+                    const formattedMessage = formatSMSTemplate(template.template, o);
                     messageTextarea.value = formattedMessage;
                 }
             }
