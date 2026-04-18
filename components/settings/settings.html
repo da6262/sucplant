@@ -30,11 +30,11 @@
 
         <!-- 일반 설정 -->
         <div id="settings-general-section" class="settings-content">
-            <div class="grid grid-cols-12 gap-x-3 gap-y-2 px-3 py-3">
+            <div class="form-grid">
 
-                <!-- 좌측: 로고 + 사이드바 설정 (col-3) -->
+                <!-- 로고 + 사이드바 (col-span-3 — Tailwind, 반응형 없음) -->
                 <div class="col-span-3 flex flex-col items-center gap-2 border-r pr-3" style="border-color:var(--border);">
-                    <div id="farm-logo-preview" class="w-24 h-24 rounded-lg border flex items-center justify-center overflow-hidden bg-section" style="border-color:var(--border);">
+                    <div id="farm-logo-preview" class="w-20 h-20 rounded-lg border flex items-center justify-center overflow-hidden bg-section" style="border-color:var(--border);">
                         <i class="fas fa-image text-muted" id="farm-logo-placeholder"></i>
                         <img id="farm-logo-img" class="w-full h-full object-contain hidden" alt="로고">
                     </div>
@@ -44,14 +44,22 @@
                         <button type="button" id="farm-logo-remove" class="btn-secondary btn-xs hidden" onclick="window._removeFarmLogo()"><i class="fas fa-times"></i></button>
                     </div>
                     <input type="hidden" id="farm-logo-url">
-                    <input type="text" id="farm-sidebar-title" class="form-control text-center" placeholder="경산다육" style="font-size:11px;"
-                           oninput="const el=document.getElementById('sidebar-title');if(el)el.textContent=this.value||'경산다육';">
-                    <input type="text" id="farm-sidebar-subtitle" class="form-control text-center" placeholder="식물농장 관리" style="font-size:10px;"
-                           oninput="const el=document.getElementById('sidebar-subtitle');if(el)el.textContent=this.value||'식물농장 관리';">
+                    <div class="w-full">
+                        <label class="form-label">사이드바 제목</label>
+                        <input type="text" id="farm-sidebar-title" class="form-control text-center text-xs"
+                               placeholder="경산다육"
+                               oninput="const el=document.getElementById('sidebar-title');if(el)el.textContent=this.value||'경산다육';">
+                    </div>
+                    <div class="w-full">
+                        <label class="form-label">사이드바 부제목</label>
+                        <input type="text" id="farm-sidebar-subtitle" class="form-control text-center text-xs"
+                               placeholder="식물농장 관리"
+                               oninput="const el=document.getElementById('sidebar-subtitle');if(el)el.textContent=this.value||'식물농장 관리';">
+                    </div>
                 </div>
 
-                <!-- 우측: 농장 정보 (col-9) -->
-                <div class="col-span-9 grid grid-cols-12 gap-x-3 gap-y-1.5">
+                <!-- 농장 정보 (col-span-9 — Tailwind) -->
+                <div class="col-span-9 grid grid-cols-12 gap-x-3 gap-y-2">
                     <div class="col-span-4">
                         <label class="form-label">농장명</label>
                         <input type="text" id="farm-name" class="form-control" placeholder="경산다육식물농장">
@@ -93,8 +101,8 @@
                     </div>
                 </div>
 
-                <!-- 버튼 (col-12) -->
-                <div class="col-span-12 flex justify-end gap-2 pt-2 border-t" style="border-color:var(--border);">
+                <!-- 액션 버튼 -->
+                <div class="form-actions">
                     <button id="cancel-general-settings" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
                     <button id="save-general-settings" class="btn-primary"><i class="fas fa-save"></i>저장</button>
                 </div>
