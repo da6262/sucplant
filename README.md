@@ -1,6 +1,6 @@
 # 경산다육식물농장 관리시스템
 
-> White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
+> 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
 [![version](https://img.shields.io/badge/version-v3.3.150-brightgreen)](https://github.com/da6262/sucplant)
 

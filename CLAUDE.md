@@ -77,7 +77,7 @@ npm run deploy            # sync + check + firebase deploy 원샷
 ---
 
 ## 프로젝트 개요
-White Platter 전문 농장의 주문/재고/고객 관리 웹앱입니다.
+경산다육식물농장의 주문/재고/고객 관리 웹앱입니다.
 
 ## 기술 스택
 - Vanilla JS (ES 모듈)
