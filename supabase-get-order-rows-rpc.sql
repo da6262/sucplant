@@ -54,7 +54,8 @@ RETURNS TABLE (
   order_status TEXT,
   delivery_status TEXT,
   sms_sent_at TIMESTAMPTZ,
-  printed_at TIMESTAMPTZ
+  printed_at TIMESTAMPTZ,
+  last_sms_type TEXT
 )
 LANGUAGE plpgsql
 SECURITY DEFINER
@@ -121,7 +122,8 @@ BEGIN
     COALESCE(NULLIF(TRIM(o.order_status), ''), '주문접수') AS order_status,
     CASE WHEN COALESCE(o.order_status, '') = '배송완료' THEN '배송완료' ELSE '미등록' END AS delivery_status,
     o.sms_sent_at,
-    o.printed_at
+    o.printed_at,
+    o.last_sms_type
   FROM farm_orders o
   INNER JOIN filtered f ON f.oid = o.id
   CROSS JOIN kst_today k

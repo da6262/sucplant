@@ -107,13 +107,13 @@ async function sendOrderSMS(orderId, templateType, customMessage = null) {
 
         console.log('✅ SMS 발송 완료:', result);
 
-        // sms_sent_at 타임스탬프 기록
+        // sms_sent_at 타임스탬프 + 발송 타입 기록
         if (window.supabaseClient && orderId) {
             await window.supabaseClient
                 .from('farm_orders')
-                .update({ sms_sent_at: new Date().toISOString() })
+                .update({ sms_sent_at: new Date().toISOString(), last_sms_type: templateType || 'custom' })
                 .eq('id', orderId);
-            console.log('✅ sms_sent_at 기록 완료');
+            console.log('✅ sms_sent_at + last_sms_type 기록 완료');
         }
 
         return result;
@@ -398,23 +398,25 @@ async function sendOrderSMSFromModal(orderId) {
         await sendOrderSMS(orderId, templateType, customMessage);
         closeSMSTemplateModal();
 
-        // 주문확인 문자 발송 완료 → 자동으로 입금대기 상태로 전환
-        if (templateType === 'orderConfirm') {
-            if (window.updateOrderStatus) {
-                await window.updateOrderStatus(orderId, '입금대기');
-                console.log('✅ 주문확인 문자 발송 완료 → 입금대기 상태로 자동 전환');
-            } else {
-                // Fix #11: orderData.js 미로드 또는 전역 등록 누락 시 경고
-                console.warn('⚠️ window.updateOrderStatus 미등록 — 입금대기 자동 전환 불가. orderData.js 로드 확인 필요.');
-            }
-            alert('SMS가 발송되었습니다.\n주문 상태가 [입금대기]로 변경되었습니다.');
-            // 주문 목록 새로고침 (RPC 재호출 후 렌더)
-            if (window.orderDataManager?.loadOrders) {
-                await window.orderDataManager.loadOrders();
-                if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
-            }
+        // 템플릿별 상태 자동 전환
+        const STATUS_MAP = {
+            orderConfirm: '입금대기',
+            paymentConfirm: '입금확인',
+            shippingStart: '배송중',
+            shippingComplete: '배송완료',
+        };
+        const newStatus = STATUS_MAP[templateType];
+        if (newStatus && window.updateOrderStatus) {
+            await window.updateOrderStatus(orderId, newStatus);
+            console.log(`✅ ${templateType} 발송 → ${newStatus} 상태 자동 전환`);
+            alert(`SMS가 발송되었습니다.\n주문 상태가 [${newStatus}](으)로 변경되었습니다.`);
         } else {
             alert('SMS가 발송되었습니다.');
+        }
+        // 주문 목록 새로고침
+        if (window.orderDataManager?.loadOrders) {
+            await window.orderDataManager.loadOrders();
+            if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
         }
 
     } catch (error) {
@@ -726,10 +728,17 @@ async function showBulkSMSModal() {
             }
         }
 
-        // 주문확인 템플릿이면 상태도 일괄 변경
-        if (templateType === 'orderConfirm' && window.updateOrderStatus) {
+        // 템플릿별 상태 자동 전환
+        const BULK_STATUS_MAP = {
+            orderConfirm: '입금대기',
+            paymentConfirm: '입금확인',
+            shippingStart: '배송중',
+            shippingComplete: '배송완료',
+        };
+        const bulkNewStatus = BULK_STATUS_MAP[templateType];
+        if (bulkNewStatus && window.updateOrderStatus) {
             for (const id of selectedIds) {
-                try { await window.updateOrderStatus(id, '입금대기'); } catch (e) { /* skip */ }
+                try { await window.updateOrderStatus(id, bulkNewStatus); } catch (e) { /* skip */ }
             }
         }
 

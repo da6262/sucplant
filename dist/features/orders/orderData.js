@@ -992,11 +992,20 @@ class OrderDataManager {
     getSmsStatus(order) {
         const at = order.sms_sent_at;
         if (!at) return { label: '미발송', tip: '클릭하여 SMS 발송' };
+        const TYPE_LABELS = {
+            orderConfirm: '주문확인',
+            paymentConfirm: '입금확인',
+            shippingStart: '배송안내',
+            shippingComplete: '배송완료',
+            outOfStock: '품절안내',
+            custom: '직접입력',
+        };
+        const typeLabel = TYPE_LABELS[order.last_sms_type] || '발송';
         try {
             const t = new Date(at);
             const short = (t.getMonth() + 1) + '/' + t.getDate();
-            return { label: '발송 ' + short, tip: '발송: ' + t.toLocaleString('ko-KR') };
-        } catch (e) { return { label: '발송완료', tip: '' }; }
+            return { label: typeLabel + ' ' + short, tip: typeLabel + ' 발송: ' + t.toLocaleString('ko-KR') };
+        } catch (e) { return { label: typeLabel, tip: '' }; }
     }
     getPrintStatus(order) {
         const at = order.printed_at;
