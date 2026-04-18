@@ -1894,6 +1894,16 @@ class ProductManagementComponent {
             '옵션명1','옵션값1','옵션명2','옵션값2','옵션명3','옵션값3',
             'SKU','바코드','판매가','부가세','원가','수량','안전재고'
         ];
+        // SKU 유효성: 영문·숫자·-·_ 만, 1~20자
+        const skuOk = s => s && /^[A-Za-z0-9_-]{1,20}$/.test(s);
+        const seenSku = new Set();
+        const getSku = s => {
+            if (!skuOk(s)) return null;        // 형식 불일치 → null
+            if (seenSku.has(s)) return null;   // 중복 → null
+            seenSku.add(s);
+            return s;
+        };
+
         const dataRows = products.map(p => [
             p.name || '',
             p.category || '',
@@ -1901,7 +1911,7 @@ class ProductManagementComponent {
             '사용',      // 판매탭 노출
             '사용',      // 재고관리 설정
             null,null,null,null,null,null, // 옵션명/값 1~3 — null = 완전 빈칸
-            p.product_code || null,
+            getSku(p.product_code),
             p.barcode || null,
             p.price || 0,
             null,        // 부가세
