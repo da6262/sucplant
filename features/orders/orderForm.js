@@ -2791,8 +2791,9 @@ function parseSmsText(text) {
     }
 
     // ── 2단계: 패턴 기반 추출 (라벨 없는 경우) ──
-    const phoneRe = /(?:^|[\s,])?(01[016789]\d{7,8}|01[016789]-\d{3,4}-\d{4})(?:[\s,]|$)/;
-    const addrRe = /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)|(?:[\uAC00-\uD7A3]+(?:시|도|군|구|읍|면|동|리|로|길)\s)/;
+    // 전화번호: 공백·하이픈·점 구분자 모두 허용 (010 4338 8929, 010-4338-8929, 01043388929)
+    const phoneRe = /(01[016789])[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})/;
+    const addrRe = /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)|(?:[\uAC00-\uD7A3]+(?:시|도|군|구|읍|면|동|리|로|길)[\s\d])/;
 
     for (let i = 0; i < lines.length; i++) {
         if (usedLines.has(i)) continue;
@@ -2802,12 +2803,21 @@ function parseSmsText(text) {
         if (!phone) {
             const pm = line.match(phoneRe);
             if (pm) {
-                phone = (pm[1] || pm[0]).replace(/[^0-9]/g, '');
-                // 전화번호만 있는 줄이면 소비
-                if (line.replace(/[\s\-()]/g, '').replace(phone, '').length < 3) {
-                    usedLines.add(i);
-                    continue;
+                phone = pm[1] + pm[2] + pm[3]; // 숫자만 합치기
+                // 전화번호를 제거한 나머지 분석
+                const remainder = line.replace(pm[0], '').trim();
+                if (remainder) {
+                    // 나머지가 한글 이름이면 이름으로
+                    if (/^[가-힣]{2,5}$/.test(remainder) && !name) {
+                        name = remainder;
+                    }
+                    // 나머지가 주소 패턴이면 주소로
+                    else if (!address && addrRe.test(remainder)) {
+                        address = remainder;
+                    }
                 }
+                usedLines.add(i);
+                continue;
             }
         }
 
@@ -2827,6 +2837,13 @@ function parseSmsText(text) {
             // 한글 2~5자 이름 패턴 (숫자·특수문자 없음)
             if (/^[가-힣]{2,5}$/.test(line)) {
                 name = line;
+                usedLines.add(i);
+                break;
+            }
+            // 이름 + 전화번호가 한 줄에 있는 경우 (이미 전화번호는 추출됨)
+            const nameMatch = line.match(/^([가-힣]{2,5})\s/);
+            if (nameMatch) {
+                name = nameMatch[1];
                 usedLines.add(i);
                 break;
             }
@@ -2877,9 +2894,6 @@ function openSmsPasteModal() {
             </div>
             <div class="modal-footer">
                 <button id="sms-paste-cancel" class="btn-secondary">취소</button>
-                <button id="sms-paste-preview-btn" class="btn-info btn-xs" style="font-size:13px;padding:6px 14px;">
-                    <i class="fas fa-search mr-1"></i>미리보기
-                </button>
                 <button id="sms-paste-apply-btn" class="btn-primary" disabled>
                     <i class="fas fa-check mr-1"></i>적용
                 </button>
@@ -2891,44 +2905,78 @@ function openSmsPasteModal() {
     const textarea = modal.querySelector('#sms-paste-input');
     const previewArea = modal.querySelector('#sms-parse-preview');
     const previewContent = modal.querySelector('#sms-preview-content');
-    const previewBtn = modal.querySelector('#sms-paste-preview-btn');
     const applyBtn = modal.querySelector('#sms-paste-apply-btn');
     let parsedResult = null;
+    let matchedCustomer = null; // 기존 고객 매칭 결과
 
     const close = () => modal.remove();
     modal.querySelector('#sms-paste-close').addEventListener('click', close);
     modal.querySelector('#sms-paste-cancel').addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
 
-    // 미리보기
-    previewBtn.addEventListener('click', () => {
+    // 전화번호로 기존 고객 검색
+    async function lookupCustomer(phoneStr) {
+        if (!phoneStr || !window.supabaseClient) return null;
+        try {
+            const normalized = phoneStr.replace(/[^0-9]/g, '');
+            const { data } = await window.supabaseClient
+                .from('farm_customers')
+                .select('id, name, phone, address, address_detail, grade')
+                .or(`phone.eq.${normalized},phone.eq.${phoneStr}`);
+            return (data && data.length > 0) ? data[0] : null;
+        } catch (e) {
+            console.warn('고객 조회 실패:', e);
+            return null;
+        }
+    }
+
+    // 미리보기 갱신
+    async function updatePreview() {
         parsedResult = parseSmsText(textarea.value);
         if (!parsedResult || (!parsedResult.name && !parsedResult.phone && !parsedResult.address)) {
             previewContent.innerHTML = '<span class="text-danger">인식할 수 없습니다. 문자 내용을 확인해주세요.</span>';
             previewArea.classList.remove('hidden');
             applyBtn.disabled = true;
+            matchedCustomer = null;
             return;
         }
+
+        // 기존 고객 매칭
+        matchedCustomer = await lookupCustomer(parsedResult.phone);
+
         const nullDash = '<span class="text-muted">—</span>';
+        const customerBadge = matchedCustomer
+            ? `<div class="mt-2 px-2 py-1 rounded text-xs" style="background:var(--badge-info-bg);color:var(--badge-info-txt);">
+                 <i class="fas fa-user-check mr-1"></i>기존 고객: <strong>${matchedCustomer.name}</strong>님 — 주문에 자동 연결됩니다
+               </div>`
+            : (parsedResult.name && parsedResult.phone)
+              ? `<div class="mt-2 px-2 py-1 rounded text-xs" style="background:var(--badge-warning-bg);color:var(--badge-warning-txt);">
+                   <i class="fas fa-user-plus mr-1"></i>신규 고객 — 적용 시 고객 자동 등록 후 주문에 연결됩니다
+                 </div>`
+              : '';
+
         previewContent.innerHTML = `
             <div><strong>이름:</strong> ${parsedResult.name || nullDash}</div>
             <div><strong>전화:</strong> ${parsedResult.phone || nullDash}</div>
             <div><strong>주소:</strong> ${parsedResult.address || nullDash}</div>
             ${parsedResult.addressDetail ? `<div><strong>상세주소:</strong> ${parsedResult.addressDetail}</div>` : ''}
             ${parsedResult.memo ? `<div><strong>메모:</strong> ${parsedResult.memo}</div>` : ''}
+            ${customerBadge}
         `;
         previewArea.classList.remove('hidden');
         applyBtn.disabled = false;
-    });
+    }
 
-    // 붙여넣기 시 자동 미리보기
-    textarea.addEventListener('paste', () => {
-        setTimeout(() => previewBtn.click(), 100);
-    });
+    // 붙여넣기·입력 시 자동 미리보기
+    let previewTimer = null;
+    textarea.addEventListener('paste', () => { clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 100); });
+    textarea.addEventListener('input', () => { clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 400); });
 
     // 적용
     applyBtn.addEventListener('click', async () => {
         if (!parsedResult) return;
+        applyBtn.disabled = true;
+        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>처리 중...';
 
         // 폼 필드에 값 채우기
         const nameEl = document.getElementById('order-customer-name');
@@ -2936,6 +2984,7 @@ function openSmsPasteModal() {
         const addressEl = document.getElementById('order-customer-address');
         const addressDetailEl = document.getElementById('order-customer-address-detail');
         const memoEl = document.getElementById('order-memo');
+        const customerIdEl = document.getElementById('order-customer-id');
 
         if (nameEl && parsedResult.name) nameEl.value = parsedResult.name;
         if (phoneEl && parsedResult.phone) phoneEl.value = parsedResult.phone;
@@ -2943,27 +2992,39 @@ function openSmsPasteModal() {
         if (addressDetailEl && parsedResult.addressDetail) addressDetailEl.value = parsedResult.addressDetail;
         if (memoEl && parsedResult.memo) memoEl.value = parsedResult.memo;
 
-        // 기존 고객 자동 매칭 (전화번호로 검색)
-        if (parsedResult.phone && window.supabaseClient) {
-            try {
+        try {
+            if (matchedCustomer) {
+                // 기존 고객 → customer_id 연결 + DB 주소 보완
+                if (customerIdEl) customerIdEl.value = matchedCustomer.id;
+                if (!parsedResult.address && matchedCustomer.address && addressEl) addressEl.value = matchedCustomer.address;
+                if (!parsedResult.addressDetail && matchedCustomer.address_detail && addressDetailEl) addressDetailEl.value = matchedCustomer.address_detail;
+                console.log('✅ 기존 고객 연결:', matchedCustomer.name, matchedCustomer.id);
+            } else if (parsedResult.name && parsedResult.phone && window.supabaseClient) {
+                // 신규 고객 → farm_customers 자동 등록
                 const normalizedPhone = parsedResult.phone.replace(/[^0-9]/g, '');
-                const { data: customers } = await window.supabaseClient
+                const newCustomer = {
+                    name: parsedResult.name,
+                    phone: normalizedPhone,
+                    address: parsedResult.address || '',
+                    address_detail: parsedResult.addressDetail || '',
+                    grade: 'GENERAL',
+                    memo: '',
+                };
+                const { data: inserted, error } = await window.supabaseClient
                     .from('farm_customers')
-                    .select('id, name, phone, address, address_detail, grade')
-                    .or(`phone.eq.${normalizedPhone},phone.eq.${parsedResult.phone}`);
+                    .insert(newCustomer)
+                    .select('id')
+                    .single();
 
-                if (customers && customers.length > 0) {
-                    const c = customers[0];
-                    const customerIdEl = document.getElementById('order-customer-id');
-                    if (customerIdEl) customerIdEl.value = c.id;
-                    // DB에 주소가 있고 폼에 주소가 비었으면 DB 주소 사용
-                    if (!parsedResult.address && c.address && addressEl) addressEl.value = c.address;
-                    if (!parsedResult.addressDetail && c.address_detail && addressDetailEl) addressDetailEl.value = c.address_detail;
-                    console.log('✅ 기존 고객 매칭:', c.name, c.id);
+                if (error) {
+                    console.error('신규 고객 등록 실패:', error);
+                } else if (inserted) {
+                    if (customerIdEl) customerIdEl.value = inserted.id;
+                    console.log('✅ 신규 고객 등록 완료:', parsedResult.name, inserted.id);
                 }
-            } catch (e) {
-                console.warn('고객 매칭 실패:', e);
             }
+        } catch (e) {
+            console.warn('고객 처리 실패:', e);
         }
 
         // 저장 버튼 상태 업데이트
