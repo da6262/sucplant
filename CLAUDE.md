@@ -380,9 +380,9 @@ start-server.bat
 
 ## 고객 등급
 - **환경설정 기반** — `farm_settings.customerGrades` JSONB 배열에 저장, 사용자가 환경설정 탭에서 이름·최소금액·할인율·색상 자유 편집
-- 등급 개수·이름 고정 아님 (기본 예시: 씨앗·새싹·그린·골드·VIP)
-- **주의: 코드에서 등급명 하드코딩 금지** — `farm_settings` 에서 동적 로드(`loadCustomerGradesFromSettings` / `settingsDataManager.settings.customerGrades`)
-- `farm_customers.grade` 에는 등급 **code**(`GENERAL`·`VIP` 등) 저장, 표시 시 settings 의 `name` 으로 변환
+- 등급 개수·이름 고정 아님. **현재 운영 중(2026-04 DB 기준)**: 일반(GENERAL·0원·0%) / 그린(GREEN_LEAF·10만원·5%) / 퍼플(PURPLE_EMPEROR·50만원·10%) / 블랙(BLACK_DIAMOND·100만원·15%) — `gradePeriod='all'`(전체 누적)
+- **주의: 코드에서 등급명 하드코딩 금지** — `farm_settings` 에서 동적 로드(`loadCustomerGradesFromSettings` / `settingsDataManager.settings.customerGrades`). 실제 등급이 뭔지는 환경설정 또는 `SELECT settings->'customerGrades' FROM farm_settings WHERE id=1` 로 확인
+- `farm_customers.grade` 에는 등급 **code**(`GENERAL`·`GREEN_LEAF`·`PURPLE_EMPEROR`·`BLACK_DIAMOND` 등) 저장, 표시 시 settings 의 `name` 으로 변환
 - 자동 재계산 경로: `updateCustomerGrade(customerId, totalPurchaseAmount)` — `gradePeriod`(all/1year/6months/3months) 에 따라 기간별 구매액 합산 → 등급 최소금액(`minAmount`) 임계값 비교 → 등급 결정. 환경설정 "전체 고객 등급 재계산" 버튼이 모든 고객 순회 (v3.3.137+: 등급 변동 시 `farm_customer_logs` 에 `grade_change` 로그 자동 기록, 수동 편집에도 동일 훅)
 
 ## 대기자(Waitlist) 상태 흐름
