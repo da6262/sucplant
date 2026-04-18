@@ -262,7 +262,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             const phoneDisplay = formatPhone(customer.phone);
             tr.innerHTML = `
                 <td class="text-center w-10"><input type="checkbox" class="customer-checkbox checkbox-ui" data-customer-id="${customer.id}"></td>
-                <td class="td-primary td-link">${escapeHtml(customer.name) || ND}</td>
+                <td class="td-primary td-link whitespace-nowrap">${escapeHtml(customer.name) || ND}</td>
                 <td class="td-secondary">${phoneDisplay || ND}</td>
                 <td class="td-muted text-center">${lastOrderDate || ND}</td>
                 <td class="text-center"><span class="badge ${getGradeBadgeClass(customer.grade)}">${gradeDisplayName}</span></td>
