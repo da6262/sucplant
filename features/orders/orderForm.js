@@ -1826,6 +1826,7 @@ function addProductToCart(productId, productName, price, stock, event) {
 // 신규 고객 정보 미완성 시 주문 저장 버튼 비활성화 (customer_id 없으면 이름+연락처 필수)
 function updateOrderSubmitButtonState() {
     const btn = document.getElementById('order-submit-btn');
+    const smsBtn = document.getElementById('order-save-sms-btn');
     if (!btn) return;
     const customerIdEl = document.getElementById('order-customer-id');
     const nameEl = document.getElementById('order-customer-name');
@@ -1835,6 +1836,7 @@ function updateOrderSubmitButtonState() {
     const phone = (phoneEl && phoneEl.value) ? String(phoneEl.value).trim() : '';
     const canSave = !!customerId || (!!name && !!phone);
     btn.disabled = !canSave;
+    if (smsBtn) smsBtn.disabled = !canSave;
 }
 
 // 전역 함수로 등록

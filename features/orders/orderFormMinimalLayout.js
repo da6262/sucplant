@@ -190,11 +190,17 @@ window.generateOrderFormHTMLMinimal = function () {
                     </tfoot>
                 </table>
 
-                <!-- 액션 버튼: 취소(좌) · 저장(우) -->
+                <!-- 액션 버튼: 취소(좌) · 저장+문자(우) -->
                 <div class="xf-actions">
                     <button type="button" id="order-cancel-btn" onclick="window.closeOrderModal()"
                             class="xf-cancel-btn">
                         취소
+                    </button>
+                    <button type="button" id="order-save-sms-btn" disabled
+                            class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed"
+                            style="background:#2563EB;"
+                            onclick="window._orderSaveAndSMS=true; document.getElementById('order-submit-btn').click();">
+                        <i class="fas fa-sms" style="margin-right:4px;"></i>저장+문자
                     </button>
                     <button type="submit" form="order-form" id="order-submit-btn" disabled
                             class="xf-save-btn disabled:opacity-40 disabled:cursor-not-allowed">

@@ -805,8 +805,27 @@ export async function saveOrder() {
                 if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
             }
 
-            alert('주문이 성공적으로 등록되었습니다.');
-            
+            // 저장+문자 버튼으로 저장한 경우 → 주문확인 SMS 발송
+            const savedOrderId = data && data[0] ? data[0].id : null;
+            if (window._orderSaveAndSMS && savedOrderId) {
+                window._orderSaveAndSMS = false;
+                try {
+                    if (window.showSMSTemplateModal) {
+                        await window.showSMSTemplateModal(savedOrderId);
+                        // 주문확인 템플릿 자동 선택
+                        setTimeout(() => {
+                            const sel = document.getElementById('sms-template-select');
+                            if (sel) { sel.value = 'orderConfirm'; sel.dispatchEvent(new Event('change')); }
+                        }, 150);
+                    }
+                } catch (e) {
+                    console.error('SMS 모달 열기 실패:', e);
+                }
+            } else {
+                window._orderSaveAndSMS = false;
+                alert('주문이 성공적으로 등록되었습니다.');
+            }
+
         } else {
             console.warn('Supabase 클라이언트가 연결되지 않았습니다');
         }
@@ -925,12 +944,29 @@ export async function updateOrder(orderId) {
                 window.orderDataManager.loadOrders();
             }
             
-            alert('주문이 성공적으로 수정되었습니다.');
-            
+            // 저장+문자 버튼으로 수정한 경우 → 주문확인 SMS 발송
+            if (window._orderSaveAndSMS && orderId) {
+                window._orderSaveAndSMS = false;
+                try {
+                    if (window.showSMSTemplateModal) {
+                        await window.showSMSTemplateModal(orderId);
+                        setTimeout(() => {
+                            const sel = document.getElementById('sms-template-select');
+                            if (sel) { sel.value = 'orderConfirm'; sel.dispatchEvent(new Event('change')); }
+                        }, 150);
+                    }
+                } catch (e) {
+                    console.error('SMS 모달 열기 실패:', e);
+                }
+            } else {
+                window._orderSaveAndSMS = false;
+                alert('주문이 성공적으로 수정되었습니다.');
+            }
+
         } else {
             console.warn('Supabase 클라이언트가 연결되지 않았습니다');
         }
-        
+
     } catch (error) {
         console.error('❌ 주문 수정 실패:', error);
         alert('주문 수정에 실패했습니다: ' + error.message);
