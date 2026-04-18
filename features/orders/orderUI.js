@@ -799,11 +799,12 @@ export async function saveOrder() {
             // 모달 닫기
             closeOrderModal();
             
-            // 주문 목록 새로고침
+            // 주문 목록 새로고침 (RPC 재호출 완료 후 알림)
             if (window.orderDataManager && window.orderDataManager.loadOrders) {
-                window.orderDataManager.loadOrders();
+                await window.orderDataManager.loadOrders();
+                if (window.orderDataManager.renderOrdersTable) window.orderDataManager.renderOrdersTable();
             }
-            
+
             alert('주문이 성공적으로 등록되었습니다.');
             
         } else {
