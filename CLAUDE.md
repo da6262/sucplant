@@ -385,6 +385,27 @@ start-server.bat
 - `farm_customer_logs` — 고객 타임라인 통합 테이블(v3.3.126+). `log_type` CHECK 제약: `call/memo/grade_change/tag_change/order_note/etc`. `metadata JSONB` 에 구조화 데이터 저장(등급변동 `{old,new,reason}`, 태그변동 `{added:[],removed:[]}`, 통화 `{direction,duration_sec}` 등). 접근: `window.customerLogsManager.{list,add,remove}`
 - **farm_orders 추가 컬럼**: `sms_sent_at` TIMESTAMPTZ (SMS 발송 시각), `printed_at` TIMESTAMPTZ (주문서 출력 시각) — v3.3.83 추가
 - **farm_orders 추가 컬럼**: `shipping_method` VARCHAR (택배사, 기본값 '택배'), `customer_address_detail` TEXT (상세주소) — v3.4.5 추가. 주의: `shipping_company` 컬럼은 존재하지 않음 — 택배사는 반드시 `shipping_method` 사용
+- **farm_orders 추가 컬럼**: `last_sms_type` VARCHAR (마지막 발송 SMS 템플릿 타입: orderConfirm/paymentConfirm/shippingStart/shippingComplete/custom) — v3.4.19 추가. RPC `get_order_rows`에서도 반환.
+
+### SMS / 카카오 알림톡 발송 체계 (v3.4.28+)
+- **스마트 발송**: `sendSmartMessage()` — 카카오 알림톡 우선 시도, 실패 시 SMS 자동 폴백
+- **카카오 채널**: pfId `KA01PF250905143602736PcFaTjYyszo` (경산다육농장, searchId: suplant)
+- **카카오 알림톡 템플릿** (Solapi 경유):
+  - `orderConfirm` → `KA01TP260418163114740BHO5Pj256DA` (주문 접수 안내)
+  - `paymentConfirm` → `KA01TP260418163114819UIuQRGFX7AV` (입금 확인 안내)
+  - `shippingStart` → `KA01TP26041816311486081rup0HHQ5K` (배송 시작 안내)
+  - `shippingComplete` → `KA01TP260418163114900fOuMkngRGhB` (배송 완료 안내)
+  - `waitlistNotify` → `KA01TP250905182859613fufzpibZmgG` (입고 알림, 승인완료)
+- **SMS 발송 후 DB 기록**: `sms_sent_at` + `last_sms_type` 자동 업데이트
+- **템플릿별 상태 자동 전환**: orderConfirm→입금대기, paymentConfirm→입금확인, shippingStart→배송중, shippingComplete→배송완료
+- **일괄 SMS**: 체크박스 선택 → `showBulkSMSModal()` → 템플릿 선택 → 순차 발송 + 진행률 표시
+
+### 문자 붙여넣기 → 주문 자동 입력 (v3.4.9+)
+- `openSmsPasteModal()` — 주문 등록 폼의 "문자입력" 버튼
+- `parseSmsText()` — 이름·전화·주소·메모·상품 자동 파싱 (라벨형/줄별/혼합 양식, 전화번호 공백 구분자 지원)
+- `matchProductsFromDB()` — 파싱된 상품명을 `farm_products`와 부분일치 매칭 → 장바구니 자동 추가
+- 기존 고객(전화번호 DB 매칭) → `customer_id` 자동 연결, 신규 고객 → `farm_customers` 자동 등록
+- "저장+문자" 버튼 — 주문 저장 후 바로 SMS 발송 모달 열기 (주문확인 템플릿 자동 선택)
 
 ### RPC: `get_order_rows`
 - 주문관리 목록의 **단일 데이터 소스** — 목록 렌더링 + 탭 카운트 모두 이 결과 사용
