@@ -599,6 +599,141 @@ function openCustomerSMSById(customerId) {
     openCustomerSMSModal(data.phone, data.name);
 }
 
+// ─────────────────────────────────────────────
+// 일괄 SMS 발송
+// ─────────────────────────────────────────────
+
+/**
+ * 일괄 SMS 모달 표시 — 선택된 주문들에 대해 템플릿 선택 후 일괄 발송
+ */
+async function showBulkSMSModal() {
+    const dm = window.orderDataManager;
+    if (!dm || !dm.selectedOrders || dm.selectedOrders.size === 0) {
+        alert('SMS를 보낼 주문을 먼저 선택해주세요.');
+        return;
+    }
+
+    const selectedIds = Array.from(dm.selectedOrders);
+    const count = selectedIds.length;
+
+    // 기존 모달 제거
+    const existing = document.getElementById('bulk-sms-modal');
+    if (existing) existing.remove();
+
+    const smsTemplates = getSMSTemplates();
+    const templateOptions = Object.entries(smsTemplates)
+        .map(([key, val]) => `<option value="${key}">${val.name}</option>`)
+        .join('');
+
+    const modal = document.createElement('div');
+    modal.id = 'bulk-sms-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '700';
+    modal.innerHTML = `
+        <div class="modal-container modal-md" style="max-width:500px;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-sms text-info mr-2"></i>일괄 SMS 발송</span>
+                <button class="modal-close-btn" onclick="document.getElementById('bulk-sms-modal').remove()">
+                    <i class="fas fa-times text-sm"></i>
+                </button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+                <p class="text-sm text-secondary mb-3">
+                    선택된 <strong class="text-info">${count}건</strong>의 주문에 SMS를 일괄 발송합니다.
+                </p>
+                <div class="mb-3">
+                    <label class="form-label">템플릿 선택</label>
+                    <select id="bulk-sms-template" class="form-control">
+                        ${templateOptions}
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">메시지 미리보기</label>
+                    <textarea id="bulk-sms-preview" class="form-control" rows="6" readonly
+                        style="font-size:12px;background:var(--bg-light);"></textarea>
+                    <p class="text-xs text-muted mt-1">* 각 주문별로 고객명·주문번호 등이 자동 치환됩니다.</p>
+                </div>
+                <div id="bulk-sms-progress" class="mt-3 hidden">
+                    <div class="flex items-center gap-2 text-sm">
+                        <i class="fas fa-spinner fa-spin text-info"></i>
+                        <span id="bulk-sms-progress-text">발송 중...</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2 mt-2">
+                        <div id="bulk-sms-progress-bar" class="h-2 rounded-full" style="width:0%;background:var(--primary);transition:width 0.3s;"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('bulk-sms-modal').remove()">취소</button>
+                <button id="bulk-sms-send-btn" class="btn-primary">
+                    <i class="fas fa-paper-plane mr-1"></i>${count}건 일괄 발송
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    const templateSelect = modal.querySelector('#bulk-sms-template');
+    const previewArea = modal.querySelector('#bulk-sms-preview');
+    const sendBtn = modal.querySelector('#bulk-sms-send-btn');
+
+    // 템플릿 미리보기 업데이트
+    function updatePreview() {
+        const key = templateSelect.value;
+        const tmpl = smsTemplates[key];
+        previewArea.value = tmpl ? tmpl.template : '';
+    }
+    templateSelect.addEventListener('change', updatePreview);
+    updatePreview();
+
+    // 발송
+    sendBtn.addEventListener('click', async () => {
+        const templateType = templateSelect.value;
+        if (!confirm(`${count}건의 주문에 SMS를 발송합니다.\n계속하시겠습니까?`)) return;
+
+        sendBtn.disabled = true;
+        const progressDiv = modal.querySelector('#bulk-sms-progress');
+        const progressText = modal.querySelector('#bulk-sms-progress-text');
+        const progressBar = modal.querySelector('#bulk-sms-progress-bar');
+        progressDiv.classList.remove('hidden');
+
+        let success = 0, fail = 0;
+
+        for (let i = 0; i < selectedIds.length; i++) {
+            const orderId = selectedIds[i];
+            progressText.textContent = `발송 중... (${i + 1}/${count})`;
+            progressBar.style.width = ((i + 1) / count * 100) + '%';
+
+            try {
+                await sendOrderSMS(orderId, templateType);
+                success++;
+            } catch (e) {
+                console.error(`SMS 발송 실패 (${orderId}):`, e);
+                fail++;
+            }
+        }
+
+        // 주문확인 템플릿이면 상태도 일괄 변경
+        if (templateType === 'orderConfirm' && window.updateOrderStatus) {
+            for (const id of selectedIds) {
+                try { await window.updateOrderStatus(id, '입금대기'); } catch (e) { /* skip */ }
+            }
+        }
+
+        modal.remove();
+
+        // 목록 새로고침
+        if (dm.loadOrders) {
+            await dm.loadOrders();
+            if (dm.renderOrdersTable) dm.renderOrdersTable();
+        }
+
+        alert(`일괄 SMS 발송 완료\n성공: ${success}건 / 실패: ${fail}건` +
+            (templateType === 'orderConfirm' ? '\n상태가 [입금대기]로 변경되었습니다.' : ''));
+    });
+}
+
+window.showBulkSMSModal = showBulkSMSModal;
 window.sendSolapiSMS = sendSolapiSMS;
 window.openCustomerSMSModal = openCustomerSMSModal;
 window.openCustomerSMSById = openCustomerSMSById;

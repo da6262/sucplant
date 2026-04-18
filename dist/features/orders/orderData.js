@@ -935,6 +935,13 @@ class OrderDataManager {
                                 </div>
 
                                 <div class="relative">
+                                    <button onclick="window.showBulkSMSModal()" class="btn-primary">
+                                        <i class="fas fa-sms"></i>
+                                        <span>일괄 SMS</span>
+                                    </button>
+                                </div>
+
+                                <div class="relative">
                                     <button onclick="showBulkDeleteModal()" class="btn-danger">
                                         <i class="fas fa-trash"></i>
                                         <span>일괄 삭제</span>
