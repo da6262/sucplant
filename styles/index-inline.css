@@ -1687,3 +1687,121 @@ table tbody td [class*="shrink-0"] {
     margin-top: 2px;
     font-variant-numeric: tabular-nums;
 }
+
+/* =====================================================
+   SMS 템플릿 — 용도별 카드 그리드 (v3.3.139+)
+   ===================================================== */
+.sms-card-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 12px;
+    padding: 12px;
+}
+
+.sms-card {
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: #fff;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: box-shadow 0.15s, transform 0.15s;
+}
+.sms-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+}
+
+.sms-card-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border-light);
+    background: var(--bg-lighter);
+}
+.sms-card-icon {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    flex: 0 0 32px;
+}
+.sms-variant-info .sms-card-icon    { background: var(--badge-info-bg);    color: var(--badge-info-txt); }
+.sms-variant-success .sms-card-icon { background: var(--badge-green-bg);   color: var(--primary); }
+.sms-variant-warn .sms-card-icon    { background: var(--badge-warning-bg); color: var(--badge-warning-txt); }
+.sms-variant-purple .sms-card-icon  { background: var(--badge-purple-bg);  color: var(--badge-purple-txt); }
+.sms-variant-danger .sms-card-icon  { background: var(--badge-danger-bg);  color: var(--danger); }
+
+.sms-card-title-wrap { flex: 1; min-width: 0; }
+.sms-card-title {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-heading);
+    line-height: 1.3;
+}
+.sms-card-desc {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    margin-top: 1px;
+    line-height: 1.3;
+}
+.sms-card-edit { margin-left: auto; }
+
+.sms-card-body {
+    padding: 10px 12px;
+    flex: 1;
+    min-height: 90px;
+    max-height: 200px;
+    overflow: auto;
+    background: #fff;
+}
+.sms-card-content {
+    font-family: inherit;
+    font-size: 12px;
+    color: var(--text-body);
+    line-height: 1.6;
+    white-space: pre-wrap;
+    word-break: break-word;
+    margin: 0;
+}
+.sms-card-empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    font-size: 12px;
+    color: var(--text-muted);
+    font-style: italic;
+    min-height: 70px;
+    height: 100%;
+}
+.sms-card-empty i { font-size: 11px; opacity: 0.6; }
+
+.sms-card-vars {
+    padding: 8px 12px;
+    background: var(--bg-section);
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    font-size: 10px;
+}
+.sms-card-vars-label {
+    color: var(--text-muted);
+    margin-right: 2px;
+    font-weight: 500;
+}
+.sms-card-vars code {
+    background: #fff;
+    border: 1px solid var(--border);
+    padding: 1px 5px;
+    border-radius: var(--radius-sm);
+    font-size: 10px;
+    color: var(--text-secondary);
+    font-family: ui-monospace, Consolas, Menlo, monospace;
+}

@@ -255,23 +255,14 @@
         </div>
 
         <!-- ══════════════════════════════════════════
-             SMS 설정 — 템플릿 표 (인증정보 제거)
+             SMS 설정 — 용도별 카드 (v3.3.139+)
              ══════════════════════════════════════════ -->
         <div id="settings-sms-section" class="settings-content hidden">
             <div class="flex items-center px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
                 <span class="text-xs font-semibold text-body">SMS 문자 템플릿</span>
-                <span class="text-xs text-muted ml-2">— 발신번호는 일반 탭 연락처 사용</span>
+                <span class="text-xs text-muted ml-2">— 발신번호는 일반 탭 연락처 사용 · 카드 클릭 또는 ✎ 로 수정</span>
             </div>
-            <table class="table-ui">
-                <thead>
-                    <tr>
-                        <th class="text-left w-24">용도</th>
-                        <th class="text-left">내용 미리보기</th>
-                        <th class="w-14"></th>
-                    </tr>
-                </thead>
-                <tbody id="sms-templates-list"></tbody>
-            </table>
+            <div id="sms-templates-list" class="sms-card-grid"></div>
         </div>
 
     </div><!-- /콘텐츠 영역 -->

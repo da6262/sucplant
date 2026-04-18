@@ -62,7 +62,7 @@ export function showSettingsTab(tabName) {
     }
 }
 
-// SMS 설정 로드 (API 인증정보 UI 제거, 템플릿만)
+// SMS 설정 로드 (v3.3.139+: 용도별 카드 그리드)
 async function loadSMSSettings() {
     try {
         const settings = window.settingsDataManager?.getAllSettings();
@@ -73,29 +73,74 @@ async function loadSMSSettings() {
         container.innerHTML = '';
 
         const templates = [
-            { key: 'orderConfirm',    label: '주문확인',    fieldId: 'sms-order-confirm',    vars: '{customerName} {orderNumber} {orderDetails} {totalAmount} {shippingFee} {paymentInfo}' },
-            { key: 'paymentConfirm',  label: '입금확인',    fieldId: 'sms-payment-confirm',   vars: '{customerName} {orderNumber}' },
-            { key: 'shippingStart',   label: '배송시작',    fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
-            { key: 'shippingComplete',label: '배송완료',    fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
-            { key: 'waitlistNotify',  label: '대기품목',    fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+            { key: 'orderConfirm',     label: '주문확인',   icon: 'fa-cart-shopping',  variant: 'info',
+              desc: '주문 접수 직후 고객에게 발송',
+              vars: ['{customerName}','{orderNumber}','{orderDetails}','{totalAmount}','{shippingFee}','{paymentInfo}'],
+              fieldId: 'sms-order-confirm' },
+            { key: 'paymentConfirm',   label: '입금확인',   icon: 'fa-check-circle',   variant: 'success',
+              desc: '입금 확인 후 주문 확정 알림',
+              vars: ['{customerName}','{orderNumber}'],
+              fieldId: 'sms-payment-confirm' },
+            { key: 'shippingStart',    label: '배송시작',   icon: 'fa-truck',          variant: 'warn',
+              desc: '송장 입력·출고 시 발송',
+              vars: ['{customerName}','{orderNumber}','{shippingCompany}','{trackingNumber}'],
+              fieldId: 'sms-shipping-start' },
+            { key: 'shippingComplete', label: '배송완료',   icon: 'fa-check-double',   variant: 'success',
+              desc: '배송 완료 확인 알림',
+              vars: ['{customerName}','{orderNumber}'],
+              fieldId: 'sms-shipping-complete' },
+            { key: 'waitlistNotify',   label: '대기품목',   icon: 'fa-bell',           variant: 'purple',
+              desc: '재입고·예약 상품 준비됨 알림',
+              vars: ['{customerName}','{productName}','{quantity}'],
+              fieldId: 'sms-waitlist-notify' },
         ];
+
+        const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
         templates.forEach(tpl => {
             const value = smsSettings[tpl.key] || '';
-            const preview = value ? value.split('\n')[0].slice(0, 60) + (value.length > 60 ? '…' : '') : '<span class="td-null">—</span>';
-            const tr = document.createElement('tr');
-            tr.id = `sms-item-${tpl.key}`;
-            tr.innerHTML = `
-                <td class="td-primary font-medium">${tpl.label}</td>
-                <td class="td-secondary sms-preview truncate">${preview}</td>
-                <td class="text-right whitespace-nowrap">
-                    <button onclick="editSmsTemplate('${tpl.key}','${tpl.fieldId}','${tpl.vars.replace(/'/g,'\\\'')}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                </td>
+            const isEmpty = !value.trim();
+            const card = document.createElement('div');
+            card.className = `sms-card sms-variant-${tpl.variant}`;
+            card.id = `sms-item-${tpl.key}`;
+            card.dataset.key = tpl.key;
+
+            const varsHtml = tpl.vars.map(v => `<code>${esc(v)}</code>`).join('');
+            const bodyHtml = isEmpty
+                ? '<div class="sms-card-empty"><i class="fas fa-pen-to-square"></i> 템플릿이 비어있습니다 — 클릭해서 작성</div>'
+                : `<pre class="sms-card-content">${esc(value)}</pre>`;
+
+            card.innerHTML = `
+                <div class="sms-card-header">
+                    <span class="sms-card-icon"><i class="fas ${tpl.icon}"></i></span>
+                    <div class="sms-card-title-wrap">
+                        <div class="sms-card-title">${esc(tpl.label)}</div>
+                        <div class="sms-card-desc">${esc(tpl.desc)}</div>
+                    </div>
+                    <button type="button" class="btn-icon btn-icon-edit sms-card-edit" title="수정"
+                        onclick="event.stopPropagation(); editSmsTemplate('${tpl.key}','${tpl.fieldId}','${tpl.vars.join(' ').replace(/'/g,'\\\'')}')">
+                        <i class="fas fa-pen"></i>
+                    </button>
+                </div>
+                <div class="sms-card-body">${bodyHtml}</div>
+                <div class="sms-card-vars">
+                    <span class="sms-card-vars-label">치환 변수</span>
+                    ${varsHtml}
+                </div>
             `;
-            container.appendChild(tr);
+
+            // 카드 전체 클릭으로 편집 모달 (✎ 외 영역)
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.sms-card-edit')) return;
+                if (typeof window.editSmsTemplate === 'function') {
+                    window.editSmsTemplate(tpl.key, tpl.fieldId, tpl.vars.join(' '));
+                }
+            });
+
+            container.appendChild(card);
         });
 
-        console.log('✅ SMS 설정 로드 완료');
+        console.log('✅ SMS 설정 로드 완료 (카드 그리드)');
     } catch (error) {
         console.error('❌ SMS 설정 로드 실패:', error);
     }
@@ -1353,15 +1398,8 @@ window.saveSingleSmsTemplate = async function(key, fieldId) {
         const value = document.getElementById(fieldId)?.value || '';
         if (window.settingsDataManager) {
             await window.settingsDataManager.updateSetting('smsTemplates', key, value);
-            // 미리보기 셀 업데이트
-            const item = document.getElementById(`sms-item-${key}`);
-            if (item) {
-                const previewEl = item.querySelector('.sms-preview');
-                if (previewEl) {
-                    const preview = value ? value.split('\n')[0].slice(0, 60) + (value.length > 60 ? '…' : '') : '<span class="td-null">—</span>';
-                    previewEl.innerHTML = preview;
-                }
-            }
+            // 카드 그리드 전체 재렌더 (v3.3.139+: 카드 구조)
+            await loadSMSSettings();
             // 모달 닫기
             document.getElementById('edit-sms-template-modal')?.remove();
             if (window.showToast) window.showToast('저장되었습니다.', 2000);
