@@ -192,6 +192,10 @@ class OrderDataManager {
         if (window.customerDataManager && (!window.customerDataManager.farm_customers || window.customerDataManager.farm_customers.length === 0)) {
             try { await window.customerDataManager.loadCustomers(); } catch (e) { console.warn('고객 데이터 사전 로드 실패:', e); }
         }
+        // 문자입력 상품 매칭을 위해 상품 데이터 미리 로드
+        if (window.productDataManager && (!window.productDataManager.farm_products || window.productDataManager.farm_products.length === 0)) {
+            try { await window.productDataManager.loadProducts(); } catch (e) { console.warn('상품 데이터 사전 로드 실패:', e); }
+        }
         try {
             console.log('📋 OrderDataManager: 주문 목록 로드 (get_order_rows 단일 소스, 카운트=rows 기반)');
             if (!window.supabaseClient) {

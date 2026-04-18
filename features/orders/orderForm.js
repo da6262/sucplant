@@ -2858,12 +2858,82 @@ function parseSmsText(text) {
         if (remaining) memo = remaining;
     }
 
+    // ── 5단계: 메모에서 상품+수량 추출 ──
+    // "오렌지먼로 대자 3개, 녹귀란 1개, 흙 중자 3개" 패턴
+    let parsedItems = [];
+    if (memo) {
+        // 쉼표·줄바꿈으로 분리 후 각 항목에서 "상품명 N개" 패턴 추출
+        const segments = memo.split(/[,，\n]+/).map(s => s.trim()).filter(Boolean);
+        for (const seg of segments) {
+            const m = seg.match(/^(.+?)\s*(\d+)\s*(?:개|포트|묶음|세트|봉|팩|박스)?(?:\s|$)/);
+            if (m) {
+                parsedItems.push({ rawName: m[1].trim(), quantity: parseInt(m[2]) || 1 });
+            } else {
+                // 수량 없으면 1개로 간주 (단, 인사말·이모지 등은 제외)
+                const cleaned = seg.replace(/[~!🩵💚❤️😊🙏부탁드려요감사합니다주문합니다요청합니다]/g, '').trim();
+                if (cleaned && cleaned.length >= 2 && !/^[가-힣]{1}$/.test(cleaned)) {
+                    parsedItems.push({ rawName: cleaned, quantity: 1 });
+                }
+            }
+        }
+    }
+
     // 전화번호 포맷 정리 (01012345678 → 010-1234-5678)
     if (phone && phone.length >= 10) {
         phone = phone.replace(/^(01[016789])(\d{3,4})(\d{4})$/, '$1-$2-$3');
     }
 
-    return { name, phone, address, addressDetail, memo };
+    return { name, phone, address, addressDetail, memo, items: parsedItems };
+}
+
+/**
+ * 파싱된 상품명을 DB 상품과 매칭
+ * 부분 일치(contains) + 유사도 순으로 최적 매칭
+ */
+function matchProductsFromDB(parsedItems) {
+    const products = window.productDataManager?.farm_products;
+    if (!Array.isArray(products) || products.length === 0 || !parsedItems.length) return [];
+
+    const results = [];
+    for (const item of parsedItems) {
+        const raw = item.rawName.toLowerCase().replace(/\s/g, '');
+        let bestMatch = null;
+        let bestScore = 0;
+
+        for (const p of products) {
+            const pName = (p.name || '').toLowerCase().replace(/\s/g, '');
+            if (!pName) continue;
+
+            let score = 0;
+            // 정확 일치
+            if (pName === raw) { score = 100; }
+            // DB 상품명이 검색어를 포함
+            else if (pName.includes(raw)) { score = 80; }
+            // 검색어가 DB 상품명을 포함
+            else if (raw.includes(pName)) { score = 70; }
+            // 부분 매칭 (검색어의 글자들이 순서대로 포함)
+            else {
+                let idx = 0;
+                for (const ch of raw) {
+                    const found = pName.indexOf(ch, idx);
+                    if (found >= 0) { idx = found + 1; score += 3; }
+                }
+            }
+
+            if (score > bestScore) {
+                bestScore = score;
+                bestMatch = p;
+            }
+        }
+
+        results.push({
+            rawName: item.rawName,
+            quantity: item.quantity,
+            matched: bestScore >= 20 ? bestMatch : null,
+            score: bestScore,
+        });
+    }
+    return results;
 }
 
 /**
@@ -2909,7 +2979,8 @@ function openSmsPasteModal() {
     const previewContent = modal.querySelector('#sms-preview-content');
     const applyBtn = modal.querySelector('#sms-paste-apply-btn');
     let parsedResult = null;
-    let matchedCustomer = null; // 기존 고객 매칭 결과
+    let matchedCustomer = null;
+    let matchedItems = []; // 상품 매칭 결과
 
     const close = () => modal.remove();
     modal.querySelector('#sms-paste-close').addEventListener('click', close);
@@ -2957,12 +3028,33 @@ function openSmsPasteModal() {
                  </div>`
               : '';
 
+        // 상품 DB 매칭
+        matchedItems = matchProductsFromDB(parsedResult.items || []);
+        let itemsHtml = '';
+        if (matchedItems.length > 0) {
+            const rows = matchedItems.map(mi => {
+                if (mi.matched) {
+                    return `<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 0;">
+                        <span><i class="fas fa-check-circle" style="color:var(--primary);margin-right:4px;"></i>${mi.rawName} ${mi.quantity}개</span>
+                        <span style="color:var(--text-secondary);font-size:10px;">→ ${mi.matched.name} (${window.fmt ? window.fmt.won(mi.matched.price || 0) : ''})</span>
+                    </div>`;
+                } else {
+                    return `<div style="padding:2px 0;">
+                        <span><i class="fas fa-question-circle" style="color:var(--warn);margin-right:4px;"></i>${mi.rawName} ${mi.quantity}개</span>
+                        <span style="color:var(--text-muted);font-size:10px;margin-left:6px;">매칭 상품 없음</span>
+                    </div>`;
+                }
+            }).join('');
+            itemsHtml = `<div class="mt-2 pt-2" style="border-top:1px solid var(--border);">
+                <strong>상품:</strong>${rows}</div>`;
+        }
+
         previewContent.innerHTML = `
             <div><strong>이름:</strong> ${parsedResult.name || nullDash}</div>
             <div><strong>전화:</strong> ${parsedResult.phone || nullDash}</div>
             <div><strong>주소:</strong> ${parsedResult.address || nullDash}</div>
             ${parsedResult.addressDetail ? `<div><strong>상세주소:</strong> ${parsedResult.addressDetail}</div>` : ''}
-            ${parsedResult.memo ? `<div><strong>메모:</strong> ${parsedResult.memo}</div>` : ''}
+            ${itemsHtml}
             ${customerBadge}
         `;
         previewArea.classList.remove('hidden');
@@ -3024,6 +3116,25 @@ function openSmsPasteModal() {
                 } else if (inserted && customerIdEl) {
                     customerIdEl.value = inserted.id;
                     console.log('✅ 신규 고객 등록 완료:', parsedResult.name, inserted.id);
+                }
+            }
+
+            // 매칭된 상품 → 장바구니 자동 추가
+            if (matchedItems.length > 0 && window.addToCart) {
+                for (const mi of matchedItems) {
+                    if (mi.matched) {
+                        window.addToCart(mi.matched.id, mi.matched.name, mi.matched.price || 0, mi.quantity);
+                        console.log('🛒 장바구니 자동 추가:', mi.matched.name, mi.quantity + '개');
+                    }
+                }
+                // 매칭 안 된 상품은 메모에 남겨두기
+                const unmatched = matchedItems.filter(mi => !mi.matched);
+                if (unmatched.length > 0) {
+                    const memoEl2 = document.getElementById('order-memo');
+                    const unmatchedText = unmatched.map(mi => mi.rawName + ' ' + mi.quantity + '개').join(', ');
+                    if (memoEl2) {
+                        memoEl2.value = (memoEl2.value ? memoEl2.value + '\n' : '') + '[미매칭] ' + unmatchedText;
+                    }
                 }
             }
 
