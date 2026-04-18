@@ -1904,9 +1904,13 @@ class ProductManagementComponent {
             return s;
         };
 
+        // Payhere 카테고리 매핑: 식물류→다육식물, 나머지→기타
+        const PLANT_CATS = new Set(['그랩토페들럼','두들레야','에오니움','에케베리아','코노피튬','크라슐라','포퀘리아']);
+        const payhereCategory = c => PLANT_CATS.has(c) ? '다육식물' : '기타';
+
         const dataRows = products.map(p => [
             p.name || '',
-            p.category || '',
+            payhereCategory(p.category),
             '초록',      // 색 설정 — Payhere 필수, 초록으로 고정
             '사용',      // 판매탭 노출
             '사용',      // 재고관리 설정
