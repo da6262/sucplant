@@ -472,22 +472,26 @@ window.printBarcodeLabels = function() {
 
     const labels = products.map(p => {
         const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        const bcHeight = Math.round(h * 0.42);
         try {
             window.JsBarcode(svg, p.barcode, {
-                format: 'EAN13', width: 1.5, height: h * 0.5,
-                fontSize: 9, margin: 4, displayValue: true
+                format: 'EAN13', width: 1.5, height: bcHeight,
+                fontSize: 8, margin: 2, displayValue: true
             });
         } catch(e) {
             window.JsBarcode(svg, p.barcode, {
-                format: 'CODE128', width: 1.5, height: h * 0.5,
-                fontSize: 9, margin: 4, displayValue: true
+                format: 'CODE128', width: 1.5, height: bcHeight,
+                fontSize: 8, margin: 2, displayValue: true
             });
         }
         const svgStr = new XMLSerializer().serializeToString(svg);
+        const name  = (p.name || '').replace(/</g,'&lt;');
+        const price = p.price ? Number(p.price).toLocaleString() + '원' : '';
         return `
-            <div style="width:${w}px;height:${h}px;border:1px solid #ccc;padding:4px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;page-break-inside:avoid;">
-                <div style="font-size:9px;font-weight:600;text-align:center;margin-bottom:2px;max-width:${w-8}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${(p.name||'').replace(/</g,'&lt;')}</div>
+            <div style="width:${w}px;height:${h}px;border:1px solid #ccc;padding:3px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;box-sizing:border-box;page-break-inside:avoid;">
                 ${svgStr}
+                <div style="font-size:9px;font-weight:700;text-align:center;margin-top:2px;max-width:${w-8}px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${name}</div>
+                <div style="font-size:9px;font-weight:600;text-align:center;color:#1a1a1a;">${price}</div>
             </div>`;
     }).join('');
 
