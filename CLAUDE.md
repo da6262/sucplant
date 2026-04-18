@@ -367,6 +367,7 @@ start-server.bat
 - `farm_customers.tags TEXT[]` — 고객 태그(v3.3.126+). 예: `{"단골","VIP후보","이탈위험"}`. GIN 인덱스.
 - `farm_customer_logs` — 고객 타임라인 통합 테이블(v3.3.126+). `log_type` CHECK 제약: `call/memo/grade_change/tag_change/order_note/etc`. `metadata JSONB` 에 구조화 데이터 저장(등급변동 `{old,new,reason}`, 태그변동 `{added:[],removed:[]}`, 통화 `{direction,duration_sec}` 등). 접근: `window.customerLogsManager.{list,add,remove}`
 - **farm_orders 추가 컬럼**: `sms_sent_at` TIMESTAMPTZ (SMS 발송 시각), `printed_at` TIMESTAMPTZ (주문서 출력 시각) — v3.3.83 추가
+- **farm_orders 추가 컬럼**: `shipping_method` VARCHAR (택배사, 기본값 '택배'), `customer_address_detail` TEXT (상세주소) — v3.4.5 추가. 주의: `shipping_company` 컬럼은 존재하지 않음 — 택배사는 반드시 `shipping_method` 사용
 
 ### RPC: `get_order_rows`
 - 주문관리 목록의 **단일 데이터 소스** — 목록 렌더링 + 탭 카운트 모두 이 결과 사용
