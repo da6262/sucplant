@@ -69,7 +69,12 @@
                 </div>
                 <div class="mb-6">
                     <label class="block text-sm font-medium text-gray-700 mb-2">비밀번호</label>
-                    <input type="password" id="password" autocomplete="current-password" class="input-ui" required>
+                    <div class="relative">
+                        <input type="password" id="password" autocomplete="current-password" class="input-ui pr-10" required>
+                        <button type="button" onclick="(function(){var i=document.getElementById('password');var b=document.getElementById('pw-toggle-icon');i.type=i.type==='password'?'text':'password';b.className=i.type==='password'?'fas fa-eye':'fas fa-eye-slash';})()" class="absolute right-3 top-1/2 -translate-y-1/2 text-muted hover:text-body">
+                            <i id="pw-toggle-icon" class="fas fa-eye"></i>
+                        </button>
+                    </div>
                 </div>
                 <button type="submit" class="w-full bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg transition-colors">
                     로그인
