@@ -3,6 +3,21 @@
  * 경산다육식물농장 관리시스템
  */
 
+// EAN-13 바코드 자동 생성
+function generateEAN13() {
+    // 기존 최대 번호 조회 후 다음 번호 사용
+    const products = window.productDataManager?.farm_products || [];
+    const existing = products
+        .map(p => p.barcode)
+        .filter(b => b && /^8801000\d{6}$/.test(b))
+        .map(b => parseInt(b.slice(7, 12)));
+    const next = existing.length > 0 ? Math.max(...existing) + 1 : 31;
+    const base = '8801000' + String(next).padStart(5, '0');
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += parseInt(base[i]) * (i % 2 === 0 ? 1 : 3);
+    return base + ((10 - (sum % 10)) % 10);
+}
+
 /**
  * 상품 테이블 컬럼 단일 소스
  * 헤더 <th> 와 행 <td> 둘 다 이 배열에서 파생 (header/body 불일치 원천 차단).
@@ -1088,9 +1103,9 @@ class ProductManagementComponent {
                 description: getFormValue('product-form-description'),
                 size: getFormValue('product-form-size-select'),
                 shipping_option: getFormValue('product-form-shipping'),
-                barcode: getFormValue('product-form-barcode')
+                barcode: getFormValue('product-form-barcode') || generateEAN13()
             };
-            
+
             console.log('📋 수집된 폼 데이터:', formData);
             
             // 필수 필드 검증
