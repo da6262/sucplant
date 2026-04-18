@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.136-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.137-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.137 | feat(고객관리 Phase C): **자동 등급 승격 로그화**. ①`js/customer-management.js#updateCustomerGrade` — 업데이트 전 기존 등급 조회 → 변동 시에만 `farm_customer_logs` 에 `grade_change` 기록(`metadata: {old, new, old_label, new_label, reason:'auto_period', period, amount}`). 환경설정에 정의된 등급명(`grades[].name`)으로 라벨링 — 등급명 하드코딩 없음. 반환값에 `__changed` 플래그 추가. ②`features/customers/customerData.js#updateCustomer` — 수동 등급 변경 감지(`prevGrade !== incomingGrade`) → `reason:'manual'` 로 동일 로그. ③환경설정 "전체 고객 등급 재계산" 버튼 — `successCount`/`failCount` 외에 `changedCount` 누적, 완료 알림에 "등급 변경 N명 (나머지 유지)" 표시. ④`renderTimelineMetadata` — `grade_change` 메타를 `old_label → new_label · reason(한글) · period · amount원` 형태로 개선, 구 데이터(`old/new` code 만) 도 폴백. ⑤CLAUDE.md "고객 등급" 섹션 환경설정 기반임을 명시(하드코딩 금지·승격 경로 문서화). 후속 Phase D(RFM 이탈위험 자동 태그) / E(세그먼트 일괄 SMS) / F(엑셀 import/export) |
 | v3.3.136 | feat: 로그인 모달 비밀번호 눈 아이콘(표시/숨기기) 토글 추가 |
 | v3.3.135 | feat(고객관리 Phase B 연장): **통화 로그 클릭 수 축소** — 기존 5클릭 → 목록 📞 버튼 경로 **1클릭**. ①고객 목록 행 "관리" 칸에 전화 아이콘 버튼 신설(`btn-icon`, 파란 info 톤). ②`components/customer-management/customer-management.html` 에 `#quick-call-log-modal` 미니 다이얼로그 추가(제목 input + 본문 textarea + 저장/취소). ③`window.openQuickCallLog(id,name,phone)` 신규 — 모달 열어 title 자동 포커스, Enter=저장, Esc=취소, 저장 시 토스트 + 상세 모달이 같은 고객으로 열려있으면 타임라인 자동 재로드. ④타임라인 컴포저의 타입 `<select>` 드롭다운 → 4종 칩 버튼(메모/통화/주문메모/기타)으로 교체, 클릭 시 active + 제목 포커스. ⑤제목 input 에서 Enter=저장 키바인딩. `reloadCustomerTimeline` 을 `window.*` 로 노출해 다이얼로그에서 재사용. `.timeline-type-chips`·`.type-chip` CSS 추가 |
 | v3.3.134 | style: SMS 템플릿 수정 모달 modal-md→modal-lg, textarea rows 6→10 확대 |

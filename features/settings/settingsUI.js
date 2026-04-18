@@ -808,7 +808,8 @@ function initSettingsEventListeners() {
                     
                     let successCount = 0;
                     let failCount = 0;
-                    
+                    let changedCount = 0;   // 실제 등급이 변경된 고객 수
+
                     for (const customer of customers) {
                         try {
                             let totalPurchaseAmount = 0;
@@ -826,8 +827,9 @@ function initSettingsEventListeners() {
                                 }
                             }
                             if (window.updateCustomerGrade) {
-                                await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
+                                const result = await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
                                 successCount++;
+                                if (result && result.__changed) changedCount++;
                             } else {
                                 console.error('❌ updateCustomerGrade 함수를 찾을 수 없습니다');
                                 failCount++;
@@ -837,9 +839,9 @@ function initSettingsEventListeners() {
                             failCount++;
                         }
                     }
-                    
-                    console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건`);
-                    alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
+
+                    console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건, 등급 변경 ${changedCount}건`);
+                    alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n처리: ${successCount}명\n실패: ${failCount}명\n등급 변경: ${changedCount}명 (나머지는 기존 등급 유지)`);
                     
                     // 고객 목록 새로고침
                     if (window.renderCustomersTable) {

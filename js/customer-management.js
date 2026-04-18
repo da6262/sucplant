@@ -598,35 +598,70 @@ async function updateCustomerGrade(customerId, totalPurchaseAmount) {
         
         const minVal = Number(newGrade.minAmount ?? newGrade.min_amount ?? 0);
         console.log(`📊 계산된 새 등급: ${newGrade.name} (최소금액: ${minVal.toLocaleString()}원)`);
-        
+
         const gradeCode = newGrade.code || newGrade.grade_code || 'GENERAL';
+
+        // 업데이트 전 기존 등급 조회 (변동 감지용)
+        let oldGradeCode = null;
+        try {
+            const { data: prev } = await window.supabaseClient
+                .from('farm_customers')
+                .select('grade')
+                .eq('id', customerId)
+                .single();
+            oldGradeCode = prev?.grade || null;
+        } catch { /* noop */ }
+
         const { error } = await window.supabaseClient
             .from('farm_customers')
-            .update({ 
+            .update({
                 grade: gradeCode,
                 updated_at: new Date().toISOString()
             })
             .eq('id', customerId);
-        
+
         if (error) {
             console.error('❌ 고객등급 업데이트 실패:', error);
             return;
         }
-        
+
         console.log(`✅ 고객등급 업데이트 완료: ${newGrade.name} (${newGrade.discount}% 할인)`);
-        
+
+        // 등급이 실제로 변경된 경우에만 타임라인 로그 기록
+        const changed = oldGradeCode !== gradeCode;
+        if (changed && window.customerLogsManager) {
+            try {
+                const oldLabel = (grades.find(g => (g.code || g.grade_code) === oldGradeCode)?.name) || oldGradeCode || '-';
+                await window.customerLogsManager.add(customerId, {
+                    log_type: 'grade_change',
+                    title: `등급 변동: ${oldLabel} → ${newGrade.name}`,
+                    metadata: {
+                        old: oldGradeCode,
+                        new: gradeCode,
+                        old_label: oldLabel,
+                        new_label: newGrade.name,
+                        reason: 'auto_period',
+                        period: gradePeriod,
+                        amount: calculatedAmount
+                    }
+                });
+            } catch (e) {
+                console.warn('⚠️ 등급 변동 로그 기록 실패:', e);
+            }
+        }
+
         // 고객 목록 새로고침 (현재 페이지가 고객관리인 경우)
         if (window.renderCustomersTable) {
             window.renderCustomersTable('all');
         }
-        
+
         // 고객 등급별 카운트 업데이트
         if (window.updateCustomerGradeCounts) {
             window.updateCustomerGradeCounts();
         }
-        
-        return newGrade;
-        
+
+        return { ...newGrade, __changed: changed, __oldGrade: oldGradeCode };
+
     } catch (error) {
         console.error('❌ 고객등급 자동 업데이트 실패:', error);
     }

@@ -1289,8 +1289,16 @@ function renderCustomerTimelineList(listEl, rows, ctx) {
 
 function renderTimelineMetadata(row) {
     const md = row.metadata || {};
-    if (row.log_type === 'grade_change' && (md.old || md.new)) {
-        return `<div class="timeline-row-meta">${escapeHtml(md.old || '?')} → <strong>${escapeHtml(md.new || '?')}</strong>${md.reason ? ' · ' + escapeHtml(md.reason) : ''}</div>`;
+    if (row.log_type === 'grade_change' && (md.old || md.new || md.old_label || md.new_label)) {
+        const oldTxt = md.old_label || md.old || '?';
+        const newTxt = md.new_label || md.new || '?';
+        const reasonMap = { auto_period: '자동(기간)', manual: '수동', auto: '자동' };
+        const reasonTxt = md.reason ? (reasonMap[md.reason] || md.reason) : '';
+        const periodTxt = md.period && md.period !== 'all' ? ` · ${escapeHtml(md.period)}` : '';
+        const amountTxt = typeof md.amount === 'number'
+            ? ` · ${(md.amount || 0).toLocaleString()}원`
+            : '';
+        return `<div class="timeline-row-meta">${escapeHtml(oldTxt)} → <strong>${escapeHtml(newTxt)}</strong>${reasonTxt ? ' · ' + escapeHtml(reasonTxt) : ''}${periodTxt}${amountTxt}</div>`;
     }
     if (row.log_type === 'tag_change') {
         const parts = [];

@@ -351,28 +351,59 @@ class CustomerDataManager {
     async updateCustomer(customerId, updateData) {
         try {
             console.log('✏️ 고객 정보 수정:', customerId, updateData);
-            
+
             const customerIndex = this.farm_customers.findIndex(c => c.id === customerId);
             if (customerIndex === -1) {
                 throw new Error('고객을 찾을 수 없습니다.');
             }
-            
+
             console.log('🔍 수정할 고객 인덱스:', customerIndex);
             console.log('🔍 기존 고객 정보:', this.farm_customers[customerIndex]);
-            
+
             // (전화번호 중복은 UI 레이어에서 경고 표시로 처리)
-            
+
+            // 수동 등급 변경 감지 (updateData 에 grade 가 명시되고 이전 값과 다를 때)
+            const prevGrade = this.farm_customers[customerIndex].grade;
+            const incomingGrade = typeof updateData.grade === 'string' ? updateData.grade.trim() : '';
+            const gradeChangedManually = incomingGrade && incomingGrade !== prevGrade;
+
             // 고객 정보 업데이트
             this.farm_customers[customerIndex] = this._sanitizeCustomer({
                 ...this.farm_customers[customerIndex],
                 ...updateData,
                 updated_at: new Date().toISOString()
             });
-            
+
             // 데이터 저장
             await this.saveCustomers();
-            
+
             console.log('✅ 고객 정보 수정 완료');
+
+            // 수동 등급 변경 시 타임라인 로그 기록 (환경설정 등급명 기반)
+            if (gradeChangedManually && window.customerLogsManager) {
+                try {
+                    const gradesList = window.settingsDataManager?.settings?.customerGrades || [];
+                    const gradeLabel = (code) => {
+                        if (!code) return '-';
+                        const found = gradesList.find(g => (g.code || g.grade_code) === code);
+                        return found?.name || code;
+                    };
+                    await window.customerLogsManager.add(customerId, {
+                        log_type: 'grade_change',
+                        title: `등급 변동 (수동): ${gradeLabel(prevGrade)} → ${gradeLabel(incomingGrade)}`,
+                        metadata: {
+                            old: prevGrade,
+                            new: incomingGrade,
+                            old_label: gradeLabel(prevGrade),
+                            new_label: gradeLabel(incomingGrade),
+                            reason: 'manual'
+                        }
+                    });
+                } catch (e) {
+                    console.warn('⚠️ 수동 등급 변동 로그 기록 실패:', e);
+                }
+            }
+
             return this.farm_customers[customerIndex];
             
         } catch (error) {
