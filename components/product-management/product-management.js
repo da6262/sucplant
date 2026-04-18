@@ -1699,49 +1699,24 @@ class ProductManagementComponent {
         document.getElementById('download-product-template-btn')?.addEventListener('click', () => this._downloadTemplate());
     }
 
-    /** 엑셀 양식 다운로드 (.xlsx) */
+    /** Payhere 양식 템플릿 다운로드 */
     _downloadTemplate() {
-        if (typeof XLSX === 'undefined') {
-            alert('엑셀 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
-            return;
-        }
-
-        // 등록된 카테고리 목록
-        const categories = window.categoryDataManager?.getAllCategories?.() || [];
-        const catNames = categories.map(c => c.name);
-
-        // 헤더 + 예시 데이터
-        const data = [
-            ['상품명', '카테고리', '판매가', '재고', '사이즈', '설명'],
-            ['에케베리아 치와와', catNames[0] || '에케베리아', 15000, 10, 'M', ''],
-            ['크라슐라 화제', catNames.length > 1 ? catNames[1] : '크라슐라', 8000, 20, 'S', ''],
-            ['코노피튬 부르겐세리', catNames.length > 2 ? catNames[2] : '코노피튬', 5000, 30, 'SX', ''],
+        if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
+        const HEADERS = [
+            '상품명','카테고리','색 설정','판매탭 노출','재고관리 설정',
+            '옵션명1','옵션값1','옵션명2','옵션값2','옵션명3','옵션값3',
+            'SKU','바코드','판매가','부가세','원가','수량','안전재고'
         ];
-
-        const ws = XLSX.utils.aoa_to_sheet(data);
-
-        // 컬럼 너비 설정
-        ws['!cols'] = [
-            { wch: 25 }, // 상품명
-            { wch: 15 }, // 카테고리
-            { wch: 10 }, // 판매가
-            { wch: 8 },  // 재고
-            { wch: 8 },  // 사이즈
-            { wch: 30 }, // 설명
+        const EXAMPLE = [
+            '에케베리아 치와와','에케베리아','','사용','사용',
+            '','','','','','',
+            'P001','8801000000012',15000,'',8000,10,''
         ];
-
+        const ws = XLSX.utils.aoa_to_sheet([HEADERS, EXAMPLE]);
+        ws['!cols'] = [25,15,8,10,10,8,8,8,8,8,8,12,15,10,6,10,8,10].map(w=>({wch:w}));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '상품등록');
-
-        // 카테고리 목록 시트 추가 (참고용)
-        if (catNames.length > 0) {
-            const catData = [['등록된 카테고리'], ...catNames.map(n => [n])];
-            const catWs = XLSX.utils.aoa_to_sheet(catData);
-            catWs['!cols'] = [{ wch: 20 }];
-            XLSX.utils.book_append_sheet(wb, catWs, '카테고리 목록');
-        }
-
-        XLSX.writeFile(wb, '상품_일괄등록_양식.xlsx');
+        XLSX.writeFile(wb, 'payhere_상품등록_양식.xlsx');
     }
 
     /** 파일 업로드 처리 */
@@ -1781,22 +1756,45 @@ class ProductManagementComponent {
     }
 
     _parseRowArrays(rows) {
+        // Payhere 양식 자동 감지: 헤더행에 '상품명' + 'SKU' 존재
+        const hdrIdx = rows.findIndex(r => String(r[0]||'').trim() === '상품명' && String(r[11]||'').trim() === 'SKU');
+        const isPayhere = hdrIdx >= 0;
+        // Payhere 컬럼 위치
+        const PH = { name:0, cat:1, sku:11, barcode:12, price:13, cost:15, stock:16 };
+
         const products = [];
-        for (const cols of rows) {
-            const name     = String(cols[0] || '').trim();
-            const category = String(cols[1] || '').trim();
-            if (!name || name === '상품명') continue;
-            // 카테고리 없으면 '기타'
-            products.push({
-                name,
-                category: category || '기타',
-                price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
-                stock:           parseInt(cols[3]) || 0,
-                size:            String(cols[4] || '').trim(),
-                description:     String(cols[5] || '').trim(),
-                cost: 0,
-                shipping_option: '일반배송',
-            });
+        const startIdx = isPayhere ? hdrIdx + 1 : 1;
+        for (let i = startIdx; i < rows.length; i++) {
+            const cols = rows[i];
+            const name = String(cols[PH.name]||'').trim();
+            // 빈 행·설명 행·헤더 잔여행 스킵
+            if (!name || name.startsWith('*') || name === '필수' || name === '선택' || name === '상품명') continue;
+            if (isPayhere) {
+                products.push({
+                    name,
+                    category:     String(cols[PH.cat]    ||'').trim(),
+                    price:        parseFloat(String(cols[PH.price] ||'').replace(/,/g,'')) || 0,
+                    cost:         parseFloat(String(cols[PH.cost]  ||'').replace(/,/g,'')) || 0,
+                    stock:        parseInt(cols[PH.stock]) || 0,
+                    product_code: String(cols[PH.sku]    ||'').trim(),
+                    barcode:      String(cols[PH.barcode]||'').trim(),
+                    shipping_option: '일반배송',
+                    status: 'active',
+                });
+            } else {
+                // 우리 기존 단순 양식 (상품명·카테고리·판매가·재고·사이즈·설명)
+                products.push({
+                    name,
+                    category:    String(cols[1]||'').trim(),
+                    price:       parseFloat(String(cols[2]||'').replace(/,/g,'')) || 0,
+                    stock:       parseInt(cols[3]) || 0,
+                    size:        String(cols[4]||'').trim(),
+                    description: String(cols[5]||'').trim(),
+                    cost: 0,
+                    shipping_option: '일반배송',
+                    status: 'active',
+                });
+            }
         }
         window.productImportData = products;
         this._showFilePreview(products);
@@ -1804,22 +1802,26 @@ class ProductManagementComponent {
     }
 
     _showFilePreview(products) {
-        const section  = document.getElementById('product-import-preview');
-        const content  = document.getElementById('product-preview-content');
-        const countEl  = document.getElementById('product-preview-count');
+        const section = document.getElementById('product-import-preview');
+        const content = document.getElementById('product-preview-content');
+        const countEl = document.getElementById('product-preview-count');
         if (!section || !content) return;
         if (countEl) countEl.textContent = `총 ${products.length}개`;
-        const cols = ['상품명','카테고리','판매가','재고','사이즈'];
-        const keys = ['name','category','price','stock','size'];
+        const cols = ['상품명','카테고리','판매가','원가','재고','바코드','SKU'];
+        const keys = ['name','category','price','cost','stock','barcode','product_code'];
+        const numKeys = new Set(['price','cost','stock']);
         let html = `<table class="table-ui"><thead><tr>` +
             cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
             `</tr></thead><tbody>` +
-            products.slice(0, 20).map(p =>
+            products.slice(0,20).map(p =>
                 `<tr>` +
-                keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
+                keys.map(k => {
+                    const v = numKeys.has(k) ? (p[k]||0).toLocaleString() : (p[k]||'-');
+                    return `<td class="whitespace-nowrap">${v}</td>`;
+                }).join('') +
                 `</tr>`
             ).join('') +
-            (products.length > 20 ? `<tr><td colspan="5" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
+            (products.length > 20 ? `<tr><td colspan="${cols.length}" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
             `</tbody></table>`;
         content.innerHTML = html;
         section.classList.remove('hidden');
@@ -1880,44 +1882,41 @@ class ProductManagementComponent {
     resetImportModal()       { this._resetImport(); }
 
     /**
-     * 상품 데이터 내보내기
+     * 상품 데이터 내보내기 — Payhere 업로드 양식
      */
     exportProducts() {
-        if (typeof XLSX === 'undefined') {
-            alert('엑셀 라이브러리가 로드되지 않았습니다.');
-            return;
-        }
-
+        if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
         const products = window.productDataManager?.getAllProducts?.() || [];
-        if (products.length === 0) {
-            alert('내보낼 상품이 없습니다.');
-            return;
-        }
+        if (products.length === 0) { alert('내보낼 상품이 없습니다.'); return; }
 
-        const rows = products.map(p => ({
-            '상품명': p.name || '',
-            '카테고리': p.category || '',
-            '판매가': p.price || 0,
-            '매입가': p.cost || 0,
-            '재고': p.stock || 0,
-            '사이즈': p.size || '',
-            '배송옵션': p.shipping_option || '일반배송',
-            '설명': p.description || '',
-        }));
-
-        const ws = XLSX.utils.json_to_sheet(rows);
-        ws['!cols'] = [
-            { wch: 25 }, { wch: 12 }, { wch: 10 }, { wch: 10 },
-            { wch: 8 }, { wch: 8 }, { wch: 10 }, { wch: 30 },
+        const HEADERS = [
+            '상품명','카테고리','색 설정','판매탭 노출','재고관리 설정',
+            '옵션명1','옵션값1','옵션명2','옵션값2','옵션명3','옵션값3',
+            'SKU','바코드','판매가','부가세','원가','수량','안전재고'
         ];
+        const dataRows = products.map(p => [
+            p.name || '',
+            p.category || '',
+            '',          // 색 설정 — 없음
+            '사용',      // 판매탭 노출
+            '사용',      // 재고관리 설정
+            '','','','','','', // 옵션명/값 1~3 — 없음
+            p.product_code || '',
+            p.barcode || '',
+            p.price || 0,
+            '',          // 부가세 — 없음
+            p.cost || '',
+            p.stock ?? '',
+            '',          // 안전재고 — 없음
+        ]);
 
+        const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...dataRows]);
+        ws['!cols'] = [25,15,8,10,10,8,8,8,8,8,8,12,15,10,6,10,8,10].map(w=>({wch:w}));
         const wb = XLSX.utils.book_new();
         XLSX.utils.book_append_sheet(wb, ws, '상품목록');
-
-        const today = new Date().toISOString().slice(0, 10);
-        XLSX.writeFile(wb, `상품목록_${today}.xlsx`);
-
-        if (window.showToast) window.showToast(`${products.length}개 상품 내보내기 완료`, 2000);
+        const today = new Date().toISOString().slice(0,10);
+        XLSX.writeFile(wb, `payhere_상품_${today}.xlsx`);
+        window.showToast?.(`${products.length}개 상품 내보내기 완료`);
     }
 
     /**
