@@ -1906,9 +1906,9 @@ class ProductManagementComponent {
             return s;
         };
 
-        // Payhere 카테고리 매핑: 식물류→다육식물, 나머지→기타
+        // Payhere 카테고리 매핑: 식물류→다육이, 화분→화분, 나머지→기타
         const PLANT_CATS = new Set(['그랩토페들럼','두들레야','에오니움','에케베리아','코노피튬','크라슐라','포퀘리아']);
-        const payhereCategory = c => PLANT_CATS.has(c) ? '다육식물' : '기타';
+        const payhereCategory = c => PLANT_CATS.has(c) ? '다육이' : c === '화분' ? '화분' : '기타';
 
         const dataRows = products.map(p => [
             p.name || '',
