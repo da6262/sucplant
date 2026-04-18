@@ -1399,7 +1399,8 @@ class ProductManagementComponent {
                 'product-form-image': product.image_url || '',
                 'product-form-id': product.id,
                 'product-form-created-at': product.created_at,
-                'product-form-barcode': product.barcode || ''
+                'product-form-barcode': product.barcode || '',
+                'product-form-product-code': product.product_code || ''
             };
             
             Object.entries(fields).forEach(([fieldId, value]) => {
@@ -1851,7 +1852,7 @@ class ProductManagementComponent {
             try {
                 if (window.productDataManager) { await window.productDataManager.addProduct(products[i]); ok++; }
                 else fail++;
-            } catch { fail++; }
+            } catch (e) { console.error(`상품 등록 실패 [${i}]:`, e); fail++; }
             this.updateProgress(i + 1, total);
             await new Promise(r => setTimeout(r, 60));
         }
@@ -2381,6 +2382,11 @@ window.cleanupProductEventListeners = cleanupProductEventListeners;
     s.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
     document.head.appendChild(s);
 })();
+
+window.generateBarcodeForModal = function() {
+    const input = document.getElementById('product-form-barcode');
+    if (input) input.value = generateEAN13();
+};
 
 window.openBarcodePrintModal = function() {
     const products = (window.productDataManager?.farm_products || [])

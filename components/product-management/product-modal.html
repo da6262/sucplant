@@ -100,6 +100,25 @@
                     </div>
                 </div>
 
+                <!-- 바코드 (col-6) | 상품코드 (col-6) -->
+                <div class="form-col-6">
+                    <label class="form-label">바코드</label>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="product-form-barcode"
+                               placeholder="바코드 (자동생성 또는 직접입력)"
+                               class="form-control" style="flex:1;">
+                        <button type="button" onclick="window.generateBarcodeForModal()" class="btn-secondary" style="padding:4px 10px;font-size:12px;white-space:nowrap;">
+                            <i class="fas fa-barcode mr-1"></i>자동생성
+                        </button>
+                    </div>
+                </div>
+                <div class="form-col-6">
+                    <label class="form-label">상품코드</label>
+                    <input type="text" id="product-form-product-code"
+                           placeholder="상품코드 (자동생성)"
+                           class="form-control" readonly style="background:#f9fafb;">
+                </div>
+
                 <!-- 배송 옵션 (col-6) | 이미지 URL (col-6) -->
                 <div class="form-col-6">
                     <label class="form-label">배송 옵션 <span class="req">*</span></label>

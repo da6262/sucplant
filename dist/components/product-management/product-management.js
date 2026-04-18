@@ -3,6 +3,81 @@
  * 경산다육식물농장 관리시스템
  */
 
+// 테이블 내 바코드 SVG 렌더링
+function renderBarcodeSVGs() {
+    const svgs = document.querySelectorAll('.barcode-img[data-barcode]');
+    if (!svgs.length) return;
+    function doRender() {
+        svgs.forEach(svg => {
+            const bc = svg.dataset.barcode;
+            if (!bc || svg.dataset.rendered) return;
+            try {
+                window.JsBarcode(svg, bc, { format: 'EAN13', width: 1.2, height: 30, fontSize: 8, margin: 2, displayValue: false });
+            } catch(e) {
+                try { window.JsBarcode(svg, bc, { format: 'CODE128', width: 1.2, height: 30, fontSize: 8, margin: 2, displayValue: false }); } catch(_) {}
+            }
+            svg.dataset.rendered = '1';
+            // 클릭 시 확대 모달
+            svg.style.cursor = 'pointer';
+            svg.onclick = () => window.openBarcodeZoom(bc, svg.closest('tr')?.querySelector('.product-name-link')?.textContent?.trim() || bc);
+        });
+    }
+    if (window.JsBarcode) { doRender(); }
+    else {
+        const t = setInterval(() => { if (window.JsBarcode) { clearInterval(t); doRender(); } }, 200);
+        setTimeout(() => clearInterval(t), 5000);
+    }
+}
+
+// 바코드 확대 모달
+window.openBarcodeZoom = function(barcode, productName) {
+    const modal = document.getElementById('barcode-zoom-modal');
+    if (!modal) return;
+    document.getElementById('barcode-zoom-name').textContent = productName || '';
+    document.getElementById('barcode-zoom-number').textContent = barcode;
+    const svg = document.getElementById('barcode-zoom-svg');
+    svg.innerHTML = '';
+    delete svg.dataset.rendered;
+    try {
+        window.JsBarcode(svg, barcode, { format: 'EAN13', width: 3, height: 100, fontSize: 16, margin: 10, displayValue: true });
+    } catch(e) {
+        window.JsBarcode(svg, barcode, { format: 'CODE128', width: 3, height: 100, fontSize: 16, margin: 10, displayValue: true });
+    }
+    modal.classList.remove('hidden');
+};
+
+window.printSingleBarcode = function() {
+    const bc = document.getElementById('barcode-zoom-number')?.textContent;
+    const name = document.getElementById('barcode-zoom-name')?.textContent;
+    if (!bc) return;
+    const svg = document.getElementById('barcode-zoom-svg');
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const win = window.open('', '_blank', 'width=400,height=300');
+    win.document.write(`<!DOCTYPE html><html><head><title>바코드</title>
+        <style>body{margin:20px;text-align:center;font-family:sans-serif;}
+        p{font-size:13px;font-weight:600;margin-bottom:8px;}
+        @media print{@page{margin:8mm;}}</style></head><body>
+        <p>${name.replace(/</g,'&lt;')}</p>${svgStr}
+        <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+    win.document.close();
+};
+
+// EAN-13 바코드 자동 생성
+function generateEAN13() {
+    // 기존 최대 번호 조회 후 다음 번호 사용
+    const products = window.productDataManager?.farm_products || [];
+    const existing = products
+        .map(p => p.barcode)
+        .filter(b => b && /^8801000\d{6}$/.test(b))
+        .map(b => parseInt(b.slice(7, 12)));
+    const next = existing.length > 0 ? Math.max(...existing) + 1 : 31;
+    const base = '8801000' + String(next).padStart(5, '0');
+    let sum = 0;
+    for (let i = 0; i < 12; i++) sum += parseInt(base[i]) * (i % 2 === 0 ? 1 : 3);
+    return base + ((10 - (sum % 10)) % 10);
+}
+
 /**
  * 상품 테이블 컬럼 단일 소스
  * 헤더 <th> 와 행 <td> 둘 다 이 배열에서 파생 (header/body 불일치 원천 차단).
@@ -16,8 +91,8 @@
 const PRODUCT_COLUMNS = [
     {
         key: 'checkbox',
-        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="rounded border-gray-300 text-brand focus:ring-green-500"></th>',
-        render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox rounded text-brand focus:ring-green-500 focus:ring-1" data-product-id="${p.id}"></td>`
+        headerCell: '<th class="w-10"><input type="checkbox" id="select-all-products" class="checkbox-ui"></th>',
+        render: (p) => `<td class="text-center"><input type="checkbox" class="product-checkbox checkbox-ui" data-product-id="${p.id}"></td>`
     },
     {
         key: 'product_code',
@@ -31,19 +106,21 @@ const PRODUCT_COLUMNS = [
     {
         key: 'name',
         label: '상품명',
-        thClass: 'min-w-[200px]',
+        thClass: 'w-36',
+        editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<td class="td-primary td-link"><span class="product-name-link">${name || dash}</span></td>`;
+            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;"><span class="product-name-link truncate block">${name || dash}</span></td>`;
         }
     },
     {
         key: 'category',
         label: '카테고리',
         thClass: 'w-24',
+        editable: true,
         render: (p, dash) => {
             const cat = p.category ? String(p.category).replace(/</g, '&lt;') : null;
-            return `<td>${cat ? `<span class="badge badge-info">${cat}</span>` : dash}</td>`;
+            return `<td class="td-primary" data-field="category" data-product-id="${p.id}">${cat || dash}</td>`;
         }
     },
     {
@@ -56,21 +133,34 @@ const PRODUCT_COLUMNS = [
         }
     },
     {
+        key: 'barcode',
+        label: '바코드',
+        thClass: 'w-32',
+        render: (p, dash) => {
+            if (!p.barcode) return `<td class="td-muted text-center">${dash}</td>`;
+            return `<td class="text-center" style="padding:2px 4px;">
+                <svg class="barcode-img" data-barcode="${p.barcode.replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg>
+            </td>`;
+        }
+    },
+    {
         key: 'price',
         label: '판매가',
         thClass: 'w-24',
+        editable: true,
         render: (p, dash) => {
             const price = Number(p.price) || 0;
-            return `<td class="td-amount text-right text-numeric">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
+            return `<td class="td-amount text-right text-numeric" data-field="price" data-product-id="${p.id}">${price > 0 ? (window.fmt?.currency(price) || '₩' + price.toLocaleString()) : dash}</td>`;
         }
     },
     {
         key: 'stock',
         label: '재고',
         thClass: 'w-20',
+        editable: true,
         render: (p, dash) => {
             const stock = Number(p.stock) || 0;
-            return `<td class="td-num text-right">${stock > 0 ? stock + '개' : dash}</td>`;
+            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}">${stock > 0 ? stock + '개' : dash}</td>`;
         }
     },
     {
@@ -152,18 +242,17 @@ class ProductManagementComponent {
             console.error('❌ ProductUI 인스턴스 생성 실패:', error);
         }
         
-        // 기존 이벤트 리스너 제거 (중복 방지)
+        // 기존 이벤트 리스너 제거 후 즉시 재바인딩 (데이터 로드 전에 버튼 활성화)
         this.removeEventListeners();
-        
-        // Supabase에서 상품 데이터 로드
+        this.setupPagination();
+        this.setupEventListeners();
+
+        // Supabase에서 상품 데이터 로드 (버튼은 이미 동작하는 상태)
         try {
             await this.loadProducts();
         } catch (error) {
             console.error('❌ 상품 데이터 로드 실패:', error);
         }
-        
-        this.setupPagination();
-        this.setupEventListeners();
 
         this.isInitialized = true;
         console.log('✅ ProductManagement 컴포넌트 초기화 완료');
@@ -175,44 +264,12 @@ class ProductManagementComponent {
     removeEventListeners() {
         try {
             console.log('🧹 상품관리 이벤트 리스너 정리 중...');
-            
-            // 상품 등록 버튼 정리
-            const addProductBtn = document.getElementById('add-product-btn');
-            if (addProductBtn) {
-                const newBtn = addProductBtn.cloneNode(true);
-                addProductBtn.parentNode.replaceChild(newBtn, addProductBtn);
-            }
-            
-            // 카테고리 관리 버튼 정리
-            const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-            if (manageCategoriesBtn) {
-                const newBtn = manageCategoriesBtn.cloneNode(true);
-                manageCategoriesBtn.parentNode.replaceChild(newBtn, manageCategoriesBtn);
-            }
-            
-            // 일괄 등록 버튼 정리
-            const importBtn = document.getElementById('import-products-btn');
-            if (importBtn) {
-                const newBtn = importBtn.cloneNode(true);
-                importBtn.parentNode.replaceChild(newBtn, importBtn);
-            }
-            
-            // 내보내기 버튼 정리
-            const exportBtn = document.getElementById('export-products-btn');
-            if (exportBtn) {
-                const newBtn = exportBtn.cloneNode(true);
-                exportBtn.parentNode.replaceChild(newBtn, exportBtn);
-            }
-            
-            // 상품 테이블 정리
-            const productTable = document.getElementById('products-table-body');
-            if (productTable) {
-                const newTable = productTable.cloneNode(true);
-                productTable.parentNode.replaceChild(newTable, productTable);
-            }
-            
-            // 상품 모달은 document.body에 위치하므로 cloneNode 대신 클래스/스타일만 초기화
-            // (cloneNode를 쓰면 addEventListener 기반 리스너가 전부 날아가 저장 버튼 먹통 발생)
+
+            // cloneNode 제거 — DOM 교체 시 리스너 탈락 근본 원인.
+            // 대신 setupEventListeners에서 dataset.bound 플래그로 중복 방지.
+            // 버튼 리스너 해제는 하지 않음 (같은 핸들러가 재등록되어도 무해).
+
+            // 모달만 닫기
             const productModal = document.getElementById('product-modal');
             if (productModal) {
                 productModal.style.display = 'none';
@@ -239,56 +296,21 @@ class ProductManagementComponent {
      * 이벤트 리스너 설정
      */
     setupEventListeners() {
-        console.log('🔧 이벤트 리스너 설정 시작...');
-        
-        // 상품 등록 버튼
-        const addProductBtn = document.getElementById('add-product-btn');
-        console.log('🔍 add-product-btn 요소:', addProductBtn);
-        
-        if (addProductBtn) {
-            console.log('✅ 상품등록 버튼 이벤트 리스너 등록');
-            
-            // 기존 이벤트 리스너 제거 (중복 방지)
-            addProductBtn.removeEventListener('click', this.handleAddProductClick);
-            
-            // 새로운 이벤트 리스너 추가
-            this.handleAddProductClick = () => {
-                console.log('🔄 상품등록 버튼 클릭됨!');
-                this.openProductModal();
-            };
-            
-            addProductBtn.addEventListener('click', this.handleAddProductClick);
-            console.log('✅ 상품등록 버튼 이벤트 리스너 등록 완료');
-        } else {
-            console.error('❌ add-product-btn 요소를 찾을 수 없습니다');
-            console.log('🔍 현재 DOM 상태 확인:');
-            console.log('- products-section:', document.getElementById('products-section'));
-            console.log('- 모든 버튼들:', document.querySelectorAll('button[id*="product"]'));
-        }
+        // dataset.bound 가드 — 같은 DOM 요소에 리스너 중복 등록 방지
+        const bind = (id, handler) => {
+            const el = document.getElementById(id);
+            if (el && !el.dataset.bound) {
+                el.addEventListener('click', handler);
+                el.dataset.bound = '1';
+            }
+        };
 
-        // 카테고리 관리 버튼
-        const manageCategoriesBtn = document.getElementById('manage-categories-btn');
-        if (manageCategoriesBtn) {
-            manageCategoriesBtn.addEventListener('click', () => {
-                this.openCategoryManagement();
-            });
-        }
-
-        // 일괄 등록 버튼
-        const importBtn = document.getElementById('import-products-btn');
-        if (importBtn) {
-            importBtn.addEventListener('click', () => {
-                this.openImportModal();
-            });
-        }
-
-        // 내보내기 버튼
-        const exportBtn = document.getElementById('export-products-btn');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', () => {
-                this.exportProducts();
-            });
-        }
+        bind('add-product-btn', () => this.openProductModal());
+        bind('manage-categories-btn', () => this.openCategoryManagement());
+        bind('import-products-btn', () => this.openImportModal());
+        bind('export-products-btn', () => this.exportProducts());
+        bind('print-barcodes-btn', () => window.openBarcodePrintModal());
+        bind('scan-barcode-btn', () => window.openBarcodeScanner());
 
         // 검색 및 필터
         const searchInput = document.getElementById('product-search');
@@ -349,11 +371,10 @@ class ProductManagementComponent {
             });
         }
 
-        // 전체 선택 체크박스
-        const selectAllCheckbox = document.getElementById('select-all-products');
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', (e) => {
-                this.toggleSelectAll(e.target.checked);
+        // 전체 선택 체크박스 — SelectAll 중앙 유틸 사용
+        if (window.SelectAll) {
+            window.SelectAll.attach('select-all-products', '.product-checkbox', () => {
+                this.updateBulkBar();
             });
         }
 
@@ -376,6 +397,91 @@ class ProductManagementComponent {
 
         // 상품명 실시간 중복 체크 (모달이 로드된 후에 설정)
         this.setupProductNameDuplicateCheck();
+
+        // 테이블 인라인 편집 (더블클릭)
+        const tableBody = document.getElementById('products-table-body');
+        if (tableBody && !tableBody.dataset.inlineEdit) {
+            tableBody.dataset.inlineEdit = '1';
+            tableBody.addEventListener('dblclick', (e) => {
+                const td = e.target.closest('td[data-field]');
+                if (!td || td.querySelector('input,select')) return;
+                this._startInlineEdit(td);
+            });
+        }
+    }
+
+    /** 인라인 편집 시작 */
+    _startInlineEdit(td) {
+        const field = td.dataset.field;
+        const productId = td.dataset.productId;
+        const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+        if (!product) return;
+
+        const originalHTML = td.innerHTML;
+        const value = product[field] ?? '';
+
+        if (field === 'category') {
+            const categories = window.categoryDataManager?.getAllCategories?.() || [];
+            const options = categories.map(c =>
+                `<option value="${c.name}"${c.name === value ? ' selected' : ''}>${c.name}</option>`
+            ).join('');
+            td.innerHTML = `<select class="input-ui" style="height:26px;font-size:12px;width:100%;">
+                <option value="">선택</option>${options}</select>`;
+            const sel = td.querySelector('select');
+            sel.focus();
+            sel.addEventListener('change', () => this._saveInlineEdit(td, productId, field, sel.value, originalHTML));
+            sel.addEventListener('blur', () => { if (td.querySelector('select')) td.innerHTML = originalHTML; });
+        } else {
+            const type = (field === 'price' || field === 'stock') ? 'number' : 'text';
+            const numVal = (field === 'price' || field === 'stock') ? (Number(value) || 0) : value;
+            td.innerHTML = `<input type="${type}" class="input-ui" style="height:26px;font-size:12px;width:100%;${type === 'number' ? 'text-align:right;' : ''}" value="${numVal}">`;
+            const input = td.querySelector('input');
+            input.focus();
+            input.select();
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') this._saveInlineEdit(td, productId, field, input.value, originalHTML);
+                if (e.key === 'Escape') td.innerHTML = originalHTML;
+            });
+            input.addEventListener('blur', () => { if (td.querySelector('input')) this._saveInlineEdit(td, productId, field, input.value, originalHTML); });
+        }
+    }
+
+    /** 인라인 편집 저장 */
+    async _saveInlineEdit(td, productId, field, newValue, originalHTML) {
+        const parsed = (field === 'price' || field === 'stock') ? (Number(newValue) || 0) : String(newValue).trim();
+        if (!window.supabaseClient) { td.innerHTML = originalHTML; return; }
+
+        try {
+            const { error } = await window.supabaseClient
+                .from('farm_products')
+                .update({ [field]: parsed })
+                .eq('id', productId);
+
+            if (error) throw error;
+
+            // 로컬 데이터도 갱신
+            const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+            if (product) product[field] = parsed;
+
+            // 셀 다시 렌더링
+            const dash = window.fmt?.ND || '<span class="td-null">—</span>';
+            const col = PRODUCT_COLUMNS.find(c => c.key === field);
+            if (col && product) {
+                const tempDiv = document.createElement('div');
+                tempDiv.innerHTML = col.render(product, dash);
+                const newTd = tempDiv.querySelector('td');
+                td.innerHTML = newTd.innerHTML;
+                // data-field, data-product-id 유지
+            } else {
+                td.innerHTML = originalHTML;
+            }
+
+            if (window.showToast) window.showToast('수정 완료', 1500);
+        } catch (err) {
+            console.error('인라인 수정 실패:', err);
+            td.innerHTML = originalHTML;
+            if (window.showToast) window.showToast('수정 실패: ' + err.message, 2000, 'error');
+        }
     }
 
     /**
@@ -429,6 +535,12 @@ class ProductManagementComponent {
         if (headerRow && !headerRow.dataset.rendered) {
             headerRow.innerHTML = renderProductTableHeader();
             headerRow.dataset.rendered = 'true';
+            // 헤더 체크박스가 이제 DOM에 존재 → SelectAll 연결
+            if (window.SelectAll) {
+                window.SelectAll.attach('select-all-products', '.product-checkbox', () => {
+                    this.updateBulkBar();
+                });
+            }
         }
 
         const tbody = document.getElementById('products-table-body');
@@ -477,6 +589,7 @@ class ProductManagementComponent {
         console.log(`✅ 총 ${pageProducts.length}개 상품 행 렌더링 완료`);
         this.updatePaginationInfo();
         this.updateFooterStats();
+        renderBarcodeSVGs();
     }
 
     /**
@@ -1059,9 +1172,10 @@ class ProductManagementComponent {
                 stock: getFormNumber('product-form-stock', 0),
                 description: getFormValue('product-form-description'),
                 size: getFormValue('product-form-size-select'),
-                shipping_option: getFormValue('product-form-shipping')
+                shipping_option: getFormValue('product-form-shipping'),
+                barcode: getFormValue('product-form-barcode') || generateEAN13()
             };
-            
+
             console.log('📋 수집된 폼 데이터:', formData);
             
             // 필수 필드 검증
@@ -1234,7 +1348,8 @@ class ProductManagementComponent {
             'product-form-description',
             'product-form-image',
             'product-form-id',
-            'product-form-created-at'
+            'product-form-created-at',
+            'product-form-barcode'
         ];
         
         let retryCount = 0;
@@ -1283,7 +1398,9 @@ class ProductManagementComponent {
                 'product-form-description': product.description || '',
                 'product-form-image': product.image_url || '',
                 'product-form-id': product.id,
-                'product-form-created-at': product.created_at
+                'product-form-created-at': product.created_at,
+                'product-form-barcode': product.barcode || '',
+                'product-form-product-code': product.product_code || ''
             };
             
             Object.entries(fields).forEach(([fieldId, value]) => {
@@ -1362,6 +1479,8 @@ class ProductManagementComponent {
         window._closeProductImport  = () => this.closeImportModal();
         window._switchImportTab     = (t) => this._switchTab(t);
         window._onPasteInput        = () => this._onPasteInput();
+        window._addBulkRow          = () => this._addBulkRow();
+        window._bulkInputChanged    = () => this._refreshImportCount();
         // 이벤트 (한 번만 등록하도록 플래그)
         if (!modal._importEventsReady) {
             modal._importEventsReady = true;
@@ -1373,8 +1492,11 @@ class ProductManagementComponent {
 
     /** 모달 상태 초기화 */
     _resetImport() {
-        // 붙여넣기 탭 활성화
-        this._switchTab('manual');
+        // 직접 입력 탭 활성화
+        this._switchTab('table');
+        // 표 초기화 — 기본 5행
+        const tbody = document.getElementById('bulk-input-tbody');
+        if (tbody) { tbody.innerHTML = ''; for (let i = 0; i < 5; i++) this._addBulkRow(); }
         // textarea 비우기
         const ta = document.getElementById('product-paste-textarea');
         if (ta) ta.value = '';
@@ -1394,21 +1516,14 @@ class ProductManagementComponent {
 
     /** 탭 전환 */
     _switchTab(tab) {
-        const manualBtn = document.getElementById('product-upload-method-manual');
-        const fileBtn   = document.getElementById('product-upload-method-excel');
-        const manualSec = document.getElementById('product-manual-input-section');
-        const fileSec   = document.getElementById('product-excel-upload-section');
-        const isManual  = tab === 'manual';
-        manualBtn?.classList.toggle('border-green-500', isManual);
-        manualBtn?.classList.toggle('text-brand',   isManual);
-        manualBtn?.classList.toggle('border-transparent', !isManual);
-        manualBtn?.classList.toggle('text-muted',    !isManual);
-        fileBtn?.classList.toggle('border-green-500',   !isManual);
-        fileBtn?.classList.toggle('text-brand',     !isManual);
-        fileBtn?.classList.toggle('border-transparent',  isManual);
-        fileBtn?.classList.toggle('text-muted',       isManual);
-        manualSec?.classList.toggle('hidden', !isManual);
-        fileSec?.classList.toggle('hidden',    isManual);
+        ['table', 'manual', 'file'].forEach(t => {
+            document.getElementById(`import-tab-${t}`)?.classList.toggle('hidden', t !== tab);
+        });
+        document.querySelectorAll('.import-tab-btn').forEach(btn => {
+            const active = btn.dataset.tab === tab;
+            btn.className = `import-tab-btn ${active ? 'btn-primary' : 'btn-secondary'} flex-1`;
+            btn.style.justifyContent = 'center';
+        });
         this._refreshImportCount();
     }
 
@@ -1432,16 +1547,15 @@ class ProductManagementComponent {
             const category = String(cols[1] || '').trim();
             // 헤더행 자동 감지 (숫자가 아닌 첫 줄 건너뜀)
             if (!name || name === '상품명') continue;
-            if (!category || category === '카테고리') continue;
             products.push({
                 name,
-                category,
+                category: category || '기타',
                 price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
-                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
-                stock:           parseInt(cols[4]) || 0,
-                size:            String(cols[5] || '').trim(),
-                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
-                description:     String(cols[7] || '').trim(),
+                stock:           parseInt(cols[3]) || 0,
+                size:            String(cols[4] || '').trim(),
+                description:     String(cols[5] || '').trim(),
+                cost: 0,
+                shipping_option: '일반배송',
             });
         }
         window.productImportData = products;
@@ -1460,8 +1574,8 @@ class ProductManagementComponent {
             section.classList.add('hidden');
             return;
         }
-        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션','설명'];
-        const keys = ['name','category','price','cost','stock','size','shipping_option','description'];
+        const cols = ['상품명','카테고리','판매가','재고','사이즈'];
+        const keys = ['name','category','price','stock','size'];
         if (countEl) countEl.textContent = `${products.length}개 상품 인식됨`;
         thead.innerHTML = cols.map(c =>
             `<th class="px-3 text-left whitespace-nowrap">${c}</th>`
@@ -1469,18 +1583,71 @@ class ProductManagementComponent {
         tbody.innerHTML = products.slice(0, 30).map((p, i) =>
             `<tr class="${i % 2 === 0 ? 'bg-white' : 'bg-section'}">` +
             keys.map(k => {
-                const v = (k === 'price' || k === 'cost') ? (p[k] || 0).toLocaleString() : (p[k] || '-');
+                const v = k === 'price' ? (p[k] || 0).toLocaleString() : (p[k] || '-');
                 return `<td class="px-3 td-secondary whitespace-nowrap">${v}</td>`;
             }).join('') +
             '</tr>'
         ).join('') + (products.length > 30
-            ? `<tr><td colspan="8" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
+            ? `<tr><td colspan="5" class="px-3 text-center td-muted">... 외 ${products.length - 30}개</td></tr>`
             : '');
         section.classList.remove('hidden');
     }
 
     /** 카운트 및 버튼 상태 갱신 */
+    /** 카테고리 옵션 HTML 생성 */
+    _getCategoryOptions() {
+        const fromDB = (window.categoryDataManager?.getAllCategories() || []).map(c => c.name);
+        const fromProducts = (this.products || []).map(p => p.category).filter(Boolean);
+        const cats = [...new Set([...fromDB, ...fromProducts])].sort();
+        return '<option value="">선택</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
+    }
+
+    /** 표 입력 행 추가 */
+    _addBulkRow() {
+        const tbody = document.getElementById('bulk-input-tbody');
+        if (!tbody) return;
+        const idx = tbody.children.length + 1;
+        const catOpts = this._getCategoryOptions();
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td class="text-center text-muted">${idx}</td>
+            <td><input type="text" class="bulk-name form-control" placeholder="상품명" style="font-size:11px;padding:2px 6px;" oninput="window._bulkInputChanged?.()"></td>
+            <td><select class="bulk-category form-control" style="font-size:11px;padding:2px 4px;">${catOpts}</select></td>
+            <td><input type="number" class="bulk-price form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="number" class="bulk-cost form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="number" class="bulk-stock form-control" placeholder="0" style="font-size:11px;padding:2px 6px;text-align:right;"></td>
+            <td><input type="text" class="bulk-size form-control" placeholder="M" style="font-size:11px;padding:2px 6px;text-align:center;"></td>
+            <td class="text-center"><button onclick="this.closest('tr').remove();window._bulkInputChanged?.()" class="text-muted hover:text-danger" style="font-size:11px;"><i class="fas fa-times"></i></button></td>
+        `;
+        tbody.appendChild(tr);
+        tr.querySelector('.bulk-name')?.focus();
+    }
+
+    /** 표 입력 데이터 수집 */
+    _collectBulkTableData() {
+        const rows = document.querySelectorAll('#bulk-input-tbody tr');
+        const data = [];
+        rows.forEach(tr => {
+            const name = tr.querySelector('.bulk-name')?.value?.trim();
+            if (!name) return;
+            data.push({
+                name,
+                category: tr.querySelector('.bulk-category')?.value?.trim() || '',
+                price: parseInt(tr.querySelector('.bulk-price')?.value) || 0,
+                cost_price: parseInt(tr.querySelector('.bulk-cost')?.value) || 0,
+                stock: parseInt(tr.querySelector('.bulk-stock')?.value) || 0,
+                size: tr.querySelector('.bulk-size')?.value?.trim() || ''
+            });
+        });
+        return data;
+    }
+
     _refreshImportCount() {
+        // 표 입력 탭이 활성화돼 있으면 표에서 수집
+        const tableTab = document.getElementById('import-tab-table');
+        if (tableTab && !tableTab.classList.contains('hidden')) {
+            window.productImportData = this._collectBulkTableData();
+        }
         const count   = (window.productImportData || []).length;
         const countEl = document.getElementById('import-row-count');
         if (countEl) {
@@ -1535,21 +1702,24 @@ class ProductManagementComponent {
         document.getElementById('download-product-template-btn')?.addEventListener('click', () => this._downloadTemplate());
     }
 
-    /** CSV 양식 다운로드 */
+    /** Payhere 양식 템플릿 다운로드 */
     _downloadTemplate() {
-        const bom = '\uFEFF';
-        const header = '상품명,카테고리,판매가,매입가,재고,사이즈,배송옵션,설명';
-        const rows = [
-            'White Platter 대,다육식물,15000,8000,20,대,일반배송,예쁜 화이트 플래터',
-            '에케베리아 소,다육식물,5000,2000,50,소,일반배송,소형 에케베리아',
-            '세덤 혼합,다육식물,3000,1500,100,,일반배송,',
+        if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
+        const HEADERS = [
+            '상품명','카테고리','색 설정','판매탭 노출','재고관리 설정',
+            '옵션명1','옵션값1','옵션명2','옵션값2','옵션명3','옵션값3',
+            'SKU','바코드','판매가','부가세','원가','수량','안전재고'
         ];
-        const blob = new Blob([bom + header + '\n' + rows.join('\n')], { type: 'text/csv;charset=utf-8;' });
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = '상품_일괄등록_양식.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
+        const EXAMPLE = [
+            '에케베리아 치와와','에케베리아','','사용','사용',
+            '','','','','','',
+            'P001','8801000000012',15000,'',8000,10,''
+        ];
+        const ws = XLSX.utils.aoa_to_sheet([HEADERS, EXAMPLE]);
+        ws['!cols'] = [25,15,8,10,10,8,8,8,8,8,8,12,15,10,6,10,8,10].map(w=>({wch:w}));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '상품등록');
+        XLSX.writeFile(wb, 'payhere_상품등록_양식.xlsx');
     }
 
     /** 파일 업로드 처리 */
@@ -1589,21 +1759,45 @@ class ProductManagementComponent {
     }
 
     _parseRowArrays(rows) {
+        // Payhere 양식 자동 감지: 헤더행에 '상품명' + 'SKU' 존재
+        const hdrIdx = rows.findIndex(r => String(r[0]||'').trim() === '상품명' && String(r[11]||'').trim() === 'SKU');
+        const isPayhere = hdrIdx >= 0;
+        // Payhere 컬럼 위치
+        const PH = { name:0, cat:1, sku:11, barcode:12, price:13, cost:15, stock:16 };
+
         const products = [];
-        for (const cols of rows) {
-            const name     = String(cols[0] || '').trim();
-            const category = String(cols[1] || '').trim();
-            if (!name || name === '상품명') continue;
-            if (!category || category === '카테고리') continue;
-            products.push({
-                name, category,
-                price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
-                cost:            parseFloat(String(cols[3] || '').replace(/,/g, '')) || 0,
-                stock:           parseInt(cols[4]) || 0,
-                size:            String(cols[5] || '').trim(),
-                shipping_option: String(cols[6] || '일반배송').trim() || '일반배송',
-                description:     String(cols[7] || '').trim(),
-            });
+        const startIdx = isPayhere ? hdrIdx + 1 : 1;
+        for (let i = startIdx; i < rows.length; i++) {
+            const cols = rows[i];
+            const name = String(cols[PH.name]||'').trim();
+            // 빈 행·설명 행·헤더 잔여행 스킵
+            if (!name || name.startsWith('*') || name === '필수' || name === '선택' || name === '상품명') continue;
+            if (isPayhere) {
+                products.push({
+                    name,
+                    category:     String(cols[PH.cat]    ||'').trim(),
+                    price:        parseFloat(String(cols[PH.price] ||'').replace(/,/g,'')) || 0,
+                    cost:         parseFloat(String(cols[PH.cost]  ||'').replace(/,/g,'')) || 0,
+                    stock:        parseInt(cols[PH.stock]) || 0,
+                    product_code: String(cols[PH.sku]    ||'').trim(),
+                    barcode:      String(cols[PH.barcode]||'').trim(),
+                    shipping_option: '일반배송',
+                    status: 'active',
+                });
+            } else {
+                // 우리 기존 단순 양식 (상품명·카테고리·판매가·재고·사이즈·설명)
+                products.push({
+                    name,
+                    category:    String(cols[1]||'').trim(),
+                    price:       parseFloat(String(cols[2]||'').replace(/,/g,'')) || 0,
+                    stock:       parseInt(cols[3]) || 0,
+                    size:        String(cols[4]||'').trim(),
+                    description: String(cols[5]||'').trim(),
+                    cost: 0,
+                    shipping_option: '일반배송',
+                    status: 'active',
+                });
+            }
         }
         window.productImportData = products;
         this._showFilePreview(products);
@@ -1611,22 +1805,26 @@ class ProductManagementComponent {
     }
 
     _showFilePreview(products) {
-        const section  = document.getElementById('product-import-preview');
-        const content  = document.getElementById('product-preview-content');
-        const countEl  = document.getElementById('product-preview-count');
+        const section = document.getElementById('product-import-preview');
+        const content = document.getElementById('product-preview-content');
+        const countEl = document.getElementById('product-preview-count');
         if (!section || !content) return;
         if (countEl) countEl.textContent = `총 ${products.length}개`;
-        const cols = ['상품명','카테고리','판매가','매입가','재고','사이즈','배송옵션'];
-        const keys = ['name','category','price','cost','stock','size','shipping_option'];
+        const cols = ['상품명','카테고리','판매가','원가','재고','바코드','SKU'];
+        const keys = ['name','category','price','cost','stock','barcode','product_code'];
+        const numKeys = new Set(['price','cost','stock']);
         let html = `<table class="table-ui"><thead><tr>` +
             cols.map(c => `<th class="whitespace-nowrap">${c}</th>`).join('') +
             `</tr></thead><tbody>` +
-            products.slice(0, 20).map(p =>
+            products.slice(0,20).map(p =>
                 `<tr>` +
-                keys.map(k => `<td class="${(k.includes('price')||k.includes('cost'))?'num':''} whitespace-nowrap">${k.includes('price')||k.includes('cost')?(p[k]||0).toLocaleString():(p[k]||'-')}</td>`).join('') +
+                keys.map(k => {
+                    const v = numKeys.has(k) ? (p[k]||0).toLocaleString() : (p[k]||'-');
+                    return `<td class="whitespace-nowrap">${v}</td>`;
+                }).join('') +
                 `</tr>`
             ).join('') +
-            (products.length > 20 ? `<tr><td colspan="7" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
+            (products.length > 20 ? `<tr><td colspan="${cols.length}" class="px-2 text-center td-muted">... 외 ${products.length-20}개</td></tr>` : '') +
             `</tbody></table>`;
         content.innerHTML = html;
         section.classList.remove('hidden');
@@ -1654,7 +1852,7 @@ class ProductManagementComponent {
             try {
                 if (window.productDataManager) { await window.productDataManager.addProduct(products[i]); ok++; }
                 else fail++;
-            } catch { fail++; }
+            } catch (e) { console.error(`상품 등록 실패 [${i}]:`, e); fail++; }
             this.updateProgress(i + 1, total);
             await new Promise(r => setTimeout(r, 60));
         }
@@ -1687,11 +1885,55 @@ class ProductManagementComponent {
     resetImportModal()       { this._resetImport(); }
 
     /**
-     * 상품 데이터 내보내기
+     * 상품 데이터 내보내기 — Payhere 업로드 양식
      */
     exportProducts() {
-        console.log('📤 상품 데이터 내보내기');
-        // TODO: Excel 내보내기 구현
+        if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
+        const products = window.productDataManager?.getAllProducts?.() || [];
+        if (products.length === 0) { alert('내보낼 상품이 없습니다.'); return; }
+
+        const HEADERS = [
+            '상품명','카테고리','색 설정','판매탭 노출','재고관리 설정',
+            '옵션명1','옵션값1','옵션명2','옵션값2','옵션명3','옵션값3',
+            'SKU','바코드','판매가','부가세','원가','수량','안전재고'
+        ];
+        // SKU 유효성: 영문·숫자·-·_ 만, 1~20자
+        const skuOk = s => s && /^[A-Za-z0-9_-]{1,20}$/.test(s);
+        const seenSku = new Set();
+        const getSku = s => {
+            if (!skuOk(s)) return null;        // 형식 불일치 → null
+            if (seenSku.has(s)) return null;   // 중복 → null
+            seenSku.add(s);
+            return s;
+        };
+
+        // Payhere 카테고리 매핑: 식물류→다육이, 화분→화분, 나머지→기타
+        const PLANT_CATS = new Set(['그랩토페들럼','두들레야','에오니움','에케베리아','코노피튬','크라슐라','포퀘리아']);
+        const payhereCategory = c => PLANT_CATS.has(c) ? '다육이' : c === '화분' ? '화분' : '기타';
+
+        const dataRows = products.map(p => [
+            p.name || '',
+            payhereCategory(p.category),
+            '초록',      // 색 설정 — Payhere 필수, 초록으로 고정
+            '사용',      // 판매탭 노출
+            '사용',      // 재고관리 설정
+            null,null,null,null,null,null, // 옵션명/값 1~3 — null = 완전 빈칸
+            getSku(p.product_code),
+            p.barcode || null,
+            p.price || 0,
+            null,        // 부가세
+            p.cost || null,
+            p.stock ?? null,
+            null,        // 안전재고
+        ]);
+
+        const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...dataRows]);
+        ws['!cols'] = [25,15,8,10,10,8,8,8,8,8,8,12,15,10,6,10,8,10].map(w=>({wch:w}));
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '상품목록');
+        const today = new Date().toISOString().slice(0,10);
+        XLSX.writeFile(wb, `payhere_상품_${today}.xlsx`);
+        window.showToast?.(`${products.length}개 상품 내보내기 완료`);
     }
 
     /**
@@ -2133,6 +2375,186 @@ function cleanupProductEventListeners() {
 // 전역 함수로 등록
 window.cleanupProductEventListeners = cleanupProductEventListeners;
 
+// ── 바코드 인쇄 / 카메라 스캔 전역 함수 ───────────────────────────────
+(function() {
+    if (window.JsBarcode) return;
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js';
+    document.head.appendChild(s);
+})();
+
+window.generateBarcodeForModal = function() {
+    const input = document.getElementById('product-form-barcode');
+    if (input) input.value = generateEAN13();
+};
+
+window.openBarcodePrintModal = function() {
+    const products = (window.productDataManager?.farm_products || [])
+        .filter(p => p.barcode)
+        .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+
+    const list = document.getElementById('barcode-product-list');
+    if (!list) return;
+    list.innerHTML = products.map(p => `
+        <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-section" style="border-color:var(--border);">
+            <input type="checkbox" class="barcode-check checkbox-ui" data-id="${p.id}" checked>
+            <span class="text-xs td-primary truncate flex-1">${(p.name||'').replace(/</g,'&lt;')}</span>
+            <span class="text-2xs td-muted font-mono">${p.barcode}</span>
+        </label>
+    `).join('');
+
+    document.getElementById('barcode-print-modal')?.classList.remove('hidden');
+};
+
+window.selectAllBarcodes = function(checked) {
+    document.querySelectorAll('.barcode-check').forEach(c => c.checked = checked);
+};
+
+window.printBarcodeLabels = function() {
+    if (!window.JsBarcode) { alert('바코드 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
+
+    const selected = [...document.querySelectorAll('.barcode-check:checked')].map(c => c.dataset.id);
+    if (!selected.length) { alert('인쇄할 상품을 선택해주세요.'); return; }
+
+    const products = (window.productDataManager?.farm_products || [])
+        .filter(p => selected.includes(p.id) && p.barcode);
+
+    // 고정: 40×20mm 감열 라벨 1장 1매 방식
+    const W = 40, H = 20;
+
+    const labels = products.map((p, i) => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        try {
+            window.JsBarcode(svg, p.barcode, {
+                format: 'EAN13', width: 1.0, height: 26,
+                fontSize: 7, margin: 1, displayValue: true
+            });
+        } catch(e) {
+            window.JsBarcode(svg, p.barcode, {
+                format: 'CODE128', width: 1.0, height: 26,
+                fontSize: 7, margin: 1, displayValue: true
+            });
+        }
+        const svgStr = new XMLSerializer().serializeToString(svg);
+        const name  = (p.name || '').replace(/</g,'&lt;');
+        const price = p.price ? Number(p.price).toLocaleString() + '원' : '';
+        const isLast = i === products.length - 1;
+        return `<div class="label${isLast ? '' : ' break'}">
+            ${svgStr}
+            <div class="info">${name}&nbsp;&nbsp;${price}</div>
+        </div>`;
+    }).join('');
+
+    const win = window.open('', '_blank', 'width=400,height=300');
+    win.document.write(`<!DOCTYPE html><html><head><title>바코드 라벨</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Malgun Gothic', sans-serif; background: #fff; }
+            .label {
+                width: ${W}mm; height: ${H}mm;
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                padding: 0.5mm 1mm 1mm;
+                overflow: hidden;
+            }
+            .label svg { max-width: 100%; height: auto; }
+            .info {
+                font-size: 5.5pt; font-weight: 700;
+                text-align: center; width: 100%;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                margin-top: 0.3mm; line-height: 1.1;
+            }
+            .break { page-break-after: always; }
+            @media print {
+                body { margin: 0; }
+                @page { size: ${W}mm ${H}mm; margin: 0; }
+            }
+        </style></head><body>
+        ${labels}
+        <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+    win.document.close();
+};
+
+let _barcodeScanner = null;
+
+window.openBarcodeScanner = function() {
+    const modal = document.getElementById('barcode-scan-modal');
+    if (!modal) return;
+    modal.classList.remove('hidden');
+
+    const statusEl = document.getElementById('scan-status-text');
+    const manualInput = document.getElementById('manual-barcode-input');
+    if (manualInput) manualInput.value = '';
+
+    if (!window.Html5Qrcode) {
+        if (statusEl) statusEl.textContent = '스캔 라이브러리 로딩 실패. 직접 입력을 이용해 주세요.';
+        return;
+    }
+
+    if (statusEl) statusEl.textContent = '카메라 시작 중...';
+
+    if (_barcodeScanner) {
+        _barcodeScanner.stop().catch(() => {}).finally(() => { _barcodeScanner = null; _startBarcodeCamera(statusEl); });
+    } else {
+        _startBarcodeCamera(statusEl);
+    }
+};
+
+function _startBarcodeCamera(statusEl) {
+    try {
+        _barcodeScanner = new window.Html5Qrcode('barcode-scanner-reader');
+        _barcodeScanner.start(
+            { facingMode: 'environment' },
+            { fps: 10, qrbox: { width: 250, height: 100 } },
+            (decodedText) => { window.processBarcodeResult(decodedText); },
+            () => {}
+        ).then(() => {
+            if (statusEl) statusEl.textContent = '카메라를 바코드에 가져다 대세요';
+        }).catch(err => {
+            if (statusEl) statusEl.textContent = '카메라 접근 실패. 직접 입력을 이용해 주세요.';
+            console.warn('카메라 시작 실패:', err);
+        });
+    } catch(e) {
+        if (statusEl) statusEl.textContent = '스캔 초기화 오류. 직접 입력을 이용해 주세요.';
+        console.warn('Html5Qrcode 초기화 오류:', e);
+    }
+}
+
+window.stopBarcodeScanner = function() {
+    document.getElementById('barcode-scan-modal')?.classList.add('hidden');
+    if (_barcodeScanner) {
+        _barcodeScanner.stop().catch(() => {});
+        _barcodeScanner = null;
+    }
+};
+
+window.processBarcodeResult = function(barcode) {
+    if (!barcode || !barcode.trim()) return;
+    barcode = barcode.trim();
+
+    window.stopBarcodeScanner();
+
+    const products = window.productDataManager?.farm_products || [];
+    const found = products.find(p => p.barcode === barcode);
+
+    if (found) {
+        window.showToast?.(`${found.name} 상품을 찾았습니다`, 'success');
+        window.openProductModal?.(found.id);
+    } else {
+        window.showToast?.(`바코드 [${barcode}] — 새 상품 등록 화면으로 이동합니다`, 'info');
+        window.openProductModal?.();
+        setTimeout(() => {
+            const input = document.getElementById('product-form-barcode');
+            if (input) {
+                input.value = barcode;
+                const details = input.closest('details');
+                if (details && !details.open) details.open = true;
+            }
+        }, 400);
+    }
+};
+
 // 상품 관리 컴포넌트 동적 로드 함수
 async function loadProductManagementComponent() {
     try {
@@ -2219,5 +2641,6 @@ async function loadProductModal() {
 // 전역 함수로 등록
 window.loadProductModal = loadProductModal;
 window.loadProductManagementComponent = loadProductManagementComponent;
+window.renderBarcodeSVGs = renderBarcodeSVGs;
 
 console.log('✅ ProductManagement 컴포넌트 스크립트 로드 완료');

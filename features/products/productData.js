@@ -663,31 +663,8 @@ class ProductDataManager {
 
     // ID로 상품 찾기
     getProductById(productId) {
-        try {
-            console.log('🔍 getProductById 호출:', productId);
-            console.log('🔍 현재 farm_products 길이:', this.farm_products?.length || 0);
-            console.log('🔍 farm_products 존재 여부:', !!this.farm_products);
-            
-            if (!this.farm_products || this.farm_products.length === 0) {
-                console.warn('⚠️ farm_products가 비어있습니다');
-                return null;
-            }
-            
-            const foundProduct = this.farm_products.find(product => product.id === productId);
-            console.log('🔍 찾은 상품:', foundProduct);
-            
-            if (foundProduct) {
-                console.log('✅ 상품 찾기 성공:', foundProduct.name);
-            } else {
-                console.warn('⚠️ 상품을 찾을 수 없습니다. 사용 가능한 ID들:', 
-                    this.farm_products.map(p => p.id).slice(0, 5));
-            }
-            
-            return foundProduct;
-        } catch (error) {
-            console.error('❌ 상품 찾기 실패:', error);
-            return null;
-        }
+        if (!this.farm_products || this.farm_products.length === 0) return null;
+        return this.farm_products.find(product => product.id === productId) || null;
     }
 
     // 상품 코드 생성 (타임스탬프 방식)
@@ -759,11 +736,6 @@ class ProductDataManager {
             console.error('상품 정렬 실패:', error);
             return this.farm_products;
         }
-    }
-
-    // 상품 ID로 조회
-    getProductById(productId) {
-        return this.farm_products.find(p => p.id === productId);
     }
 
     // 상품명으로 조회
