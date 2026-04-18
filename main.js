@@ -73,6 +73,9 @@ import './features/customers/customerRfmData.js';
 import './features/customers/customerSegment.js';
 import './features/customers/customerSegmentUI.js';
 
+// 엑셀 가져오기 / 내보내기 (Phase F)
+import './features/customers/customerImportExport.js';
+
 // 상품 데이터 모듈 import
 import { 
     ProductDataManager,

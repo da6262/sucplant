@@ -338,6 +338,37 @@ function attachCustomerGradesEventListeners() {
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
 
+    // 엑셀 내보내기·가져오기 (Phase F)
+    const exportBtn = document.getElementById('export-customers-btn');
+    if (exportBtn && !exportBtn.dataset.listenerAdded) {
+        exportBtn.dataset.listenerAdded = 'true';
+        exportBtn.onclick = () => {
+            if (typeof window.exportCustomersToExcel !== 'function') {
+                alert('내보내기 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            window.exportCustomersToExcel();
+        };
+        console.log('✅ 고객 내보내기 버튼 연결');
+    }
+
+    const importBtn = document.getElementById('import-customers-btn');
+    const importFile = document.getElementById('import-customers-file');
+    if (importBtn && importFile && !importBtn.dataset.listenerAdded) {
+        importBtn.dataset.listenerAdded = 'true';
+        importBtn.onclick = () => importFile.click();
+        importFile.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (window.customerImportExport?.openImportDialog) {
+                await window.customerImportExport.openImportDialog(file);
+            }
+            // 같은 파일 다시 선택 가능하도록 리셋
+            e.target.value = '';
+        };
+        console.log('✅ 고객 가져오기 버튼 연결');
+    }
+
     // 일괄 문자 발송 버튼 (Phase E — 세그먼트 SMS)
     const bulkSMSBtn = document.getElementById('open-bulk-sms-btn');
     if (bulkSMSBtn && !bulkSMSBtn.dataset.listenerAdded) {

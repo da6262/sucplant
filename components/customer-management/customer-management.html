@@ -8,7 +8,9 @@
             <button id="open-bulk-sms-btn" class="btn-secondary" title="태그·등급으로 고객 세그먼트 필터 후 일괄 문자 발송"><i class="fas fa-bullhorn"></i>일괄 문자</button>
             <button id="recalc-auto-tags-btn" class="btn-secondary" title="전체 고객 주문 이력으로 자동 태그(신규·단골·이탈위험·VIP후보) 재계산"><i class="fas fa-robot"></i>자동 태그</button>
             <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
-            <button class="btn-secondary" title="내보내기"><i class="fas fa-download"></i></button>
+            <button id="import-customers-btn" class="btn-secondary" title="엑셀 파일로 고객 일괄 가져오기 (전화번호 기준 upsert)"><i class="fas fa-file-import"></i>가져오기</button>
+            <button id="export-customers-btn" class="btn-secondary" title="현재 전체 고객을 엑셀 파일로 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
+            <input type="file" id="import-customers-file" accept=".xlsx,.xls,.csv" style="display:none;">
             <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
         </div>
     </div>
