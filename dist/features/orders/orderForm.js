@@ -2973,26 +2973,29 @@ function openSmsPasteModal() {
     textarea.addEventListener('input', () => { clearTimeout(previewTimer); previewTimer = setTimeout(updatePreview, 400); });
 
     // 적용
-    applyBtn.addEventListener('click', async () => {
+    applyBtn.addEventListener('click', async (e) => {
+        e.preventDefault();
+        e.stopPropagation();
         if (!parsedResult) return;
-        applyBtn.disabled = true;
-        applyBtn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>처리 중...';
+
+        // 먼저 모달 닫기 (폼 필드 채우기 전에 닫아야 주문 모달이 안 가려짐)
+        close();
 
         // 폼 필드에 값 채우기
-        const nameEl = document.getElementById('order-customer-name');
-        const phoneEl = document.getElementById('order-customer-phone');
-        const addressEl = document.getElementById('order-customer-address');
-        const addressDetailEl = document.getElementById('order-customer-address-detail');
-        const memoEl = document.getElementById('order-memo');
-        const customerIdEl = document.getElementById('order-customer-id');
-
-        if (nameEl && parsedResult.name) nameEl.value = parsedResult.name;
-        if (phoneEl && parsedResult.phone) phoneEl.value = parsedResult.phone;
-        if (addressEl && parsedResult.address) addressEl.value = parsedResult.address;
-        if (addressDetailEl && parsedResult.addressDetail) addressDetailEl.value = parsedResult.addressDetail;
-        if (memoEl && parsedResult.memo) memoEl.value = parsedResult.memo;
-
         try {
+            const nameEl = document.getElementById('order-customer-name');
+            const phoneEl = document.getElementById('order-customer-phone');
+            const addressEl = document.getElementById('order-customer-address');
+            const addressDetailEl = document.getElementById('order-customer-address-detail');
+            const memoEl = document.getElementById('order-memo');
+            const customerIdEl = document.getElementById('order-customer-id');
+
+            if (nameEl && parsedResult.name) nameEl.value = parsedResult.name;
+            if (phoneEl && parsedResult.phone) phoneEl.value = parsedResult.phone;
+            if (addressEl && parsedResult.address) addressEl.value = parsedResult.address;
+            if (addressDetailEl && parsedResult.addressDetail) addressDetailEl.value = parsedResult.addressDetail;
+            if (memoEl && parsedResult.memo) memoEl.value = parsedResult.memo;
+
             if (matchedCustomer) {
                 // 기존 고객 → customer_id 연결 + DB 주소 보완
                 if (customerIdEl) customerIdEl.value = matchedCustomer.id;
@@ -3002,35 +3005,31 @@ function openSmsPasteModal() {
             } else if (parsedResult.name && parsedResult.phone && window.supabaseClient) {
                 // 신규 고객 → farm_customers 자동 등록
                 const normalizedPhone = parsedResult.phone.replace(/[^0-9]/g, '');
-                const newCustomer = {
-                    name: parsedResult.name,
-                    phone: normalizedPhone,
-                    address: parsedResult.address || '',
-                    address_detail: parsedResult.addressDetail || '',
-                    grade: 'GENERAL',
-                    memo: '',
-                };
                 const { data: inserted, error } = await window.supabaseClient
                     .from('farm_customers')
-                    .insert(newCustomer)
+                    .insert({
+                        name: parsedResult.name,
+                        phone: normalizedPhone,
+                        address: parsedResult.address || '',
+                        address_detail: parsedResult.addressDetail || '',
+                        grade: 'GENERAL',
+                    })
                     .select('id')
                     .single();
 
                 if (error) {
                     console.error('신규 고객 등록 실패:', error);
-                } else if (inserted) {
-                    if (customerIdEl) customerIdEl.value = inserted.id;
+                } else if (inserted && customerIdEl) {
+                    customerIdEl.value = inserted.id;
                     console.log('✅ 신규 고객 등록 완료:', parsedResult.name, inserted.id);
                 }
             }
+
+            // 저장 버튼 상태 업데이트
+            if (window.updateOrderSubmitButtonState) window.updateOrderSubmitButtonState();
         } catch (e) {
-            console.warn('고객 처리 실패:', e);
+            console.error('❌ 문자입력 적용 실패:', e);
         }
-
-        // 저장 버튼 상태 업데이트
-        if (window.updateOrderSubmitButtonState) window.updateOrderSubmitButtonState();
-
-        close();
     });
 
     textarea.focus();
