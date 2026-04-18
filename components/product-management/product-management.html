@@ -338,6 +338,24 @@
         </div>
     </div>
 
+    <!-- 바코드 확대 모달 -->
+    <div id="barcode-zoom-modal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="modal-container modal-sm" style="text-align:center;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="barcode-zoom-name"></h3>
+                <button class="modal-close-btn" onclick="document.getElementById('barcode-zoom-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px;">
+                <svg id="barcode-zoom-svg" style="width:100%;max-width:320px;"></svg>
+                <span id="barcode-zoom-number" class="font-mono text-sm text-muted"></span>
+            </div>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('barcode-zoom-modal').classList.add('hidden')" class="btn-secondary">닫기</button>
+                <button onclick="window.printSingleBarcode()" class="btn-primary"><i class="fas fa-print mr-1"></i>인쇄</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 바코드 인쇄 모달 -->
     <div id="barcode-print-modal" class="modal-overlay hidden">
         <div class="modal-container modal-lg">

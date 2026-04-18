@@ -17,6 +17,9 @@ function renderBarcodeSVGs() {
                 try { window.JsBarcode(svg, bc, { format: 'CODE128', width: 1.2, height: 30, fontSize: 8, margin: 2, displayValue: false }); } catch(_) {}
             }
             svg.dataset.rendered = '1';
+            // 클릭 시 확대 모달
+            svg.style.cursor = 'pointer';
+            svg.onclick = () => window.openBarcodeZoom(bc, svg.closest('tr')?.querySelector('.product-name-link')?.textContent?.trim() || bc);
         });
     }
     if (window.JsBarcode) { doRender(); }
@@ -25,6 +28,40 @@ function renderBarcodeSVGs() {
         setTimeout(() => clearInterval(t), 5000);
     }
 }
+
+// 바코드 확대 모달
+window.openBarcodeZoom = function(barcode, productName) {
+    const modal = document.getElementById('barcode-zoom-modal');
+    if (!modal) return;
+    document.getElementById('barcode-zoom-name').textContent = productName || '';
+    document.getElementById('barcode-zoom-number').textContent = barcode;
+    const svg = document.getElementById('barcode-zoom-svg');
+    svg.innerHTML = '';
+    delete svg.dataset.rendered;
+    try {
+        window.JsBarcode(svg, barcode, { format: 'EAN13', width: 3, height: 100, fontSize: 16, margin: 10, displayValue: true });
+    } catch(e) {
+        window.JsBarcode(svg, barcode, { format: 'CODE128', width: 3, height: 100, fontSize: 16, margin: 10, displayValue: true });
+    }
+    modal.classList.remove('hidden');
+};
+
+window.printSingleBarcode = function() {
+    const bc = document.getElementById('barcode-zoom-number')?.textContent;
+    const name = document.getElementById('barcode-zoom-name')?.textContent;
+    if (!bc) return;
+    const svg = document.getElementById('barcode-zoom-svg');
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const win = window.open('', '_blank', 'width=400,height=300');
+    win.document.write(`<!DOCTYPE html><html><head><title>바코드</title>
+        <style>body{margin:20px;text-align:center;font-family:sans-serif;}
+        p{font-size:13px;font-weight:600;margin-bottom:8px;}
+        @media print{@page{margin:8mm;}}</style></head><body>
+        <p>${name.replace(/</g,'&lt;')}</p>${svgStr}
+        <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+    win.document.close();
+};
 
 // EAN-13 바코드 자동 생성
 function generateEAN13() {
