@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.5-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.6-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.6 | fix: 사이드바 버전 배지 미표시 수정 — config.js에서 window.APP_VERSION 할당 누락으로 배지가 항상 "—"로 표시되던 버그 수정 |
 | v3.4.5 | fix: 송장번호 일괄입력 패널 로드 실패 수정 — farm_orders에 없는 shipping_company 컬럼 참조를 shipping_method로 교정, 택배사 선택값 DB 저장 로직 추가, 기본 택배사를 로젠택배로 변경 |
 | v3.4.4 | feat(주문·배송): 고객 태그 칩 인라인 표시 — 고객 체계화 결과물(RFM 자동 태그 + 수동 태그)을 업무 화면에 즉시 노출. ①`features/orders/orderData.js` 에 `_getCustomerTagsForOrder(order)`(전화번호 전체 매칭 → 이름+last4 폴백) + `_renderCustomerCellWithTags(nameHtml, order)` (최대 2개 칩 + "+N" 나머지 개수) 헬퍼 추가. ②주문 목록 `renderOrderRow` 에서 고객명 셀 치환, 배송 목록(`features/shipping/shippingUI.js`) 도 동일 헬퍼 재사용. ③태그별 색상 매핑: 이탈위험→danger, VIP후보→purple, 단골→success, 신규→info, 재구매/미구매→neutral. ④`.order-row-tag*` CSS(9px·라운드·variant 별 배지 토큰). 주문관리·배송관리 한 화면에서 VIP·이탈위험 즉시 인지 가능 |
 | v3.4.2 | feat: 바코드 라벨 인쇄 40×20mm 감열 1장 1매 방식 전환 — A4 그리드 제거, @page{size:40mm 20mm;margin:0}+page-break-after로 감열 프린터 자동 피드 대응. 모달 사이즈/열 선택 UI 제거 |
