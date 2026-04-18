@@ -1470,16 +1470,24 @@ export class ProductUI {
                             formattedValue = `${value}개`;
                         }
                         
+                        if (column.key === 'barcode') {
+                            const nullDash2 = '<span class="td-null">—</span>';
+                            return value
+                                ? `<td class="text-center" style="padding:2px 4px;"><svg class="barcode-img" data-barcode="${String(value).replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg></td>`
+                                : `<td class="td-muted text-center">${nullDash2}</td>`;
+                        }
                         const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
                             : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
-                            : column.key === 'barcode' ? 'td-muted whitespace-nowrap font-mono'
                             : 'td-secondary';
                         return `<td class="${cellClass}">${formattedValue}</td>`;
                     }).join('')}
                 </tr>
             `).join('');
+
+            // 바코드 SVG 렌더링
+            if (window.renderBarcodeSVGs) window.renderBarcodeSVGs();
 
             // 이벤트 리스너 추가
             this.attachProductTableEventListeners();
@@ -1606,11 +1614,16 @@ export class ProductUI {
                                 formattedValue = new Date(value).toLocaleDateString();
                             }
                             
+                            if (column.key === 'barcode') {
+                                const nullDash2 = '<span class="td-null">—</span>';
+                                return value
+                                    ? `<td class="text-center" style="padding:2px 4px;"><svg class="barcode-img" data-barcode="${String(value).replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg></td>`
+                                    : `<td class="td-muted text-center">${nullDash2}</td>`;
+                            }
                             const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
                             : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
-                            : column.key === 'barcode' ? 'td-muted whitespace-nowrap font-mono'
                             : 'td-secondary';
                             if (column.key === 'name') {
                                 return `<td class="${cellClass}" style="max-width:180px;"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline truncate block" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;

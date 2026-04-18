@@ -3,6 +3,29 @@
  * 경산다육식물농장 관리시스템
  */
 
+// 테이블 내 바코드 SVG 렌더링
+function renderBarcodeSVGs() {
+    const svgs = document.querySelectorAll('#products-tbody .barcode-img[data-barcode]');
+    if (!svgs.length) return;
+    function doRender() {
+        svgs.forEach(svg => {
+            const bc = svg.dataset.barcode;
+            if (!bc || svg.dataset.rendered) return;
+            try {
+                window.JsBarcode(svg, bc, { format: 'EAN13', width: 1.2, height: 30, fontSize: 8, margin: 2, displayValue: false });
+            } catch(e) {
+                try { window.JsBarcode(svg, bc, { format: 'CODE128', width: 1.2, height: 30, fontSize: 8, margin: 2, displayValue: false }); } catch(_) {}
+            }
+            svg.dataset.rendered = '1';
+        });
+    }
+    if (window.JsBarcode) { doRender(); }
+    else {
+        const t = setInterval(() => { if (window.JsBarcode) { clearInterval(t); doRender(); } }, 200);
+        setTimeout(() => clearInterval(t), 5000);
+    }
+}
+
 // EAN-13 바코드 자동 생성
 function generateEAN13() {
     // 기존 최대 번호 조회 후 다음 번호 사용
@@ -75,10 +98,12 @@ const PRODUCT_COLUMNS = [
     {
         key: 'barcode',
         label: '바코드',
-        thClass: 'w-28',
+        thClass: 'w-32',
         render: (p, dash) => {
-            const bc = p.barcode ? String(p.barcode).replace(/</g, '&lt;') : null;
-            return `<td class="td-muted whitespace-nowrap font-mono">${bc || dash}</td>`;
+            if (!p.barcode) return `<td class="td-muted text-center">${dash}</td>`;
+            return `<td class="text-center" style="padding:2px 4px;">
+                <svg class="barcode-img" data-barcode="${p.barcode.replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg>
+            </td>`;
         }
     },
     {
@@ -520,6 +545,7 @@ class ProductManagementComponent {
         console.log(`✅ 총 ${pageProducts.length}개 상품 행 렌더링 완료`);
         this.updatePaginationInfo();
         this.updateFooterStats();
+        renderBarcodeSVGs();
     }
 
     /**
@@ -2377,5 +2403,6 @@ async function loadProductModal() {
 // 전역 함수로 등록
 window.loadProductModal = loadProductModal;
 window.loadProductManagementComponent = loadProductManagementComponent;
+window.renderBarcodeSVGs = renderBarcodeSVGs;
 
 console.log('✅ ProductManagement 컴포넌트 스크립트 로드 완료');
