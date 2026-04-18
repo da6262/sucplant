@@ -987,8 +987,8 @@ class OrderDataManager {
         if (!at) return { label: '미발송', tip: '클릭하여 SMS 발송' };
         try {
             const t = new Date(at);
-            const str = t.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            return { label: '발송완료(' + str + ')', tip: '마지막 발송: ' + t.toLocaleString('ko-KR') };
+            const short = (t.getMonth() + 1) + '/' + t.getDate();
+            return { label: '발송 ' + short, tip: '발송: ' + t.toLocaleString('ko-KR') };
         } catch (e) { return { label: '발송완료', tip: '' }; }
     }
     getPrintStatus(order) {

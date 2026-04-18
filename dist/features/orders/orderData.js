@@ -1,6 +1,8 @@
 // 주문 데이터 관리
 // features/orders/orderData.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 /**
  * get_order_rows 결과 rows에서 탭/상태별 카운트 계산 (단일 소스, 주문관리·대시보드 공유)
  * @param {Array<{order_status?: string}>} rows - get_order_rows RPC 반환 배열
@@ -576,10 +578,8 @@ class OrderDataManager {
             console.log('💾 OrderDataManager: 주문 데이터 저장 시작');
             
             // Supabase 연결 확인
-            if (!window.supabaseClient) {
-                throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
-            }
-            
+            ensureSupabase();
+
             console.log('☁️ Supabase에 주문 데이터 저장 중...');
             
             // 기존 데이터 삭제 후 새로 삽입 (upsert 방식)
@@ -987,8 +987,8 @@ class OrderDataManager {
         if (!at) return { label: '미발송', tip: '클릭하여 SMS 발송' };
         try {
             const t = new Date(at);
-            const str = t.toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' });
-            return { label: '발송완료(' + str + ')', tip: '마지막 발송: ' + t.toLocaleString('ko-KR') };
+            const short = (t.getMonth() + 1) + '/' + t.getDate();
+            return { label: '발송 ' + short, tip: '발송: ' + t.toLocaleString('ko-KR') };
         } catch (e) { return { label: '발송완료', tip: '' }; }
     }
     getPrintStatus(order) {
@@ -998,6 +998,53 @@ class OrderDataManager {
             const t = new Date(at);
             return { label: '출력완료', tip: '마지막 출력: ' + t.toLocaleString('ko-KR') };
         } catch (e) { return { label: '출력완료', tip: '' }; }
+    }
+
+    // 고객명 + 태그 칩 렌더 (최대 2개 + 나머지 개수) — 주문 행·배송 행 공용 (v3.4.2+)
+    _renderCustomerCellWithTags(customerNameHtml, order) {
+        const tags = this._getCustomerTagsForOrder(order);
+        if (tags.length === 0) return customerNameHtml;
+        const VARIANT = {
+            '이탈위험': 'danger',
+            'VIP후보':  'purple',
+            '단골':     'success',
+            '신규':     'info',
+            '재구매':   'neutral',
+            '미구매':   'neutral',
+        };
+        const MAX = 2;
+        const visible = tags.slice(0, MAX);
+        const rest = tags.length - visible.length;
+        const chipsHtml = visible.map(t => {
+            const v = VARIANT[t] || 'neutral';
+            const safe = String(t).replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            return `<span class="order-row-tag order-row-tag-${v}">${safe}</span>`;
+        }).join('') + (rest > 0 ? `<span class="order-row-tag-more">+${rest}</span>` : '');
+        return `<span class="order-row-customer">${customerNameHtml}${chipsHtml}</span>`;
+    }
+
+    // 주문 행의 고객을 farm_customers 에서 찾아 태그 배열 반환 (v3.4.2+)
+    // - 우선순위: 전화번호 전체 → 이름+last4 폴백
+    // - RPC 경로(isRowSpec)는 phone 없이 last4 만 있을 수 있어 이름 매칭으로 폴백
+    _getCustomerTagsForOrder(order) {
+        try {
+            const list = window.customerDataManager?.farm_customers;
+            if (!Array.isArray(list) || list.length === 0) return [];
+            const phone = String(order.customer_phone || '').replace(/\D/g, '');
+            const last4 = order.customer_phone_last4 || (phone ? phone.slice(-4) : '');
+            const name  = (order.customer_name || '').trim();
+            let customer = null;
+            if (phone) {
+                customer = list.find(c => String(c.phone || '').replace(/\D/g, '') === phone);
+            }
+            if (!customer && last4 && name) {
+                customer = list.find(c => {
+                    const cd = String(c.phone || '').replace(/\D/g, '');
+                    return c.name === name && cd.endsWith(last4);
+                });
+            }
+            return Array.isArray(customer?.tags) ? customer.tags : [];
+        } catch { return []; }
     }
 
     // 주문 행 렌더링 (운영자 작업 화면: 고객명·상품요약 중심, D-Day, SMS/출력 상태, 밀도 조정)
@@ -1049,8 +1096,8 @@ class OrderDataManager {
             const dNum = isRowSpec ? order.d_day : (ddayText !== '-' ? parseInt(ddayText.replace('D+','')) : null);
             const isOverdue = orderStatus === '입금대기' && dNum != null && dNum >= 3;
 
-            const smsStatus = isRowSpec ? { label: '미발송', tip: '클릭하여 SMS 발송' } : this.getSmsStatus(order);
-            const printStatus = isRowSpec ? { label: '출력대기', tip: '클릭하여 주문서 출력' } : this.getPrintStatus(order);
+            const smsStatus = this.getSmsStatus(order);
+            const printStatus = this.getPrintStatus(order);
             const isSelected = this.selectedOrders.has(rowId);
 
             const nd = window.fmt.ND;
@@ -1065,14 +1112,14 @@ class OrderDataManager {
                                onchange="toggleOrderSelection('${rowId}')">
                     </td>
                     <td class="text-center td-num ${(ddayWarn || isOverdue) ? 'text-danger font-semibold' : ''}">${window.fmt.nullDash(ddayText)}${isOverdue ? ' ⚠' : ''}</td>
-                    <td class="td-primary td-link">${customerName === '고객명 없음' ? nd : customerName}</td>
+                    <td class="td-primary td-link">${customerName === '고객명 없음' ? nd : this._renderCustomerCellWithTags(customerName, order)}</td>
                     <td class="td-secondary" title="${productSummary}"><div class="max-w-[150px] truncate">${window.fmt.nullDash(productSummary)}</div></td>
                     <td class="td-muted whitespace-nowrap">${window.fmt.nullDash(orderNumber)}</td>
                     <td class="td-amount text-right text-numeric">${totalAmount > 0 ? window.fmt.currency(totalAmount) : nd}</td>
                     <td class="text-center relative" onclick="event.stopPropagation()">
                         <span class="badge ${statusColor} cursor-pointer"
                               onclick="event.stopPropagation(); toggleOrderStatusEdit('${rowId}', '${orderStatus}')" title="클릭하여 상태 변경">${orderStatus}</span>
-                        <div id="status-edit-${rowId}" class="absolute left-0 top-full hidden z-50 mt-0.5 bg-card border border-gray-200 rounded-lg shadow-lg py-1 min-w-[140px] max-h-48 overflow-y-auto">
+                        <div id="status-edit-${rowId}" class="absolute left-1/2 -translate-x-1/2 top-full hidden mt-0.5 border border-gray-200 rounded-lg py-1 min-w-[140px] max-h-48 overflow-y-auto" style="z-index:9999; background:#fff; box-shadow:0 8px 24px rgba(0,0,0,0.18)">
                             ${this.standardOrderStatuses.map(s => `
                                 <button class="w-full text-left px-2 text-xs hover:bg-gray-50 ${orderStatus === s.value ? 'bg-blue-50 text-blue-700 font-medium' : 'text-gray-700'}"
                                         onclick="event.stopPropagation(); changeOrderStatus('${rowId}', '${s.value}')">${s.label}</button>

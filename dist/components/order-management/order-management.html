@@ -4,14 +4,14 @@
 <div class="page-header">
     <h2>주문 관리</h2>
     <div class="action-group">
-        <button id="bulk-export-logen-btn" class="btn-secondary hidden">
-            <i class="fas fa-file-excel"></i>로젠택배
+        <button id="bulk-export-logen-btn" class="btn-secondary" onclick="exportLogenExcel()" title="배송준비 주문을 로젠택배 엑셀 양식으로 다운로드">
+            <i class="fas fa-file-excel"></i>로젠 엑셀
+        </button>
+        <button id="bulk-tracking-import-btn" class="btn-secondary" title="배송준비 주문에 송장번호 일괄 입력">
+            <i class="fas fa-barcode"></i>송장입력
         </button>
         <button id="generate-picking-list-btn" class="btn-secondary">
             <i class="fas fa-clipboard-list"></i>피킹 리스트
-        </button>
-        <button id="generate-packaging-labels-btn" class="btn-secondary hidden">
-            <i class="fas fa-tags"></i>포장 라벨
         </button>
         <button id="add-order-btn" class="btn-primary">
             <i class="fas fa-plus"></i>새 주문
@@ -90,6 +90,7 @@
                         <th class="w-24">주문번호</th>
                         <th class="w-24">고객명</th>
                         <th>상품요약</th>
+                        <th class="w-28">택배사</th>
                         <th class="w-48">송장번호</th>
                         <th class="w-16">저장</th>
                     </tr>
@@ -123,13 +124,13 @@
                     <input type="checkbox" id="select-all-orders" class="rounded text-brand focus:ring-green-500 focus:ring-1">
                 </th>
                 <th class="w-12">D</th>
-                <th class="min-w-[80px] th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
+                <th class="w-28 th-sortable" onclick="orderDataManager.sortOrders('customer_name')">고객명</th>
                 <th class="min-w-[140px]">상품 요약</th>
                 <th class="w-28">주문번호</th>
                 <th class="w-20 th-sortable" onclick="orderDataManager.sortOrders('total_amount')">금액</th>
                 <th class="w-20">상태</th>
                 <th class="w-16">출력</th>
-                <th class="w-16">SMS</th>
+                <th class="w-20">SMS</th>
                 <th class="w-14">관리</th>
             </tr>
         </thead>
@@ -144,7 +145,7 @@
     <span>총 <strong id="order-status-total">0</strong>건 · <span id="order-list-count">0건 표시</span></span>
     <div class="flex items-center gap-2">
         <label class="flex items-center gap-1 text-muted">표시
-            <select id="order-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+            <select id="order-page-size" class="select-page-size">
                 <option value="20">20건</option>
                 <option value="50" selected>50건</option>
                 <option value="100">100건</option>
