@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.141-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.142-brightgreen)](https://github.com/da6262/sucplant)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,7 +233,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
-
+| v3.3.142 | feat: 상품 등록·수정 시 바코드 자동 생성(EAN-13) — 바코드 입력란 비워두면 저장 시 자동 채움. 기존 상품 30개 바코드 일괄 생성(8801000000012~302). generateEAN13() 함수 추가 |
+| v3.3.141 | feat: 상품관리 테이블·폼에 바코드 컬럼 추가 — PRODUCT_COLUMNS·PRODUCT_TABLE_COLUMNS 양쪽 barcode 삽입, 폼 입력 필드·formData·fillProductForm 연동. DB: add-product-barcode.sql |
 | v3.3.140 | feat(고객관리 Phase D): **RFM 자동 태그 재계산 엔진** 도입. ①`features/customers/customerRfmData.js` 신규 — `farm_orders` 를 `customer_phone` 별로 1회 쿼리 + 메모리 집계(orderCount·totalAmount·lastOrderDate) 후 고객별 매칭. ②`computeAutoTagsFromStats(stats)` 규칙 — `미구매`(0건)/`신규`(1~2)/`재구매`(5~9)/`단골`(10+), `이탈위험`(주문이력+90일 초과), `VIP후보`(50만원+). 임계값은 `AUTO_TAG_THRESHOLDS` 상수(추후 `farm_settings.rfmThresholds` 이관 가능). ③`recalcAllAutoTags()` — 기존 수동 태그 보존하고 자동 범주 6종만 교체, 실제로 변경된 고객만 `updateCustomer` + `tag_change` 로그 기록(`reason:'auto_rfm'`, `metadata: {added, removed, stats}`). ④고객관리 헤더에 "🤖 자동 태그" 버튼 신설, 규칙 미리보기 + 확인 후 실행 + 진행률 표시(`done/total`), 완료 시 대상·변경·실패 건수 알림. ⑤`main.js` 에 side-effect import 로 `window.customerRfm` 등록. 후속 Phase E(세그먼트 일괄 SMS) — 이 태그로 필터링 가능 |
 | v3.3.139 | feat(환경설정 SMS): **용도별 카드 그리드로 전환** — 표 형식 → 카드 5종(주문확인·입금확인·배송시작·배송완료·대기품목). 각 카드는 용도 아이콘(color-coded: info/success/warn/purple)·라벨·짧은 설명·내용 미리보기(pre-wrap, 최대 200px 스크롤, 빈 상태 표시)·치환 변수 칩(`{customerName}` 등)을 한눈에. 카드 전체 클릭 또는 ✎ 버튼 → 기존 편집 모달 열림, 저장 후 `loadSMSSettings()` 재호출로 카드 즉시 갱신(구 `.sms-preview` 셀 참조 제거). `.sms-card-grid`·`.sms-card-header/body/vars/empty`·`.sms-variant-*` CSS 블록 추가 |
 | v3.3.138 | docs: CLAUDE.md 고객 등급 섹션 정정 — 기본값 예시(씨앗·새싹·그린·골드·VIP)가 실제 운영 등급(일반·그린·퍼플·블랙)과 달라 혼동 유발. 실제 DB 값·code·최소금액·할인율 명시, 확인 쿼리 추가. 등급명 하드코딩 금지 원칙 재강조 |
