@@ -521,6 +521,7 @@ function attachOrderDetailEventListeners(modal, order) {
                     printWindow.focus();
                     setTimeout(() => {
                         printWindow.print();
+                        printWindow.onafterprint = () => printWindow.close();
                     }, 500);
                 } else {
                     alert('주문서 출력 기능을 사용할 수 없습니다.');
@@ -707,13 +708,9 @@ function attachOrderEventListeners() {
             console.warn('⚠️ 배송비 설정 버튼을 찾을 수 없습니다');
         }
         
-        // 전체 선택 체크박스 — onchange 할당
-        const selectAllOrders = document.getElementById('select-all-orders');
-        if (selectAllOrders) {
-            selectAllOrders.onchange = function() {
-                const orderCheckboxes = document.querySelectorAll('input[type="checkbox"][data-order-id]');
-                orderCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-            };
+        // 전체 선택 체크박스 — SelectAll 중앙 유틸 사용
+        if (window.SelectAll) {
+            window.SelectAll.attach('select-all-orders', 'input[type="checkbox"][data-order-id]');
         }
 
         // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)
@@ -1345,11 +1342,12 @@ async function openPickingPreviewModal(pickingData, type) {
                 break;
         }
         
-        // 미리보기 내용 표시
+        // 미리보기 내용 표시 + 원본 HTML 저장 (인쇄 시 재사용)
         const contentEl = modal.querySelector('#picking-preview-content');
         if (contentEl) {
             contentEl.innerHTML = previewHTML;
         }
+        modal._printHTML = previewHTML;
         
         // 모달 표시
         modal.classList.remove('hidden');
@@ -1468,9 +1466,10 @@ function printPickingList(pickingData, type) {
             printWindow.document.close();
             printWindow.focus();
 
-            // 인쇄 대화상자 열기
+            // 인쇄 대화상자 열기 → 완료 후 창 닫기
             setTimeout(() => {
                 printWindow.print();
+                printWindow.onafterprint = () => printWindow.close();
             }, 500);
         } else {
             alert('출력할 내용을 생성할 수 없습니다.');
@@ -1482,60 +1481,34 @@ function printPickingList(pickingData, type) {
     }
 }
 
-// 미리보기 내용 인쇄
+// 미리보기 내용 인쇄 — 저장된 원본 HTML(CSS 포함)을 숨김 iframe으로 바로 인쇄
 function printPreviewContent() {
     try {
-        console.log('🖨️ 미리보기 내용 인쇄 시작');
-        
-        // 미리보기 모달의 내용 가져오기
-        const previewContent = document.getElementById('picking-preview-content');
-        if (!previewContent) {
-            console.error('❌ 미리보기 내용을 찾을 수 없습니다');
-            alert('미리보기 내용을 찾을 수 없습니다.');
+        const modal = document.getElementById('picking-preview-modal');
+        const fullHTML = modal?._printHTML;
+        if (!fullHTML) {
+            alert('인쇄할 내용을 찾을 수 없습니다.');
             return;
         }
-        
-        // 미리보기 내용의 HTML 가져오기
-        const contentHTML = previewContent.innerHTML;
-        
-        // 새 창에서 인쇄
-        const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-            alert('팝업이 차단되었습니다. 브라우저 팝업 차단을 해제 후 다시 시도해주세요.');
-            return;
-        }
-        printWindow.document.write(`
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <title>피킹 리스트 인쇄</title>
-                <meta charset="UTF-8">
-                <style>
-                    * { margin: 0; padding: 0; box-sizing: border-box; }
-                    body {
-                        font-family: 'Malgun Gothic', sans-serif;
-                        padding: 20px;
-                        background: white;
-                    }
-                    @media print {
-                        body { margin: 0; padding: 16px; }
-                    }
-                </style>
-            </head>
-            <body>
-                ${contentHTML}
-            </body>
-            </html>
-        `);
-        printWindow.document.close();
-        printWindow.focus();
 
-        // 인쇄 대화상자 열기
+        const old = document.getElementById('_picking-print-frame');
+        if (old) old.remove();
+
+        const iframe = document.createElement('iframe');
+        iframe.id = '_picking-print-frame';
+        iframe.style.cssText = 'position:fixed;left:-9999px;top:0;width:800px;height:600px;border:none;';
+        document.body.appendChild(iframe);
+
+        const doc = iframe.contentDocument || iframe.contentWindow.document;
+        doc.open();
+        doc.write(fullHTML);
+        doc.close();
+
         setTimeout(() => {
-            printWindow.print();
-        }, 500);
-        
-        console.log('✅ 미리보기 내용 인쇄 완료');
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+            iframe.contentWindow.onafterprint = () => iframe.remove();
+        }, 300);
         
     } catch (error) {
         console.error('❌ 미리보기 내용 인쇄 실패:', error);
@@ -2595,7 +2568,7 @@ window.testProductNameLookup = async function() {
 // 송장번호 일괄입력 인라인 패널
 // =============================================
 
-const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '쿠팡로켓', '편의점택배', '기타'];
+const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '편의점택배', '기타'];
 
 async function toggleTrackingPanel() {
     const panel = document.getElementById('tracking-import-panel');
@@ -2617,11 +2590,11 @@ async function loadTrackingPanelOrders() {
     tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted"><i class="fas fa-spinner fa-spin mr-2"></i>로딩 중...</td></tr>`;
 
     try {
-        if (!window.supabaseClient) throw new Error('Supabase 미연결');
+        window.ensureSupabase();
 
         const { data: orders, error } = await window.supabaseClient
             .from('farm_orders')
-            .select('id, order_number, customer_name, order_status, tracking_number')
+            .select('id, order_number, customer_name, order_status, tracking_number, shipping_method')
             .in('order_status', ['배송준비', '상품준비'])
             .order('order_date', { ascending: false });
 
@@ -2650,23 +2623,29 @@ async function loadTrackingPanelOrders() {
 
         tbody.innerHTML = orders.map(order => {
             const summary = (itemsMap[order.id] || []).join(', ') || '-';
-            const existingCompany = order.shipping_company || '';
+            const existingCompany = order.shipping_method || '로젠택배';
             const existingTracking = order.tracking_number || '';
+            const companyOpts = SHIPPING_COMPANIES.map(c =>
+                `<option value="${c}"${c === existingCompany ? ' selected' : ''}>${c}</option>`
+            ).join('');
             return `
             <tr class="hover:bg-amber-50" data-order-id="${order.id}">
                 <td class="px-3 font-mono td-secondary whitespace-nowrap">${order.order_number || '-'}</td>
                 <td class="px-3 font-medium td-primary whitespace-nowrap">${order.customer_name || '-'}</td>
                 <td class="px-3 td-muted max-w-[180px] truncate" title="${summary}">${summary}</td>
                 <td class="px-3">
-                    <input type="text" class="tracking-number-input w-full border border-gray-200 rounded px-2 py-1 focus:outline-none focus:border-amber-400"
+                    <select class="tracking-company-select input-ui" style="font-size:12px; padding:2px 4px;">
+                        ${companyOpts}
+                    </select>
+                </td>
+                <td class="px-3">
+                    <input type="text" class="tracking-number-input input-ui" style="font-size:12px; padding:2px 6px;"
                         placeholder="송장번호 입력" value="${existingTracking}"
                         onkeydown="if(event.key==='Enter'){saveOneTrackingNumber('${order.id}', this.closest('tr'))}">
                 </td>
                 <td class="px-3 text-center">
                     <button onclick="saveOneTrackingNumber('${order.id}', this.closest('tr'))"
-                        class="px-2 py-1 bg-amber-500 hover:bg-amber-600 text-white rounded text-xs font-medium">
-                        저장
-                    </button>
+                        class="btn-warn btn-xs">저장</button>
                 </td>
             </tr>`;
         }).join('');
@@ -2690,7 +2669,7 @@ async function saveOneTrackingNumber(orderId, rowEl) {
     try {
         const { error } = await window.supabaseClient
             .from('farm_orders')
-            .update({ tracking_number: trackingNumber, order_status: '배송중' })
+            .update({ tracking_number: trackingNumber, shipping_method: shippingCompany, order_status: '배송중' })
             .eq('id', orderId);
 
         if (error) throw error;
@@ -2724,7 +2703,7 @@ async function saveAllTrackingNumbers() {
 
         try {
             await window.supabaseClient.from('farm_orders')
-                .update({ tracking_number: trackingNumber, order_status: '배송중' })
+                .update({ tracking_number: trackingNumber, shipping_method: shippingCompany, order_status: '배송중' })
                 .eq('id', orderId);
             tr.style.background = '#d1fae5';
             saved++;
@@ -2743,6 +2722,88 @@ async function saveAllTrackingNumbers() {
 window.toggleTrackingPanel = toggleTrackingPanel;
 window.saveOneTrackingNumber = saveOneTrackingNumber;
 window.saveAllTrackingNumbers = saveAllTrackingNumbers;
+
+// =============================================
+// 로젠택배 엑셀 내보내기
+// =============================================
+async function exportLogenExcel() {
+    if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리가 로드되지 않았습니다.'); return; }
+    window.ensureSupabase();
+
+    try {
+        // 배송준비 + 상품준비 상태 주문 조회
+        const { data: orders, error } = await window.supabaseClient
+            .from('farm_orders')
+            .select('id, order_number, customer_name, customer_phone, customer_address, order_status, shipping_fee, memo')
+            .in('order_status', ['배송준비', '상품준비'])
+            .order('order_date', { ascending: false });
+
+        if (error) throw error;
+        if (!orders || orders.length === 0) { alert('배송준비/상품준비 상태 주문이 없습니다.'); return; }
+
+        // 주문별 상품 조회
+        const ids = orders.map(o => o.id);
+        const { data: items } = await window.supabaseClient
+            .from('farm_order_items')
+            .select('order_id, product_name, quantity')
+            .in('order_id', ids);
+
+        const itemsMap = {};
+        (items || []).forEach(item => {
+            if (!itemsMap[item.order_id]) itemsMap[item.order_id] = [];
+            itemsMap[item.order_id].push(`${item.product_name} ${item.quantity}개`);
+        });
+
+        // 환경설정에서 로젠 운임/운임구분 읽기
+        const shippingSettings = window.settingsDataManager?.settings?.shipping || {};
+        const logenFee = shippingSettings.logenShippingFee ?? 3800;
+        const logenFreight = shippingSettings.logenFreightType ?? 10;
+
+        // 로젠 E타입(경산다육): 주문번호, 수하인명, 우편번호, 주소, 전화, 핸드폰, 수량, 운임, 운임구분, 품목명, 배송메세지
+        const rows = orders.map(order => {
+            const phone = (order.customer_phone || '').replace(/[-\s]/g, '');
+            const address = order.customer_address || '';
+            const productSummary = (itemsMap[order.id] || []).join(', ') || '-';
+
+            return [
+                order.order_number || '',
+                order.customer_name || '',
+                '',
+                address,
+                phone,
+                phone,
+                1,
+                logenFee,
+                logenFreight,
+                productSummary,
+                order.memo || ''
+            ];
+        });
+
+        const wsData = rows;
+        const ws = XLSX.utils.aoa_to_sheet(wsData);
+
+        // 컬럼 너비: 주문번호, 수하인명, 우편번호, 주소, 전화, 핸드폰, 수량, 운임, 운임구분, 품목명, 배송메세지
+        ws['!cols'] = [
+            { wch: 18 }, { wch: 12 }, { wch: 8 }, { wch: 40 }, { wch: 15 },
+            { wch: 15 }, { wch: 8 }, { wch: 8 }, { wch: 8 }, { wch: 30 }, { wch: 20 }
+        ];
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, '로젠택배');
+
+        const today = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+        XLSX.writeFile(wb, `로젠택배_${today}_${orders.length}건.xlsx`);
+
+        alert(`로젠택배 엑셀 다운로드 완료: ${orders.length}건`);
+
+    } catch (e) {
+        console.error('로젠 엑셀 내보내기 실패:', e);
+        alert('엑셀 내보내기 실패: ' + e.message);
+    }
+}
+
+window.exportLogenExcel = exportLogenExcel;
 
 // ──────────────────────────────────────────────
 // 날짜 필터 함수

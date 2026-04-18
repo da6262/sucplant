@@ -2568,7 +2568,7 @@ window.testProductNameLookup = async function() {
 // 송장번호 일괄입력 인라인 패널
 // =============================================
 
-const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '쿠팡로켓', '편의점택배', '기타'];
+const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '편의점택배', '기타'];
 
 async function toggleTrackingPanel() {
     const panel = document.getElementById('tracking-import-panel');
@@ -2594,7 +2594,7 @@ async function loadTrackingPanelOrders() {
 
         const { data: orders, error } = await window.supabaseClient
             .from('farm_orders')
-            .select('id, order_number, customer_name, order_status, tracking_number')
+            .select('id, order_number, customer_name, order_status, tracking_number, shipping_method')
             .in('order_status', ['배송준비', '상품준비'])
             .order('order_date', { ascending: false });
 
@@ -2623,7 +2623,7 @@ async function loadTrackingPanelOrders() {
 
         tbody.innerHTML = orders.map(order => {
             const summary = (itemsMap[order.id] || []).join(', ') || '-';
-            const existingCompany = order.shipping_company || 'CJ대한통운';
+            const existingCompany = order.shipping_method || '로젠택배';
             const existingTracking = order.tracking_number || '';
             const companyOpts = SHIPPING_COMPANIES.map(c =>
                 `<option value="${c}"${c === existingCompany ? ' selected' : ''}>${c}</option>`
@@ -2669,7 +2669,7 @@ async function saveOneTrackingNumber(orderId, rowEl) {
     try {
         const { error } = await window.supabaseClient
             .from('farm_orders')
-            .update({ tracking_number: trackingNumber, order_status: '배송중' })
+            .update({ tracking_number: trackingNumber, shipping_method: shippingCompany, order_status: '배송중' })
             .eq('id', orderId);
 
         if (error) throw error;
@@ -2703,7 +2703,7 @@ async function saveAllTrackingNumbers() {
 
         try {
             await window.supabaseClient.from('farm_orders')
-                .update({ tracking_number: trackingNumber, order_status: '배송중' })
+                .update({ tracking_number: trackingNumber, shipping_method: shippingCompany, order_status: '배송중' })
                 .eq('id', orderId);
             tr.style.background = '#d1fae5';
             saved++;

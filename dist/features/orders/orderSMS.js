@@ -180,7 +180,7 @@ function formatSMSTemplate(template, order) {
         .replace('{shippingFee}', shippingFee.toLocaleString())
         .replace('{shippingFeeText}', shippingText)
         .replace('{paymentInfo}', paymentInfo)
-        .replace('{shippingCompany}', order.shipping_company || '택배사')
+        .replace('{shippingCompany}', order.shipping_method || '택배사')
         .replace('{trackingNumber}', order.tracking_number || '송장번호');
     
     console.log('📱 포맷팅된 SMS 템플릿:', formattedTemplate);
