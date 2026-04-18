@@ -188,6 +188,10 @@ class OrderDataManager {
         this._loadErrorMessage = null;
         // 환경설정 기반 상태 탭 렌더를 카운트 업데이트 전에 보장 (idempotent — 기존 .dynamic 제거 후 재생성)
         await this.renderStatusTabs();
+        // 고객 태그 표시를 위해 고객 데이터 미리 로드 (아직 안 불러왔으면)
+        if (window.customerDataManager && (!window.customerDataManager.farm_customers || window.customerDataManager.farm_customers.length === 0)) {
+            try { await window.customerDataManager.loadCustomers(); } catch (e) { console.warn('고객 데이터 사전 로드 실패:', e); }
+        }
         try {
             console.log('📋 OrderDataManager: 주문 목록 로드 (get_order_rows 단일 소스, 카운트=rows 기반)');
             if (!window.supabaseClient) {
