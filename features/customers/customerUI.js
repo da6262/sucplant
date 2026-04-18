@@ -261,6 +261,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             tr.setAttribute('data-customer-id', customer.id);
             const phoneDisplay = formatPhone(customer.phone);
             tr.innerHTML = `
+                <td class="text-center w-10"><input type="checkbox" class="customer-checkbox checkbox-ui" data-customer-id="${customer.id}"></td>
                 <td class="td-primary td-link">${escapeHtml(customer.name) || ND}</td>
                 <td class="td-secondary">${phoneDisplay || ND}</td>
                 <td class="td-muted text-center">${lastOrderDate || ND}</td>
@@ -283,6 +284,11 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         // 기존 내용과 새 내용을 한 번에 교체
         container.innerHTML = '';
         container.appendChild(fragment);
+
+        // 헤더 체크박스 전체선택 연결
+        if (window.SelectAll) {
+            window.SelectAll.attach('select-all-customers', '.customer-checkbox');
+        }
 
         console.log('✅ 고객 리스트(테이블) 렌더링 완료');
         

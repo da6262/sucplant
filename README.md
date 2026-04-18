@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.147-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.149-brightgreen)](https://github.com/da6262/sucplant)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,8 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.149 | feat: 고객관리·대기자관리 전체선택 체크박스 추가 — 헤더 체크박스(select-all-customers, select-all-waitlist) + 행별 customer-checkbox/waitlist-checkbox, SelectAll.attach로 전체선택·해제·indeterminate 연동 |
+| v3.3.148 | fix: 상품관리 전체선택 체크박스 동작 수정 — SelectAll.attach() 호출 시점을 setupEventListeners()(DOM 생성 전)에서 renderProducts()의 헤더 렌더 직후로 이동. 헤더 체크박스가 DOM에 존재한 뒤 attach하도록 수정 |
 | v3.3.147 | feat: 상품관리 카메라 바코드 스캔 — "카메라 스캔" 버튼 → html5-qrcode 카메라 뷰파인더 모달. 스캔 성공 시 일치 상품 있으면 수정 모달 열기, 없으면 신규 등록 모달에 바코드 자동 채움. 수동 입력 fallback 제공. openBarcodeScanner/stopBarcodeScanner/processBarcodeResult 구현 |
 | v3.3.145 | feat(고객관리 Phase E): **세그먼트 일괄 SMS** — 태그·등급 조합 필터 → 매치 고객 미리보기 → 템플릿 선택·편집 → 일괄 Solapi 발송. ①`features/customers/customerSegment.js` 신규 — `collectAllCustomerTags()`/`filterCustomersByCriteria(tags·grades·tagMatch any/all·requirePhone)`/`personalizeMessage(tpl,customer)`(`{customerName}`·`{customerPhone}` 치환)/`sendBulkSMSToSegment(customers,template,{delayMs,maxConsecutiveFail,onProgress,templateKey})` — 200ms 간격 발송·연속 실패 5건 시 중단·개별 성공/실패 모두 타임라인 `etc`(metadata.category:'bulk_sms') 로그. ②`features/customers/customerSegmentUI.js` 신규 — `window.openBulkSMSModal()` 모달 제어(태그·등급 chip picker·실시간 매치 미리보기·템플릿 드롭다운으로 `farm_settings.smsTemplates` 불러와 편집·발송 진행률 바·결과 요약 알림). ③고객관리 헤더에 "📣 일괄 문자" 버튼 + 모달 HTML(`#bulk-sms-modal`) + `.bulk-sms-*` CSS(section·chip-picker·count-badge·preview·progress-bar). ④`main.js` 에 segment/segmentUI side-effect import, `js/customer-management.js` 에 버튼 핸들러 `dataset.listenerAdded` guard. ⑤발송 전 "N명에게 발송합니다" 확인 + Solapi 과금 경고. 후속 Phase F(엑셀 import/export) |
 | v3.3.142 | style(환경설정 SMS): **실제 폰 수신 말풍선 모양으로 재디자인** — 기존 "header + body + vars 3단 평범 카드" → 폰 스크린 프레임(`#f1f5f9` 배경, 18px 라운드) + 상단 용도 탭(흰 상태바 역할) + **수신자 이름(경산다육식물농장)** + **실제 좌측 정렬 말풍선**(꼬리 ::before/::after 로 삼각형 구현, 라운드 16px + 꼬리쪽 4px). variant 별 은은한 accent 색(info: #EFF6FF / success: #F0FDF4 / warn: #FFFBEB / purple: #FAF5FF / danger: #FEF2F2) + 꼬리 색 매칭. 빈 템플릿은 점선 empty 상태. 변수 스트립은 컴팩트화. Apple SD Gothic Neo·Malgun Gothic 폰트 적용으로 실제 안드로이드/iOS 메시지 앱 수신 화면과 시각적으로 매칭 |

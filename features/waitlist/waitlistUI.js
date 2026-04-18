@@ -126,8 +126,8 @@ export class WaitlistUI {
                 : `${pagedWaitlist.length} / ${waitlist.length}명 표시`;
 
             if (pagedWaitlist.length === 0) {
-                // 빈 상태 표시 — 공통 유틸 사용 (colspan=9: 번호·고객명·연락처·희망상품·카테고리·희망가격·상태·등록일·관리)
-                tbody.innerHTML = window.renderEmptyRow(9, '등록된 대기자가 없습니다.');
+                // 빈 상태 표시 — colspan=10: 체크박스·번호·고객명·연락처·희망상품·카테고리·희망가격·상태·등록일·관리
+                tbody.innerHTML = window.renderEmptyRow(10, '등록된 대기자가 없습니다.');
             } else {
                 // 성능 최적화: DocumentFragment로 일괄 DOM 추가
                 const fragment = document.createDocumentFragment();
@@ -136,6 +136,11 @@ export class WaitlistUI {
                 });
                 tbody.innerHTML = '';
                 tbody.appendChild(fragment);
+            }
+
+            // 헤더 체크박스 전체선택 연결
+            if (window.SelectAll) {
+                window.SelectAll.attach('select-all-waitlist', '.waitlist-checkbox');
             }
 
             // 통계 업데이트
@@ -154,6 +159,7 @@ export class WaitlistUI {
         const row = document.createElement('tr');
         row.className = 'hover:bg-gray-50 transition-colors';
         row.innerHTML = `
+            <td class="text-center w-10"><input type="checkbox" class="waitlist-checkbox checkbox-ui" data-waitlist-id="${item.id}"></td>
             <td class="td-muted text-center">${index + 1}</td>
             <td class="td-primary td-link">${nullDash(item.customer_name)}</td>
             <td class="td-secondary">${formatPhone(item.customer_phone)}</td>

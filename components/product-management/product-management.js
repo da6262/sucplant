@@ -533,6 +533,12 @@ class ProductManagementComponent {
         if (headerRow && !headerRow.dataset.rendered) {
             headerRow.innerHTML = renderProductTableHeader();
             headerRow.dataset.rendered = 'true';
+            // 헤더 체크박스가 이제 DOM에 존재 → SelectAll 연결
+            if (window.SelectAll) {
+                window.SelectAll.attach('select-all-products', '.product-checkbox', () => {
+                    this.updateBulkBar();
+                });
+            }
         }
 
         const tbody = document.getElementById('products-table-body');
