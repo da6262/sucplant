@@ -58,6 +58,15 @@ const PRODUCT_COLUMNS = [
         }
     },
     {
+        key: 'barcode',
+        label: '바코드',
+        thClass: 'w-28',
+        render: (p, dash) => {
+            const bc = p.barcode ? String(p.barcode).replace(/</g, '&lt;') : null;
+            return `<td class="td-muted whitespace-nowrap font-mono">${bc || dash}</td>`;
+        }
+    },
+    {
         key: 'price',
         label: '판매가',
         thClass: 'w-24',
@@ -1078,7 +1087,8 @@ class ProductManagementComponent {
                 stock: getFormNumber('product-form-stock', 0),
                 description: getFormValue('product-form-description'),
                 size: getFormValue('product-form-size-select'),
-                shipping_option: getFormValue('product-form-shipping')
+                shipping_option: getFormValue('product-form-shipping'),
+                barcode: getFormValue('product-form-barcode')
             };
             
             console.log('📋 수집된 폼 데이터:', formData);
@@ -1253,7 +1263,8 @@ class ProductManagementComponent {
             'product-form-description',
             'product-form-image',
             'product-form-id',
-            'product-form-created-at'
+            'product-form-created-at',
+            'product-form-barcode'
         ];
         
         let retryCount = 0;
@@ -1302,7 +1313,8 @@ class ProductManagementComponent {
                 'product-form-description': product.description || '',
                 'product-form-image': product.image_url || '',
                 'product-form-id': product.id,
-                'product-form-created-at': product.created_at
+                'product-form-created-at': product.created_at,
+                'product-form-barcode': product.barcode || ''
             };
             
             Object.entries(fields).forEach(([fieldId, value]) => {

@@ -24,6 +24,7 @@ const PRODUCT_TABLE_COLUMNS = [
     { key: 'name', label: '상품명', width: '' },
     { key: 'category', label: '카테고리', width: 'w-24' },
     { key: 'size', label: '사이즈', width: 'w-16' },
+    { key: 'barcode', label: '바코드', width: 'w-28' },
     { key: 'price', label: '판매가', width: 'w-24', format: 'currency' },
     { key: 'stock', label: '재고', width: 'w-20', format: 'number' },
     { key: 'shipping_option', label: '배송옵션', width: 'w-24' },
@@ -1472,13 +1473,14 @@ export class ProductUI {
                         const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
-                            : column.key === 'product_code' ? 'td-muted'
+                            : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
+                            : column.key === 'barcode' ? 'td-muted whitespace-nowrap font-mono'
                             : 'td-secondary';
                         return `<td class="${cellClass}">${formattedValue}</td>`;
                     }).join('')}
                 </tr>
             `).join('');
-            
+
             // 이벤트 리스너 추가
             this.attachProductTableEventListeners();
             
@@ -1607,7 +1609,8 @@ export class ProductUI {
                             const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
-                            : column.key === 'product_code' ? 'td-muted'
+                            : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
+                            : column.key === 'barcode' ? 'td-muted whitespace-nowrap font-mono'
                             : 'td-secondary';
                             if (column.key === 'name') {
                                 return `<td class="${cellClass}" style="max-width:180px;"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline truncate block" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
