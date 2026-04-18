@@ -20,14 +20,15 @@ const PRODUCT_FORM_FIELDS = [
 // ⚠️ PRODUCT_COLUMNS (product-management.js)와 이중 경로 — 너비·컬럼 변경 시 양쪽 동기화 필수
 const PRODUCT_TABLE_COLUMNS = [
     { key: 'checkbox', label: '', width: 'w-10', type: 'checkbox' },
+    { key: 'image', label: '', width: 'w-10' },
     { key: 'product_code', label: '상품코드', width: 'w-20' },
     { key: 'name', label: '상품명', width: '' },
     { key: 'category', label: '카테고리', width: 'w-24' },
     { key: 'size', label: '사이즈', width: 'w-16' },
-    { key: 'barcode', label: '바코드', width: 'w-28' },
     { key: 'price', label: '판매가', width: 'w-24', format: 'currency' },
+    { key: 'cost', label: '매입가', width: 'w-20', format: 'currency' },
+    { key: 'margin', label: '마진', width: 'w-16' },
     { key: 'stock', label: '재고', width: 'w-20', format: 'number' },
-    { key: 'shipping_option', label: '배송옵션', width: 'w-24' },
     { key: 'actions', label: '관리', width: 'w-20', type: 'actions' }
 ];
 

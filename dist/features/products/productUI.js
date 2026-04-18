@@ -17,16 +17,19 @@ const PRODUCT_FORM_FIELDS = [
 ];
 
 // 상품 테이블 컬럼 정의 (실제 화면에 표시되는 구조에 맞게 수정)
+// ⚠️ PRODUCT_COLUMNS (product-management.js)와 이중 경로 — 너비·컬럼 변경 시 양쪽 동기화 필수
 const PRODUCT_TABLE_COLUMNS = [
-    { key: 'checkbox', label: '', width: 'w-12', type: 'checkbox' },
+    { key: 'checkbox', label: '', width: 'w-10', type: 'checkbox' },
+    { key: 'image', label: '', width: 'w-10' },
     { key: 'product_code', label: '상품코드', width: 'w-20' },
-    { key: 'name', label: '상품명', width: 'w-1/4' },
-    { key: 'category', label: '카테고리', width: 'w-1/6' },
-    { key: 'size', label: '사이즈', width: 'w-1/6' },
-    { key: 'price', label: '판매가', width: 'w-1/6', format: 'currency' },
-    { key: 'stock', label: '재고', width: 'w-1/12', format: 'number' },
-    { key: 'shipping_option', label: '배송옵션', width: 'w-1/6' },
-    { key: 'actions', label: '관리', width: 'w-1/12', type: 'actions' }
+    { key: 'name', label: '상품명', width: '' },
+    { key: 'category', label: '카테고리', width: 'w-24' },
+    { key: 'size', label: '사이즈', width: 'w-16' },
+    { key: 'price', label: '판매가', width: 'w-24', format: 'currency' },
+    { key: 'cost', label: '매입가', width: 'w-20', format: 'currency' },
+    { key: 'margin', label: '마진', width: 'w-16' },
+    { key: 'stock', label: '재고', width: 'w-20', format: 'number' },
+    { key: 'actions', label: '관리', width: 'w-20', type: 'actions' }
 ];
 
 // 공통 CSS 클래스 정의 — 통제실 변수 기반 (반란군 제거 완료)
@@ -895,7 +898,15 @@ export class ProductUI {
                     { id: 'product-form-description', value: product.description || '' },
                     { id: 'product-form-image', value: product.image_url || '' }
                 ];
-                
+
+                // 기존 이미지 미리보기 표시
+                const previewWrap = document.getElementById('product-image-preview');
+                const previewImg = document.getElementById('product-image-preview-img');
+                if (product.image_url && previewImg && previewWrap) {
+                    previewImg.src = product.image_url;
+                    previewWrap.classList.remove('hidden');
+                }
+
                 // 사이즈 처리 (기존 값이 표준 사이즈인지 확인)
                 const standardSizes = ['SX', 'S', 'M', 'L', 'XL'];
                 const productSize = product.size || '';
@@ -1002,9 +1013,13 @@ export class ProductUI {
                 return false;
             }
             
+            // 이미지 업로드 (파일 선택된 경우)
+            if (window.uploadProductImage) {
+                await window.uploadProductImage();
+            }
+
             // 폼 데이터 수집
             const productData = this.collectProductFormData();
-            console.log('📋 수집된 상품 데이터:', productData);
             
             if (!productData) {
                 console.error('❌ 상품 데이터 수집 실패');
@@ -1428,7 +1443,7 @@ export class ProductUI {
                 <tr data-product-id="${product.id}">
                     ${PRODUCT_TABLE_COLUMNS.map(column => {
                         if (column.type === 'checkbox') {
-                            return `<td class="text-center"><input type="checkbox" class="product-checkbox rounded border-gray-300 text-green-600 focus:ring-green-500" data-product-id="${product.id}"></td>`;
+                            return `<td class="text-center"><input type="checkbox" class="product-checkbox checkbox-ui" data-product-id="${product.id}"></td>`;
                         }
 
                         if (column.type === 'actions') {
@@ -1456,16 +1471,25 @@ export class ProductUI {
                             formattedValue = `${value}개`;
                         }
                         
+                        if (column.key === 'barcode') {
+                            const nullDash2 = '<span class="td-null">—</span>';
+                            return value
+                                ? `<td class="text-center" style="padding:2px 4px;"><svg class="barcode-img" data-barcode="${String(value).replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg></td>`
+                                : `<td class="td-muted text-center">${nullDash2}</td>`;
+                        }
                         const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
-                            : column.key === 'product_code' ? 'td-muted'
+                            : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
                             : 'td-secondary';
                         return `<td class="${cellClass}">${formattedValue}</td>`;
                     }).join('')}
                 </tr>
             `).join('');
-            
+
+            // 바코드 SVG 렌더링
+            if (window.renderBarcodeSVGs) window.renderBarcodeSVGs();
+
             // 이벤트 리스너 추가
             this.attachProductTableEventListeners();
             
@@ -1591,13 +1615,19 @@ export class ProductUI {
                                 formattedValue = new Date(value).toLocaleDateString();
                             }
                             
+                            if (column.key === 'barcode') {
+                                const nullDash2 = '<span class="td-null">—</span>';
+                                return value
+                                    ? `<td class="text-center" style="padding:2px 4px;"><svg class="barcode-img" data-barcode="${String(value).replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg></td>`
+                                    : `<td class="td-muted text-center">${nullDash2}</td>`;
+                            }
                             const cellClass = column.key === 'name' ? 'td-primary'
                             : column.format === 'currency' ? 'td-amount'
                             : column.format === 'number'   ? 'td-num'
-                            : column.key === 'product_code' ? 'td-muted'
+                            : column.key === 'product_code' ? 'td-muted whitespace-nowrap'
                             : 'td-secondary';
                             if (column.key === 'name') {
-                                return `<td class="${cellClass}"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
+                                return `<td class="${cellClass}" style="max-width:180px;"><span class="product-name-link cursor-pointer hover:text-green-700 hover:underline truncate block" data-action="detail" data-product-id="${product.id}">${formattedValue}</span></td>`;
                             }
                         return `<td class="${cellClass}">${formattedValue}</td>`;
                         }).join('')}
@@ -2208,4 +2238,84 @@ window.handleSizeChange = function() {
 
 window.renderProductsTable = function() {
     productUI.renderProductsTable();
+};
+
+// ─── 상품 이미지 업로드 (Supabase Storage) ───────────────────────
+const MAX_IMAGE_SIZE = 800; // 리사이즈 최대 px
+const IMAGE_QUALITY = 0.7; // JPEG 압축 품질
+
+// 이미지 선택 시 미리보기 + 리사이즈
+window.handleProductImageSelect = function(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    const nameEl = document.getElementById('product-image-filename');
+    const previewWrap = document.getElementById('product-image-preview');
+    const previewImg = document.getElementById('product-image-preview-img');
+    if (nameEl) nameEl.textContent = file.name;
+
+    // 리사이즈 후 미리보기
+    resizeImage(file, MAX_IMAGE_SIZE, IMAGE_QUALITY).then(blob => {
+        const url = URL.createObjectURL(blob);
+        if (previewImg) previewImg.src = url;
+        if (previewWrap) previewWrap.classList.remove('hidden');
+        // blob을 임시 저장 (저장 시 업로드)
+        input._resizedBlob = blob;
+    });
+};
+
+// 이미지 리사이즈 (canvas 기반, 최대 px 제한 + JPEG 압축)
+function resizeImage(file, maxSize, quality) {
+    return new Promise((resolve) => {
+        const img = new Image();
+        img.onload = () => {
+            let w = img.width, h = img.height;
+            if (w > maxSize || h > maxSize) {
+                const ratio = Math.min(maxSize / w, maxSize / h);
+                w = Math.round(w * ratio);
+                h = Math.round(h * ratio);
+            }
+            const canvas = document.createElement('canvas');
+            canvas.width = w;
+            canvas.height = h;
+            canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+            canvas.toBlob(blob => resolve(blob), 'image/jpeg', quality);
+        };
+        img.src = URL.createObjectURL(file);
+    });
+}
+
+// 상품 저장 전 이미지 업로드 → image_url 설정
+window.uploadProductImage = async function() {
+    const fileInput = document.getElementById('product-form-image-file');
+    const blob = fileInput?._resizedBlob;
+    if (!blob) return null; // 새 이미지 없음
+
+    if (!window.supabaseClient) {
+        console.warn('Supabase 없음 — 이미지 업로드 스킵');
+        return null;
+    }
+
+    const fileName = `${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+    const { data, error } = await window.supabaseClient.storage
+        .from('product-images')
+        .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+
+    if (error) {
+        console.error('이미지 업로드 실패:', error);
+        if (window.showToast) window.showToast('이미지 업로드 실패: ' + error.message, 3000, 'error');
+        return null;
+    }
+
+    const { data: urlData } = window.supabaseClient.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+    const publicUrl = urlData?.publicUrl;
+    // hidden input에 URL 설정
+    const hiddenInput = document.getElementById('product-form-image');
+    if (hiddenInput && publicUrl) hiddenInput.value = publicUrl;
+
+    console.log('✅ 이미지 업로드 완료:', publicUrl);
+    return publicUrl;
 };

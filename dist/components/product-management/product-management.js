@@ -104,13 +104,26 @@ const PRODUCT_COLUMNS = [
         }
     },
     {
+        key: 'image',
+        label: '',
+        thClass: 'w-10',
+        render: (p) => {
+            if (p.image_url) {
+                return `<td class="text-center" style="padding:2px;"><img src="${p.image_url}" alt="" style="width:32px;height:32px;object-fit:cover;border-radius:4px;border:1px solid #e0e0e0;" onerror="this.style.display='none'"></td>`;
+            }
+            return `<td class="text-center text-muted" style="padding:2px;"><i class="fas fa-image" style="font-size:14px;color:#ccc;"></i></td>`;
+        }
+    },
+    {
         key: 'name',
         label: '상품명',
         thClass: 'w-36',
         editable: true,
         render: (p, dash) => {
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;"><span class="product-name-link truncate block">${name || dash}</span></td>`;
+            const stock = Number(p.stock) || 0;
+            const outBadge = stock === 0 ? ' <span class="badge badge-danger" style="font-size:9px;padding:1px 4px;">품절</span>' : '';
+            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;"><span class="product-name-link truncate block">${name || dash}</span>${outBadge}</td>`;
         }
     },
     {
@@ -132,17 +145,11 @@ const PRODUCT_COLUMNS = [
             return `<td class="td-secondary">${s || dash}</td>`;
         }
     },
-    {
-        key: 'barcode',
-        label: '바코드',
-        thClass: 'w-32',
-        render: (p, dash) => {
-            if (!p.barcode) return `<td class="td-muted text-center">${dash}</td>`;
-            return `<td class="text-center" style="padding:2px 4px;">
-                <svg class="barcode-img" data-barcode="${p.barcode.replace(/"/g,'&quot;')}" style="max-width:110px;height:36px;"></svg>
-            </td>`;
-        }
-    },
+    // 바코드 컬럼 — 테이블 밀도를 위해 숨김 (바코드 인쇄·모달에서 확인 가능)
+    // {
+    //     key: 'barcode', label: '바코드', thClass: 'w-32',
+    //     render: (p, dash) => { ... }
+    // },
     {
         key: 'price',
         label: '판매가',
@@ -154,24 +161,44 @@ const PRODUCT_COLUMNS = [
         }
     },
     {
+        key: 'cost',
+        label: '매입가',
+        thClass: 'w-20',
+        render: (p, dash) => {
+            const cost = Number(p.cost) || 0;
+            return `<td class="td-amount text-right text-numeric">${cost > 0 ? (window.fmt?.currency(cost) || '₩' + cost.toLocaleString()) : dash}</td>`;
+        }
+    },
+    {
+        key: 'margin',
+        label: '마진',
+        thClass: 'w-16',
+        render: (p, dash) => {
+            const price = Number(p.price) || 0;
+            const cost = Number(p.cost) || 0;
+            if (price <= 0 || cost <= 0) return `<td class="td-muted text-center">${dash}</td>`;
+            const margin = Math.round((price - cost) / price * 100);
+            const color = margin >= 50 ? 'color:var(--primary);font-weight:600;' : margin >= 30 ? '' : 'color:var(--danger);';
+            return `<td class="td-num text-center" style="${color}">${margin}%</td>`;
+        }
+    },
+    {
         key: 'stock',
         label: '재고',
         thClass: 'w-20',
         editable: true,
         render: (p, dash) => {
             const stock = Number(p.stock) || 0;
-            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}">${stock > 0 ? stock + '개' : dash}</td>`;
+            if (stock === 0) return `<td class="td-num text-right font-semibold" data-field="stock" data-product-id="${p.id}" style="color:var(--danger);">품절</td>`;
+            if (stock <= 5) return `<td class="td-num text-right font-semibold" data-field="stock" data-product-id="${p.id}" style="color:var(--warn);">${stock}개</td>`;
+            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}">${stock}개</td>`;
         }
     },
-    {
-        key: 'shipping_option',
-        label: '배송옵션',
-        thClass: 'w-24',
-        render: (p, dash) => {
-            const ship = p.shipping_option ? String(p.shipping_option).replace(/</g, '&lt;') : null;
-            return `<td class="td-secondary">${ship || dash}</td>`;
-        }
-    },
+    // 배송옵션 — 모달에서 확인 가능, 테이블 밀도 위해 숨김
+    // {
+    //     key: 'shipping_option', label: '배송옵션', thClass: 'w-24',
+    //     render: (p, dash) => { ... }
+    // },
     {
         key: 'actions',
         headerCell: '<th class="w-20">관리</th>',
