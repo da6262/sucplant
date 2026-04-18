@@ -8,7 +8,9 @@
             <button id="export-products-btn"   class="btn-secondary"><i class="fas fa-download"></i>내보내기</button>
             <button id="import-products-btn"   class="btn-secondary"><i class="fas fa-upload"></i>일괄 등록</button>
             <button id="manage-categories-btn" class="btn-secondary"><i class="fas fa-tags"></i>카테고리</button>
-            <button id="add-product-btn"       class="btn-primary"><i class="fas fa-plus"></i>상품 등록</button>
+            <button id="print-barcodes-btn"    class="btn-secondary"><i class="fas fa-barcode"></i>바코드 인쇄</button>
+            <button id="scan-barcode-btn"      class="btn-secondary"><i class="fas fa-camera"></i>카메라 스캔</button>
+            <button id="add-product-btn" class="btn-primary"><i class="fas fa-plus"></i>상품 등록</button>
         </div>
     </div>
 
@@ -41,9 +43,30 @@
         </button>
     </div>
 
+    <!-- 카테고리별 요약 통계 -->
+    <div id="product-category-stats" class="px-3 py-1.5 border-b border-gray-100 flex flex-wrap gap-2 text-xs" style="background:#FAFAFA;">
+        <!-- JS에서 동적 생성 -->
+    </div>
+
+    <!-- 일괄 처리 바 -->
+    <div id="product-bulk-bar" class="hidden px-3 py-2 flex items-center justify-between flex-wrap gap-2" style="background:#EFF6FF;border-bottom:2px solid #93C5FD;">
+        <span class="text-xs font-semibold text-body"><span id="product-bulk-count">0</span>건 선택됨</span>
+        <div class="flex flex-wrap gap-1.5">
+            <button type="button" onclick="window._productBulkStockAdjust()" class="btn-secondary" style="color:var(--info);border-color:#93C5FD;">
+                <i class="fas fa-boxes"></i>재고 일괄 수정
+            </button>
+            <button type="button" onclick="window._productBulkDelete()" class="btn-secondary" style="color:var(--danger);border-color:#FCA5A5;">
+                <i class="fas fa-trash"></i>일괄 삭제
+            </button>
+            <button type="button" onclick="document.querySelectorAll('.product-checkbox').forEach(c=>c.checked=false);document.getElementById('select-all-products').checked=false;document.getElementById('product-bulk-bar').classList.add('hidden');" class="btn-secondary">
+                <i class="fas fa-times"></i>선택 해제
+            </button>
+        </div>
+    </div>
+
     <!-- 상품 목록 테이블 -->
     <div class="flex-1 overflow-auto">
-        <table class="table-ui min-w-full">
+        <table class="table-ui w-full table-fixed">
             <thead class="sticky top-0 z-10">
                 <!-- <tr> 는 JS 의 PRODUCT_COLUMNS 스키마에서 자동 생성 (헤더·행 단일 소스) -->
                 <tr id="products-table-header"></tr>
@@ -72,7 +95,7 @@
             </div>
             <span class="text-gray-300">|</span>
             <label class="flex items-center gap-1 text-muted">표시
-                <select id="product-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                <select id="product-page-size" class="select-page-size">
                     <option value="10">10개</option>
                     <option value="20" selected>20개</option>
                     <option value="50">50개</option>
@@ -84,99 +107,139 @@
 
     <!-- 상품 일괄 등록 모달 -->
     <div id="product-import-modal" class="modal-overlay hidden">
-        <div class="modal-container modal-lg">
+        <div class="modal-container" style="max-width:800px;">
             <div class="modal-header">
-                <span class="modal-title"><i class="fas fa-upload text-brand mr-2"></i>상품 일괄 등록</span>
-                <button id="close-import-modal" class="modal-close-btn">
-                    <i class="fas fa-times"></i>
-                </button>
+                <span class="modal-title"><i class="fas fa-upload mr-2"></i>상품 일괄 등록</span>
+                <button onclick="window._closeProductImport?.()" class="modal-close-btn"><i class="fas fa-times"></i></button>
             </div>
 
-            <div class="modal-body">
-                <div class="flex gap-2 mb-4">
-                    <button id="product-upload-method-manual" class="btn-primary flex-1" style="justify-content:center;">
-                        <i class="fas fa-keyboard"></i>직접 입력
+            <div class="modal-body" style="padding:12px 16px;">
+                <!-- 탭 전환 -->
+                <div class="flex gap-2 mb-3">
+                    <button onclick="window._switchImportTab?.('table')" class="import-tab-btn btn-primary flex-1" data-tab="table" style="justify-content:center;">
+                        <i class="fas fa-table mr-1"></i>직접 입력
                     </button>
-                    <button id="product-upload-method-excel" class="btn-secondary flex-1" style="justify-content:center;">
-                        <i class="fas fa-file-excel"></i>Excel 파일
+                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-secondary flex-1" data-tab="manual" style="justify-content:center;">
+                        <i class="fas fa-keyboard mr-1"></i>붙여넣기
+                    </button>
+                    <button onclick="window._switchImportTab?.('file')" class="import-tab-btn btn-secondary flex-1" data-tab="file" style="justify-content:center;">
+                        <i class="fas fa-file-excel mr-1"></i>엑셀 파일
                     </button>
                 </div>
 
-                <div id="product-manual-input-section" class="space-y-4">
-                    <div>
-                        <label class="form-label">상품 정보 (한 줄에 하나씩)</label>
-                        <textarea id="product-import-text" rows="10" class="form-control"
-                            placeholder="상품명,카테고리,가격,재고,설명
-다육이1,다육식물,5000,10,예쁜 다육이
-다육이2,다육식물,3000,20,작은 다육이"></textarea>
-                    </div>
-                    <div class="bg-section border border-gray-200 rounded-lg p-3">
-                        <h4 class="text-xs font-semibold text-body mb-2"><i class="fas fa-info-circle mr-1 text-muted"></i>입력 형식</h4>
-                        <ul class="text-xs text-body space-y-1">
-                            <li>• 첫 번째 줄: 상품명,카테고리,가격,재고,설명</li>
-                            <li>• 두 번째 줄부터: 실제 상품 데이터</li>
-                            <li>• 쉼표(,)로 구분</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div id="product-excel-upload-section" class="hidden space-y-4">
-                    <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center">
-                        <i class="fas fa-file-excel text-brand text-4xl mb-3"></i>
-                        <p class="text-sm text-body mb-3">Excel 파일을 선택하세요</p>
-                        <input type="file" id="product-excel-input" accept=".xlsx,.xls,.csv" class="hidden">
-                        <button id="product-select-excel" class="btn-primary"><i class="fas fa-folder-open"></i>파일 선택</button>
-                        <p class="text-xs text-muted mt-3">지원 형식: .xlsx, .xls, .csv</p>
-                    </div>
-                    <div class="bg-section border border-gray-200 rounded-lg p-3">
-                        <h4 class="text-xs font-semibold text-body mb-2"><i class="fas fa-exclamation-triangle mr-1 text-amber-500"></i>Excel 파일 형식</h4>
-                        <ul class="text-xs text-body space-y-1">
-                            <li>• A열: 상품명 (필수) / B열: 카테고리 / C열: 가격 (필수) / D열: 재고 / E열: 설명</li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div id="product-import-preview" class="hidden mt-6">
-                    <h4 class="text-sm font-medium text-body mb-3">미리보기</h4>
-                    <div class="border border-gray-300 rounded-lg overflow-x-auto">
-                        <table id="product-preview-table" class="min-w-full table-ui"></table>
-                    </div>
-                </div>
-
-                <div id="product-import-progress" class="hidden mt-6">
+                <!-- 직접 입력 탭 (표 양식) -->
+                <div id="import-tab-table">
                     <div class="flex items-center justify-between mb-2">
-                        <span class="text-sm font-medium text-body">등록 진행 중...</span>
-                        <span id="product-import-percentage" class="text-sm font-medium text-brand">0%</span>
+                        <p class="text-xs text-muted">표에 직접 입력하세요. 상품명은 필수입니다.</p>
+                        <button onclick="window._addBulkRow?.()" class="btn-primary btn-xs"><i class="fas fa-plus mr-1"></i>행 추가</button>
                     </div>
-                    <div class="w-full bg-gray-200 rounded-full h-2">
-                        <div id="product-import-progress-bar" class="bg-green-600 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:350px;overflow-y:auto;">
+                        <table class="w-full table-ui">
+                            <thead>
+                                <tr>
+                                    <th class="w-8 text-center">#</th>
+                                    <th class="min-w-[150px]">상품명 <span class="text-danger">*</span></th>
+                                    <th class="w-24">카테고리</th>
+                                    <th class="w-20">판매가</th>
+                                    <th class="w-20">매입가</th>
+                                    <th class="w-16">재고</th>
+                                    <th class="w-16">사이즈</th>
+                                    <th class="w-10"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="bulk-input-tbody">
+                            </tbody>
+                        </table>
                     </div>
-                    <p id="product-import-info" class="text-xs text-muted mt-2">상품 정보를 입력하거나 파일을 업로드해주세요.</p>
+                </div>
+
+
+                <!-- 붙여넣기 탭 -->
+                <div id="import-tab-manual">
+                    <p class="text-xs text-muted mb-2">엑셀에서 복사한 내용을 아래에 붙여넣기 하세요 (탭/쉼표 구분 자동 감지)</p>
+                    <textarea id="product-paste-textarea" rows="8" class="form-control" style="font-size:12px;font-family:monospace;"
+                        placeholder="상품명	카테고리	판매가	재고	사이즈
+에케베리아 치와와	에케베리아	15000	10	M
+크라슐라 화제	크라슐라	8000	20	S
+코노피튬 부르겐세리	코노피튬	5000	30	SX
+
+※ 엑셀에서 Ctrl+C → 여기에 Ctrl+V
+※ 상품명만 필수, 나머지 비워도 됩니다"></textarea>
+                    <!-- 붙여넣기 미리보기 -->
+                    <div id="paste-preview-section" class="hidden mt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-body">미리보기</span>
+                            <span id="paste-preview-count" class="text-xs text-brand font-semibold"></span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:200px;overflow-y:auto;">
+                            <table class="w-full table-ui">
+                                <thead><tr id="paste-preview-thead"></tr></thead>
+                                <tbody id="paste-preview-tbody"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 파일 업로드 탭 -->
+                <div id="import-tab-file" class="hidden">
+                    <div id="product-drop-zone" class="border-2 border-dashed border-gray-300 rounded-lg p-6 text-center cursor-pointer hover:border-green-400 transition-colors">
+                        <div id="product-upload-area-content">
+                            <i class="fas fa-file-excel text-brand text-3xl mb-2"></i>
+                            <p class="text-sm text-body mb-2">클릭하거나 파일을 드래그하세요</p>
+                            <p class="text-xs text-muted">.xlsx, .xls, .csv</p>
+                        </div>
+                        <div id="product-upload-file-info" class="hidden">
+                            <i class="fas fa-file-check text-brand text-2xl mb-1"></i>
+                            <p class="text-sm font-medium text-body"><span id="product-upload-file-name"></span></p>
+                            <p class="text-xs text-muted"><span id="product-upload-file-size"></span></p>
+                            <button id="product-remove-file-btn" class="btn-secondary mt-2" style="font-size:11px;padding:2px 8px;">파일 제거</button>
+                        </div>
+                        <input type="file" id="product-excel-input" accept=".xlsx,.xls,.csv" class="hidden">
+                    </div>
+                    <div class="flex gap-2 mt-2">
+                        <button id="download-product-template-btn" class="btn-secondary" style="font-size:11px;">
+                            <i class="fas fa-download mr-1"></i>양식 다운로드 (.xlsx)
+                        </button>
+                    </div>
+                    <!-- 파일 미리보기 -->
+                    <div id="product-import-preview" class="hidden mt-3">
+                        <div class="flex items-center justify-between mb-1">
+                            <span class="text-xs font-medium text-body">미리보기</span>
+                            <span id="product-preview-count" class="text-xs text-brand font-semibold"></span>
+                        </div>
+                        <div class="border border-gray-200 rounded-lg overflow-x-auto" style="max-height:200px;overflow-y:auto;">
+                            <div id="product-preview-content"></div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button id="product-import-cancel" class="btn-secondary"><i class="fas fa-times"></i>취소</button>
-                <button id="product-import-preview-btn" class="btn-secondary"><i class="fas fa-eye"></i>미리보기</button>
-                <button id="product-import-start" class="btn-primary" disabled><i class="fas fa-upload"></i>등록 시작</button>
+                <span id="import-row-count" class="text-sm text-muted">0개</span>
+                <div class="flex gap-2">
+                    <button onclick="window._closeProductImport?.()" class="btn-secondary">취소</button>
+                    <button id="product-import-start" class="btn-primary" disabled><i class="fas fa-upload mr-1"></i>등록 시작</button>
+                </div>
             </div>
         </div>
     </div>
 
-    <!-- 상품 등록/수정 모달 (product-modal.html 인라인) -->
+    <!-- 상품 등록/수정 모달 -->
     <div id="product-modal" class="modal-overlay hidden">
-        <div id="product-modal-content" class="modal-container modal-xl">
+        <div id="product-modal-content" class="modal-container modal-md">
             <div class="modal-header">
                 <span id="product-modal-title" class="modal-title">새 상품 등록</span>
                 <button id="close-product-modal" onclick="window.closeProductModal()" class="modal-close-btn" title="닫기">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
-            <div class="modal-body">
-                <form id="product-form" class="form-grid">
-                    <input type="hidden" id="product-form-id" name="product-id">
-                    <input type="hidden" id="product-form-created-at" name="product-created-at">
-                    <div class="form-col-6">
+            <div class="modal-body" style="padding:12px 16px;">
+                <form id="product-form" class="form-grid" style="gap:8px 12px;">
+                    <input type="hidden" id="product-form-id">
+                    <input type="hidden" id="product-form-created-at">
+
+                    <!-- 상품명 (전체) -->
+                    <div class="form-col-12">
                         <label class="form-label">상품명 <span class="req">*</span></label>
                         <div style="position:relative;">
                             <input type="text" id="product-form-name" placeholder="예: White Platter (대)" required class="form-control" autocomplete="off">
@@ -189,7 +252,9 @@
                             <i class="fas fa-exclamation-triangle mr-1"></i>이미 등록된 상품명입니다
                         </div>
                     </div>
-                    <div class="form-col-3">
+
+                    <!-- 카테고리 | 사이즈 -->
+                    <div class="form-col-6">
                         <label class="form-label">카테고리 <span class="req">*</span></label>
                         <div style="position:relative;">
                             <select id="product-form-category" required class="form-control" style="padding-right:32px;">
@@ -203,68 +268,167 @@
                             </button>
                         </div>
                     </div>
-                    <div class="form-col-3">
+                    <div class="form-col-6">
                         <label class="form-label">사이즈</label>
                         <select id="product-form-size-select" class="form-control" onchange="handleSizeChange()">
-                            <option value="">사이즈 선택</option>
-                            <option value="SX">SX (초소형)</option>
-                            <option value="S">S (소형)</option>
-                            <option value="M">M (중형)</option>
-                            <option value="L">L (대형)</option>
-                            <option value="XL">XL (초대형)</option>
+                            <option value="">선택</option>
+                            <option value="SX">SX</option>
+                            <option value="S">S</option>
+                            <option value="M">M</option>
+                            <option value="L">L</option>
+                            <option value="XL">XL</option>
                             <option value="custom">직접 기입</option>
                         </select>
-                        <input type="text" id="product-form-size-custom" placeholder="예: 3-5cm, 특대, 혼합 등" class="form-control hidden" style="margin-top:6px;">
+                        <input type="text" id="product-form-size-custom" placeholder="예: 3-5cm" class="form-control hidden" style="margin-top:4px;">
                     </div>
-                    <div class="form-col-4">
+
+                    <!-- 판매가 | 재고 -->
+                    <div class="form-col-6">
                         <label class="form-label">판매가 <span class="req">*</span></label>
                         <div class="form-input-group with-unit">
                             <input type="number" id="product-form-price" placeholder="0" min="0" step="1000" required class="form-control" oninput="calculateModalProfitMargin()">
                             <span class="form-input-unit">원</span>
                         </div>
                     </div>
-                    <div class="form-col-4">
-                        <label class="form-label">매입가</label>
-                        <div class="form-input-group with-unit">
-                            <input type="number" id="product-form-wholesale-price" placeholder="0" min="0" step="1000" class="form-control" oninput="calculateModalProfitMargin()">
-                            <span class="form-input-unit">원</span>
-                        </div>
-                        <div id="modal-profit-margin" class="form-helper"></div>
-                    </div>
-                    <div class="form-col-4">
+                    <div class="form-col-6">
                         <label class="form-label">재고수량 <span class="req">*</span></label>
                         <div class="form-input-group with-unit">
                             <input type="number" id="product-form-stock" placeholder="0" min="0" required class="form-control">
                             <span class="form-input-unit">개</span>
                         </div>
                     </div>
-                    <div class="form-col-6">
-                        <label class="form-label">배송 옵션 <span class="req">*</span></label>
-                        <select id="product-form-shipping" required class="form-control">
-                            <option value="">배송 옵션 선택</option>
-                            <option value="일반배송" selected>일반배송 (조건부 무료)</option>
-                            <option value="무료배송">무료배송 (행사상품)</option>
-                            <option value="배송비포함">배송비포함 (단독배송)</option>
-                            <option value="직접배송">직접배송 (농장배송)</option>
-                        </select>
-                    </div>
-                    <div class="form-col-6">
-                        <label class="form-label">상품 이미지 URL</label>
-                        <input type="url" id="product-form-image" placeholder="https://example.com/image.jpg" class="form-control">
-                    </div>
+
+                    <!-- 사진 -->
                     <div class="form-col-12">
-                        <label class="form-label">상품설명</label>
-                        <textarea id="product-form-description" rows="3" placeholder="상품에 대한 자세한 설명을 입력하세요" class="form-control"></textarea>
+                        <label class="form-label">상품 이미지</label>
+                        <div class="flex items-center gap-3">
+                            <label class="btn-secondary cursor-pointer" style="padding:5px 12px;font-size:12px;">
+                                <i class="fas fa-camera mr-1"></i>사진 선택
+                                <input type="file" id="product-form-image-file" accept="image/*" class="hidden"
+                                       onchange="window.handleProductImageSelect(this)">
+                            </label>
+                            <span id="product-image-filename" class="text-xs text-muted truncate" style="max-width:180px;"></span>
+                            <input type="hidden" id="product-form-image" value="">
+                            <div id="product-image-preview" class="hidden">
+                                <img id="product-image-preview-img" class="w-14 h-14 object-cover rounded border border-gray-200" alt="미리보기">
+                            </div>
+                        </div>
                     </div>
+
+                    <!-- 접기: 추가 정보 (매입가·배송·설명) -->
+                    <div class="form-col-12">
+                        <details class="border border-gray-200 rounded-lg">
+                            <summary class="px-3 py-2 text-xs text-muted cursor-pointer hover:text-body select-none">
+                                <i class="fas fa-chevron-right mr-1 text-2xs"></i>추가 정보 (매입가 · 배송 · 설명)
+                            </summary>
+                            <div class="px-3 pb-3 pt-1 grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="form-label">매입가</label>
+                                    <div class="form-input-group with-unit">
+                                        <input type="number" id="product-form-wholesale-price" placeholder="0" min="0" step="1000" class="form-control" oninput="calculateModalProfitMargin()">
+                                        <span class="form-input-unit">원</span>
+                                    </div>
+                                    <div id="modal-profit-margin" class="form-helper"></div>
+                                </div>
+                                <div>
+                                    <label class="form-label">배송 옵션</label>
+                                    <select id="product-form-shipping" class="form-control">
+                                        <option value="일반배송" selected>일반배송</option>
+                                        <option value="무료배송">무료배송</option>
+                                        <option value="배송비포함">배송비포함</option>
+                                        <option value="직접배송">직접배송</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="form-label">바코드</label>
+                                    <input type="text" id="product-form-barcode" placeholder="예: 8801234567890" class="form-control" autocomplete="off">
+                                </div>
+                                <div class="col-span-2">
+                                    <label class="form-label">상품설명</label>
+                                    <textarea id="product-form-description" rows="2" placeholder="상품 설명 (선택)" class="form-control"></textarea>
+                                </div>
+                            </div>
+                        </details>
+                    </div>
+
                 </form>
             </div>
             <div class="modal-footer">
-                <button type="button" id="close-product-modal-btn" onclick="window.closeProductModal()" class="btn-secondary">
-                    <i class="fas fa-times"></i>취소
-                </button>
-                <button type="button" id="save-product-btn" class="btn-primary">
-                    <i class="fas fa-save"></i>저장
-                </button>
+                <button type="button" id="close-product-modal-btn" onclick="window.closeProductModal()" class="btn-secondary">취소</button>
+                <button type="button" id="save-product-btn" class="btn-primary"><i class="fas fa-save mr-1"></i>저장</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 카메라 바코드 스캔 모달 -->
+    <div id="barcode-scan-modal" class="modal-overlay hidden">
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-camera mr-2"></i>바코드 스캔</h3>
+                <button class="modal-close-btn" onclick="window.stopBarcodeScanner()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="padding:0;">
+                <!-- 카메라 뷰파인더 -->
+                <div id="barcode-scanner-view" style="width:100%;min-height:260px;background:#000;position:relative;">
+                    <div id="barcode-scanner-reader" style="width:100%;"></div>
+                    <!-- 조준선 -->
+                    <div style="position:absolute;top:50%;left:10%;right:10%;height:2px;background:rgba(34,197,94,0.8);transform:translateY(-50%);pointer-events:none;box-shadow:0 0 8px rgba(34,197,94,0.6);"></div>
+                </div>
+                <!-- 상태 메시지 -->
+                <div id="scan-status" class="px-4 py-3 text-center">
+                    <p class="text-sm text-muted" id="scan-status-text">카메라를 바코드에 가져다 대세요</p>
+                </div>
+                <!-- 수동 입력 -->
+                <div class="px-4 pb-4 border-t" style="border-color:var(--border);">
+                    <p class="text-xs text-muted mt-3 mb-1">직접 입력</p>
+                    <div class="flex gap-2">
+                        <input type="text" id="manual-barcode-input" placeholder="바코드 번호 입력 또는 스캐너 연결" class="input-ui flex-1" inputmode="numeric" autocomplete="off">
+                        <button onclick="window.processBarcodeResult(document.getElementById('manual-barcode-input').value)" class="btn-secondary" style="white-space:nowrap;">확인</button>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="window.stopBarcodeScanner()" class="btn-secondary">닫기</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 바코드 확대 모달 -->
+    <div id="barcode-zoom-modal" class="modal-overlay hidden" onclick="if(event.target===this)this.classList.add('hidden')">
+        <div class="modal-container modal-sm" style="text-align:center;">
+            <div class="modal-header">
+                <h3 class="modal-title" id="barcode-zoom-name"></h3>
+                <button class="modal-close-btn" onclick="document.getElementById('barcode-zoom-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;align-items:center;gap:12px;padding:24px;">
+                <svg id="barcode-zoom-svg" style="width:100%;max-width:320px;"></svg>
+                <span id="barcode-zoom-number" class="font-mono text-sm text-muted"></span>
+            </div>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('barcode-zoom-modal').classList.add('hidden')" class="btn-secondary">닫기</button>
+                <button onclick="window.printSingleBarcode()" class="btn-primary"><i class="fas fa-print mr-1"></i>인쇄</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 바코드 인쇄 모달 -->
+    <div id="barcode-print-modal" class="modal-overlay hidden">
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <h3 class="modal-title"><i class="fas fa-barcode mr-2"></i>바코드 라벨 인쇄</h3>
+                <button class="modal-close-btn" onclick="document.getElementById('barcode-print-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="text-xs text-muted">40×20mm 감열 라벨 · 1장 1매 출력</span>
+                    <button onclick="window.selectAllBarcodes(true)" class="btn-secondary btn-xs ml-auto">전체 선택</button>
+                    <button onclick="window.selectAllBarcodes(false)" class="btn-secondary btn-xs">전체 해제</button>
+                </div>
+                <div id="barcode-product-list" class="grid gap-1" style="grid-template-columns:repeat(3,1fr);"></div>
+            </div>
+            <div class="modal-footer">
+                <button onclick="document.getElementById('barcode-print-modal').classList.add('hidden')" class="btn-secondary">닫기</button>
+                <button onclick="window.printBarcodeLabels()" class="btn-primary"><i class="fas fa-print mr-1"></i>인쇄</button>
             </div>
         </div>
     </div>

@@ -387,6 +387,9 @@ start-server.bat
 - **farm_orders 추가 컬럼**: `shipping_method` VARCHAR (택배사, 기본값 '택배'), `customer_address_detail` TEXT (상세주소) — v3.4.5 추가. 주의: `shipping_company` 컬럼은 존재하지 않음 — 택배사는 반드시 `shipping_method` 사용
 - **farm_orders 추가 컬럼**: `last_sms_type` VARCHAR (마지막 발송 SMS 템플릿 타입: orderConfirm/paymentConfirm/shippingStart/shippingComplete/custom) — v3.4.19 추가. RPC `get_order_rows`에서도 반환.
 
+- **farm_stock_logs** — 입출고 이력 테이블(v3.4.32+). `type` CHECK: `in/out/adjust/order/cancel/return`. `product_id` FK farm_products, `order_id` FK farm_orders(nullable). `stock_before`/`stock_after`로 변동 전후 기록. 접근: `window.logStockChange(productId, type, qty, {reason, orderId})`, `window.getStockLogs(productId, limit)`
+- **farm_products.safe_stock** INT (안전재고, 기본값 5) — v3.4.31 추가
+
 ### SMS / 카카오 알림톡 발송 체계 (v3.4.28+)
 - **스마트 발송**: `sendSmartMessage()` — 카카오 알림톡 우선 시도, 실패 시 SMS 자동 폴백
 - **카카오 채널**: pfId `KA01PF250905143602736PcFaTjYyszo` (경산다육농장, searchId: suplant)

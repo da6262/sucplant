@@ -789,7 +789,20 @@ export async function saveOrder() {
             }
             
             console.log('✅ 주문 저장 완료:', data);
-            
+
+            // 입출고 이력 기록 (주문에 의한 재고 차감)
+            const savedOrderId = data && data[0] ? data[0].id : null;
+            if (window.logStockChange && formData.items) {
+                for (const item of formData.items) {
+                    if (item.product_id) {
+                        await window.logStockChange(item.product_id, 'order', item.quantity || 1, {
+                            orderId: savedOrderId,
+                            reason: '주문 등록',
+                        });
+                    }
+                }
+            }
+
             // 고객등급 자동 업데이트 (주문 완료 시)
             if (orderData.order_status === '배송완료' || orderData.order_status === '결제완료' || 
                 orderData.order_status === '입금확인' || orderData.order_status === '상품준비') {

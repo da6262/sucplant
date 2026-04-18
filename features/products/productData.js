@@ -942,5 +942,64 @@ window.ProductMgmt = {
     getManager: getProductDataManager,
 };
 
+// =============================================
+// 입출고 이력 관리 (farm_stock_logs)
+// =============================================
+
+/**
+ * 재고 변동 기록
+ * @param {string} productId
+ * @param {string} type - 'in'|'out'|'adjust'|'order'|'cancel'|'return'
+ * @param {number} quantity - 변동 수량 (양수)
+ * @param {object} opts - { reason, orderId, createdBy }
+ */
+async function logStockChange(productId, type, quantity, opts = {}) {
+    if (!window.supabaseClient || !productId) return;
+    try {
+        const product = window.productDataManager?.getProductById(productId);
+        const stockBefore = product ? (Number(product.stock) || 0) : null;
+        const delta = ['out', 'order'].includes(type) ? -Math.abs(quantity) : Math.abs(quantity);
+        const stockAfter = stockBefore !== null ? Math.max(0, stockBefore + delta) : null;
+
+        await window.supabaseClient.from('farm_stock_logs').insert({
+            product_id: productId,
+            type,
+            quantity: Math.abs(quantity),
+            stock_before: stockBefore,
+            stock_after: stockAfter,
+            reason: opts.reason || null,
+            order_id: opts.orderId || null,
+            created_by: opts.createdBy || 'system',
+        });
+    } catch (e) {
+        console.warn('입출고 기록 실패:', e);
+    }
+}
+
+/**
+ * 상품별 입출고 이력 조회
+ * @param {string} productId
+ * @param {number} limit
+ */
+async function getStockLogs(productId, limit = 30) {
+    if (!window.supabaseClient || !productId) return [];
+    try {
+        const { data, error } = await window.supabaseClient
+            .from('farm_stock_logs')
+            .select('*')
+            .eq('product_id', productId)
+            .order('created_at', { ascending: false })
+            .limit(limit);
+        if (error) throw error;
+        return data || [];
+    } catch (e) {
+        console.warn('입출고 이력 조회 실패:', e);
+        return [];
+    }
+}
+
+window.logStockChange = logStockChange;
+window.getStockLogs = getStockLogs;
+
 // ES6 모듈 export
-export { ProductDataManager, initializeProductDataManager, getProductDataManager };
+export { ProductDataManager, initializeProductDataManager, getProductDataManager, logStockChange, getStockLogs };

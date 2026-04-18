@@ -123,7 +123,7 @@ const PRODUCT_COLUMNS = [
             const name = (p.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             const stock = Number(p.stock) || 0;
             const outBadge = stock === 0 ? ' <span class="badge badge-danger" style="font-size:9px;padding:1px 4px;">품절</span>' : '';
-            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;"><span class="product-name-link truncate block">${name || dash}</span>${outBadge}</td>`;
+            return `<td class="td-primary td-link" data-field="name" data-product-id="${p.id}" style="max-width:180px;cursor:pointer;" onclick="window.openProductDetailModal('${p.id}')"><span class="product-name-link truncate block">${name || dash}</span>${outBadge}</td>`;
         }
     },
     {
@@ -590,7 +590,7 @@ class ProductManagementComponent {
         if (pageProducts.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="8" class="px-4 text-center text-muted">
+                    <td colspan="11" class="px-4 text-center text-muted">
                         <div class="flex flex-col items-center">
                             <i class="fas fa-box text-3xl mb-3 text-gray-300"></i>
                             <p class="text-sm font-medium text-body">등록된 상품이 없습니다</p>
@@ -617,6 +617,7 @@ class ProductManagementComponent {
         this.updatePaginationInfo();
         this.updateFooterStats();
         renderBarcodeSVGs();
+        if (window._renderCategoryStats) window._renderCategoryStats();
     }
 
     /**
@@ -2413,6 +2414,259 @@ window.cleanupProductEventListeners = cleanupProductEventListeners;
 window.generateBarcodeForModal = function() {
     const input = document.getElementById('product-form-barcode');
     if (input) input.value = generateEAN13();
+};
+
+// ── 재고 일괄 수정 ──
+window._productBulkStockAdjust = function() {
+    const checked = [...document.querySelectorAll('.product-checkbox:checked')];
+    if (checked.length === 0) { alert('상품을 선택해주세요.'); return; }
+
+    const existing = document.getElementById('bulk-stock-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'bulk-stock-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '700';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-boxes text-info mr-2"></i>재고 일괄 수정</span>
+                <button class="modal-close-btn" onclick="document.getElementById('bulk-stock-modal').remove()"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+                <p class="text-sm text-secondary mb-3">선택된 <strong class="text-info">${checked.length}개</strong> 상품의 재고를 수정합니다.</p>
+                <div class="mb-3">
+                    <label class="form-label">수정 방식</label>
+                    <select id="bulk-stock-mode" class="form-control">
+                        <option value="add">재고 추가 (+)</option>
+                        <option value="subtract">재고 차감 (-)</option>
+                        <option value="set">재고 설정 (=)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="form-label">수량</label>
+                    <input type="number" id="bulk-stock-qty" class="form-control" min="0" value="0" placeholder="수량 입력">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('bulk-stock-modal').remove()">취소</button>
+                <button id="bulk-stock-apply" class="btn-primary"><i class="fas fa-check mr-1"></i>적용</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+
+    document.getElementById('bulk-stock-apply').addEventListener('click', async () => {
+        const mode = document.getElementById('bulk-stock-mode').value;
+        const qty = parseInt(document.getElementById('bulk-stock-qty').value) || 0;
+        if (qty === 0 && mode !== 'set') { alert('수량을 입력해주세요.'); return; }
+
+        let ok = 0;
+        for (const cb of checked) {
+            const id = cb.dataset.productId;
+            try {
+                const product = window.productDataManager?.getProductById(id);
+                if (!product) continue;
+                let newStock;
+                if (mode === 'add') newStock = (Number(product.stock) || 0) + qty;
+                else if (mode === 'subtract') newStock = Math.max(0, (Number(product.stock) || 0) - qty);
+                else newStock = qty;
+
+                const oldStock = Number(product.stock) || 0;
+                await window.supabaseClient.from('farm_products').update({ stock: newStock, updated_at: new Date().toISOString() }).eq('id', id);
+                product.stock = newStock;
+                // 입출고 이력 기록
+                if (window.logStockChange) {
+                    const logType = mode === 'add' ? 'in' : mode === 'subtract' ? 'out' : 'adjust';
+                    await window.logStockChange(id, logType, Math.abs(newStock - oldStock), { reason: '재고 일괄 수정 (' + mode + ')' });
+                }
+                ok++;
+            } catch (e) { console.error('재고 수정 실패:', id, e); }
+        }
+
+        modal.remove();
+        alert(ok + '개 상품 재고 수정 완료');
+        if (window.productManagementComponent) window.productManagementComponent.loadProducts();
+    });
+};
+
+// ── 일괄 삭제 ──
+window._productBulkDelete = function() {
+    if (window.productManagementComponent) window.productManagementComponent.bulkDeleteProducts();
+};
+
+// ── 카테고리별 통계 렌더 ──
+window._renderCategoryStats = function() {
+    const el = document.getElementById('product-category-stats');
+    if (!el) return;
+    const products = window.productDataManager?.farm_products || [];
+    if (products.length === 0) { el.innerHTML = ''; return; }
+
+    const stats = {};
+    let totalStock = 0, outOfStock = 0, lowStock = 0;
+    products.forEach(p => {
+        const cat = p.category || '미분류';
+        if (!stats[cat]) stats[cat] = { count: 0, stock: 0, value: 0 };
+        stats[cat].count++;
+        stats[cat].stock += Number(p.stock) || 0;
+        stats[cat].value += (Number(p.price) || 0) * (Number(p.stock) || 0);
+        totalStock += Number(p.stock) || 0;
+        if ((Number(p.stock) || 0) === 0) outOfStock++;
+        else if ((Number(p.stock) || 0) <= 5) lowStock++;
+    });
+
+    const won = (v) => window.fmt?.currency(v) || '₩' + v.toLocaleString();
+    const badges = Object.entries(stats).map(([cat, s]) =>
+        `<span class="px-2 py-0.5 rounded" style="background:#fff;border:1px solid #e0e0e0;cursor:pointer;" onclick="document.getElementById('product-category-filter').value='${cat}';document.getElementById('product-filter-btn')?.click();">${cat} <strong>${s.count}</strong></span>`
+    ).join('');
+
+    el.innerHTML = `
+        <span class="text-muted">전체 <strong>${products.length}</strong>종 · 총재고 <strong>${totalStock}</strong>개</span>
+        ${outOfStock > 0 ? `<span style="color:var(--danger);"><i class="fas fa-exclamation-circle mr-1"></i>품절 ${outOfStock}</span>` : ''}
+        ${lowStock > 0 ? `<span style="color:var(--warn);"><i class="fas fa-exclamation-triangle mr-1"></i>부족 ${lowStock}</span>` : ''}
+        <span class="text-gray-300">|</span>
+        ${badges}
+    `;
+};
+
+// ── 상품 상세 모달 (클릭 시 주문 이력·재고 정보 표시) ──
+window.openProductDetailModal = async function(productId) {
+    const product = window.productDataManager?.getProductById(productId);
+    if (!product) return;
+
+    const existing = document.getElementById('product-detail-modal');
+    if (existing) existing.remove();
+
+    const won = (v) => window.fmt?.currency(v) || '₩' + Number(v).toLocaleString();
+    const price = Number(product.price) || 0;
+    const cost = Number(product.cost) || 0;
+    const stock = Number(product.stock) || 0;
+    const margin = price > 0 && cost > 0 ? Math.round((price - cost) / price * 100) : null;
+    const stockValue = price * stock;
+
+    // 최근 주문 이력 조회
+    let orderHistoryHtml = '<p class="text-muted text-center py-2">조회 중...</p>';
+    const modal = document.createElement('div');
+    modal.id = 'product-detail-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '600';
+    modal.innerHTML = `
+        <div class="modal-container modal-lg" style="max-width:700px;max-height:90vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-seedling text-brand mr-2"></i>${(product.name || '').replace(/</g,'&lt;')}</span>
+                <button class="modal-close-btn" onclick="document.getElementById('product-detail-modal').remove()"><i class="fas fa-times text-sm"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y:auto;flex:1;padding:16px;">
+                <div class="flex gap-4 mb-4">
+                    ${product.image_url ? `<img src="${product.image_url}" style="width:100px;height:100px;object-fit:cover;border-radius:8px;border:1px solid #e0e0e0;" onerror="this.style.display='none'">` : ''}
+                    <div class="flex-1">
+                        <div class="grid grid-cols-3 gap-3 text-sm">
+                            <div><span class="text-muted block">카테고리</span><strong>${product.category || '-'}</strong></div>
+                            <div><span class="text-muted block">사이즈</span><strong>${product.size || '-'}</strong></div>
+                            <div><span class="text-muted block">상품코드</span><strong class="text-xs">${product.product_code || '-'}</strong></div>
+                            <div><span class="text-muted block">판매가</span><strong>${won(price)}</strong></div>
+                            <div><span class="text-muted block">매입가</span><strong>${cost > 0 ? won(cost) : '-'}</strong></div>
+                            <div><span class="text-muted block">마진율</span><strong style="${margin !== null ? (margin >= 50 ? 'color:var(--primary)' : margin < 30 ? 'color:var(--danger)' : '') : ''}">${margin !== null ? margin + '%' : '-'}</strong></div>
+                            <div><span class="text-muted block">재고</span><strong style="${stock === 0 ? 'color:var(--danger)' : stock <= 5 ? 'color:var(--warn)' : ''}">${stock}개</strong></div>
+                            <div><span class="text-muted block">재고 가치</span><strong>${won(stockValue)}</strong></div>
+                            <div><span class="text-muted block">바코드</span><strong class="text-xs">${product.barcode || '-'}</strong></div>
+                        </div>
+                    </div>
+                </div>
+                ${product.description ? `<div class="mb-3 p-2 rounded text-sm" style="background:var(--bg-light);border:1px solid var(--border);">${product.description.replace(/</g,'&lt;')}</div>` : ''}
+                <div class="flex gap-4 mb-2">
+                    <button id="pdt-tab-orders" class="text-sm font-semibold text-info pb-1" style="border-bottom:2px solid var(--info);" onclick="document.getElementById('pdt-orders').classList.remove('hidden');document.getElementById('pdt-stock-logs').classList.add('hidden');this.style.borderBottom='2px solid var(--info)';document.getElementById('pdt-tab-stock').style.borderBottom='none';">
+                        <i class="fas fa-history mr-1"></i>주문 이력
+                    </button>
+                    <button id="pdt-tab-stock" class="text-sm font-semibold text-secondary pb-1" onclick="document.getElementById('pdt-stock-logs').classList.remove('hidden');document.getElementById('pdt-orders').classList.add('hidden');this.style.borderBottom='2px solid var(--info)';document.getElementById('pdt-tab-orders').style.borderBottom='none';window._loadStockLogs('${productId}');">
+                        <i class="fas fa-boxes mr-1"></i>입출고 이력
+                    </button>
+                </div>
+                <div id="pdt-orders">${orderHistoryHtml}</div>
+                <div id="pdt-stock-logs" class="hidden"><p class="text-muted text-center py-2">탭을 클릭하면 로드됩니다</p></div>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
+
+    // 입출고 이력 로드 함수
+    window._loadStockLogs = async function(productId) {
+        const container = document.getElementById('pdt-stock-logs');
+        if (!container) return;
+        container.innerHTML = '<p class="text-muted text-center py-2">조회 중...</p>';
+        try {
+            const logs = await window.getStockLogs(productId, 20);
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<p class="text-muted text-center py-2">입출고 이력이 없습니다</p>';
+                return;
+            }
+            const TYPE_LABELS = { 'in': '입고', 'out': '출고', 'adjust': '조정', 'order': '주문', 'cancel': '취소', 'return': '반품' };
+            const TYPE_COLORS = { 'in': 'color:var(--primary)', 'out': 'color:var(--danger)', 'adjust': '', 'order': 'color:var(--danger)', 'cancel': 'color:var(--primary)', 'return': 'color:var(--warn)' };
+            container.innerHTML = `<table class="table-ui w-full text-xs">
+                <thead><tr><th>일시</th><th>유형</th><th>수량</th><th>재고 전</th><th>재고 후</th><th>사유</th></tr></thead>
+                <tbody>${logs.map(l => `<tr>
+                    <td class="text-center">${l.created_at ? new Date(l.created_at).toLocaleString('ko-KR', {month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}) : '-'}</td>
+                    <td class="text-center" style="${TYPE_COLORS[l.type] || ''}"><strong>${TYPE_LABELS[l.type] || l.type}</strong></td>
+                    <td class="td-num text-right" style="${['out','order'].includes(l.type) ? 'color:var(--danger)' : 'color:var(--primary)'}">${['out','order'].includes(l.type) ? '-' : '+'}${l.quantity}</td>
+                    <td class="td-num text-right">${l.stock_before ?? '-'}</td>
+                    <td class="td-num text-right">${l.stock_after ?? '-'}</td>
+                    <td class="td-secondary">${l.reason || '-'}</td>
+                </tr>`).join('')}</tbody>
+            </table>`;
+        } catch (e) {
+            container.innerHTML = '<p class="text-danger text-center py-2">조회 실패</p>';
+        }
+    };
+
+    // 주문 이력 비동기 로드
+    try {
+        if (window.supabaseClient) {
+            const { data: items } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('order_id, quantity, subtotal, created_at')
+                .eq('product_name', product.name)
+                .order('created_at', { ascending: false })
+                .limit(10);
+
+            const ordersDiv = document.getElementById('product-detail-orders');
+            if (!ordersDiv) return;
+
+            if (!items || items.length === 0) {
+                ordersDiv.innerHTML = '<p class="text-muted text-center py-2">주문 이력이 없습니다</p>';
+                return;
+            }
+
+            // 주문 정보 조회
+            const orderIds = [...new Set(items.map(i => i.order_id))];
+            const { data: orders } = await window.supabaseClient
+                .from('farm_orders')
+                .select('id, order_number, customer_name, order_status, created_at')
+                .in('id', orderIds);
+            const orderMap = {};
+            (orders || []).forEach(o => orderMap[o.id] = o);
+
+            ordersDiv.innerHTML = `<table class="table-ui w-full text-xs">
+                <thead><tr><th>주문번호</th><th>고객명</th><th>수량</th><th>금액</th><th>상태</th><th>일자</th></tr></thead>
+                <tbody>${items.map(i => {
+                    const o = orderMap[i.order_id] || {};
+                    return `<tr>
+                        <td class="td-muted">${o.order_number || '-'}</td>
+                        <td class="td-primary">${o.customer_name || '-'}</td>
+                        <td class="td-num text-right">${i.quantity}개</td>
+                        <td class="td-amount text-right">${won(i.subtotal || 0)}</td>
+                        <td class="text-center">${o.order_status || '-'}</td>
+                        <td class="text-center">${i.created_at ? new Date(i.created_at).toLocaleDateString('ko-KR') : '-'}</td>
+                    </tr>`;
+                }).join('')}</tbody>
+            </table>`;
+        }
+    } catch (e) {
+        console.error('주문 이력 조회 실패:', e);
+        const ordersDiv = document.getElementById('product-detail-orders');
+        if (ordersDiv) ordersDiv.innerHTML = '<p class="text-danger text-center py-2">조회 실패</p>';
+    }
 };
 
 window.openBarcodePrintModal = function() {
