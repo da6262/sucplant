@@ -2413,66 +2413,58 @@ window.printBarcodeLabels = function() {
     const products = (window.productDataManager?.farm_products || [])
         .filter(p => selected.includes(p.id) && p.barcode);
 
-    const size = document.getElementById('barcode-size-select')?.value || 'sm';
-    const cols = parseInt(document.getElementById('barcode-cols-select')?.value || '4');
+    // 고정: 40×20mm 감열 라벨 1장 1매 방식
+    const W = 40, H = 20;
 
-    const SIZES = {
-        sm: { w: 40, h: 20, bcH: 28, barW: 1.0, fs: 5.5 },
-        md: { w: 60, h: 30, bcH: 44, barW: 1.4, fs: 7   },
-        lg: { w: 80, h: 40, bcH: 60, barW: 1.8, fs: 8.5 },
-    };
-    const s = SIZES[size];
-
-    const labels = products.map(p => {
+    const labels = products.map((p, i) => {
         const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
         try {
             window.JsBarcode(svg, p.barcode, {
-                format: 'EAN13', width: s.barW, height: s.bcH,
-                fontSize: s.fs + 1, margin: 2, displayValue: true
+                format: 'EAN13', width: 1.0, height: 26,
+                fontSize: 7, margin: 1, displayValue: true
             });
         } catch(e) {
             window.JsBarcode(svg, p.barcode, {
-                format: 'CODE128', width: s.barW, height: s.bcH,
-                fontSize: s.fs + 1, margin: 2, displayValue: true
+                format: 'CODE128', width: 1.0, height: 26,
+                fontSize: 7, margin: 1, displayValue: true
             });
         }
         const svgStr = new XMLSerializer().serializeToString(svg);
         const name  = (p.name || '').replace(/</g,'&lt;');
         const price = p.price ? Number(p.price).toLocaleString() + '원' : '';
-        return `
-            <div class="label">
-                ${svgStr}
-                <div class="info">${name}&nbsp;&nbsp;${price}</div>
-            </div>`;
+        const isLast = i === products.length - 1;
+        return `<div class="label${isLast ? '' : ' break'}">
+            ${svgStr}
+            <div class="info">${name}&nbsp;&nbsp;${price}</div>
+        </div>`;
     }).join('');
 
-    const win = window.open('', '_blank', 'width=800,height=600');
+    const win = window.open('', '_blank', 'width=400,height=300');
     win.document.write(`<!DOCTYPE html><html><head><title>바코드 라벨</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
             body { font-family: 'Malgun Gothic', sans-serif; background: #fff; }
-            .grid { display: grid; grid-template-columns: repeat(${cols}, ${s.w}mm); gap: 0; }
             .label {
-                width: ${s.w}mm; height: ${s.h}mm;
-                border: 0.3mm solid #bbb;
+                width: ${W}mm; height: ${H}mm;
                 display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
-                padding: 1mm 1mm 1.5mm;
-                overflow: hidden; page-break-inside: avoid;
+                padding: 0.5mm 1mm 1mm;
+                overflow: hidden;
             }
             .label svg { max-width: 100%; height: auto; }
             .info {
-                font-size: ${s.fs}pt; font-weight: 700;
+                font-size: 5.5pt; font-weight: 700;
                 text-align: center; width: 100%;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                margin-top: 0.5mm; line-height: 1.2;
+                margin-top: 0.3mm; line-height: 1.1;
             }
+            .break { page-break-after: always; }
             @media print {
                 body { margin: 0; }
-                @page { margin: 5mm; size: A4; }
+                @page { size: ${W}mm ${H}mm; margin: 0; }
             }
         </style></head><body>
-        <div class="grid">${labels}</div>
+        ${labels}
         <script>window.onload=()=>{window.print();}<\/script>
     </body></html>`);
     win.document.close();

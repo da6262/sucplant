@@ -399,19 +399,8 @@
             </div>
             <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
                 <div class="flex items-center gap-2 mb-3">
-                    <label class="text-xs text-muted">라벨 크기:</label>
-                    <select id="barcode-size-select" class="input-ui text-xs" style="width:120px;">
-                        <option value="sm">소 (40×20mm)</option>
-                        <option value="md" selected>중 (60×30mm)</option>
-                        <option value="lg">대 (80×40mm)</option>
-                    </select>
-                    <label class="text-xs text-muted ml-4">열 수:</label>
-                    <select id="barcode-cols-select" class="input-ui text-xs" style="width:80px;">
-                        <option value="2">2열</option>
-                        <option value="3" selected>3열</option>
-                        <option value="4">4열</option>
-                    </select>
-                    <button onclick="window.selectAllBarcodes(true)" class="btn-secondary btn-xs ml-4">전체 선택</button>
+                    <span class="text-xs text-muted">40×20mm 감열 라벨 · 1장 1매 출력</span>
+                    <button onclick="window.selectAllBarcodes(true)" class="btn-secondary btn-xs ml-auto">전체 선택</button>
                     <button onclick="window.selectAllBarcodes(false)" class="btn-secondary btn-xs">전체 해제</button>
                 </div>
                 <div id="barcode-product-list" class="grid gap-1" style="grid-template-columns:repeat(3,1fr);"></div>
