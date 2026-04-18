@@ -104,8 +104,18 @@ async function sendOrderSMS(orderId, templateType, customMessage = null) {
         
         // SMS 발송
         const result = await sendSMS(order.customer_phone, message, templateType);
-        
+
         console.log('✅ SMS 발송 완료:', result);
+
+        // sms_sent_at 타임스탬프 기록
+        if (window.supabaseClient && orderId) {
+            await window.supabaseClient
+                .from('farm_orders')
+                .update({ sms_sent_at: new Date().toISOString() })
+                .eq('id', orderId);
+            console.log('✅ sms_sent_at 기록 완료');
+        }
+
         return result;
         
     } catch (error) {
