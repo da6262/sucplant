@@ -1292,7 +1292,7 @@ export async function printOrder(orderId) {
         modal.className = 'modal-overlay';
         modal.style.cssText = 'display:flex; z-index:10000;';
 
-        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<script>/);
+        const bodyMatch = html.match(/<body[^>]*>([\s\S]*?)<\/body>/);
         const styleMatch = html.match(/<style>([\s\S]*?)<\/style>/);
         const content = bodyMatch ? bodyMatch[1] : '';
         const style = styleMatch ? styleMatch[1] : '';
