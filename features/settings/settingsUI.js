@@ -344,15 +344,24 @@ export async function loadCustomerGrades() {
 
         const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         settings.customerGrades.forEach((grade, index) => {
+            const color = grade.color || '#6B7280';
+            const amountStr = window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원';
+            const discountBadge = (grade.discount||0) > 0
+                ? `<span class="badge badge-info shrink-0">${grade.discount}% 할인</span>`
+                : `<span class="badge badge-neutral shrink-0">할인 없음</span>`;
             const row = document.createElement('div');
             row.id = `grade-row-${index}`;
-            row.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
+            row.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            row.style.borderColor = 'var(--border-light)';
             row.innerHTML = `
-                <span class="flex-1 text-xs font-medium text-body">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary w-36 text-right">${window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원'} 이상</span>
-                <span class="text-xs text-secondary w-10 text-right">${grade.discount||0}%</span>
-                <button onclick="startEditGrade(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteCustomerGrade(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="w-8 h-8 rounded-full flex items-center justify-center shrink-0 text-xs" style="background:${color}18;color:${color};"><i class="${grade.icon||'fas fa-circle'}"></i></span>
+                <span class="text-sm font-semibold text-body w-14 shrink-0">${_esc(grade.name)}</span>
+                <span class="text-xs text-secondary flex-1">${amountStr} 이상 구매</span>
+                ${discountBadge}
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
             `;
             container.appendChild(row);
         });
@@ -537,15 +546,19 @@ export async function loadSalesChannels() {
         const esc2 = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         channels.forEach((channel, index) => {
             const isActive = channel.is_active !== false;
+            const desc = esc2(channel.description||'');
             const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
+            channelElement.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            channelElement.style.borderColor = 'var(--border-light)';
             channelElement.innerHTML = `
-                <div class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></div>
-                <span class="text-xs font-medium text-body flex-1">${esc2(channel.name||'')}</span>
-                <span class="text-xs text-muted">${esc2(channel.description||'')}</span>
-                <button onclick="toggleSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
-                <button onclick="editSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="편집"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="badge ${isActive ? 'badge-success' : 'badge-neutral'} shrink-0">${isActive ? '활성' : '비활성'}</span>
+                <span class="text-sm font-medium text-body flex-1">${esc2(channel.name||'')}</span>
+                ${desc ? `<span class="text-xs text-muted max-w-[200px] truncate">${desc}</span>` : ''}
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                    <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
             `;
             container.appendChild(channelElement);
         });
@@ -598,14 +611,17 @@ export function loadOrderStatuses() {
         container.innerHTML = '';
         
         settings.orderStatuses.forEach((status, index) => {
+            const color = status.color || '#6B7280';
             const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
+            statusElement.className = 'flex items-center gap-3 px-4 py-3 hover:bg-section group border-b last:border-0';
+            statusElement.style.borderColor = 'var(--border-light)';
             statusElement.innerHTML = `
-                <div class="w-2 h-2 rounded-full shrink-0" style="background-color:${status.color||'#6B7280'}"></div>
-                <span class="text-xs font-medium text-body w-20 shrink-0">${status.label||''}</span>
-                <span class="text-xs text-muted flex-1">${status.description||''}</span>
-                <button onclick="editOrderStatus(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteOrderStatus(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <span class="badge shrink-0" style="background:${color}18;color:${color};border:1px solid ${color}35;min-width:72px;text-align:center;">${status.label||''}</span>
+                <span class="text-xs text-secondary flex-1">${status.description||'—'}</span>
+                <div class="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </div>
             `;
             container.appendChild(statusElement);
         });
@@ -1028,6 +1044,57 @@ window.loadSalesChannels = loadSalesChannels;
 window.loadOrderStatuses = loadOrderStatuses;
 window.saveSettings = saveSettings;
 window.initSettingsEventListeners = initSettingsEventListeners;
+
+// 주문 상태 전역 함수
+window.editOrderStatus = function(index) {
+    const settings = window.settingsDataManager?.getAllSettings();
+    const s = settings?.orderStatuses?.[index];
+    if (!s) return;
+    const _esc = v => String(v||'').replace(/"/g,'&quot;');
+    const modal = document.createElement('div');
+    modal.id = 'edit-order-status-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <span class="modal-title">주문상태 수정</span>
+                <button class="modal-close-btn" onclick="document.getElementById('edit-order-status-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body space-y-3">
+                <div><label class="form-label">상태명</label><input type="text" id="edit-os-label" class="form-control" value="${_esc(s.label)}"></div>
+                <div><label class="form-label">설명</label><input type="text" id="edit-os-desc" class="form-control" value="${_esc(s.description||'')}"></div>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1"><label class="form-label">색상</label><input type="color" id="edit-os-color" class="form-control h-9" value="${_esc(s.color||'#6B7280')}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('edit-order-status-modal').remove()">취소</button>
+                <button class="btn-primary" onclick="saveOrderStatus(${index})">저장</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+window.saveOrderStatus = function(index) {
+    const label = document.getElementById('edit-os-label')?.value.trim();
+    const description = document.getElementById('edit-os-desc')?.value.trim();
+    const color = document.getElementById('edit-os-color')?.value;
+    if (!label) { alert('상태명을 입력해주세요.'); return; }
+    const settings = window.settingsDataManager?.getAllSettings();
+    const existing = settings?.orderStatuses?.[index];
+    window.settingsDataManager.updateOrderStatus(index, { ...existing, label, description, color });
+    document.getElementById('edit-order-status-modal')?.remove();
+    loadOrderStatuses();
+    if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+};
+
+window.deleteOrderStatus = async function(index) {
+    if (!confirm('이 주문상태를 삭제하시겠습니까?')) return;
+    window.settingsDataManager.deleteOrderStatus(index);
+    loadOrderStatuses();
+    if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+};
 
 // 판매채널 관련 전역 함수 — farm_channels 기준 (index → id 변환 후 CRUD)
 window.toggleSalesChannelByIndex = async function(index) {
