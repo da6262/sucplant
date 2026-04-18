@@ -335,10 +335,10 @@ export async function loadCustomerGrades() {
         }
         
         container.innerHTML = '';
-        
+
         if (!settings.customerGrades || settings.customerGrades.length === 0) {
             console.warn('⚠️ 고객등급 데이터가 없습니다');
-            container.innerHTML = '<div class="text-muted text-center py-4 text-xs">고객등급이 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4 text-xs">고객등급이 없습니다.</td></tr>';
             return;
         }
 
@@ -346,17 +346,17 @@ export async function loadCustomerGrades() {
         settings.customerGrades.forEach((grade, index) => {
             const color = grade.color || '#6B7280';
             const amountStr = window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원';
-            const row = document.createElement('div');
+            const row = document.createElement('tr');
             row.id = `grade-row-${index}`;
-            row.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
-            row.style.borderColor = 'var(--border-light)';
             row.innerHTML = `
-                <span class="w-2 h-2 rounded-full shrink-0" style="background:${color};"></span>
-                <span class="text-xs font-semibold text-body w-12 shrink-0">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary flex-1">${amountStr} 이상</span>
-                <span class="text-xs text-muted shrink-0 whitespace-nowrap">${grade.discount||0}% 할인</span>
-                <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block" style="background:${color};"></span></td>
+                <td class="td-primary font-semibold">${_esc(grade.name)}</td>
+                <td class="td-amount text-right">${amountStr} 이상</td>
+                <td class="td-num text-right">${grade.discount||0}%</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
             container.appendChild(row);
         });
@@ -528,13 +528,13 @@ export async function loadSalesChannels() {
     try {
         console.log('🏪 판매 채널 관리 로드 (farm_channels)');
         if (!window.salesChannelsDataManager) {
-            container.innerHTML = '<div class="text-muted text-center py-4">판매채널 모듈을 불러올 수 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">판매채널 모듈을 불러올 수 없습니다.</td></tr>';
             return;
         }
         const channels = await window.salesChannelsDataManager.loadChannels();
         container.innerHTML = '';
         if (!channels || channels.length === 0) {
-            container.innerHTML = '<div class="text-muted text-center py-4">판매채널이 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">판매채널이 없습니다.</td></tr>';
             console.log('✅ 판매 채널 관리 로드 완료 (0개)');
             return;
         }
@@ -542,23 +542,23 @@ export async function loadSalesChannels() {
         channels.forEach((channel, index) => {
             const isActive = channel.is_active !== false;
             const desc = esc2(channel.description||'');
-            const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
-            channelElement.style.borderColor = 'var(--border-light)';
-            channelElement.innerHTML = `
-                <span class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></span>
-                <span class="text-xs font-medium text-body w-20 shrink-0">${esc2(channel.name||'')}</span>
-                ${desc ? `<span class="text-xs text-muted flex-1 truncate">${desc}</span>` : '<span class="flex-1"></span>'}
-                <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
-                <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
-                <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></span></td>
+                <td class="td-primary">${esc2(channel.name||'')}</td>
+                <td class="td-secondary truncate">${desc || '<span class="td-null">—</span>'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                    <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
-            container.appendChild(channelElement);
+            container.appendChild(tr);
         });
         console.log('✅ 판매 채널 관리 로드 완료:', channels.length, '개');
     } catch (error) {
         console.error('❌ 판매 채널 관리 로드 실패:', error);
-        container.innerHTML = '<div class="text-danger text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
+        container.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4 text-xs">채널 목록을 불러오지 못했습니다.</td></tr>';
     }
 
     // 채널 추가 버튼 리스너 (1회만 등록)
@@ -602,20 +602,25 @@ export function loadOrderStatuses() {
         if (!container) return;
         
         container.innerHTML = '';
-        
+
+        if (!settings.orderStatuses || settings.orderStatuses.length === 0) {
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">주문상태가 없습니다.</td></tr>';
+            return;
+        }
+
         settings.orderStatuses.forEach((status, index) => {
             const color = status.color || '#6B7280';
-            const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center gap-2 px-3 py-1.5 hover:bg-section border-b last:border-0';
-            statusElement.style.borderColor = 'var(--border-light)';
-            statusElement.innerHTML = `
-                <span class="w-2 h-2 rounded-full shrink-0" style="background:${color};"></span>
-                <span class="text-xs font-medium text-body w-20 shrink-0">${status.label||''}</span>
-                <span class="text-xs text-secondary flex-1">${status.description||'—'}</span>
-                <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
-                <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block" style="background:${color};"></span></td>
+                <td class="td-primary">${status.label||''}</td>
+                <td class="td-secondary">${status.description||'—'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
-            container.appendChild(statusElement);
+            container.appendChild(tr);
         });
 
         // "상태 추가" 버튼 리스너: initSettingsEventListeners() 가 never called 라서 여기서 1회 바인딩
@@ -1343,13 +1348,14 @@ window.startEditGrade = function(index) {
     if (!g) return;
     const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     row.innerHTML = `
-        <input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui flex-1 text-xs" placeholder="등급명">
-        <input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui w-28 text-xs text-right" min="0">
-        <span class="text-xs text-muted shrink-0">원 이상</span>
-        <input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui w-14 text-xs text-right" min="0" max="100">
-        <span class="text-xs text-muted shrink-0">%</span>
-        <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs shrink-0">저장</button>
-        <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs shrink-0">취소</button>
+        <td></td>
+        <td><input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui text-xs w-full" placeholder="등급명"></td>
+        <td><input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui text-xs text-right w-full" min="0"></td>
+        <td><input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui text-xs text-right w-full" min="0" max="100"></td>
+        <td class="whitespace-nowrap text-right">
+            <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs">저장</button>
+            <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs">취소</button>
+        </td>
     `;
     row.querySelector(`#grade-name-${index}`)?.focus();
 };
