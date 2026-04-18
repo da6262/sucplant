@@ -1327,14 +1327,14 @@ window.editSmsTemplate = function(key, fieldId, vars) {
     modal.id = 'edit-sms-template-modal';
     modal.className = 'modal-overlay';
     modal.innerHTML = `
-        <div class="modal-container modal-md">
+        <div class="modal-container modal-lg">
             <div class="modal-header">
                 <span class="modal-title">SMS 템플릿 수정</span>
                 <button class="modal-close-btn" onclick="document.getElementById('edit-sms-template-modal').remove()"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body">
                 <p class="text-xs text-muted mb-2">사용 가능 변수: <span class="font-mono">${vars}</span></p>
-                <textarea id="${fieldId}" class="input-ui resize-y w-full text-xs" rows="6">${value}</textarea>
+                <textarea id="${fieldId}" class="input-ui resize-y w-full text-sm" rows="10">${value}</textarea>
             </div>
             <div class="modal-footer">
                 <button class="btn-secondary" onclick="document.getElementById('edit-sms-template-modal').remove()">취소</button>

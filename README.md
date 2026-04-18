@@ -2,7 +2,7 @@
 
 > White Platter 전문 농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-[![version](https://img.shields.io/badge/version-v3.3.133-brightgreen)](https://github.com/da6262/sucplant)
+[![version](https://img.shields.io/badge/version-v3.3.134-brightgreen)](https://github.com/da6262/sucplant)
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
 ---
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.3.134 | style: SMS 템플릿 수정 모달 modal-md→modal-lg, textarea rows 6→10 확대 |
 | v3.3.133 | refactor: 환경설정 SMS탭 API 인증정보 UI 제거 — 발신번호 일반탭 연락처로 일원화, 템플릿을 table-ui 표 형식으로 전환, editSmsTemplate 모달 추가 |
 | v3.3.132 | refactor: 환경설정 전탭 표 양식 전환 — settings.html 6개 탭 table-ui tbody 구조로 재작성, settingsUI.js div→tr/td 렌더, startEditGrade inline td 지원 |
 | v3.3.131 | feat(고객관리 Phase A+B): **체계화 1차 — 태그 + 타임라인** 도입. ①DB 마이그레이션(Supabase): `farm_customers.tags TEXT[]` 컬럼 + GIN 인덱스 추가, `farm_customer_logs` 신규 테이블(콜·메모·등급변동·태그변동·주문메모 5종 타임라인) + RLS + 인덱스 2종. ②데이터 계층: `customerLogsManager` 신규(`list/add/remove`) + `_sanitizeCustomer` 에 tags 배열 정규화(공백·중복 제거). ③UI: 고객 상세 모달 860→1040px 확장, 좌측에 **태그 칩 영역**(Enter 로 추가, × 로 삭제, 퍼플 칩) 신설. 우측 "상담 기록" textarea → **타임라인 카드**(탭 전환: 전체/메모/통화/등급/태그, 컴포저: 타입+한줄요약+본문, 로그별 아이콘·시간·삭제). 태그 변경 시 자동으로 `tag_change` 로그 기록. ④`styles/index-inline.css` 에 `.customer-tags-*`·`.customer-timeline-*`·`.timeline-tab`·`.timeline-row-*` 스타일 블록 추가. 후속: Phase C(자동 등급 승격), D(RFM 이탈위험 자동 태그), E(세그먼트 일괄 SMS), F(엑셀 import/export) |
