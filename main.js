@@ -59,6 +59,11 @@ import {
 import { renderCustomersTable, invalidateCustomerUICache } from './features/customers/customerUI.js';
 import { showToast } from './utils/ui-helpers.js';
 
+// 고객 로그(타임라인) 데이터 모듈 import
+import { customerLogsManager, CustomerLogsManager } from './features/customers/customerLogsData.js';
+window.customerLogsManager = customerLogsManager;
+window.CustomerLogsManager = CustomerLogsManager;
+
 // 상품 데이터 모듈 import
 import { 
     ProductDataManager,

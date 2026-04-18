@@ -363,7 +363,9 @@ start-server.bat
 ## 데이터베이스
 - Supabase 전용 (localStorage 없음)
 - **DB 쿼리는 오직 `window.supabaseClient` 로만 접근**. `window.supabase` 사용 금지 — 초기화 경로(index.html inline vs supabase-config.js)에 따라 `window.supabase` 가 라이브러리 namespace(`.from()` 없음) 이거나 client 이거나 타이밍 의존적. `window.supabaseClient` 는 항상 client 인스턴스로만 설정되므로 안전. 함정 사례: v3.3.9 에서 categoryData.js 가 `window.supabase.from(...)` 호출로 일부 init 경로에서 silent fail 하던 버그 수정
-- 주요 테이블: farm_customers, farm_orders, farm_products, farm_categories, farm_order_items, farm_settings
+- 주요 테이블: farm_customers, farm_orders, farm_products, farm_categories, farm_order_items, farm_settings, farm_customer_logs
+- `farm_customers.tags TEXT[]` — 고객 태그(v3.3.126+). 예: `{"단골","VIP후보","이탈위험"}`. GIN 인덱스.
+- `farm_customer_logs` — 고객 타임라인 통합 테이블(v3.3.126+). `log_type` CHECK 제약: `call/memo/grade_change/tag_change/order_note/etc`. `metadata JSONB` 에 구조화 데이터 저장(등급변동 `{old,new,reason}`, 태그변동 `{added:[],removed:[]}`, 통화 `{direction,duration_sec}` 등). 접근: `window.customerLogsManager.{list,add,remove}`
 - **farm_orders 추가 컬럼**: `sms_sent_at` TIMESTAMPTZ (SMS 발송 시각), `printed_at` TIMESTAMPTZ (주문서 출력 시각) — v3.3.83 추가
 
 ### RPC: `get_order_rows`

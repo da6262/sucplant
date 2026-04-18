@@ -917,11 +917,11 @@ async function showCustomerDetailInPanel(customer) {
         const smsPhone = escapeHtml(customer.phone || '');
         const smsName  = escapeHtml(customer.name || '');
 
-        // 팝업 내부: 좌(프로필+액션) / 우(주문이력+메모) 2컬럼
+        // 팝업 내부: 좌(프로필+태그+지표+액션) / 우(주문이력 + 타임라인) 2컬럼
         detailContent.innerHTML = `
             <div class="crm-popup-grid">
 
-                <!-- ─── 좌: 프로필 + 지표 + 액션 ─── -->
+                <!-- ─── 좌: 프로필 + 태그 + 지표 + 액션 ─── -->
                 <div style="display:flex;flex-direction:column;gap:12px;">
 
                     <!-- 프로필 카드 -->
@@ -941,6 +941,17 @@ async function showCustomerDetailInPanel(customer) {
                             <div style="word-break:break-word;"><i class="fas fa-map-marker-alt" style="width:16px;color:#9CA3AF;"></i> ${escapeHtml(addressFull)}</div>
                             <div><i class="fas fa-calendar-alt" style="width:16px;color:#9CA3AF;"></i> 등록일 ${formatDate(customer.registration_date)}</div>
                         </div>
+                    </div>
+
+                    <!-- 태그 영역 -->
+                    <div class="customer-tags-card">
+                        <div class="customer-tags-header">
+                            <span><i class="fas fa-tag" style="color:#9CA3AF;margin-right:6px;"></i>태그</span>
+                            <span class="customer-tags-hint">Enter 로 추가</span>
+                        </div>
+                        <div id="customer-tags-chips" class="customer-tags-chips" data-customer-id="${customer.id}"></div>
+                        <input type="text" id="customer-tag-input" class="customer-tag-input"
+                               placeholder="예: 단골, VIP후보, 이탈위험" maxlength="20" autocomplete="off">
                     </div>
 
                     <!-- 핵심 지표 3개 -->
@@ -977,32 +988,54 @@ async function showCustomerDetailInPanel(customer) {
 
                 </div>
 
-                <!-- ─── 우: 주문이력 + 상담기록 ─── -->
+                <!-- ─── 우: 주문이력 + 타임라인 ─── -->
                 <div style="display:flex;flex-direction:column;gap:12px;min-width:0;">
 
                     <!-- 주문 이력 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;flex:1;">
+                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
                         <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
                             <i class="fas fa-receipt" style="color:#9CA3AF;margin-right:6px;"></i>주문 이력
                         </div>
-                        <div style="overflow-y:auto;max-height:280px;background:white;">
+                        <div style="overflow-y:auto;max-height:220px;background:white;">
                             <div id="customer-orders-list" style="font-size:12px;color:#9CA3AF;padding:12px;">불러오는 중...</div>
                         </div>
                     </div>
 
-                    <!-- 상담 기록 -->
-                    <div style="border:1px solid #E5E7EB;border-radius:10px;overflow:hidden;">
-                        <div style="padding:10px 14px;border-bottom:1px solid #E5E7EB;background:#F9FAFB;font-size:12px;font-weight:600;color:#374151;">
-                            <i class="fas fa-sticky-note" style="color:#9CA3AF;margin-right:6px;"></i>상담 기록
+                    <!-- 타임라인 (로그) -->
+                    <div class="customer-timeline-card" data-customer-id="${customer.id}">
+                        <div class="customer-timeline-head">
+                            <span><i class="fas fa-stream" style="color:#9CA3AF;margin-right:6px;"></i>타임라인</span>
+                            <div class="customer-timeline-tabs" id="customer-timeline-tabs">
+                                <button type="button" class="timeline-tab active" data-type="all">전체</button>
+                                <button type="button" class="timeline-tab" data-type="memo">메모</button>
+                                <button type="button" class="timeline-tab" data-type="call">통화</button>
+                                <button type="button" class="timeline-tab" data-type="grade_change">등급</button>
+                                <button type="button" class="timeline-tab" data-type="tag_change">태그</button>
+                            </div>
                         </div>
-                        <div style="padding:12px;background:white;">
-                            <textarea id="customer-detail-memo"
-                                style="width:100%;min-height:100px;padding:8px;border:1px solid #E5E7EB;border-radius:6px;font-size:13px;resize:vertical;box-sizing:border-box;line-height:1.6;"
-                                placeholder="예: 포장 꼼꼼히 요구하심, 선물용 위주로 구매">${customer.memo ? escapeHtml(customer.memo) : ''}</textarea>
-                            <button type="button" id="customer-memo-save-btn" data-customer-id="${customer.id}"
-                                class="btn-primary" style="margin-top:8px;width:100%;justify-content:center;">
-                                <i class="fas fa-save"></i> 메모 저장
+
+                        <!-- 컴포저 -->
+                        <div class="customer-timeline-composer">
+                            <select id="customer-log-type" class="input-ui" style="max-width:110px;">
+                                <option value="memo">메모</option>
+                                <option value="call">통화</option>
+                                <option value="order_note">주문메모</option>
+                                <option value="etc">기타</option>
+                            </select>
+                            <input type="text" id="customer-log-title" class="input-ui"
+                                   placeholder="한 줄 요약 (예: 배송 전 전화 요청)" maxlength="200">
+                            <button type="button" id="customer-log-save-btn" class="btn-primary"
+                                    style="white-space:nowrap;">
+                                <i class="fas fa-plus"></i> 추가
                             </button>
+                        </div>
+                        <textarea id="customer-log-body"
+                                  class="customer-timeline-body-input"
+                                  placeholder="본문 (선택) — 길게 쓰려면 여기에"></textarea>
+
+                        <!-- 리스트 -->
+                        <div id="customer-timeline-list" class="customer-timeline-list">
+                            <div class="customer-timeline-empty">불러오는 중...</div>
                         </div>
                     </div>
 
@@ -1010,14 +1043,44 @@ async function showCustomerDetailInPanel(customer) {
             </div>
         `;
 
-        // 메모 저장 이벤트
-        document.getElementById('customer-memo-save-btn')?.addEventListener('click', async () => {
-            const memo = document.getElementById('customer-detail-memo')?.value.trim() || '';
+        // 태그 UI 초기화
+        initCustomerTagsUI(customer);
+
+        // 타임라인 초기 로드
+        const timelineCtx = { customerId: customer.id, currentType: 'all' };
+        await reloadCustomerTimeline(timelineCtx);
+
+        // 타임라인 탭 전환
+        detailContent.querySelectorAll('#customer-timeline-tabs .timeline-tab').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                detailContent.querySelectorAll('#customer-timeline-tabs .timeline-tab')
+                    .forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                timelineCtx.currentType = btn.dataset.type;
+                await reloadCustomerTimeline(timelineCtx);
+            });
+        });
+
+        // 로그 추가
+        document.getElementById('customer-log-save-btn')?.addEventListener('click', async () => {
+            const type  = document.getElementById('customer-log-type')?.value || 'memo';
+            const title = document.getElementById('customer-log-title')?.value.trim() || '';
+            const body  = document.getElementById('customer-log-body')?.value.trim() || '';
+            if (!title && !body) {
+                if (window.showToast) window.showToast('제목 또는 본문을 입력하세요.', 2000);
+                return;
+            }
             try {
-                await customerDataManager.updateCustomer(customer.id, { ...customer, memo });
-                if (window.showToast) window.showToast('메모가 저장되었습니다.', 2000);
+                await window.customerLogsManager.add(customer.id, {
+                    log_type: type, title, body
+                });
+                document.getElementById('customer-log-title').value = '';
+                document.getElementById('customer-log-body').value = '';
+                if (window.showToast) window.showToast('기록이 추가되었습니다.', 1500);
+                await reloadCustomerTimeline(timelineCtx);
             } catch (e) {
-                if (window.showToast) window.showToast('메모 저장에 실패했습니다.', 2000);
+                console.error(e);
+                if (window.showToast) window.showToast('기록 추가 실패: ' + (e.message || e), 3000);
             }
         });
 
@@ -1032,6 +1095,206 @@ async function showCustomerDetailInPanel(customer) {
 
     } catch (error) {
         console.error('❌ 고객 상세 팝업 업데이트 실패:', error);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 태그 UI (chip 리스트 + 추가 input)
+// ─────────────────────────────────────────────────────────────
+function initCustomerTagsUI(customer) {
+    const chipsEl = document.getElementById('customer-tags-chips');
+    const inputEl = document.getElementById('customer-tag-input');
+    if (!chipsEl || !inputEl) return;
+
+    const current = Array.isArray(customer.tags) ? [...customer.tags] : [];
+
+    const renderChips = () => {
+        if (current.length === 0) {
+            chipsEl.innerHTML = '<span class="customer-tags-empty">태그 없음</span>';
+            return;
+        }
+        chipsEl.innerHTML = current.map((t, i) => `
+            <span class="customer-tag-chip">
+                ${escapeHtml(t)}
+                <button type="button" class="customer-tag-remove" data-idx="${i}" title="삭제">
+                    <i class="fas fa-times"></i>
+                </button>
+            </span>
+        `).join('');
+        // 삭제 바인딩
+        chipsEl.querySelectorAll('.customer-tag-remove').forEach(btn => {
+            btn.addEventListener('click', async () => {
+                const idx = Number(btn.dataset.idx);
+                const removed = current.splice(idx, 1)[0];
+                renderChips();
+                await persistTags(customer, current, { removed });
+            });
+        });
+    };
+
+    const addTag = async (raw) => {
+        const tag = (raw || '').trim();
+        if (!tag) return;
+        if (tag.length > 20) {
+            if (window.showToast) window.showToast('태그는 20자 이하로 입력하세요.', 2000);
+            return;
+        }
+        if (current.includes(tag)) {
+            if (window.showToast) window.showToast('이미 있는 태그입니다.', 1500);
+            return;
+        }
+        current.push(tag);
+        renderChips();
+        inputEl.value = '';
+        await persistTags(customer, current, { added: tag });
+    };
+
+    inputEl.addEventListener('keydown', async (e) => {
+        if (e.key === 'Enter' || e.key === ',') {
+            e.preventDefault();
+            await addTag(inputEl.value);
+        }
+    });
+
+    renderChips();
+}
+
+async function persistTags(customer, tags, change = {}) {
+    try {
+        await window.customerDataManager.updateCustomer(customer.id, {
+            ...customer,
+            tags
+        });
+        // 메모리 반영
+        customer.tags = [...tags];
+
+        // 타임라인에 tag_change 로그 자동 기록
+        if (change.added || change.removed) {
+            const meta = {};
+            if (change.added)   meta.added   = [change.added];
+            if (change.removed) meta.removed = [change.removed];
+            try {
+                await window.customerLogsManager.add(customer.id, {
+                    log_type: 'tag_change',
+                    title: change.added ? `태그 추가: ${change.added}` : `태그 삭제: ${change.removed}`,
+                    metadata: meta
+                });
+                // 타임라인 새로고침 (로그 탭이 열려 있을 때만 반영)
+                const ctxCard = document.querySelector('.customer-timeline-card');
+                if (ctxCard) {
+                    const activeTab = ctxCard.querySelector('.timeline-tab.active');
+                    const type = activeTab?.dataset.type || 'all';
+                    if (type === 'all' || type === 'tag_change') {
+                        await reloadCustomerTimeline({ customerId: customer.id, currentType: type });
+                    }
+                }
+            } catch (e) {
+                console.warn('⚠️ 태그 변경 로그 기록 실패:', e);
+            }
+        }
+    } catch (e) {
+        console.error('❌ 태그 저장 실패:', e);
+        if (window.showToast) window.showToast('태그 저장 실패', 2500);
+    }
+}
+
+// ─────────────────────────────────────────────────────────────
+// 타임라인 렌더링
+// ─────────────────────────────────────────────────────────────
+async function reloadCustomerTimeline(ctx) {
+    const listEl = document.getElementById('customer-timeline-list');
+    if (!listEl) return;
+    listEl.innerHTML = '<div class="customer-timeline-empty">불러오는 중...</div>';
+
+    try {
+        const rows = await window.customerLogsManager.list(ctx.customerId, {
+            type: ctx.currentType,
+            limit: 100
+        });
+        renderCustomerTimelineList(listEl, rows, ctx);
+    } catch (e) {
+        listEl.innerHTML = `<div class="customer-timeline-empty" style="color:var(--danger);">로드 실패: ${escapeHtml(e.message || String(e))}</div>`;
+    }
+}
+
+function renderCustomerTimelineList(listEl, rows, ctx) {
+    if (!rows || rows.length === 0) {
+        listEl.innerHTML = '<div class="customer-timeline-empty">기록이 없습니다.</div>';
+        return;
+    }
+
+    const META = (window.CustomerLogsManager && window.CustomerLogsManager.TYPE_META) || {};
+    listEl.innerHTML = rows.map(row => {
+        const m = META[row.log_type] || { label: row.log_type, icon: 'fa-circle', variant: 'neutral' };
+        const when = formatLogWhen(row.created_at);
+        const bodyHtml = row.body ? `<div class="timeline-row-body">${escapeHtml(row.body).replace(/\n/g, '<br>')}</div>` : '';
+        const titleHtml = row.title ? `<div class="timeline-row-title">${escapeHtml(row.title)}</div>` : '';
+        const metaExtra = renderTimelineMetadata(row);
+        return `
+            <div class="timeline-row" data-log-id="${row.id}">
+                <div class="timeline-row-icon variant-${m.variant}">
+                    <i class="fas ${m.icon}"></i>
+                </div>
+                <div class="timeline-row-main">
+                    <div class="timeline-row-head">
+                        <span class="badge badge-${m.variant}">${m.label}</span>
+                        <span class="timeline-row-when">${when}</span>
+                        <button type="button" class="timeline-row-del" data-log-id="${row.id}" title="삭제">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                    ${titleHtml}
+                    ${bodyHtml}
+                    ${metaExtra}
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    // 삭제 바인딩
+    listEl.querySelectorAll('.timeline-row-del').forEach(btn => {
+        btn.addEventListener('click', async () => {
+            if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+            try {
+                await window.customerLogsManager.remove(btn.dataset.logId);
+                await reloadCustomerTimeline(ctx);
+            } catch (e) {
+                if (window.showToast) window.showToast('삭제 실패: ' + (e.message || e), 2500);
+            }
+        });
+    });
+}
+
+function renderTimelineMetadata(row) {
+    const md = row.metadata || {};
+    if (row.log_type === 'grade_change' && (md.old || md.new)) {
+        return `<div class="timeline-row-meta">${escapeHtml(md.old || '?')} → <strong>${escapeHtml(md.new || '?')}</strong>${md.reason ? ' · ' + escapeHtml(md.reason) : ''}</div>`;
+    }
+    if (row.log_type === 'tag_change') {
+        const parts = [];
+        if (Array.isArray(md.added)   && md.added.length)   parts.push('+ ' + md.added.map(escapeHtml).join(', '));
+        if (Array.isArray(md.removed) && md.removed.length) parts.push('− ' + md.removed.map(escapeHtml).join(', '));
+        if (parts.length) return `<div class="timeline-row-meta">${parts.join(' / ')}</div>`;
+    }
+    if (row.log_type === 'call' && md.duration_sec) {
+        return `<div class="timeline-row-meta">통화시간 ${Math.round(md.duration_sec/60)}분</div>`;
+    }
+    return '';
+}
+
+function formatLogWhen(iso) {
+    if (!iso) return '';
+    try {
+        const d = new Date(iso);
+        const now = new Date();
+        const sameDay = d.toDateString() === now.toDateString();
+        if (sameDay) {
+            return d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+        }
+        return d.toLocaleDateString('ko-KR', { month: '2-digit', day: '2-digit' })
+             + ' ' + d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    } catch {
+        return iso;
     }
 }
 

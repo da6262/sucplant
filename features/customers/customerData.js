@@ -40,6 +40,17 @@ class CustomerDataManager {
             ? Number(safeCustomer.live_order_count)
             : 0;
 
+        // tags: string[] 정규화 — 공백 제거, 빈 문자열 제외, 중복 제거
+        if (Array.isArray(safeCustomer.tags)) {
+            const cleaned = safeCustomer.tags
+                .filter(t => typeof t === 'string')
+                .map(t => t.trim())
+                .filter(Boolean);
+            safeCustomer.tags = Array.from(new Set(cleaned));
+        } else {
+            safeCustomer.tags = [];
+        }
+
         return safeCustomer;
     }
 
