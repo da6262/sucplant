@@ -9,6 +9,8 @@ import { TABLE_MAP, mapTable, getSupabaseTableName } from './utils/helpers.js';
 
 // 페이지 표시 개수 컨트롤 — 전역 window.PageSize 등록 (side-effect import)
 import './utils/pageSize.js';
+// 헤더 체크박스 전체선택 유틸 — 전역 window.SelectAll 등록
+import './utils/selectAll.js';
 
 // ── 공통 데이터 포맷터 (Single Source of Truth) ──────────────
 import {

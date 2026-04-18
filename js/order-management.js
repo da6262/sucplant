@@ -708,13 +708,9 @@ function attachOrderEventListeners() {
             console.warn('⚠️ 배송비 설정 버튼을 찾을 수 없습니다');
         }
         
-        // 전체 선택 체크박스 — onchange 할당
-        const selectAllOrders = document.getElementById('select-all-orders');
-        if (selectAllOrders) {
-            selectAllOrders.onchange = function() {
-                const orderCheckboxes = document.querySelectorAll('input[type="checkbox"][data-order-id]');
-                orderCheckboxes.forEach(checkbox => { checkbox.checked = this.checked; });
-            };
+        // 전체 선택 체크박스 — SelectAll 중앙 유틸 사용
+        if (window.SelectAll) {
+            window.SelectAll.attach('select-all-orders', 'input[type="checkbox"][data-order-id]');
         }
 
         // 페이지당 표시 수 — 전역 PageSize 컨트롤 사용 (options·리스너 중앙 관리)

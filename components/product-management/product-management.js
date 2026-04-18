@@ -369,11 +369,10 @@ class ProductManagementComponent {
             });
         }
 
-        // 전체 선택 체크박스
-        const selectAllCheckbox = document.getElementById('select-all-products');
-        if (selectAllCheckbox) {
-            selectAllCheckbox.addEventListener('change', (e) => {
-                this.toggleSelectAll(e.target.checked);
+        // 전체 선택 체크박스 — SelectAll 중앙 유틸 사용
+        if (window.SelectAll) {
+            window.SelectAll.attach('select-all-products', '.product-checkbox', () => {
+                this.updateBulkBar();
             });
         }
 
