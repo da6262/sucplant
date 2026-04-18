@@ -1009,10 +1009,11 @@ class OrderDataManager {
     }
     getPrintStatus(order) {
         const at = order.printed_at;
-        if (!at) return { label: '출력대기', tip: '클릭하여 주문서 출력' };
+        if (!at) return { label: '미출력', tip: '클릭하여 명세서 출력' };
         try {
             const t = new Date(at);
-            return { label: '출력완료', tip: '마지막 출력: ' + t.toLocaleString('ko-KR') };
+            const short = (t.getMonth() + 1) + '/' + t.getDate();
+            return { label: '출력 ' + short, tip: '명세서 출력: ' + t.toLocaleString('ko-KR') };
         } catch (e) { return { label: '출력완료', tip: '' }; }
     }
 
