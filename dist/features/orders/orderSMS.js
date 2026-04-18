@@ -102,10 +102,10 @@ async function sendOrderSMS(orderId, templateType, customMessage = null) {
             message = formatSMSTemplate(template.template, order);
         }
         
-        // SMS 발송
-        const result = await sendSMS(order.customer_phone, message, templateType);
+        // 메시지 발송 (카카오 알림톡 우선 → SMS 폴백)
+        const result = await sendSMS(order.customer_phone, message, templateType, order);
 
-        console.log('✅ SMS 발송 완료:', result);
+        console.log('✅ 발송 완료:', result);
 
         // sms_sent_at 타임스탬프 + 발송 타입 기록
         if (window.supabaseClient && orderId) {
@@ -197,12 +197,13 @@ function formatSMSTemplate(template, order) {
     return formattedTemplate;
 }
 
-// SMS 발송 (실제 API 호출) — sendSolapiSMS 직접 사용
-async function sendSMS(phoneNumber, message, templateType = 'custom') {
+// 메시지 발송 (카카오 알림톡 우선 → SMS 폴백)
+async function sendSMS(phoneNumber, message, templateType = 'custom', order = null) {
     try {
-        console.log('📱 SMS API 호출:', { phoneNumber, message, templateType });
+        console.log('📱 메시지 발송:', { phoneNumber, templateType, hasOrder: !!order });
 
-        const result = await sendSolapiSMS(phoneNumber, message);
+        const result = await sendSmartMessage(phoneNumber, message, templateType, order);
+        console.log(`✅ ${result.channel === 'kakao' ? '카카오 알림톡' : 'SMS'} 발송 성공`);
 
         console.log('✅ SMS 발송 성공:', result);
 
@@ -503,6 +504,99 @@ function _randomHex(bytes) {
     return Array.from(arr).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
+// =============================================
+// 카카오 알림톡 설정
+// =============================================
+const KAKAO_CONFIG = {
+    pfId: 'KA01PF250905143602736PcFaTjYyszo',
+    templates: {
+        orderConfirm:    'KA01TP260418163114740BHO5Pj256DA',  // 주문 접수 안내
+        paymentConfirm:  'KA01TP260418163114819UIuQRGFX7AV',  // 입금 확인 안내
+        shippingStart:   'KA01TP26041816311486081rup0HHQ5K',  // 배송 시작 안내
+        shippingComplete:'KA01TP260418163114900fOuMkngRGhB',  // 배송 완료 안내
+        waitlistNotify:  'KA01TP250905182859613fufzpibZmgG',  // 다육식물 입고 알림
+    }
+};
+
+// 카카오 알림톡 발송 (Solapi 경유)
+async function sendKakaoAlimtalk(phoneNumber, templateType, variables) {
+    const normalizedPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
+    if (!normalizedPhone) throw new Error('전화번호가 없습니다.');
+
+    const templateId = KAKAO_CONFIG.templates[templateType];
+    if (!templateId) throw new Error(`카카오 템플릿 없음: ${templateType}`);
+
+    const cfg = getSolapiConfig();
+    const date = new Date().toISOString();
+    const salt = _randomHex(16);
+    const signature = await _createSolapiSignature(date, salt, cfg.apiSecret);
+    const authHeader = `HMAC-SHA256 apiKey=${cfg.apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+
+    const response = await fetch('https://api.solapi.com/messages/v4/send', {
+        method: 'POST',
+        headers: { 'Authorization': authHeader, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            message: {
+                to: normalizedPhone,
+                from: cfg.from,
+                kakaoOptions: {
+                    pfId: KAKAO_CONFIG.pfId,
+                    templateId: templateId,
+                    variables: variables
+                }
+            }
+        })
+    });
+
+    if (!response.ok) {
+        const err = await response.text();
+        throw new Error(`카카오 알림톡 오류 ${response.status}: ${err}`);
+    }
+    return await response.json();
+}
+
+// 주문 정보 → 카카오 변수 매핑
+function orderToKakaoVars(order, templateType) {
+    const name = order.customer_name || '고객';
+    const orderNum = order.order_number || '-';
+    const amount = (order.total_amount || 0).toLocaleString();
+    const items = (order.items || []).map(i => (i.product_name || i.name || '')).filter(Boolean).join(', ') || '상품';
+
+    switch (templateType) {
+        case 'orderConfirm':
+            return { '#{고객명}': name, '#{주문번호}': orderNum, '#{상품명}': items, '#{금액}': amount };
+        case 'paymentConfirm':
+            return { '#{고객명}': name, '#{주문번호}': orderNum, '#{금액}': amount };
+        case 'shippingStart':
+            return { '#{고객명}': name, '#{주문번호}': orderNum, '#{택배사}': order.shipping_method || '로젠택배', '#{송장번호}': order.tracking_number || '-' };
+        case 'shippingComplete':
+            return { '#{고객명}': name, '#{주문번호}': orderNum };
+        default:
+            return {};
+    }
+}
+
+// 스마트 발송: 카카오 알림톡 우선 → 실패 시 SMS 폴백
+async function sendSmartMessage(phoneNumber, message, templateType, order) {
+    const kakaoTemplateId = KAKAO_CONFIG.templates[templateType];
+
+    // 카카오 알림톡 시도 (템플릿이 있는 경우)
+    if (kakaoTemplateId && order) {
+        try {
+            const vars = orderToKakaoVars(order, templateType);
+            const result = await sendKakaoAlimtalk(phoneNumber, templateType, vars);
+            console.log('✅ 카카오 알림톡 발송 성공:', templateType);
+            return { ...result, channel: 'kakao' };
+        } catch (e) {
+            console.warn('⚠️ 카카오 알림톡 실패, SMS 폴백:', e.message);
+        }
+    }
+
+    // SMS 폴백
+    const result = await sendSolapiSMS(phoneNumber, message);
+    return { ...result, channel: 'sms' };
+}
+
 // Solapi SMS 발송 (저수준)
 async function sendSolapiSMS(phoneNumber, message) {
     const normalizedPhone = (phoneNumber || '').replace(/[^0-9]/g, '');
@@ -757,6 +851,9 @@ async function showBulkSMSModal() {
 
 window.showBulkSMSModal = showBulkSMSModal;
 window.sendSolapiSMS = sendSolapiSMS;
+window.sendKakaoAlimtalk = sendKakaoAlimtalk;
+window.sendSmartMessage = sendSmartMessage;
+window.KAKAO_CONFIG = KAKAO_CONFIG;
 window.openCustomerSMSModal = openCustomerSMSModal;
 window.openCustomerSMSById = openCustomerSMSById;
 
