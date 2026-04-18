@@ -1557,10 +1557,39 @@ table tbody td [class*="shrink-0"] {
 .customer-timeline-composer {
     display: flex;
     gap: 6px;
-    padding: 10px 12px 6px;
+    padding: 4px 12px 6px;
     align-items: center;
 }
-.customer-timeline-composer .input-ui { font-size: 12px; padding: 5px 8px; }
+.customer-timeline-composer .input-ui { font-size: 12px; padding: 5px 8px; flex: 1; }
+
+/* 로그 타입 칩 (통화/메모/주문메모/기타) */
+.timeline-type-chips {
+    display: flex;
+    gap: 4px;
+    padding: 10px 12px 4px;
+    flex-wrap: wrap;
+}
+.type-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 10px;
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    background: var(--bg-section);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    transition: all 0.15s;
+}
+.type-chip:hover { background: var(--bg-light); color: var(--text-body); }
+.type-chip.active {
+    background: var(--primary);
+    color: #fff;
+    border-color: var(--primary);
+}
+.type-chip i { font-size: 10px; }
 .customer-timeline-body-input {
     margin: 0 12px 10px;
     width: calc(100% - 24px);

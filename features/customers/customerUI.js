@@ -268,6 +268,7 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
                 <td class="text-center">
                     <div class="btn-group">
                         <button onclick="window.addOrderForCustomer && window.addOrderForCustomer('${customer.id}', '${escapeHtml(customer.name)}', '${escapeHtml(customer.phone || '')}')" class="btn-icon btn-icon-primary" title="주문 추가"><i class="fas fa-cart-plus"></i></button>
+                        <button onclick="window.openQuickCallLog && window.openQuickCallLog('${customer.id}', '${escapeHtml(customer.name || '')}', '${escapeHtml(customer.phone || '')}')" class="btn-icon" style="color:var(--info);" title="통화 기록"><i class="fas fa-phone"></i></button>
                         <button onclick="editCustomer('${customer.id}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
                         <button onclick="deleteCustomer('${customer.id}')" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
                     </div>
@@ -1014,16 +1015,16 @@ async function showCustomerDetailInPanel(customer) {
                             </div>
                         </div>
 
-                        <!-- 컴포저 -->
+                        <!-- 컴포저 — 타입 칩 + 제목 + 저장 (Enter 로 저장) -->
+                        <div class="timeline-type-chips" id="customer-log-type-chips" role="radiogroup" aria-label="로그 타입">
+                            <button type="button" class="type-chip active" data-type="memo"><i class="fas fa-sticky-note"></i> 메모</button>
+                            <button type="button" class="type-chip" data-type="call"><i class="fas fa-phone"></i> 통화</button>
+                            <button type="button" class="type-chip" data-type="order_note"><i class="fas fa-receipt"></i> 주문메모</button>
+                            <button type="button" class="type-chip" data-type="etc"><i class="fas fa-ellipsis-h"></i> 기타</button>
+                        </div>
                         <div class="customer-timeline-composer">
-                            <select id="customer-log-type" class="input-ui" style="max-width:110px;">
-                                <option value="memo">메모</option>
-                                <option value="call">통화</option>
-                                <option value="order_note">주문메모</option>
-                                <option value="etc">기타</option>
-                            </select>
                             <input type="text" id="customer-log-title" class="input-ui"
-                                   placeholder="한 줄 요약 (예: 배송 전 전화 요청)" maxlength="200">
+                                   placeholder="한 줄 요약 — Enter 로 저장" maxlength="200">
                             <button type="button" id="customer-log-save-btn" class="btn-primary"
                                     style="white-space:nowrap;">
                                 <i class="fas fa-plus"></i> 추가
@@ -1061,10 +1062,23 @@ async function showCustomerDetailInPanel(customer) {
             });
         });
 
-        // 로그 추가
-        document.getElementById('customer-log-save-btn')?.addEventListener('click', async () => {
-            const type  = document.getElementById('customer-log-type')?.value || 'memo';
-            const title = document.getElementById('customer-log-title')?.value.trim() || '';
+        // 타입 칩 전환: 클릭 시 active 갱신 + 제목 input 포커스
+        const chipsWrap = document.getElementById('customer-log-type-chips');
+        const titleInput = document.getElementById('customer-log-title');
+        if (chipsWrap) {
+            chipsWrap.querySelectorAll('.type-chip').forEach(chip => {
+                chip.addEventListener('click', () => {
+                    chipsWrap.querySelectorAll('.type-chip').forEach(c => c.classList.remove('active'));
+                    chip.classList.add('active');
+                    if (titleInput) titleInput.focus();
+                });
+            });
+        }
+
+        // 로그 저장 실행 (버튼·Enter 공용)
+        const submitLog = async () => {
+            const type  = chipsWrap?.querySelector('.type-chip.active')?.dataset.type || 'memo';
+            const title = titleInput?.value.trim() || '';
             const body  = document.getElementById('customer-log-body')?.value.trim() || '';
             if (!title && !body) {
                 if (window.showToast) window.showToast('제목 또는 본문을 입력하세요.', 2000);
@@ -1074,14 +1088,22 @@ async function showCustomerDetailInPanel(customer) {
                 await window.customerLogsManager.add(customer.id, {
                     log_type: type, title, body
                 });
-                document.getElementById('customer-log-title').value = '';
-                document.getElementById('customer-log-body').value = '';
+                if (titleInput) titleInput.value = '';
+                const bodyEl = document.getElementById('customer-log-body');
+                if (bodyEl) bodyEl.value = '';
                 if (window.showToast) window.showToast('기록이 추가되었습니다.', 1500);
                 await reloadCustomerTimeline(timelineCtx);
+                if (titleInput) titleInput.focus();
             } catch (e) {
                 console.error(e);
                 if (window.showToast) window.showToast('기록 추가 실패: ' + (e.message || e), 3000);
             }
+        };
+
+        document.getElementById('customer-log-save-btn')?.addEventListener('click', submitLog);
+        // 제목 칸에서 Enter = 저장 (body 는 Shift+Enter 없이 줄바꿈 자유)
+        titleInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); submitLog(); }
         });
 
         // 주문 추가 이벤트
@@ -1297,6 +1319,84 @@ function formatLogWhen(iso) {
         return iso;
     }
 }
+
+// reloadCustomerTimeline 을 빠른 다이얼로그에서도 호출 가능하도록 전역 노출
+window.reloadCustomerTimeline = reloadCustomerTimeline;
+
+// ─────────────────────────────────────────────────────────────
+// 빠른 통화 로그 다이얼로그 (고객 목록 행의 📞 버튼에서 호출)
+// 목표: 최소 클릭(행 버튼 → 제목 타이핑 → Enter)으로 저장
+// ─────────────────────────────────────────────────────────────
+window.openQuickCallLog = function(customerId, customerName, customerPhone) {
+    const modal   = document.getElementById('quick-call-log-modal');
+    if (!modal) {
+        console.warn('⚠️ quick-call-log-modal 요소를 찾을 수 없습니다.');
+        return;
+    }
+    const titleEl = document.getElementById('quick-call-log-title');
+    const metaEl  = document.getElementById('quick-call-log-meta');
+    const ttl     = document.getElementById('quick-call-log-title-input');
+    const body    = document.getElementById('quick-call-log-body-input');
+
+    if (titleEl) titleEl.textContent = `통화 기록 — ${customerName || ''}`;
+    if (metaEl) {
+        metaEl.innerHTML = customerPhone
+            ? `<i class="fas fa-phone-alt" style="margin-right:4px;"></i>${escapeHtml(customerPhone)}`
+            : '';
+    }
+    if (ttl)  ttl.value = '';
+    if (body) body.value = '';
+    modal.classList.remove('hidden');
+    setTimeout(() => ttl?.focus(), 30);
+
+    const close = () => modal.classList.add('hidden');
+
+    const save = async () => {
+        const t = (ttl?.value || '').trim();
+        const b = (body?.value || '').trim();
+        if (!t && !b) {
+            if (window.showToast) window.showToast('요약 또는 내용을 입력하세요.', 2000);
+            return;
+        }
+        try {
+            await window.customerLogsManager.add(customerId, {
+                log_type: 'call',
+                title: t,
+                body: b
+            });
+            if (window.showToast) window.showToast('통화 기록 저장됨', 1500);
+            close();
+
+            // 상세 모달이 이 고객으로 열려 있으면 타임라인 새로고침
+            const panelCard = document.querySelector('.customer-timeline-card');
+            if (panelCard && panelCard.dataset.customerId === customerId) {
+                const activeTab = panelCard.querySelector('.timeline-tab.active');
+                const type = activeTab?.dataset.type || 'all';
+                if (type === 'all' || type === 'call') {
+                    await window.reloadCustomerTimeline({ customerId, currentType: type });
+                }
+            }
+        } catch (e) {
+            console.error(e);
+            if (window.showToast) window.showToast('저장 실패: ' + (e.message || e), 2500);
+        }
+    };
+
+    // 핸들러 바인딩 (onclick 덮어써서 중복 리스너 방지)
+    document.getElementById('quick-call-log-close').onclick  = close;
+    document.getElementById('quick-call-log-cancel').onclick = close;
+    document.getElementById('quick-call-log-save').onclick   = save;
+    if (ttl) {
+        ttl.onkeydown = (e) => {
+            if (e.key === 'Escape') { close(); }
+            else if (e.key === 'Enter') { e.preventDefault(); save(); }
+        };
+    }
+    if (body) {
+        body.onkeydown = (e) => { if (e.key === 'Escape') close(); };
+    }
+    modal.onclick = (e) => { if (e.target === modal) close(); };
+};
 
 // 고객 핵심 지표 업데이트: 총 구매액 · 주문 횟수 · 단골 점수 (주문 배열 기준)
 function updateCustomerTotalPurchaseDisplay(orders) {

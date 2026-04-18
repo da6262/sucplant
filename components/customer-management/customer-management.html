@@ -77,6 +77,32 @@
         </div>
     </footer>
 
+    <!-- 빠른 통화 로그 다이얼로그 (목록 행의 📞 버튼에서 호출) -->
+    <div id="quick-call-log-modal" class="modal-overlay hidden" style="z-index:470;">
+        <div class="modal-container" style="max-width:420px;width:92vw;">
+            <div class="modal-header">
+                <span class="modal-title">
+                    <i class="fas fa-phone" style="color:var(--info);margin-right:6px;"></i>
+                    <span id="quick-call-log-title">통화 기록</span>
+                </span>
+                <button id="quick-call-log-close" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
+                <div id="quick-call-log-meta" class="text-muted text-xs"></div>
+                <input type="text" id="quick-call-log-title-input" class="input-ui"
+                       placeholder="한 줄 요약 (예: 배송 전 전화 요청)" maxlength="200">
+                <textarea id="quick-call-log-body-input" class="input-ui"
+                          placeholder="상세 내용 (선택) — Enter 로 저장, Shift+Enter 줄바꿈"
+                          style="min-height:80px;resize:vertical;font-family:inherit;"></textarea>
+                <div class="text-muted text-xs">※ Esc 취소 · 제목 칸에서 Enter 저장</div>
+            </div>
+            <div class="modal-footer">
+                <button id="quick-call-log-cancel" class="btn-secondary">취소</button>
+                <button id="quick-call-log-save" class="btn-primary"><i class="fas fa-save"></i> 저장</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 고객 상세 팝업 모달 (position:fixed → 뷰포트 중앙, #customers-section 안에 있어야 DOM 보존됨) -->
     <div id="customer-detail-panel" class="modal-overlay hidden" style="z-index:450;">
         <div class="modal-container" style="max-width:1040px;width:94vw;max-height:90vh;display:flex;flex-direction:column;">
