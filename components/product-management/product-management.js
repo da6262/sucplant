@@ -1897,17 +1897,17 @@ class ProductManagementComponent {
         const dataRows = products.map(p => [
             p.name || '',
             p.category || '',
-            '',          // 색 설정 — 없음
+            '초록',      // 색 설정 — Payhere 필수, 초록으로 고정
             '사용',      // 판매탭 노출
             '사용',      // 재고관리 설정
-            '','','','','','', // 옵션명/값 1~3 — 없음
-            p.product_code || '',
-            p.barcode || '',
+            null,null,null,null,null,null, // 옵션명/값 1~3 — null = 완전 빈칸
+            p.product_code || null,
+            p.barcode || null,
             p.price || 0,
-            '',          // 부가세 — 없음
-            p.cost || '',
-            p.stock ?? '',
-            '',          // 안전재고 — 없음
+            null,        // 부가세
+            p.cost || null,
+            p.stock ?? null,
+            null,        // 안전재고
         ]);
 
         const ws = XLSX.utils.aoa_to_sheet([HEADERS, ...dataRows]);
