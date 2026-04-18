@@ -62,51 +62,11 @@ export function showSettingsTab(tabName) {
     }
 }
 
-// SMS 설정 로드
+// SMS 설정 로드 (API 인증정보 UI 제거, 템플릿만)
 async function loadSMSSettings() {
     try {
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
-        const smsConfig   = settings?.smsConfig    || {};
-
-        // API 인증정보 필드 채우기
-        const keyEl    = document.getElementById('sms-api-key');
-        const secretEl = document.getElementById('sms-api-secret');
-        const fromEl   = document.getElementById('sms-from-number');
-        if (keyEl)    keyEl.value    = smsConfig.apiKey    || '';
-        if (secretEl) secretEl.value = smsConfig.apiSecret || '';
-        if (fromEl)   fromEl.value   = smsConfig.from      || '';
-
-        // 인증정보 저장 버튼 이벤트 연결
-        const saveConfigBtn = document.getElementById('save-sms-config-btn');
-        if (saveConfigBtn && !saveConfigBtn._bound) {
-            saveConfigBtn._bound = true;
-            saveConfigBtn.addEventListener('click', async () => {
-                try {
-                    const apiKey    = (document.getElementById('sms-api-key')?.value    || '').trim();
-                    const apiSecret = (document.getElementById('sms-api-secret')?.value || '').trim();
-                    const from      = (document.getElementById('sms-from-number')?.value || '').replace(/[^0-9]/g, '');
-
-                    if (!apiKey || !apiSecret || !from) {
-                        alert('API Key, API Secret, 발신번호를 모두 입력해주세요.');
-                        return;
-                    }
-
-                    if (window.settingsDataManager) {
-                        await window.settingsDataManager.updateSetting('smsConfig', 'apiKey',    apiKey);
-                        await window.settingsDataManager.updateSetting('smsConfig', 'apiSecret', apiSecret);
-                        await window.settingsDataManager.updateSetting('smsConfig', 'from',      from);
-                        if (window.showToast) window.showToast('✅ SMS 인증정보가 저장되었습니다.', 2500);
-                        else alert('SMS 인증정보가 저장되었습니다.');
-                    } else {
-                        alert('설정 저장에 실패했습니다.');
-                    }
-                } catch (e) {
-                    console.error('SMS 인증정보 저장 실패:', e);
-                    alert('저장 실패: ' + e.message);
-                }
-            });
-        }
 
         const container = document.getElementById('sms-templates-list');
         if (!container) return;
@@ -122,25 +82,17 @@ async function loadSMSSettings() {
 
         templates.forEach(tpl => {
             const value = smsSettings[tpl.key] || '';
-            const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
-            const item = document.createElement('div');
-            item.id = `sms-item-${tpl.key}`;
-            item.className = 'border-b border-gray-100 last:border-0';
-            item.innerHTML = `
-                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
-                    <span class="text-xs font-medium text-body w-20 shrink-0">${tpl.label}</span>
-                    <span class="sms-preview text-xs text-muted flex-1 truncate">${preview}</span>
-                    <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
-                </div>
-                <div class="hidden px-3 pb-3 bg-section" id="sms-detail-${tpl.key}">
-                    <p class="text-xs text-muted mb-1.5">변수: ${tpl.vars}</p>
-                    <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
-                    <div class="flex justify-end mt-1.5">
-                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
-                    </div>
-                </div>
+            const preview = value ? value.split('\n')[0].slice(0, 60) + (value.length > 60 ? '…' : '') : '<span class="td-null">—</span>';
+            const tr = document.createElement('tr');
+            tr.id = `sms-item-${tpl.key}`;
+            tr.innerHTML = `
+                <td class="td-primary font-medium">${tpl.label}</td>
+                <td class="td-secondary sms-preview truncate">${preview}</td>
+                <td class="text-right whitespace-nowrap">
+                    <button onclick="editSmsTemplate('${tpl.key}','${tpl.fieldId}','${tpl.vars.replace(/'/g,'\\\'')}')" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                </td>
             `;
-            container.appendChild(item);
+            container.appendChild(tr);
         });
 
         console.log('✅ SMS 설정 로드 완료');
@@ -1365,17 +1317,32 @@ window.cancelEditGrade = function(index) {
     loadCustomerGrades();
 };
 
-// SMS 템플릿 펼침/접힘 토글
-window.toggleSmsTemplate = function(key) {
-    const detail = document.getElementById(`sms-detail-${key}`);
-    const chevron = document.getElementById(`sms-chevron-${key}`);
-    if (!detail) return;
-    const isHidden = detail.classList.contains('hidden');
-    detail.classList.toggle('hidden', !isHidden);
-    if (chevron) {
-        chevron.classList.toggle('fa-chevron-down', !isHidden);
-        chevron.classList.toggle('fa-chevron-up', isHidden);
-    }
+// SMS 템플릿 편집 모달
+window.editSmsTemplate = function(key, fieldId, vars) {
+    const settings = window.settingsDataManager?.getAllSettings();
+    const value = settings?.smsTemplates?.[key] || '';
+    const existing = document.getElementById('edit-sms-template-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'edit-sms-template-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container modal-md">
+            <div class="modal-header">
+                <span class="modal-title">SMS 템플릿 수정</span>
+                <button class="modal-close-btn" onclick="document.getElementById('edit-sms-template-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-xs text-muted mb-2">사용 가능 변수: <span class="font-mono">${vars}</span></p>
+                <textarea id="${fieldId}" class="input-ui resize-y w-full text-xs" rows="6">${value}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('edit-sms-template-modal').remove()">취소</button>
+                <button class="btn-primary" onclick="saveSingleSmsTemplate('${key}','${fieldId}')">저장</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 };
 
 // SMS 단일 템플릿 저장
@@ -1384,14 +1351,18 @@ window.saveSingleSmsTemplate = async function(key, fieldId) {
         const value = document.getElementById(fieldId)?.value || '';
         if (window.settingsDataManager) {
             await window.settingsDataManager.updateSetting('smsTemplates', key, value);
+            // 미리보기 셀 업데이트
             const item = document.getElementById(`sms-item-${key}`);
             if (item) {
                 const previewEl = item.querySelector('.sms-preview');
                 if (previewEl) {
-                    const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
-                    previewEl.textContent = preview;
+                    const preview = value ? value.split('\n')[0].slice(0, 60) + (value.length > 60 ? '…' : '') : '<span class="td-null">—</span>';
+                    previewEl.innerHTML = preview;
                 }
             }
+            // 모달 닫기
+            document.getElementById('edit-sms-template-modal')?.remove();
+            if (window.showToast) window.showToast('저장되었습니다.', 2000);
         }
     } catch (error) {
         console.error('❌ SMS 템플릿 저장 실패:', error);

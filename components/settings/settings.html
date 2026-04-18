@@ -255,40 +255,23 @@
         </div>
 
         <!-- ══════════════════════════════════════════
-             SMS 설정 — 2컬럼 속성 테이블
+             SMS 설정 — 템플릿 표 (인증정보 제거)
              ══════════════════════════════════════════ -->
         <div id="settings-sms-section" class="settings-content hidden">
-
-            <!-- API 인증정보 -->
-            <div class="flex items-center justify-between px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
-                <span class="text-xs font-semibold text-body">솔라피 API 인증정보</span>
-                <button id="save-sms-config-btn" class="btn-primary btn-xs"><i class="fas fa-save"></i>저장</button>
+            <div class="flex items-center px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
+                <span class="text-xs font-semibold text-body">SMS 문자 템플릿</span>
+                <span class="text-xs text-muted ml-2">— 발신번호는 일반 탭 연락처 사용</span>
             </div>
-            <table class="w-full table-fixed border-collapse">
-                <colgroup><col style="width:90px"><col><col style="width:90px"><col></colgroup>
-                <tbody>
-                    <tr style="border-bottom:1px solid var(--border-light);">
-                        <th class="px-3 py-2 text-xs text-secondary text-right bg-section font-semibold">API Key</th>
-                        <td class="px-2 py-1" colspan="3"><input type="text" id="sms-api-key" class="form-control font-mono" placeholder="솔라피 API Key"></td>
-                    </tr>
-                    <tr style="border-bottom:1px solid var(--border-light);">
-                        <th class="px-3 py-2 text-xs text-secondary text-right bg-section font-semibold">API Secret</th>
-                        <td class="px-2 py-1" colspan="3"><input type="password" id="sms-api-secret" class="form-control font-mono" placeholder="솔라피 API Secret"></td>
-                    </tr>
+            <table class="table-ui">
+                <thead>
                     <tr>
-                        <th class="px-3 py-2 text-xs text-secondary text-right bg-section font-semibold">발신번호</th>
-                        <td class="px-2 py-1" colspan="3">
-                            <input type="tel" id="sms-from-number" class="form-control" placeholder="01012345678 (하이픈 없이)">
-                        </td>
+                        <th class="text-left w-24">용도</th>
+                        <th class="text-left">내용 미리보기</th>
+                        <th class="w-14"></th>
                     </tr>
-                </tbody>
+                </thead>
+                <tbody id="sms-templates-list"></tbody>
             </table>
-
-            <!-- SMS 문자 템플릿 -->
-            <div class="flex items-center px-3 py-1.5 bg-section border-b border-t mt-2" style="border-color:var(--border-light);">
-                <span class="text-xs font-semibold text-body">문자 템플릿</span>
-            </div>
-            <div id="sms-templates-list" class="divide-y divide-gray-100"></div>
         </div>
 
     </div><!-- /콘텐츠 영역 -->
