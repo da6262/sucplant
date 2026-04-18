@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-v3.3.158-brightgreen)
+![버전](https://img.shields.io/badge/version-v3.4.1-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| **v3.4.1** | 🎉 **MINOR 승격** — 고객관리 체계화(Phase A~F) 사이클 완결 마일스톤. ①DB 기반(`farm_customers.tags` + `farm_customer_logs`) ②태그 칩 + 타임라인 카드 + 빠른 통화 로그(1클릭) ③자동 등급 승격 + 변동 로그 ④RFM 자동 태그(미구매·신규·재구매·단골·이탈위험·VIP후보) ⑤세그먼트 일괄 SMS(태그·등급 필터 + Solapi) ⑥엑셀 가져오기/내보내기. 다음 사이클: 배송·상품·대시보드 체계화 예정 |
 | v3.3.157 | fix: Payhere 내보내기 카테고리 매핑 변경 — 식물류→다육이, 화분→화분, 용토·기타→기타 |
 | v3.3.156 | fix: 바코드 인쇄·카메라 스캔 버튼 작동 안 하던 버그 수정 — innerHTML 로드 시 <script> 미실행 문제로 openBarcodePrintModal 등 전역 함수 미등록됐던 것을, product-management.js 로 이전하고 setupEventListeners에서 버튼 바인딩으로 해결 |
 | v3.3.151 | feat: 상품 내보내기·일괄등록 Payhere 양식 전환 — 내보내기: Payhere 18컬럼(상품명·카테고리·색설정·판매탭노출·재고관리·옵션1~3·SKU·바코드·판매가·부가세·원가·수량·안전재고) 형식으로 출력, 없는 값 빈칸. 일괄등록: Payhere 양식 자동 감지(col0=상품명+col11=SKU) → name·category·price·cost·stock·product_code·barcode 매핑. 양식 템플릿도 Payhere 형식으로 교체 |
