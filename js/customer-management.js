@@ -337,7 +337,49 @@ function attachCustomerGradesEventListeners() {
         };
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
-    
+
+    // 자동 태그 재계산 버튼 (Phase D — RFM 기반)
+    const recalcAutoTagsBtn = document.getElementById('recalc-auto-tags-btn');
+    if (recalcAutoTagsBtn && !recalcAutoTagsBtn.dataset.listenerAdded) {
+        recalcAutoTagsBtn.dataset.listenerAdded = 'true';
+        recalcAutoTagsBtn.onclick = async () => {
+            if (!window.customerRfm) {
+                alert('RFM 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            const rules = [
+                '• 미구매 (주문 0건) / 신규 (1~2건) / 재구매 (5~9건) / 단골 (10건+)',
+                '• 이탈위험 (주문 이력 있고 최근 주문 90일 초과)',
+                '• VIP후보 (누적 구매 50만원 이상)'
+            ].join('\n');
+            if (!confirm(`전체 고객의 자동 태그를 재계산하시겠습니까?\n\n[적용 규칙]\n${rules}\n\n※ 수동으로 추가한 태그는 그대로 보존됩니다.\n※ 변경된 고객은 타임라인에 "tag_change" 로그가 남습니다.`)) return;
+
+            const origHtml = recalcAutoTagsBtn.innerHTML;
+            recalcAutoTagsBtn.disabled = true;
+            recalcAutoTagsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>분석 중…';
+
+            try {
+                const res = await window.customerRfm.recalcAllAutoTags({
+                    onProgress: (done, total) => {
+                        recalcAutoTagsBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>${done}/${total}`;
+                    }
+                });
+                alert(`✅ 자동 태그 재계산 완료\n\n대상: ${res.total}명\n변경: ${res.changed}명\n실패: ${res.errors}명\n\n변경된 고객은 목록 새로고침 후 새 태그가 보입니다.`);
+                if (window.renderCustomersTable) {
+                    const active = document.querySelector('.customer-tab-btn.active, [id^="customer-grade-"].active');
+                    window.renderCustomersTable(active?.dataset?.grade || 'all');
+                }
+            } catch (e) {
+                console.error('❌ 자동 태그 재계산 실패:', e);
+                alert('자동 태그 재계산에 실패했습니다: ' + (e.message || e));
+            } finally {
+                recalcAutoTagsBtn.disabled = false;
+                recalcAutoTagsBtn.innerHTML = origHtml;
+            }
+        };
+        console.log('✅ 자동 태그 재계산 버튼 연결');
+    }
+
     console.log('✅ 고객등급관리 이벤트 리스너 연결 완료');
 }
 

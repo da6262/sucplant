@@ -64,6 +64,9 @@ import { customerLogsManager, CustomerLogsManager } from './features/customers/c
 window.customerLogsManager = customerLogsManager;
 window.CustomerLogsManager = CustomerLogsManager;
 
+// RFM 분석 + 자동 태그 재계산 모듈 (window.customerRfm 로 전역 노출)
+import './features/customers/customerRfmData.js';
+
 // 상품 데이터 모듈 import
 import { 
     ProductDataManager,
