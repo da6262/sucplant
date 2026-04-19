@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.38-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.35-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.36 | feat: 대시보드 강화 — 카테고리별 매출 가로막대 차트 추가, KPI 전일/전월 대비 % 화살표 표시, 차트 3열 확장 + 환경설정 카카오 알림톡 탭(템플릿 승인현황 실시간 조회) + SMS API 인증 저장 수정 + 대기자관리 상태 모달·주문전환·일괄 SMS + 입출고 이력 시스템 |
 | v3.4.38 | fix: 바코드 인쇄 팝업 근본원인 해결 — Chrome 보안정책상 팝업 script에서 자동 window.print() 차단됨. 팝업 구조를 "미리보기 + 인쇄 버튼" 방식으로 전환: 초록 상단바에 인쇄 버튼 표시 → 사용자 클릭 → window.print() → onafterprint로 팝업 자동 닫힘. 라벨 preview(dashed border)와 print-content(@media print만 표시) 분리 |
 | v3.4.37 | style: 바코드 인쇄 모달 크기 확대 — modal-lg → modal-xl, 본문 높이 60vh → 72vh |
 | v3.4.36 | fix: 바코드 모달 "전체 선택" 버튼 토글 동작 — 첫 클릭 시 전체 선택(버튼 텍스트 "전체 해제"), 재클릭 시 전체 해제(버튼 텍스트 "전체 선택")로 단일 버튼 토글 처리 |
