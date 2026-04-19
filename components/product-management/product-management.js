@@ -2710,9 +2710,27 @@ function _initBarcodeSizePicker() {
     }
     customBox.classList.toggle('hidden', preset.value !== 'custom');
 
+    const _updateHint = () => {
+        const hint = document.getElementById('barcode-size-hint');
+        if (!hint) return;
+        if (preset.value === 'custom') {
+            const w = document.getElementById('barcode-size-w')?.value || '?';
+            const h = document.getElementById('barcode-size-h')?.value || '?';
+            hint.textContent = `${w} × ${h} mm`;
+        } else {
+            const [w, h] = preset.value.split('x');
+            hint.textContent = `${w} × ${h} mm`;
+        }
+    };
+    _updateHint();
+
     if (!preset.dataset.bound) {
         preset.addEventListener('change', () => {
             customBox.classList.toggle('hidden', preset.value !== 'custom');
+            _updateHint();
+        });
+        ['barcode-size-w', 'barcode-size-h'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', _updateHint);
         });
         preset.dataset.bound = '1';
     }
