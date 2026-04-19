@@ -2687,6 +2687,13 @@ window.openBarcodePrintModal = function() {
     document.getElementById('barcode-print-modal')?.classList.remove('hidden');
 
     _initBarcodeSizePicker();
+
+    // 체크박스 변경 시 미리보기 업데이트 (이벤트 위임)
+    if (list && !list.dataset.previewBound) {
+        list.addEventListener('change', () => window.updateBarcodePreview());
+        list.dataset.previewBound = '1';
+    }
+    setTimeout(() => window.updateBarcodePreview(), 50);
 };
 
 function _initBarcodeSizePicker() {
@@ -2721,6 +2728,7 @@ function _initBarcodeSizePicker() {
             const [w, h] = preset.value.split('x');
             hint.textContent = `${w} × ${h} mm`;
         }
+        window.updateBarcodePreview?.();
     };
     _updateHint();
 
@@ -2752,6 +2760,44 @@ function _getBarcodeLabelSize() {
     try { localStorage.setItem('barcodeLabelSize', JSON.stringify({ W, H })); } catch {}
     return { W, H };
 }
+
+window.updateBarcodePreview = function() {
+    const box = document.getElementById('barcode-preview-box');
+    if (!box || !window.JsBarcode) return;
+    const { W, H } = _getBarcodeLabelSize();
+    const selected = [...document.querySelectorAll('.barcode-check:checked')].map(c => c.dataset.id);
+    const products = (window.productDataManager?.farm_products || [])
+        .filter(p => selected.includes(p.id) && p.barcode);
+    if (!products.length) {
+        box.innerHTML = '<span class="text-xs text-muted">상품을 선택하면<br>미리보기가 표시됩니다</span>';
+        return;
+    }
+    const p = products[0];
+    const PX_PER_MM = 3.7795;
+    const maxW = 160;
+    const scale = Math.min(1, maxW / (W * PX_PER_MM));
+    const displayW = Math.round(W * PX_PER_MM * scale);
+    const displayH = Math.round(H * PX_PER_MM * scale);
+    const bcHeight = Math.max(18, Math.min(80, Math.round(H * 0.6 * 10) / 10));
+    const infoFontPt = Math.max(3.5, Math.min(9, (W * H) / 120));
+    const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    try {
+        window.JsBarcode(svg, p.barcode, { format:'EAN13', width:0.8*scale, height:bcHeight*scale, fontSize:6*scale, margin:1, displayValue:true });
+    } catch {
+        window.JsBarcode(svg, p.barcode, { format:'CODE128', width:0.8*scale, height:bcHeight*scale, fontSize:6*scale, margin:1, displayValue:true });
+    }
+    const svgStr = new XMLSerializer().serializeToString(svg);
+    const name = (p.name||'').replace(/</g,'&lt;');
+    const price = p.price ? Number(p.price).toLocaleString()+'원' : '';
+    box.innerHTML = `
+        <div class="text-2xs text-muted mb-1">${selected.length}개 선택 · ${W}×${H}mm</div>
+        <div style="background:#fff;border:1px solid #CBD5E1;border-radius:4px;width:${displayW}px;height:${displayH}px;display:flex;flex-direction:column;align-items:center;justify-content:center;overflow:hidden;padding:1px 2px 2px;">
+            ${svgStr}
+            <div style="font-size:${infoFontPt*scale*1.333}px;font-weight:700;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;line-height:1.1;">${name}&nbsp;${price}</div>
+        </div>
+        ${products.length>1?`<div class="text-2xs text-muted mt-1">+${products.length-1}개 더</div>`:''}
+    `;
+};
 
 window.selectAllBarcodes = function(checked) {
     document.querySelectorAll('.barcode-check').forEach(c => c.checked = checked);
@@ -2829,7 +2875,7 @@ window.printBarcodeLabels = function() {
             }
         </style></head><body>
         ${labels}
-        <script>window.onload=()=>{window.print();}<\/script>
+        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
     </body></html>`);
     win.document.close();
 };
