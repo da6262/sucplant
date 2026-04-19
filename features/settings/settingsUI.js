@@ -52,6 +52,10 @@ export function showSettingsTab(tabName) {
                     break;
                 case 'sms':
                     loadSMSSettings();
+                    loadSmsApiConfig();
+                    break;
+                case 'kakao':
+                    loadKakaoSettings();
                     break;
             }
         } else {
@@ -1032,6 +1036,112 @@ function initSettingsEventListeners() {
         console.error('❌ 환경설정 이벤트 리스너 설정 실패:', error);
     }
 }
+
+// ── SMS API 설정 로드/저장 ──
+function loadSmsApiConfig() {
+    try {
+        const cfg = window.settingsDataManager?.getAllSettings()?.smsConfig || {};
+        const keyEl = document.getElementById('sms-api-key');
+        const secretEl = document.getElementById('sms-api-secret');
+        const fromEl = document.getElementById('sms-from-number');
+        if (keyEl) keyEl.value = cfg.apiKey || '';
+        if (secretEl) secretEl.value = cfg.apiSecret || '';
+        if (fromEl) fromEl.value = cfg.from || '';
+
+        // 저장 버튼
+        const saveBtn = document.getElementById('save-sms-config-btn');
+        if (saveBtn && !saveBtn.dataset.listenerAdded) {
+            saveBtn.dataset.listenerAdded = 'true';
+            saveBtn.addEventListener('click', async () => {
+                const apiKey = document.getElementById('sms-api-key')?.value.trim();
+                const apiSecret = document.getElementById('sms-api-secret')?.value.trim();
+                const from = document.getElementById('sms-from-number')?.value.trim().replace(/[^0-9]/g, '');
+                if (!apiKey || !apiSecret) { alert('API Key와 Secret을 입력해주세요.'); return; }
+                try {
+                    await window.settingsDataManager.updateSetting('smsConfig', 'apiKey', apiKey);
+                    await window.settingsDataManager.updateSetting('smsConfig', 'apiSecret', apiSecret);
+                    if (from) await window.settingsDataManager.updateSetting('smsConfig', 'from', from);
+                    await window.settingsDataManager.saveSettings();
+                    alert('SMS API 설정이 저장되었습니다.');
+                } catch (e) {
+                    console.error('SMS 설정 저장 실패:', e);
+                    alert('저장 실패: ' + e.message);
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('SMS API 설정 로드 실패:', e);
+    }
+}
+
+// ── 카카오 알림톡 설정 ──
+async function loadKakaoSettings() {
+    // 템플릿 상태 확인 버튼
+    const checkBtn = document.getElementById('kakao-check-status-btn');
+    if (checkBtn && !checkBtn.dataset.listenerAdded) {
+        checkBtn.dataset.listenerAdded = 'true';
+        checkBtn.addEventListener('click', checkKakaoTemplateStatus);
+    }
+    // 자동 로드
+    await checkKakaoTemplateStatus();
+}
+
+async function checkKakaoTemplateStatus() {
+    const container = document.getElementById('kakao-templates-list');
+    if (!container) return;
+    container.innerHTML = '<p class="text-muted text-sm py-2"><i class="fas fa-spinner fa-spin mr-1"></i>조회 중...</p>';
+
+    try {
+        const cfg = window.settingsDataManager?.getAllSettings()?.smsConfig || {};
+        const apiKey = cfg.apiKey || 'NCSMOXRMGQAODZLK';
+        const apiSecret = cfg.apiSecret || '3KYQNOP16SZPKTBXFKPMB9UKTFRWI066';
+        const pfId = window.KAKAO_CONFIG?.pfId || 'KA01PF250905143602736PcFaTjYyszo';
+
+        // Solapi API로 템플릿 조회
+        const date = new Date().toISOString();
+        const salt = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2,'0')).join('');
+        const enc = new TextEncoder();
+        const key = await crypto.subtle.importKey('raw', enc.encode(apiSecret), { name: 'HMAC', hash: 'SHA-256' }, false, ['sign']);
+        const sig = await crypto.subtle.sign('HMAC', key, enc.encode(date + salt));
+        const signature = Array.from(new Uint8Array(sig)).map(b => b.toString(16).padStart(2,'0')).join('');
+        const authHeader = `HMAC-SHA256 apiKey=${apiKey}, date=${date}, salt=${salt}, signature=${signature}`;
+
+        const res = await fetch(`https://api.solapi.com/kakao/v2/templates?channelId=${pfId}`, {
+            headers: { 'Authorization': authHeader }
+        });
+        const data = await res.json();
+        const templates = (data.templateList || []).filter(t => t.channelId === pfId);
+
+        if (templates.length === 0) {
+            container.innerHTML = '<p class="text-muted text-sm py-2">등록된 템플릿이 없습니다.</p>';
+            return;
+        }
+
+        const STATUS_BADGE = {
+            'APPROVED': '<span class="badge badge-success">승인</span>',
+            'PENDING': '<span class="badge badge-warning">검수중</span>',
+            'REJECTED': '<span class="badge badge-danger">반려</span>',
+        };
+
+        container.innerHTML = templates.map(t => `
+            <div class="p-3 rounded-lg mb-2" style="border:1px solid var(--border);background:#fff;">
+                <div class="flex items-center justify-between mb-1">
+                    <strong class="text-sm">${t.name}</strong>
+                    ${STATUS_BADGE[t.status] || `<span class="badge badge-neutral">${t.status}</span>`}
+                </div>
+                <p class="text-xs text-muted" style="white-space:pre-wrap;max-height:60px;overflow:hidden;">${(t.content || '').substring(0, 120)}${t.content?.length > 120 ? '...' : ''}</p>
+                <div class="text-xs text-muted mt-1">ID: ${t.templateId}</div>
+            </div>
+        `).join('');
+
+    } catch (e) {
+        console.error('카카오 템플릿 조회 실패:', e);
+        container.innerHTML = '<p class="text-danger text-sm py-2">조회 실패: ' + e.message + '</p>';
+    }
+}
+
+window.loadSmsApiConfig = loadSmsApiConfig;
+window.loadKakaoSettings = loadKakaoSettings;
 
 // 전역 함수들 등록
 window.showSettingsTab = showSettingsTab;

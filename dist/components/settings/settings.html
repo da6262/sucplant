@@ -22,6 +22,7 @@
             <button id="settings-tab-orders"    class="settings-tab-btn"><i class="fas fa-tasks"></i><span>주문상태</span></button>
             <button id="settings-tab-customers" class="settings-tab-btn"><i class="fas fa-crown"></i><span>고객등급</span></button>
             <button id="settings-tab-sms"       class="settings-tab-btn"><i class="fas fa-sms"></i><span>SMS</span></button>
+            <button id="settings-tab-kakao"    class="settings-tab-btn"><i class="fas fa-comment-dots"></i><span>카카오</span></button>
         </div>
     </div>
 
@@ -258,11 +259,74 @@
              SMS 설정 — 용도별 카드 (v3.3.139+)
              ══════════════════════════════════════════ -->
         <div id="settings-sms-section" class="settings-content hidden">
+            <!-- API 인증 정보 -->
+            <div class="flex items-center px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
+                <span class="text-xs font-semibold text-body">Solapi API 인증</span>
+                <span class="flex-1"></span>
+                <button id="save-sms-config-btn" class="btn-primary btn-xs"><i class="fas fa-save"></i>API 설정 저장</button>
+            </div>
+            <div class="p-3 border-b" style="border-color:var(--border-light);">
+                <div class="grid grid-cols-3 gap-3">
+                    <div>
+                        <label class="form-label">API Key</label>
+                        <input type="text" id="sms-api-key" class="form-control" placeholder="Solapi API Key">
+                    </div>
+                    <div>
+                        <label class="form-label">API Secret</label>
+                        <input type="password" id="sms-api-secret" class="form-control" placeholder="Solapi API Secret">
+                    </div>
+                    <div>
+                        <label class="form-label">발신번호</label>
+                        <input type="tel" id="sms-from-number" class="form-control" placeholder="01012345678">
+                    </div>
+                </div>
+            </div>
+
+            <!-- SMS 템플릿 -->
             <div class="flex items-center px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
                 <span class="text-xs font-semibold text-body">SMS 문자 템플릿</span>
-                <span class="text-xs text-muted ml-2">— 발신번호는 일반 탭 연락처 사용 · 카드 클릭 또는 ✎ 로 수정</span>
+                <span class="text-xs text-muted ml-2">— 카드 클릭 또는 ✎ 로 수정</span>
             </div>
             <div id="sms-templates-list" class="sms-card-grid"></div>
+        </div>
+
+        <!-- ══════════════════════════════════════════
+             카카오 알림톡 설정
+             ══════════════════════════════════════════ -->
+        <div id="settings-kakao-section" class="settings-content hidden">
+            <div class="flex items-center px-3 py-1.5 border-b bg-section" style="border-color:var(--border-light);">
+                <span class="text-xs font-semibold text-body">카카오 알림톡 연동 현황</span>
+                <span class="flex-1"></span>
+                <button id="kakao-check-status-btn" class="btn-info btn-xs"><i class="fas fa-sync"></i>상태 확인</button>
+            </div>
+            <div class="p-4">
+                <!-- 채널 정보 -->
+                <div class="mb-4 p-3 rounded-lg" style="background:var(--bg-light);border:1px solid var(--border);">
+                    <div class="flex items-center gap-2 mb-2">
+                        <i class="fas fa-comment-dots text-info"></i>
+                        <strong class="text-sm">카카오 비즈니스 채널</strong>
+                    </div>
+                    <div id="kakao-channel-info" class="text-sm text-secondary">
+                        <p>채널명: <strong>경산다육농장</strong></p>
+                        <p>검색 ID: <strong>suplant</strong></p>
+                        <p>연동: <span class="badge badge-success">Solapi 연동 완료</span></p>
+                    </div>
+                </div>
+
+                <!-- 템플릿 현황 -->
+                <div class="mb-2">
+                    <strong class="text-sm text-heading">등록된 알림톡 템플릿</strong>
+                </div>
+                <div id="kakao-templates-list" class="space-y-2">
+                    <p class="text-muted text-sm py-2">"상태 확인" 버튼을 클릭하면 최신 현황을 조회합니다.</p>
+                </div>
+
+                <!-- 발송 방식 안내 -->
+                <div class="mt-4 p-3 rounded-lg text-xs" style="background:#F0FDF4;border:1px solid #86EFAC;">
+                    <strong class="text-brand"><i class="fas fa-info-circle mr-1"></i>발송 방식</strong>
+                    <p class="mt-1 text-secondary">SMS 발송 시 카카오 알림톡을 먼저 시도합니다. 템플릿이 승인되지 않았거나 발송 실패 시 자동으로 SMS로 폴백됩니다.</p>
+                </div>
+            </div>
         </div>
 
     </div><!-- /콘텐츠 영역 -->
