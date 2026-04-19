@@ -2875,7 +2875,7 @@ window.printBarcodeLabels = function() {
             }
         </style></head><body>
         ${labels}
-        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();}<\/script>
+        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();window.addEventListener('focus',()=>setTimeout(()=>window.close(),300));}<\/script>
     </body></html>`);
     win.document.close();
 };
