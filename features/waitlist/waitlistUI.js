@@ -140,7 +140,12 @@ export class WaitlistUI {
 
             // 헤더 체크박스 전체선택 연결
             if (window.SelectAll) {
-                window.SelectAll.attach('select-all-waitlist', '.waitlist-checkbox');
+                window.SelectAll.attach('select-all-waitlist', '.waitlist-checkbox', (checkedIds) => {
+                    const bar = document.getElementById('waitlist-bulk-bar');
+                    const countEl = document.getElementById('waitlist-bulk-count');
+                    if (bar) bar.classList.toggle('hidden', checkedIds.length === 0);
+                    if (countEl) countEl.textContent = checkedIds.length;
+                });
             }
 
             // 통계 업데이트
@@ -476,42 +481,49 @@ export class WaitlistUI {
      */
     updateStatus(waitlistId) {
         try {
-            console.log('🔄 대기자 상태 변경:', waitlistId);
-            
-            const statusOptions = [
-                { value: '대기중', label: '대기중', color: 'orange' },
-                { value: '연락완료', label: '연락완료', color: 'blue' },
-                { value: '주문전환', label: '주문전환', color: 'green' },
-                { value: '취소', label: '취소', color: 'red' }
-            ];
-            
             const currentWaitlist = waitlistDataManager.getWaitlistById(waitlistId);
-            if (!currentWaitlist) {
-                alert('대기자 정보를 찾을 수 없습니다.');
-                return;
-            }
-            
-            const statusList = statusOptions.map(option => 
-                `${option.value}:${option.label}:${option.color}`
-            ).join('\n');
-            
-            const newStatus = prompt(
-                `현재 상태: ${currentWaitlist.status}\n\n변경할 상태를 선택하세요:\n${statusList}`,
-                currentWaitlist.status
-            );
-            
-            if (newStatus && newStatus !== currentWaitlist.status) {
-                const success = waitlistDataManager.updateWaitlistStatus(waitlistId, newStatus);
-                if (success) {
-                    this.renderWaitlistTable();
-                    alert('대기자 상태가 변경되었습니다.');
-                } else {
-                    alert('상태 변경에 실패했습니다.');
-                }
-            }
+            if (!currentWaitlist) { alert('대기자 정보를 찾을 수 없습니다.'); return; }
+
+            const existing = document.getElementById('waitlist-status-modal');
+            if (existing) existing.remove();
+
+            const statuses = [
+                { value: '대기중', icon: 'fa-clock', color: 'var(--warn)' },
+                { value: '연락완료', icon: 'fa-phone-alt', color: 'var(--info)' },
+                { value: '주문전환', icon: 'fa-shopping-cart', color: 'var(--primary)' },
+                { value: '취소', icon: 'fa-times-circle', color: 'var(--danger)' },
+            ];
+
+            const modal = document.createElement('div');
+            modal.id = 'waitlist-status-modal';
+            modal.className = 'modal-overlay';
+            modal.style.zIndex = '600';
+            modal.innerHTML = `
+                <div class="modal-container modal-sm" style="max-width:340px;">
+                    <div class="modal-header">
+                        <span class="modal-title"><i class="fas fa-exchange-alt text-info mr-2"></i>상태 변경</span>
+                        <button class="modal-close-btn" onclick="document.getElementById('waitlist-status-modal').remove()"><i class="fas fa-times text-sm"></i></button>
+                    </div>
+                    <div class="modal-body" style="padding:12px;">
+                        <p class="text-xs text-secondary mb-2">${(currentWaitlist.customer_name || '').replace(/</g,'&lt;')} · ${currentWaitlist.product_name || ''}</p>
+                        <div class="flex flex-col gap-2">
+                            ${statuses.map(s => `
+                                <button class="flex items-center gap-2 px-3 py-2 rounded text-sm text-left w-full ${currentWaitlist.status === s.value ? 'font-bold' : ''}"
+                                    style="border:1px solid ${currentWaitlist.status === s.value ? s.color : '#e0e0e0'};background:${currentWaitlist.status === s.value ? s.color + '11' : '#fff'};"
+                                    onclick="window._applyWaitlistStatus('${waitlistId}','${s.value}')">
+                                    <i class="fas ${s.icon}" style="color:${s.color};width:16px;"></i>
+                                    ${s.value}
+                                    ${currentWaitlist.status === s.value ? '<span class="text-xs text-muted ml-auto">현재</span>' : ''}
+                                </button>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.addEventListener('click', (e) => { if (e.target === modal) modal.remove(); });
         } catch (error) {
             console.error('❌ 대기자 상태 변경 실패:', error);
-            alert('상태 변경 중 오류가 발생했습니다.');
         }
     }
 
@@ -913,3 +925,98 @@ export const waitlistUI = new WaitlistUI();
 if (typeof window !== 'undefined') {
     window.waitlistUI = waitlistUI;
 }
+
+// ── 상태 변경 적용 (모달에서 호출) ──
+window._applyWaitlistStatus = async function(waitlistId, newStatus) {
+    const modal = document.getElementById('waitlist-status-modal');
+    if (modal) modal.remove();
+
+    const w = window.waitlistDataManager?.getWaitlistById(waitlistId);
+    if (!w || w.status === newStatus) return;
+
+    const success = await window.waitlistDataManager.updateWaitlistStatus(waitlistId, newStatus);
+    if (!success) { alert('상태 변경에 실패했습니다.'); return; }
+
+    // 주문전환 시 → 주문 등록 폼으로 이동
+    if (newStatus === '주문전환') {
+        const doOrder = confirm(`${w.customer_name}님의 대기 상품 "${w.product_name}"을 주문 등록하시겠습니까?`);
+        if (doOrder && window.openOrderModal) {
+            await window.openOrderModal(null, {
+                customerName: w.customer_name,
+                customerPhone: w.customer_phone,
+            });
+            // 상품 검색 필드에 대기 상품명 자동 입력
+            setTimeout(() => {
+                const searchEl = document.getElementById('product-search');
+                if (searchEl) {
+                    searchEl.value = w.product_name || '';
+                    searchEl.dispatchEvent(new Event('input'));
+                    searchEl.focus();
+                }
+            }, 300);
+        }
+    }
+
+    // 연락완료 시 → SMS 발송 제안
+    if (newStatus === '연락완료' && w.customer_phone) {
+        const doSms = confirm('입고 알림 문자를 발송할까요?');
+        if (doSms) {
+            try {
+                if (window.sendWaitlistSMS) {
+                    await window.sendWaitlistSMS(w, w.product_name, 1);
+                } else if (window.openCustomerSMSModal) {
+                    window.openCustomerSMSModal(w.customer_phone, w.customer_name);
+                }
+            } catch (e) {
+                console.error('SMS 발송 실패:', e);
+            }
+        }
+    }
+
+    if (window.waitlistUI) window.waitlistUI.renderWaitlistTable();
+};
+
+// ── 대기자 일괄 SMS 발송 ──
+window._waitlistBulkSMS = async function() {
+    const checked = [...document.querySelectorAll('.waitlist-checkbox:checked')];
+    if (checked.length === 0) { alert('대기자를 선택해주세요.'); return; }
+
+    if (!confirm(`선택된 ${checked.length}명에게 입고 알림을 발송합니다.\n계속하시겠습니까?`)) return;
+
+    let ok = 0, fail = 0;
+    for (const cb of checked) {
+        const id = cb.dataset.waitlistId;
+        const w = window.waitlistDataManager?.getWaitlistById(id);
+        if (!w || !w.customer_phone) { fail++; continue; }
+        try {
+            if (window.sendWaitlistSMS) {
+                await window.sendWaitlistSMS(w, w.product_name, 1);
+            }
+            await window.waitlistDataManager.updateWaitlistStatus(id, '연락완료');
+            ok++;
+        } catch (e) { fail++; }
+    }
+
+    alert(`입고 알림 발송 완료\n성공: ${ok}건 / 실패: ${fail}건`);
+    if (window.waitlistUI) window.waitlistUI.renderWaitlistTable();
+};
+
+// ── 대기자 일괄 상태 변경 ──
+window._waitlistBulkStatus = async function(newStatus) {
+    const checked = [...document.querySelectorAll('.waitlist-checkbox:checked')];
+    if (checked.length === 0) { alert('대기자를 선택해주세요.'); return; }
+
+    if (!confirm(`선택된 ${checked.length}건을 "${newStatus}"(으)로 변경합니다.`)) return;
+
+    let ok = 0;
+    for (const cb of checked) {
+        const id = cb.dataset.waitlistId;
+        try {
+            await window.waitlistDataManager.updateWaitlistStatus(id, newStatus);
+            ok++;
+        } catch (e) { /* skip */ }
+    }
+
+    alert(`${ok}건 상태 변경 완료`);
+    if (window.waitlistUI) window.waitlistUI.renderWaitlistTable();
+};
