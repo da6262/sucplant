@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.18-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.34-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.34 | fix: 주문 저장 불가 수정 — `features/orders/orderUI.js#saveOrder` 에 `const savedOrderId` 가 같은 블록 안에서 2회 선언되어(v3.4.33 입출고 이력 패치에서 앞쪽 선언 추가 시 뒷쪽 기존 선언 미제거) 모듈 파싱 SyntaxError → 주문 탭 전반 동작 불가. 뒤쪽 중복 선언 제거, 794 라인 단일 선언 유지. dist/ 동기화 포함 |
 | v3.4.33 | feat: 입출고 이력 시스템 — farm_stock_logs 테이블 추가(in/out/adjust/order/cancel/return), 주문 등록 시 자동 재고 차감 기록, 재고 일괄 수정 시 기록, 상품 상세 모달에 입출고 이력 탭 추가(주문이력/입출고이력 전환) |
 | v3.4.31 | feat: 상품관리 대폭 개선 — ①이미지 썸네일·품절 배지·재고 색상 강조(빨강/주황) ②매입가·마진율 컬럼 ③상품 상세 모달(주문이력·재고가치) ④재고 일괄 수정 ⑤카테고리별 통계 바 ⑥바코드 모달 필드 추가 ⑦버그 정리 ⑧카카오 알림톡 4템플릿 등록+스마트 발송 |
 | v3.4.16 | feat: 일괄 SMS 발송 — 체크박스로 주문 선택 후 템플릿(주문확인/입금확인/배송안내 등) 선택하여 일괄 발송. 진행률 표시, 주문확인 템플릿 시 입금대기 상태 자동 전환. 고객명 컬럼 너비 축소, SMS 라벨 간결화("발송 4/18"), sms_sent_at DB 기록 추가, loadOrders await 적용 |

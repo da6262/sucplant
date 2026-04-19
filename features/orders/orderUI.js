@@ -819,7 +819,6 @@ export async function saveOrder() {
             }
 
             // 저장+문자 버튼으로 저장한 경우 → 주문확인 SMS 발송
-            const savedOrderId = data && data[0] ? data[0].id : null;
             if (window._orderSaveAndSMS && savedOrderId) {
                 window._orderSaveAndSMS = false;
                 try {
