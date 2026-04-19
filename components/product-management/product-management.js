@@ -2854,33 +2854,90 @@ window.printBarcodeLabels = function() {
         </div>`;
     }).join('');
 
-    const win = window.open('', '_blank', 'width=400,height=300');
-    win.document.write(`<!DOCTYPE html><html><head><title>바코드 라벨</title>
+    const labelCount = products.length;
+    const win = window.open('', '_blank', 'width=480,height=360');
+    win.document.write(`<!DOCTYPE html><html><head><title>바코드 라벨 인쇄</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
-            body { font-family: 'Malgun Gothic', sans-serif; background: #fff; }
+            body { font-family: 'Malgun Gothic', sans-serif; background: #f8f8f8; }
+            #print-bar {
+                position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+                background: #16a34a; color: #fff;
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 8px 14px; gap: 10px;
+                font-size: 13px;
+            }
+            #print-bar span { opacity: 0.9; }
+            #btn-do-print {
+                background: #fff; color: #16a34a;
+                border: none; border-radius: 6px;
+                padding: 6px 18px; font-size: 14px; font-weight: 700;
+                cursor: pointer; white-space: nowrap;
+            }
+            #btn-do-print:hover { background: #f0fdf4; }
+            #preview-area {
+                margin-top: 48px; padding: 16px;
+                display: flex; flex-wrap: wrap; gap: 8px; justify-content: center;
+            }
+            .label-preview {
+                width: ${W * 3.78}px; height: ${H * 3.78}px;
+                border: 1px dashed #aaa; background: #fff;
+                display: flex; flex-direction: column;
+                align-items: center; justify-content: center;
+                padding: 2px 5px; overflow: hidden;
+            }
+            .label-preview svg { max-width: 100%; height: auto; display: block; }
+            .label-preview .info {
+                font-size: ${infoFontPt}pt; font-weight: 700;
+                text-align: center; width: 100%;
+                overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+                margin-top: 1px; line-height: 1.1;
+            }
+            @media print {
+                #print-bar { display: none !important; }
+                #preview-area { display: none !important; }
+                body { background: #fff; margin: 0; padding: 0; }
+                #print-content { display: block !important; }
+                @page { size: ${W}mm ${H}mm; margin: 0; }
+            }
+            #print-content { display: none; }
             .label {
                 width: ${W}mm; height: ${H}mm;
                 display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
                 padding: 0.5mm ${padH}mm 0.5mm;
                 overflow: hidden;
+                page-break-after: always;
             }
+            .label:last-child { page-break-after: avoid; }
             .label svg { max-width: 100%; height: auto; display: block; }
-            .info {
+            .label .info {
                 font-size: ${infoFontPt}pt; font-weight: 700;
                 text-align: center; width: 100%;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                 margin-top: 0.5mm; line-height: 1.1;
             }
-            .break { page-break-after: always; }
-            @media print {
-                body { margin: 0; }
-                @page { size: ${W}mm ${H}mm landscape; margin: 0; }
-            }
         </style></head><body>
-        ${labels}
-        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();const mql=window.matchMedia('print');mql.addEventListener('change',e=>{if(!e.matches)setTimeout(()=>window.close(),200);});if(window.opener){window.opener.addEventListener('focus',function h(){window.opener.removeEventListener('focus',h);setTimeout(()=>window.close(),200);});}}<\/script>
+        <div id="print-bar">
+            <span>라벨 ${labelCount}장 준비됨 (${W}×${H}mm)</span>
+            <button id="btn-do-print" onclick="doPrint()">🖨 인쇄</button>
+        </div>
+        <div id="preview-area">${labels.replace(/class="label[^"]*"/g, 'class="label-preview"')}</div>
+        <div id="print-content">${labels}</div>
+        <script>
+        function doPrint(){
+            document.getElementById('btn-do-print').disabled=true;
+            document.getElementById('btn-do-print').textContent='인쇄 중...';
+            setTimeout(function(){
+                window.print();
+                window.onafterprint=function(){window.close();};
+                var mql=window.matchMedia('print');
+                mql.addEventListener('change',function(e){
+                    if(!e.matches)setTimeout(function(){window.close();},300);
+                });
+            },50);
+        }
+        <\/script>
     </body></html>`);
     win.document.close();
 };
