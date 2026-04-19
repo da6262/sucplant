@@ -2821,22 +2821,27 @@ window.printBarcodeLabels = function() {
 
     // 사용자 선택 라벨 크기 (기본 40×20mm, localStorage 저장)
     const { W, H } = _getBarcodeLabelSize();
-    // 바코드 SVG 높이 (라벨 높이의 약 60%) — 이름·가격 자리 확보
-    const bcHeight = Math.max(18, Math.min(80, Math.round(H * 0.6 * 10) / 10));
-    // 이름·가격 폰트 크기 (라벨 면적에 맞춰 3.5pt ~ 9pt)
-    const infoFontPt = Math.max(3.5, Math.min(9, (W * H) / 120));
+    // EAN-13 at width=1 SVG 폭 ≈ 113px. 라벨 폭으로 스케일 후 목표 바높이(H*0.62) 역산
+    const eanSvgW = 113;
+    const pxPerMm = 96 / 25.4;
+    const scale = (W * pxPerMm) / eanSvgW;
+    const bcHeight = Math.max(20, Math.min(150, Math.round((H * pxPerMm * 0.62) / scale)));
+    // 이름·가격 폰트 크기 — 라벨 높이 기반, 작은 라벨에 맞게 조정
+    const infoFontPt = Math.max(4, Math.min(10, H * 0.35));
+    // 가로 패딩: 양쪽 1.5mm (우측 잘림 방지)
+    const padH = 1.5;
 
     const labels = products.map((p, i) => {
         const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
         try {
             window.JsBarcode(svg, p.barcode, {
                 format: 'EAN13', width: 1.0, height: bcHeight,
-                fontSize: 7, margin: 1, displayValue: true
+                fontSize: Math.round(bcHeight * 0.22), margin: 1, displayValue: true
             });
         } catch(e) {
             window.JsBarcode(svg, p.barcode, {
                 format: 'CODE128', width: 1.0, height: bcHeight,
-                fontSize: 7, margin: 1, displayValue: true
+                fontSize: Math.round(bcHeight * 0.22), margin: 1, displayValue: true
             });
         }
         const svgStr = new XMLSerializer().serializeToString(svg);
@@ -2858,20 +2863,20 @@ window.printBarcodeLabels = function() {
                 width: ${W}mm; height: ${H}mm;
                 display: flex; flex-direction: column;
                 align-items: center; justify-content: center;
-                padding: 0.5mm 1mm 1mm;
+                padding: 0.5mm ${padH}mm 0.5mm;
                 overflow: hidden;
             }
-            .label svg { max-width: 100%; height: auto; }
+            .label svg { max-width: 100%; height: auto; display: block; }
             .info {
                 font-size: ${infoFontPt}pt; font-weight: 700;
                 text-align: center; width: 100%;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
-                margin-top: 0.3mm; line-height: 1.1;
+                margin-top: 0.5mm; line-height: 1.1;
             }
             .break { page-break-after: always; }
             @media print {
                 body { margin: 0; }
-                @page { size: ${W}mm ${H}mm; margin: 0; }
+                @page { size: ${W}mm ${H}mm landscape; margin: 0; }
             }
         </style></head><body>
         ${labels}
