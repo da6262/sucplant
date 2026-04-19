@@ -98,12 +98,17 @@ class DashboardComponent {
         });
 
         // 차트 기간 버튼
-        const chartButtons = document.querySelectorAll('[id^="chart-"]');
-        chartButtons.forEach(btn => {
-            btn.addEventListener('click', (e) => {
-                this.handleChartPeriodChange(e.target.id);
+        const chartPeriodContainer = document.getElementById('chart-period-btns');
+        if (chartPeriodContainer) {
+            chartPeriodContainer.addEventListener('click', (e) => {
+                const btn = e.target.closest('.chart-period-btn');
+                if (!btn) return;
+                chartPeriodContainer.querySelectorAll('.chart-period-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                const days = parseInt(btn.dataset.period) || 7;
+                this.setupSalesTrendChart(days);
             });
-        });
+        }
 
         // 빠른 업무 버튼
         const quickMap = {
@@ -112,7 +117,7 @@ class DashboardComponent {
             'quick-packaging-labels':() => this.navigateToSection('orders'),
             'quick-new-customer':    () => { this.navigateToSection('customers'); setTimeout(() => { if (window.openCustomerModal) window.openCustomerModal(); }, 400); },
             'quick-add-waitlist':    () => { this.navigateToSection('waitlist'); setTimeout(() => { if (window.orderSystem?.openWaitlistModal) window.orderSystem.openWaitlistModal(); }, 400); },
-            'quick-excel-export':    () => { if (window.exportToExcel) window.exportToExcel(); },
+            'quick-excel-export':    () => { if (window.exportLogenExcel) window.exportLogenExcel(); else this.navigateToSection('orders'); },
             'quick-stock-update':    () => this.navigateToSection('products'),
         };
         Object.entries(quickMap).forEach(([id, fn]) => {
@@ -281,10 +286,179 @@ class DashboardComponent {
      */
     renderDashboard() {
         this.updateLastUpdatedDisplay();
+        this.updateSalesKPI();
         this.updateSummaryCards();
         this.renderRecentOrders();
+        this.renderTopProducts();
+        this.renderOpsEfficiency();
+        this.renderCustomerAnalysis();
         this.renderStockAlerts();
-        this.renderSystemStatus();
+        this.setupSalesTrendChart(this._chartPeriod || 7);
+        this.setupOrderStatusChart();
+    }
+
+    /** 매출 KPI 카드 */
+    updateSalesKPI() {
+        const orders = this.data.orders || [];
+        const fmt = (n) => '₩' + (n || 0).toLocaleString('ko-KR');
+        const toLD = (d) => { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
+        const today = toLD(new Date());
+        const thisMonth = today.slice(0, 7);
+        const valid = orders.filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const todayO = valid.filter(o => o.order_created_at && toLD(o.order_created_at) === today);
+        const monthO = valid.filter(o => o.order_created_at && toLD(o.order_created_at).startsWith(thisMonth));
+        const todayS = todayO.reduce((s,o) => s + (o.total_amount||0), 0);
+        const monthS = monthO.reduce((s,o) => s + (o.total_amount||0), 0);
+        const avgO = monthO.length > 0 ? Math.round(monthS / monthO.length) : 0;
+        const customers = this.data.customers || [];
+        const newC = customers.filter(c => { const d = c.registration_date || c.created_at; return d && toLD(d).startsWith(thisMonth); });
+        const phoneOrders = {}; valid.forEach(o => { const p = (o.customer_phone_last4||'').trim(); if (p) phoneOrders[p] = (phoneOrders[p]||0)+1; });
+        const totalB = Object.keys(phoneOrders).length;
+        const repeatB = Object.values(phoneOrders).filter(c => c>=2).length;
+        const repeatRate = totalB > 0 ? Math.round((repeatB/totalB)*100) : 0;
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        set('kpi-today-sales', fmt(todayS)); set('kpi-today-orders', `${todayO.length}건`);
+        set('kpi-month-sales', fmt(monthS)); set('kpi-month-orders', `${monthO.length}건`);
+        set('kpi-avg-order', fmt(avgO)); set('kpi-total-customers', `고객 ${customers.length}명`);
+        set('kpi-new-customers', `${newC.length}명`); set('kpi-repeat-rate', `재구매 ${repeatRate}%`);
+    }
+
+    /** 인기 상품 TOP 5 */
+    renderTopProducts() {
+        const container = document.getElementById('top-products-list');
+        if (!container) return;
+        const orders = this.data.orders || [];
+        const pc = {};
+        orders.forEach(o => {
+            if (['주문취소','환불완료'].includes(o.order_status)) return;
+            (o.order_items_summary||'').split(',').forEach(item => {
+                const t = item.trim(); if (!t) return;
+                const m = t.match(/^(.+?)\s+(\d+)(?:개|건)$/);
+                if (m) { pc[m[1].trim()] = (pc[m[1].trim()]||0) + (parseInt(m[2])||1); }
+                else { const m2 = t.match(/^(.+?)\s+외\s+(\d+)건$/); if (m2) pc[m2[1].trim()] = (pc[m2[1].trim()]||0)+parseInt(m2[2])+1; else pc[t] = (pc[t]||0)+1; }
+            });
+        });
+        const sorted = Object.entries(pc).sort((a,b) => b[1]-a[1]).slice(0,5);
+        if (!sorted.length) { container.innerHTML = '<p class="text-muted text-center py-4">데이터 없음</p>'; return; }
+        const max = sorted[0][1];
+        const colors = ['text-brand','text-info','text-purple-500','text-warn','text-muted'];
+        container.innerHTML = sorted.map(([name,qty],i) => `
+            <div class="flex items-center gap-2 py-1">
+                <span class="font-bold ${colors[i]} w-4 text-right">${i+1}</span>
+                <div class="flex-1 min-w-0">
+                    <div class="flex justify-between"><span class="truncate text-body">${name}</span><span class="text-muted tabular-nums flex-shrink-0 ml-1">${qty}건</span></div>
+                    <div class="h-1 rounded-full bg-gray-100 mt-0.5"><div class="h-1 rounded-full bg-green-400" style="width:${Math.round((qty/max)*100)}%"></div></div>
+                </div>
+            </div>`).join('');
+    }
+
+    /** 운영 효율 */
+    renderOpsEfficiency() {
+        const orders = this.data.orders || [];
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const total = orders.length;
+        const completed = orders.filter(o => o.order_status === '배송완료').length;
+        const cancelled = orders.filter(o => ['주문취소','환불완료'].includes(o.order_status)).length;
+
+        // 배송 완료율
+        const deliveryRate = total > 0 ? Math.round((completed / total) * 100) : 0;
+        set('ops-delivery-rate', `${deliveryRate}%`);
+
+        // 취소율
+        const cancelRate = total > 0 ? Math.round((cancelled / total) * 100) : 0;
+        set('ops-cancel-rate', `${cancelRate}%`);
+
+        // 주문→배송 평균 소요일 (d_day 활용)
+        const shippedOrders = orders.filter(o => o.order_status === '배송완료' && o.d_day != null);
+        const avgDays = shippedOrders.length > 0
+            ? (shippedOrders.reduce((s,o) => s + Math.abs(parseInt(o.d_day)||0), 0) / shippedOrders.length).toFixed(1)
+            : '-';
+        set('ops-avg-ship-days', `${avgDays}일`);
+
+        // 입금대기 3일+ 건수
+        const overdue = orders.filter(o => o.order_status === '입금대기' && parseInt(o.d_day) >= 3).length;
+        set('ops-overdue-count', `${overdue}건`);
+
+        // 파이프라인 바
+        const pipeline = document.getElementById('ops-pipeline');
+        if (pipeline) {
+            const statusFlow = ['주문접수','입금대기','입금확인','상품준비','배송준비','배송중','배송완료'];
+            const colors = ['bg-gray-300','bg-yellow-300','bg-yellow-400','bg-blue-300','bg-purple-300','bg-sky-400','bg-green-400'];
+            const counts = statusFlow.map(s => orders.filter(o => o.order_status === s).length);
+            const max = Math.max(...counts, 1);
+            pipeline.innerHTML = statusFlow.map((s, i) => {
+                const pct = Math.max(Math.round((counts[i] / max) * 100), counts[i] > 0 ? 8 : 2);
+                return `<div class="flex flex-col items-center flex-1">
+                    <div class="w-full ${colors[i]} rounded" style="height:${Math.max(pct * 0.3, 3)}px"></div>
+                    <span class="text-3xs text-muted mt-0.5">${s.replace('주문','').replace('배송','배')}</span>
+                    <span class="text-3xs font-bold">${counts[i]}</span>
+                </div>`;
+            }).join('');
+        }
+    }
+
+    /** 고객 분석 */
+    renderCustomerAnalysis() {
+        const orders = this.data.orders || [];
+        const customers = this.data.customers || [];
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
+        const fmt = (n) => '₩' + (n||0).toLocaleString('ko-KR');
+
+        set('cust-total', customers.length);
+
+        // 고객별 총 구매금액
+        const valid = orders.filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const custSpend = {};
+        valid.forEach(o => {
+            const name = o.customer_name || '미확인';
+            custSpend[name] = (custSpend[name] || 0) + (o.total_amount || 0);
+        });
+        const buyers = Object.keys(custSpend).length;
+
+        // 재구매 고객 (2건 이상 주문)
+        const custOrderCount = {};
+        valid.forEach(o => { const n = o.customer_name || '미확인'; custOrderCount[n] = (custOrderCount[n]||0)+1; });
+        const repeatCount = Object.values(custOrderCount).filter(c => c >= 2).length;
+        set('cust-repeat', repeatCount);
+
+        // 평균 구매금액
+        const totalSpend = Object.values(custSpend).reduce((s,v) => s+v, 0);
+        const avgSpend = buyers > 0 ? Math.round(totalSpend / buyers) : 0;
+        set('cust-avg-spend', fmt(avgSpend));
+
+        // 등급 분포 바
+        const gradeContainer = document.getElementById('cust-grade-bars');
+        if (gradeContainer) {
+            const gradeCounts = {};
+            customers.forEach(c => { const g = c.grade || 'GENERAL'; gradeCounts[g] = (gradeCounts[g]||0)+1; });
+            const gradeNames = { SEED: '씨앗', SPROUT: '새싹', GREEN_LEAF: '그린', GOLD: '골드', VIP: 'VIP', GENERAL: '일반' };
+            const gradeColors = { SEED: 'bg-yellow-200', SPROUT: 'bg-green-200', GREEN_LEAF: 'bg-green-400', GOLD: 'bg-yellow-400', VIP: 'bg-purple-400', GENERAL: 'bg-gray-300' };
+            const maxG = Math.max(...Object.values(gradeCounts), 1);
+            gradeContainer.innerHTML = Object.entries(gradeCounts)
+                .sort((a,b) => b[1]-a[1])
+                .map(([g, cnt]) => {
+                    const pct = Math.round((cnt/maxG)*100);
+                    return `<div class="flex items-center gap-2">
+                        <span class="w-8 text-2xs text-right text-muted">${gradeNames[g]||g}</span>
+                        <div class="flex-1 h-2 bg-gray-100 rounded-full"><div class="${gradeColors[g]||'bg-gray-300'} h-2 rounded-full" style="width:${pct}%"></div></div>
+                        <span class="w-6 text-2xs tabular-nums text-right">${cnt}</span>
+                    </div>`;
+                }).join('');
+        }
+
+        // VIP 고객 TOP 5
+        const vipContainer = document.getElementById('cust-vip-list');
+        if (vipContainer) {
+            const top5 = Object.entries(custSpend).sort((a,b) => b[1]-a[1]).slice(0,5);
+            if (top5.length === 0) { vipContainer.innerHTML = '<p class="text-muted text-center">데이터 없음</p>'; return; }
+            vipContainer.innerHTML = top5.map(([name, amount], i) => {
+                const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `${i+1}`;
+                return `<div class="flex items-center justify-between py-0.5">
+                    <span><span class="mr-1">${medal}</span><span class="text-body">${name}</span></span>
+                    <span class="tabular-nums text-muted">${fmt(amount)}</span>
+                </div>`;
+            }).join('');
+        }
     }
 
     /**
@@ -408,19 +582,21 @@ class DashboardComponent {
 
         recentOrders.forEach(order => {
             const orderItem = document.createElement('div');
-            orderItem.className = 'flex items-center justify-between p-3 bg-section rounded-lg';
-            const orderLabel = order.order_id ? String(order.order_id).slice(0, 8) + '…' : '주문';
+            orderItem.className = 'flex items-center justify-between px-2 py-1.5 rounded hover:bg-section';
+            const name = (order.customer_name || '-').replace(/</g, '&lt;');
+            const summary = (order.order_items_summary || '').replace(/</g, '&lt;');
             const status = order.order_status || '주문접수';
             const statusClass = getStatusBadge(status);
+            const amount = (order.total_amount || 0).toLocaleString('ko-KR');
             orderItem.innerHTML = `
-                <div class="flex-1">
-                    <div class="text-sm font-medium text-heading">${orderLabel}</div>
-                    <div class="text-xs text-muted">${(order.customer_name || '').replace(/</g, '&lt;')}</div>
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-1.5">
+                        <span class="font-medium text-body">${name}</span>
+                        <span class="badge ${statusClass}">${status}</span>
+                    </div>
+                    <div class="text-2xs text-muted truncate">${summary || '-'}</div>
                 </div>
-                <div class="flex items-center space-x-2">
-                    <span class="badge ${statusClass}">${status}</span>
-                    <span class="text-xs text-muted">${this.formatCurrency(order.total_amount || 0)}</span>
-                </div>
+                <span class="text-xs font-medium tabular-nums text-heading flex-shrink-0 ml-2">₩${amount}</span>
             `;
             container.appendChild(orderItem);
         });
@@ -542,7 +718,7 @@ class DashboardComponent {
     /**
      * 매출 트렌드 차트 설정
      */
-    setupSalesTrendChart() {
+    setupSalesTrendChart(periodDays) {
         const ctx = document.getElementById('sales-trend-chart');
         if (!ctx) return;
 
@@ -551,7 +727,8 @@ class DashboardComponent {
             this.charts.salesTrend = null;
         }
 
-        const salesData = this.calculateSalesTrendData();
+        if (periodDays) this._chartPeriod = periodDays;
+        const salesData = this.calculateSalesTrendData(this._chartPeriod || 7);
 
         this.charts.salesTrend = new Chart(ctx, {
             type: 'line',
@@ -581,20 +758,14 @@ class DashboardComponent {
                 },
                 scales: {
                     x: {
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
-                        ticks: {
-                            color: 'rgb(156, 163, 175)'
-                        }
+                        grid: { color: 'rgba(0,0,0,0.05)' },
+                        ticks: { color: 'rgb(107,114,128)', font: { size: 11 } }
                     },
                     y: {
                         beginAtZero: true,
-                        grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                        },
+                        grid: { color: 'rgba(0,0,0,0.05)' },
                         ticks: {
-                            color: 'rgb(156, 163, 175)',
+                            color: 'rgb(107,114,128)', font: { size: 11 },
                             callback: function(value) {
                                 return new Intl.NumberFormat('ko-KR', {
                                     style: 'currency',
@@ -636,10 +807,10 @@ class DashboardComponent {
                         'rgb(34, 197, 94)',    // 배송완료
                         'rgb(239, 68, 68)'     // 취소
                     ],
-                    borderWidth: 3,
-                    borderColor: 'rgb(31, 41, 55)',
-                    hoverBorderWidth: 4,
-                    hoverBorderColor: 'rgb(255, 255, 255)'
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                    hoverBorderWidth: 3,
+                    hoverBorderColor: '#fff'
                 }]
             },
             options: {
@@ -647,14 +818,11 @@ class DashboardComponent {
                 maintainAspectRatio: false,
                 plugins: {
                     legend: {
-                        position: 'bottom',
+                        position: 'right',
                         labels: {
-                            color: 'rgb(156, 163, 175)',
-                            font: {
-                                size: 12,
-                                weight: 'bold'
-                            },
-                            padding: 20,
+                            color: 'rgb(75, 85, 99)',
+                            font: { size: 11 },
+                            padding: 8,
                             usePointStyle: true,
                             pointStyle: 'circle'
                         }
@@ -668,31 +836,32 @@ class DashboardComponent {
     /**
      * 매출 트렌드 데이터 계산 (최근 7일)
      */
-    calculateSalesTrendData() {
-        const days = [];
+    calculateSalesTrendData(periodDays = 7) {
+        const labels = [];
         const values = [];
+        const orders = (this.data.orders || []).filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const toLD = (d) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
-        const toLocalDateStr = (d) =>
-            `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-        // 최근 7일 데이터
-        for (let i = 6; i >= 0; i--) {
-            const date = new Date();
-            date.setDate(date.getDate() - i);
-            const dateKey = toLocalDateStr(date);
-
-            const dayOrders = (this.data.orders || []).filter(order => {
-                const d = order.order_created_at ? new Date(order.order_created_at) : null;
-                return d && toLocalDateStr(d) === dateKey;
-            });
-            
-            const daySales = dayOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-            
-            days.push(`${date.getMonth() + 1}/${date.getDate()}`);
-            values.push(daySales);
+        if (periodDays <= 31) {
+            for (let i = periodDays - 1; i >= 0; i--) {
+                const date = new Date(); date.setDate(date.getDate() - i);
+                const dateKey = toLD(date);
+                const daySales = orders.filter(o => o.order_created_at && toLD(new Date(o.order_created_at)) === dateKey)
+                    .reduce((s,o) => s + (o.total_amount||0), 0);
+                labels.push(`${date.getMonth()+1}/${date.getDate()}`);
+                values.push(daySales);
+            }
+        } else {
+            for (let i = 11; i >= 0; i--) {
+                const date = new Date(); date.setMonth(date.getMonth() - i);
+                const monthKey = `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}`;
+                const monthSales = orders.filter(o => o.order_created_at && toLD(new Date(o.order_created_at)).startsWith(monthKey))
+                    .reduce((s,o) => s + (o.total_amount||0), 0);
+                labels.push(`${date.getMonth()+1}월`);
+                values.push(monthSales);
+            }
         }
-        
-        return { labels: days, values: values };
+        return { labels, values };
     }
 
     /**
@@ -715,13 +884,13 @@ class DashboardComponent {
     handleChartPeriodChange(buttonId) {
         // 모든 버튼 비활성화
         document.querySelectorAll('[id^="chart-"]').forEach(btn => {
-            btn.className = 'px-3 py-1 text-xs bg-page text-heading rounded-full hover:bg-gray-200';
+            btn.className = 'px-3 py-1 text-xs bg-page text-heading rounded-full hover:bg-section';
         });
-        
+
         // 선택된 버튼 활성화
         const selectedBtn = document.getElementById(buttonId);
         if (selectedBtn) {
-            selectedBtn.className = 'px-3 py-1 text-xs bg-info-accent text-blue-800 rounded-full hover:bg-blue-200';
+            selectedBtn.className = 'px-3 py-1 text-xs bg-info-accent text-info rounded-full hover:bg-info-accent';
         }
         
         // 차트 업데이트

@@ -4,7 +4,7 @@ const fs   = require('fs');
 const path = require('path');
 const url  = require('url');
 
-const port = 8000;
+const port = parseInt(process.env.PORT, 10) || 8000;
 
 // ─────────────────────────────────────────────
 // 1. js/config.js에서 버전 읽기 (HTML 요청마다 호출되어 최신 값 반영)

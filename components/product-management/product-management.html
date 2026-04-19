@@ -419,10 +419,28 @@
                 <button class="modal-close-btn" onclick="document.getElementById('barcode-print-modal').classList.add('hidden')"><i class="fas fa-times"></i></button>
             </div>
             <div class="modal-body" style="max-height:60vh;overflow-y:auto;">
-                <div class="flex items-center gap-2 mb-3">
-                    <span class="text-xs text-muted">40×20mm 감열 라벨 · 1장 1매 출력</span>
+                <div class="flex items-center gap-2 mb-2 flex-wrap">
+                    <label class="text-xs text-secondary whitespace-nowrap">라벨 크기</label>
+                    <select id="barcode-size-preset" class="input-ui" style="width:auto;min-width:130px;padding:2px 8px;font-size:12px;">
+                        <option value="40x20">40 × 20 mm</option>
+                        <option value="40x30">40 × 30 mm</option>
+                        <option value="50x25">50 × 25 mm</option>
+                        <option value="50x30">50 × 30 mm</option>
+                        <option value="60x40">60 × 40 mm</option>
+                        <option value="80x40">80 × 40 mm</option>
+                        <option value="custom">직접입력</option>
+                    </select>
+                    <div id="barcode-size-custom" class="hidden flex items-center gap-1">
+                        <input id="barcode-size-w" type="number" min="10" max="200" step="1" class="input-ui" style="width:56px;padding:2px 6px;font-size:12px;" placeholder="W">
+                        <span class="text-xs text-muted">×</span>
+                        <input id="barcode-size-h" type="number" min="10" max="200" step="1" class="input-ui" style="width:56px;padding:2px 6px;font-size:12px;" placeholder="H">
+                        <span class="text-xs text-muted">mm</span>
+                    </div>
+                    <span class="text-xs text-muted hidden sm:inline">감열 1장 1매</span>
                     <button onclick="window.selectAllBarcodes(true)" class="btn-secondary btn-xs ml-auto">전체 선택</button>
-                    <button onclick="window.selectAllBarcodes(false)" class="btn-secondary btn-xs">전체 해제</button>
+                </div>
+                <div class="text-xs text-warn mb-2" style="line-height:1.4;">
+                    💡 인쇄 대화상자의 <b>용지 크기</b>도 위와 동일하게 맞춰주세요. 다르면 Chrome 이 비율을 무시하고 출력이 밀립니다.
                 </div>
                 <div id="barcode-product-list" class="grid gap-1" style="grid-template-columns:repeat(3,1fr);"></div>
             </div>

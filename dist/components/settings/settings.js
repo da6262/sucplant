@@ -216,7 +216,17 @@ async function saveGeneralSettings() {
         m.settings.farm.owner = val('farm-owner') || m.settings.farm.owner || '';
         m.settings.farm.phone = val('farm-phone');
         m.settings.farm.address = val('farm-address');
+        m.settings.farm.email = val('farm-email');
+        m.settings.farm.businessNumber = val('farm-business-number');
+        m.settings.farm.bankName = val('farm-bank-name');
+        m.settings.farm.bankAccount = val('farm-bank-account');
+        m.settings.farm.bankHolder = val('farm-bank-holder');
+        m.settings.farm.logoUrl = val('farm-logo-url');
+        m.settings.farm.sidebarTitle = val('farm-sidebar-title');
+        m.settings.farm.sidebarSubtitle = val('farm-sidebar-subtitle');
         await m.saveSettings();
+        // 사이드바 즉시 반영
+        if (window.applySidebarLogo) window.applySidebarLogo();
         alert('일반 설정이 저장되었습니다.');
     } catch (err) {
         console.error('❌ 일반 설정 저장 실패:', err);
@@ -238,6 +248,10 @@ async function saveShippingSettings() {
         window.settingsDataManager.settings.shipping.defaultShippingFee = get('default-shipping-fee') ? num('default-shipping-fee') : (window.settingsDataManager.settings.shipping.defaultShippingFee ?? 3000);
         window.settingsDataManager.settings.shipping.freeShippingThreshold = get('free-shipping-threshold') ? num('free-shipping-threshold') : (window.settingsDataManager.settings.shipping.freeShippingThreshold ?? 50000);
         window.settingsDataManager.settings.shipping.remoteAreaShippingFee = get('remote-area-shipping-fee') ? num('remote-area-shipping-fee') : (window.settingsDataManager.settings.shipping.remoteAreaShippingFee ?? 5000);
+        // 로젠택배 설정
+        window.settingsDataManager.settings.shipping.logenShippingFee = get('logen-shipping-fee') ? num('logen-shipping-fee') : (window.settingsDataManager.settings.shipping.logenShippingFee ?? 3800);
+        const logenFreightEl = get('logen-freight-type');
+        if (logenFreightEl) window.settingsDataManager.settings.shipping.logenFreightType = parseInt(logenFreightEl.value, 10) || 10;
         // 배송 방법 목록
         const methodsInput = get('shipping-methods-input');
         if (methodsInput && methodsInput.value.trim()) {
@@ -268,9 +282,19 @@ function syncFormToSettings() {
     if (get('farm-owner')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.owner = val('farm-owner') || m.settings.farm.owner || ''; }
     if (get('farm-phone')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.phone = val('farm-phone'); }
     if (get('farm-address')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.address = val('farm-address'); }
+    if (get('farm-email')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.email = val('farm-email'); }
+    if (get('farm-business-number')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.businessNumber = val('farm-business-number'); }
+    if (get('farm-bank-name')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankName = val('farm-bank-name'); }
+    if (get('farm-bank-account')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankAccount = val('farm-bank-account'); }
+    if (get('farm-bank-holder')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.bankHolder = val('farm-bank-holder'); }
+    if (get('farm-logo-url')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.logoUrl = val('farm-logo-url'); }
+    if (get('farm-sidebar-title')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.sidebarTitle = val('farm-sidebar-title'); }
+    if (get('farm-sidebar-subtitle')) { m.settings.farm = m.settings.farm || {}; m.settings.farm.sidebarSubtitle = val('farm-sidebar-subtitle'); }
     if (get('default-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.defaultShippingFee = num('default-shipping-fee'); }
     if (get('free-shipping-threshold')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.freeShippingThreshold = num('free-shipping-threshold'); }
     if (get('remote-area-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.remoteAreaShippingFee = num('remote-area-shipping-fee'); }
+    if (get('logen-shipping-fee')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.logenShippingFee = num('logen-shipping-fee'); }
+    if (get('logen-freight-type')) { m.settings.shipping = m.settings.shipping || {}; m.settings.shipping.logenFreightType = parseInt(get('logen-freight-type').value, 10) || 10; }
     const smsOrder = get('sms-order-confirm'); const smsPay = get('sms-payment-confirm'); const smsStart = get('sms-shipping-start');
     const smsComplete = get('sms-shipping-complete'); const smsWait = get('sms-waitlist-notify'); const smsOos = get('sms-out-of-stock');
     if (smsOrder || smsPay || smsStart || smsComplete || smsWait || smsOos) {

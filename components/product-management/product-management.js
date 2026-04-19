@@ -2685,7 +2685,55 @@ window.openBarcodePrintModal = function() {
     `).join('');
 
     document.getElementById('barcode-print-modal')?.classList.remove('hidden');
+
+    _initBarcodeSizePicker();
 };
+
+function _initBarcodeSizePicker() {
+    const preset = document.getElementById('barcode-size-preset');
+    const customBox = document.getElementById('barcode-size-custom');
+    const wIn = document.getElementById('barcode-size-w');
+    const hIn = document.getElementById('barcode-size-h');
+    if (!preset || !customBox) return;
+
+    const saved = (() => {
+        try { return JSON.parse(localStorage.getItem('barcodeLabelSize') || 'null'); } catch { return null; }
+    })();
+    if (saved && typeof saved.W === 'number' && typeof saved.H === 'number') {
+        const key = `${saved.W}x${saved.H}`;
+        const hasOption = [...preset.options].some(o => o.value === key);
+        preset.value = hasOption ? key : 'custom';
+        if (!hasOption) {
+            if (wIn) wIn.value = saved.W;
+            if (hIn) hIn.value = saved.H;
+        }
+    }
+    customBox.classList.toggle('hidden', preset.value !== 'custom');
+
+    if (!preset.dataset.bound) {
+        preset.addEventListener('change', () => {
+            customBox.classList.toggle('hidden', preset.value !== 'custom');
+        });
+        preset.dataset.bound = '1';
+    }
+}
+
+function _getBarcodeLabelSize() {
+    const preset = document.getElementById('barcode-size-preset');
+    if (!preset) return { W: 40, H: 20 };
+    let W = 40, H = 20;
+    if (preset.value === 'custom') {
+        W = parseInt(document.getElementById('barcode-size-w')?.value, 10) || 40;
+        H = parseInt(document.getElementById('barcode-size-h')?.value, 10) || 20;
+    } else {
+        const [w, h] = preset.value.split('x').map(n => parseInt(n, 10));
+        if (w && h) { W = w; H = h; }
+    }
+    W = Math.max(10, Math.min(200, W));
+    H = Math.max(10, Math.min(200, H));
+    try { localStorage.setItem('barcodeLabelSize', JSON.stringify({ W, H })); } catch {}
+    return { W, H };
+}
 
 window.selectAllBarcodes = function(checked) {
     document.querySelectorAll('.barcode-check').forEach(c => c.checked = checked);
@@ -2700,19 +2748,23 @@ window.printBarcodeLabels = function() {
     const products = (window.productDataManager?.farm_products || [])
         .filter(p => selected.includes(p.id) && p.barcode);
 
-    // 고정: 40×20mm 감열 라벨 1장 1매 방식
-    const W = 40, H = 20;
+    // 사용자 선택 라벨 크기 (기본 40×20mm, localStorage 저장)
+    const { W, H } = _getBarcodeLabelSize();
+    // 바코드 SVG 높이 (라벨 높이의 약 60%) — 이름·가격 자리 확보
+    const bcHeight = Math.max(18, Math.min(80, Math.round(H * 0.6 * 10) / 10));
+    // 이름·가격 폰트 크기 (라벨 면적에 맞춰 3.5pt ~ 9pt)
+    const infoFontPt = Math.max(3.5, Math.min(9, (W * H) / 120));
 
     const labels = products.map((p, i) => {
         const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
         try {
             window.JsBarcode(svg, p.barcode, {
-                format: 'EAN13', width: 1.0, height: 26,
+                format: 'EAN13', width: 1.0, height: bcHeight,
                 fontSize: 7, margin: 1, displayValue: true
             });
         } catch(e) {
             window.JsBarcode(svg, p.barcode, {
-                format: 'CODE128', width: 1.0, height: 26,
+                format: 'CODE128', width: 1.0, height: bcHeight,
                 fontSize: 7, margin: 1, displayValue: true
             });
         }
@@ -2740,7 +2792,7 @@ window.printBarcodeLabels = function() {
             }
             .label svg { max-width: 100%; height: auto; }
             .info {
-                font-size: 5.5pt; font-weight: 700;
+                font-size: ${infoFontPt}pt; font-weight: 700;
                 text-align: center; width: 100%;
                 overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
                 margin-top: 0.3mm; line-height: 1.1;

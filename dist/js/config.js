@@ -5,14 +5,15 @@
  * server.js가 HTML을 서빙할 때 모든 로컬 JS/CSS 경로에 자동으로 ?v=VERSION을 주입합니다.
  * 사이드바 버전 배지도 이 값을 읽습니다.
  */
-const _APP_VER = '3.3.58';           // ← 여기만 수정 (v3.3.0: MINOR 승격, PATCH 리셋)
+const _APP_VER = '3.4.35';           // ← 여기만 수정 (v3.4.0: MINOR 승격 — 고객관리 체계화 A~F 사이클 완결)
+
+
 
 window.APP_VERSION = _APP_VER;
+
 window.APP_CONFIG  = {
-    version  : _APP_VER,
     appName  : '경산다육식물농장 관리시스템',
     shortName: '경산다육',
     github   : 'https://github.com/da6262/sucplant'
 };
 
-console.log(`🌱 경산다육식물농장 관리시스템 v${_APP_VER}`);

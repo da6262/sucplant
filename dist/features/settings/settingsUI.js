@@ -1,6 +1,8 @@
 // 환경설정 UI 관리
 // features/settings/settingsUI.js
 
+import { ensureSupabase } from '../../utils/formatters.js';
+
 // 환경설정 탭 표시
 export function showSettingsTab(tabName) {
     try {
@@ -60,88 +62,87 @@ export function showSettingsTab(tabName) {
     }
 }
 
-// SMS 설정 로드
+// SMS 설정 로드 (v3.3.139+: 용도별 카드 그리드)
 async function loadSMSSettings() {
     try {
         const settings = window.settingsDataManager?.getAllSettings();
         const smsSettings = settings?.smsTemplates || {};
-        const smsConfig   = settings?.smsConfig    || {};
-
-        // API 인증정보 필드 채우기
-        const keyEl    = document.getElementById('sms-api-key');
-        const secretEl = document.getElementById('sms-api-secret');
-        const fromEl   = document.getElementById('sms-from-number');
-        if (keyEl)    keyEl.value    = smsConfig.apiKey    || '';
-        if (secretEl) secretEl.value = smsConfig.apiSecret || '';
-        if (fromEl)   fromEl.value   = smsConfig.from      || '';
-
-        // 인증정보 저장 버튼 이벤트 연결
-        const saveConfigBtn = document.getElementById('save-sms-config-btn');
-        if (saveConfigBtn && !saveConfigBtn._bound) {
-            saveConfigBtn._bound = true;
-            saveConfigBtn.addEventListener('click', async () => {
-                try {
-                    const apiKey    = (document.getElementById('sms-api-key')?.value    || '').trim();
-                    const apiSecret = (document.getElementById('sms-api-secret')?.value || '').trim();
-                    const from      = (document.getElementById('sms-from-number')?.value || '').replace(/[^0-9]/g, '');
-
-                    if (!apiKey || !apiSecret || !from) {
-                        alert('API Key, API Secret, 발신번호를 모두 입력해주세요.');
-                        return;
-                    }
-
-                    if (window.settingsDataManager) {
-                        await window.settingsDataManager.updateSetting('smsConfig', 'apiKey',    apiKey);
-                        await window.settingsDataManager.updateSetting('smsConfig', 'apiSecret', apiSecret);
-                        await window.settingsDataManager.updateSetting('smsConfig', 'from',      from);
-                        if (window.showToast) window.showToast('✅ SMS 인증정보가 저장되었습니다.', 2500);
-                        else alert('SMS 인증정보가 저장되었습니다.');
-                    } else {
-                        alert('설정 저장에 실패했습니다.');
-                    }
-                } catch (e) {
-                    console.error('SMS 인증정보 저장 실패:', e);
-                    alert('저장 실패: ' + e.message);
-                }
-            });
-        }
 
         const container = document.getElementById('sms-templates-list');
         if (!container) return;
         container.innerHTML = '';
 
         const templates = [
-            { key: 'orderConfirm',    label: '주문확인',    fieldId: 'sms-order-confirm',    vars: '{customerName} {orderNumber} {orderDetails} {totalAmount} {shippingFee} {paymentInfo}' },
-            { key: 'paymentConfirm',  label: '입금확인',    fieldId: 'sms-payment-confirm',   vars: '{customerName} {orderNumber}' },
-            { key: 'shippingStart',   label: '배송시작',    fieldId: 'sms-shipping-start',    vars: '{customerName} {orderNumber} {shippingCompany} {trackingNumber}' },
-            { key: 'shippingComplete',label: '배송완료',    fieldId: 'sms-shipping-complete', vars: '{customerName} {orderNumber}' },
-            { key: 'waitlistNotify',  label: '대기품목',    fieldId: 'sms-waitlist-notify',   vars: '{customerName} {productName} {quantity}' },
+            { key: 'orderConfirm',     label: '주문확인',   icon: 'fa-cart-shopping',  variant: 'info',
+              desc: '주문 접수 직후 고객에게 발송',
+              vars: ['{customerName}','{orderNumber}','{orderDetails}','{totalAmount}','{shippingFee}','{paymentInfo}'],
+              fieldId: 'sms-order-confirm' },
+            { key: 'paymentConfirm',   label: '입금확인',   icon: 'fa-check-circle',   variant: 'success',
+              desc: '입금 확인 후 주문 확정 알림',
+              vars: ['{customerName}','{orderNumber}'],
+              fieldId: 'sms-payment-confirm' },
+            { key: 'shippingStart',    label: '배송시작',   icon: 'fa-truck',          variant: 'warn',
+              desc: '송장 입력·출고 시 발송',
+              vars: ['{customerName}','{orderNumber}','{shippingCompany}','{trackingNumber}'],
+              fieldId: 'sms-shipping-start' },
+            { key: 'shippingComplete', label: '배송완료',   icon: 'fa-check-double',   variant: 'success',
+              desc: '배송 완료 확인 알림',
+              vars: ['{customerName}','{orderNumber}'],
+              fieldId: 'sms-shipping-complete' },
+            { key: 'waitlistNotify',   label: '대기품목',   icon: 'fa-bell',           variant: 'purple',
+              desc: '재입고·예약 상품 준비됨 알림',
+              vars: ['{customerName}','{productName}','{quantity}'],
+              fieldId: 'sms-waitlist-notify' },
         ];
+
+        const esc = (s) => String(s ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
         templates.forEach(tpl => {
             const value = smsSettings[tpl.key] || '';
-            const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
-            const item = document.createElement('div');
-            item.id = `sms-item-${tpl.key}`;
-            item.className = 'border-b border-gray-100 last:border-0';
-            item.innerHTML = `
-                <div class="flex items-center gap-3 px-3 py-2 cursor-pointer hover:bg-gray-50 select-none" onclick="toggleSmsTemplate('${tpl.key}')">
-                    <span class="text-xs font-medium text-body w-20 shrink-0">${tpl.label}</span>
-                    <span class="sms-preview text-xs text-muted flex-1 truncate">${preview}</span>
-                    <i class="fas fa-chevron-down text-gray-300 text-xs" id="sms-chevron-${tpl.key}"></i>
+            const isEmpty = !value.trim();
+            const card = document.createElement('div');
+            card.className = `sms-card sms-variant-${tpl.variant}`;
+            card.id = `sms-item-${tpl.key}`;
+            card.dataset.key = tpl.key;
+
+            const varsHtml = tpl.vars.map(v => `<code>${esc(v)}</code>`).join('');
+            const bubbleHtml = isEmpty
+                ? `<div class="sms-phone-empty"><i class="fas fa-pen-to-square"></i> 빈 템플릿 — 클릭해서 작성</div>`
+                : `<div class="sms-bubble">${esc(value)}</div>`;
+
+            // 폰 메시지 말풍선 형태로 렌더 (받는 사람 관점: 왼쪽 정렬 회색 버블)
+            card.innerHTML = `
+                <div class="sms-card-tab">
+                    <span class="sms-tab-icon"><i class="fas ${tpl.icon}"></i></span>
+                    <span class="sms-tab-label">${esc(tpl.label)}</span>
+                    <span class="sms-tab-desc">${esc(tpl.desc)}</span>
+                    <button type="button" class="btn-icon btn-icon-edit sms-card-edit" title="수정"
+                        onclick="event.stopPropagation(); editSmsTemplate('${tpl.key}','${tpl.fieldId}','${tpl.vars.join(' ').replace(/'/g,'\\\'')}')">
+                        <i class="fas fa-pen"></i>
+                    </button>
                 </div>
-                <div class="hidden px-3 pb-3 bg-section" id="sms-detail-${tpl.key}">
-                    <p class="text-xs text-muted mb-1.5">변수: ${tpl.vars}</p>
-                    <textarea id="${tpl.fieldId}" class="input-ui resize-y w-full text-xs" rows="5">${value}</textarea>
-                    <div class="flex justify-end mt-1.5">
-                        <button onclick="saveSingleSmsTemplate('${tpl.key}','${tpl.fieldId}')" class="btn-primary btn-xs">저장</button>
-                    </div>
+                <div class="sms-phone-screen">
+                    <div class="sms-phone-sender">경산다육식물농장</div>
+                    ${bubbleHtml}
+                </div>
+                <div class="sms-card-vars">
+                    <span class="sms-card-vars-label">치환</span>
+                    ${varsHtml}
                 </div>
             `;
-            container.appendChild(item);
+
+            // 카드 전체 클릭으로 편집 모달 (✎ 외 영역)
+            card.addEventListener('click', (e) => {
+                if (e.target.closest('.sms-card-edit')) return;
+                if (typeof window.editSmsTemplate === 'function') {
+                    window.editSmsTemplate(tpl.key, tpl.fieldId, tpl.vars.join(' '));
+                }
+            });
+
+            container.appendChild(card);
         });
 
-        console.log('✅ SMS 설정 로드 완료');
+        console.log('✅ SMS 설정 로드 완료 (카드 그리드)');
     } catch (error) {
         console.error('❌ SMS 설정 로드 실패:', error);
     }
@@ -226,7 +227,31 @@ export function loadGeneralSettings() {
         if (farmOwnerInput) farmOwnerInput.value = settings.farm.owner || '';
         if (farmPhoneInput) farmPhoneInput.value = settings.farm.phone || '';
         if (farmAddressInput) farmAddressInput.value = settings.farm.address || '';
-        
+
+        // 추가 필드 (v3.3.97)
+        const el = (id) => document.getElementById(id);
+        if (el('farm-email')) el('farm-email').value = settings.farm.email || '';
+        if (el('farm-business-number')) el('farm-business-number').value = settings.farm.businessNumber || '';
+        if (el('farm-bank-name')) el('farm-bank-name').value = settings.farm.bankName || '';
+        if (el('farm-bank-account')) el('farm-bank-account').value = settings.farm.bankAccount || '';
+        if (el('farm-bank-holder')) el('farm-bank-holder').value = settings.farm.bankHolder || '';
+
+        // 사이드바 표시명/설명
+        if (el('farm-sidebar-title')) el('farm-sidebar-title').value = settings.farm.sidebarTitle || '';
+        if (el('farm-sidebar-subtitle')) el('farm-sidebar-subtitle').value = settings.farm.sidebarSubtitle || '';
+
+        // 로고
+        const logoUrl = settings.farm.logoUrl || '';
+        if (el('farm-logo-url')) el('farm-logo-url').value = logoUrl;
+        const logoImg = el('farm-logo-img');
+        const logoPlaceholder = el('farm-logo-placeholder');
+        const logoRemoveBtn = el('farm-logo-remove');
+        if (logoUrl && logoImg) {
+            logoImg.src = logoUrl; logoImg.classList.remove('hidden');
+            if (logoPlaceholder) logoPlaceholder.classList.add('hidden');
+            if (logoRemoveBtn) logoRemoveBtn.classList.remove('hidden');
+        }
+
         // 시스템 설정 로드
         const autoBackupToggle = document.getElementById('auto-backup');
         const systemLogsToggle = document.getElementById('system-logs');
@@ -256,6 +281,12 @@ export function loadShippingSettings() {
         if (defaultShippingFeeInput) defaultShippingFeeInput.value = settings.shipping.defaultShippingFee || 3000;
         if (freeShippingThresholdInput) freeShippingThresholdInput.value = settings.shipping.freeShippingThreshold || 50000;
         if (remoteAreaShippingFeeInput) remoteAreaShippingFeeInput.value = settings.shipping.remoteAreaShippingFee ?? 5000;
+
+        // 로젠택배 설정
+        const logenFeeInput = document.getElementById('logen-shipping-fee');
+        const logenFreightSelect = document.getElementById('logen-freight-type');
+        if (logenFeeInput) logenFeeInput.value = settings.shipping.logenShippingFee ?? 3800;
+        if (logenFreightSelect) logenFreightSelect.value = String(settings.shipping.logenFreightType ?? 10);
 
         // 배송 방법 목록
         const methodsInput = document.getElementById('shipping-methods-input');
@@ -290,7 +321,11 @@ export async function loadCustomerGrades() {
             console.log('📅 등급 적용 기간 설정 로드:', settings.gradePeriod);
         }
         
-        const container = document.getElementById('customer-grades-list');
+        // ID 충돌 방지: customer-management.html 의 customer-grades-list 와 구분하기 위해
+        // settings 전용 ID 'settings-customer-grades-list' 를 우선 사용하고,
+        // 구형 환경(ID 변경 전 HTML 캐시 등)을 위한 폴백으로 'customer-grades-list' 도 시도
+        const container = document.getElementById('settings-customer-grades-list')
+                       || document.getElementById('customer-grades-list');
         console.log('📦 컨테이너 요소:', container);
         
         if (!container) {
@@ -299,24 +334,28 @@ export async function loadCustomerGrades() {
         }
         
         container.innerHTML = '';
-        
+
         if (!settings.customerGrades || settings.customerGrades.length === 0) {
             console.warn('⚠️ 고객등급 데이터가 없습니다');
-            container.innerHTML = '<div class="text-muted text-center py-4 text-xs">고객등급이 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="5" class="text-center text-muted py-4 text-xs">고객등급이 없습니다.</td></tr>';
             return;
         }
 
         const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
         settings.customerGrades.forEach((grade, index) => {
-            const row = document.createElement('div');
+            const color = grade.color || '#6B7280';
+            const amountStr = window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원';
+            const row = document.createElement('tr');
             row.id = `grade-row-${index}`;
-            row.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
             row.innerHTML = `
-                <span class="flex-1 text-xs font-medium text-body">${_esc(grade.name)}</span>
-                <span class="text-xs text-secondary w-36 text-right">${window.fmt?.currency(grade.minAmount||0) || (grade.minAmount||0).toLocaleString() + '원'} 이상</span>
-                <span class="text-xs text-secondary w-10 text-right">${grade.discount||0}%</span>
-                <button onclick="startEditGrade(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteCustomerGrade(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block" style="background:${color};"></span></td>
+                <td class="td-primary font-semibold">${_esc(grade.name)}</td>
+                <td class="td-amount text-right">${amountStr} 이상</td>
+                <td class="td-num text-right">${grade.discount||0}%</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="startEditGrade(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteCustomerGrade(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
             container.appendChild(row);
         });
@@ -339,6 +378,7 @@ export async function loadCustomerGrades() {
                         color: '#6B7280',
                         icon: 'fas fa-circle'
                     });
+                    if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
                     setTimeout(() => loadCustomerGrades(), 100);
                 } catch (error) {
                     console.error('❌ 고객등급 추가 실패:', error);
@@ -358,7 +398,7 @@ export async function loadCustomerGrades() {
                     return;
                 }
                 try {
-                    if (!window.supabaseClient) throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
+                    ensureSupabase();
                     const period = periodSelect.value;
                     const { data, error } = await window.supabaseClient
                         .from('farm_settings').select('settings').eq('id', 1).single();
@@ -398,10 +438,8 @@ export async function loadCustomerGrades() {
                         this.disabled = true;
                         this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
                         
-                        if (!window.supabaseClient) {
-                            throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                        }
-                        
+                        ensureSupabase();
+
                         // 1. 모든 고객 조회
                         const { data: customers, error: customersError } = await window.supabaseClient
                             .from('farm_customers')
@@ -489,35 +527,37 @@ export async function loadSalesChannels() {
     try {
         console.log('🏪 판매 채널 관리 로드 (farm_channels)');
         if (!window.salesChannelsDataManager) {
-            container.innerHTML = '<div class="text-muted text-center py-4">판매채널 모듈을 불러올 수 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">판매채널 모듈을 불러올 수 없습니다.</td></tr>';
             return;
         }
         const channels = await window.salesChannelsDataManager.loadChannels();
         container.innerHTML = '';
         if (!channels || channels.length === 0) {
-            container.innerHTML = '<div class="text-muted text-center py-4">판매채널이 없습니다.</div>';
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">판매채널이 없습니다.</td></tr>';
             console.log('✅ 판매 채널 관리 로드 완료 (0개)');
             return;
         }
         const esc2 = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
         channels.forEach((channel, index) => {
             const isActive = channel.is_active !== false;
-            const channelElement = document.createElement('div');
-            channelElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
-            channelElement.innerHTML = `
-                <div class="w-2 h-2 rounded-full shrink-0 ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></div>
-                <span class="text-xs font-medium text-body flex-1">${esc2(channel.name||'')}</span>
-                <span class="text-xs text-muted">${esc2(channel.description||'')}</span>
-                <button onclick="toggleSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
-                <button onclick="editSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="편집"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteSalesChannelByIndex(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+            const desc = esc2(channel.description||'');
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block ${isActive ? 'bg-green-500' : 'bg-gray-300'}"></span></td>
+                <td class="td-primary">${esc2(channel.name||'')}</td>
+                <td class="td-secondary truncate">${desc || '<span class="td-null">—</span>'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="toggleSalesChannelByIndex(${index})" class="btn-icon" title="${isActive?'비활성화':'활성화'}"><i class="fas fa-${isActive?'pause':'play'} text-xs"></i></button>
+                    <button onclick="editSalesChannelByIndex(${index})" class="btn-icon btn-icon-edit" title="편집"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteSalesChannelByIndex(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
-            container.appendChild(channelElement);
+            container.appendChild(tr);
         });
         console.log('✅ 판매 채널 관리 로드 완료:', channels.length, '개');
     } catch (error) {
         console.error('❌ 판매 채널 관리 로드 실패:', error);
-        container.innerHTML = '<div class="text-danger text-center py-4">채널 목록을 불러오지 못했습니다.</div>';
+        container.innerHTML = '<tr><td colspan="4" class="text-center text-danger py-4 text-xs">채널 목록을 불러오지 못했습니다.</td></tr>';
     }
 
     // 채널 추가 버튼 리스너 (1회만 등록)
@@ -561,18 +601,25 @@ export function loadOrderStatuses() {
         if (!container) return;
         
         container.innerHTML = '';
-        
+
+        if (!settings.orderStatuses || settings.orderStatuses.length === 0) {
+            container.innerHTML = '<tr><td colspan="4" class="text-center text-muted py-4 text-xs">주문상태가 없습니다.</td></tr>';
+            return;
+        }
+
         settings.orderStatuses.forEach((status, index) => {
-            const statusElement = document.createElement('div');
-            statusElement.className = 'flex items-center gap-3 px-3 py-2 border-b border-gray-100 last:border-0';
-            statusElement.innerHTML = `
-                <div class="w-2 h-2 rounded-full shrink-0" style="background-color:${status.color||'#6B7280'}"></div>
-                <span class="text-xs font-medium text-body w-20 shrink-0">${status.label||''}</span>
-                <span class="text-xs text-muted flex-1">${status.description||''}</span>
-                <button onclick="editOrderStatus(${index})" class="p-1 text-muted hover:text-blue-500 rounded" title="수정"><i class="fas fa-pencil-alt text-xs"></i></button>
-                <button onclick="deleteOrderStatus(${index})" class="p-1 text-muted hover:text-red-500 rounded" title="삭제"><i class="fas fa-trash text-xs"></i></button>
+            const color = status.color || '#6B7280';
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="text-center"><span class="w-2 h-2 rounded-full inline-block" style="background:${color};"></span></td>
+                <td class="td-primary">${status.label||''}</td>
+                <td class="td-secondary">${status.description||'—'}</td>
+                <td class="whitespace-nowrap text-right">
+                    <button onclick="editOrderStatus(${index})" class="btn-icon btn-icon-edit" title="수정"><i class="fas fa-pen"></i></button>
+                    <button onclick="deleteOrderStatus(${index})" class="btn-icon btn-icon-delete" title="삭제"><i class="fas fa-trash"></i></button>
+                </td>
             `;
-            container.appendChild(statusElement);
+            container.appendChild(tr);
         });
 
         // "상태 추가" 버튼 리스너: initSettingsEventListeners() 가 never called 라서 여기서 1회 바인딩
@@ -622,7 +669,15 @@ export function saveSettings() {
         window.settingsDataManager.updateSetting('farm', 'owner', farmOwner);
         window.settingsDataManager.updateSetting('farm', 'phone', farmPhone);
         window.settingsDataManager.updateSetting('farm', 'address', farmAddress);
-        
+        window.settingsDataManager.updateSetting('farm', 'email', document.getElementById('farm-email')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'businessNumber', document.getElementById('farm-business-number')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankName', document.getElementById('farm-bank-name')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankAccount', document.getElementById('farm-bank-account')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'bankHolder', document.getElementById('farm-bank-holder')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'logoUrl', document.getElementById('farm-logo-url')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'sidebarTitle', document.getElementById('farm-sidebar-title')?.value || '');
+        window.settingsDataManager.updateSetting('farm', 'sidebarSubtitle', document.getElementById('farm-sidebar-subtitle')?.value || '');
+
         // 시스템 설정 저장
         const autoBackup = document.getElementById('auto-backup')?.checked || false;
         const systemLogs = document.getElementById('system-logs')?.checked || false;
@@ -638,7 +693,13 @@ export function saveSettings() {
         
         window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
         window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
-        
+
+        // 주문 폼 배송비 캐시 즉시 갱신
+        if (window.SHIPPING_SETTINGS) {
+            window.SHIPPING_SETTINGS.defaultShippingFee = defaultShippingFee;
+            window.SHIPPING_SETTINGS.freeShippingThreshold = freeShippingThreshold;
+        }
+
         console.log('✅ 설정 저장 완료');
         return true;
     } catch (error) {
@@ -725,10 +786,8 @@ function initSettingsEventListeners() {
                     console.log('📅 등급 적용 기간 저장:', period);
                     
                     // Supabase에 저장
-                    if (!window.supabaseClient) {
-                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                    }
-                    
+                    ensureSupabase();
+
                     const { data, error } = await window.supabaseClient
                         .from('farm_settings')
                         .select('settings')
@@ -778,10 +837,8 @@ function initSettingsEventListeners() {
                     this.disabled = true;
                     this.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i>재계산 중...';
                     
-                    if (!window.supabaseClient) {
-                        throw new Error('Supabase 클라이언트를 찾을 수 없습니다');
-                    }
-                    
+                    ensureSupabase();
+
                     // 1. 모든 고객 조회
                     const { data: customers, error: customersError } = await window.supabaseClient
                         .from('farm_customers')
@@ -798,7 +855,8 @@ function initSettingsEventListeners() {
                     
                     let successCount = 0;
                     let failCount = 0;
-                    
+                    let changedCount = 0;   // 실제 등급이 변경된 고객 수
+
                     for (const customer of customers) {
                         try {
                             let totalPurchaseAmount = 0;
@@ -816,8 +874,9 @@ function initSettingsEventListeners() {
                                 }
                             }
                             if (window.updateCustomerGrade) {
-                                await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
+                                const result = await window.updateCustomerGrade(customer.id, totalPurchaseAmount);
                                 successCount++;
+                                if (result && result.__changed) changedCount++;
                             } else {
                                 console.error('❌ updateCustomerGrade 함수를 찾을 수 없습니다');
                                 failCount++;
@@ -827,9 +886,9 @@ function initSettingsEventListeners() {
                             failCount++;
                         }
                     }
-                    
-                    console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건`);
-                    alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n성공: ${successCount}명\n실패: ${failCount}명`);
+
+                    console.log(`✅ 전체 고객 등급 재계산 완료: 성공 ${successCount}건, 실패 ${failCount}건, 등급 변경 ${changedCount}건`);
+                    alert(`✅ 전체 고객 등급 재계산이 완료되었습니다!\n\n처리: ${successCount}명\n실패: ${failCount}명\n등급 변경: ${changedCount}명 (나머지는 기존 등급 유지)`);
                     
                     // 고객 목록 새로고침
                     if (window.renderCustomersTable) {
@@ -878,7 +937,8 @@ function initSettingsEventListeners() {
                             color: '#6B7280',
                             icon: 'fas fa-circle'
                         });
-                        
+                        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
+
                         // 화면 새로고침
                         setTimeout(() => {
                             loadCustomerGrades();
@@ -941,7 +1001,14 @@ function initSettingsEventListeners() {
                     await window.settingsDataManager.updateSetting('shipping', 'defaultShippingFee', defaultShippingFee);
                     await window.settingsDataManager.updateSetting('shipping', 'freeShippingThreshold', freeShippingThreshold);
                     await window.settingsDataManager.updateSetting('shipping', 'remoteAreaShippingFee', remoteAreaShippingFee);
-                    
+
+                    // 주문 폼 배송비 캐시 즉시 갱신
+                    if (window.SHIPPING_SETTINGS) {
+                        window.SHIPPING_SETTINGS.defaultShippingFee = defaultShippingFee;
+                        window.SHIPPING_SETTINGS.freeShippingThreshold = freeShippingThreshold;
+                        window.SHIPPING_SETTINGS.remoteAreaShippingFee = remoteAreaShippingFee;
+                    }
+
                     alert('✅ 배송 설정이 Supabase에 저장되었습니다.');
                 } catch (error) {
                     console.error('❌ 배송 설정 저장 실패:', error);
@@ -975,6 +1042,57 @@ window.loadSalesChannels = loadSalesChannels;
 window.loadOrderStatuses = loadOrderStatuses;
 window.saveSettings = saveSettings;
 window.initSettingsEventListeners = initSettingsEventListeners;
+
+// 주문 상태 전역 함수
+window.editOrderStatus = function(index) {
+    const settings = window.settingsDataManager?.getAllSettings();
+    const s = settings?.orderStatuses?.[index];
+    if (!s) return;
+    const _esc = v => String(v||'').replace(/"/g,'&quot;');
+    const modal = document.createElement('div');
+    modal.id = 'edit-order-status-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm">
+            <div class="modal-header">
+                <span class="modal-title">주문상태 수정</span>
+                <button class="modal-close-btn" onclick="document.getElementById('edit-order-status-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body space-y-3">
+                <div><label class="form-label">상태명</label><input type="text" id="edit-os-label" class="form-control" value="${_esc(s.label)}"></div>
+                <div><label class="form-label">설명</label><input type="text" id="edit-os-desc" class="form-control" value="${_esc(s.description||'')}"></div>
+                <div class="flex items-center gap-3">
+                    <div class="flex-1"><label class="form-label">색상</label><input type="color" id="edit-os-color" class="form-control h-9" value="${_esc(s.color||'#6B7280')}"></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('edit-order-status-modal').remove()">취소</button>
+                <button class="btn-primary" onclick="saveOrderStatus(${index})">저장</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
+};
+
+window.saveOrderStatus = function(index) {
+    const label = document.getElementById('edit-os-label')?.value.trim();
+    const description = document.getElementById('edit-os-desc')?.value.trim();
+    const color = document.getElementById('edit-os-color')?.value;
+    if (!label) { alert('상태명을 입력해주세요.'); return; }
+    const settings = window.settingsDataManager?.getAllSettings();
+    const existing = settings?.orderStatuses?.[index];
+    window.settingsDataManager.updateOrderStatus(index, { ...existing, label, description, color });
+    document.getElementById('edit-order-status-modal')?.remove();
+    loadOrderStatuses();
+    if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+};
+
+window.deleteOrderStatus = async function(index) {
+    if (!confirm('이 주문상태를 삭제하시겠습니까?')) return;
+    window.settingsDataManager.deleteOrderStatus(index);
+    loadOrderStatuses();
+    if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+};
 
 // 판매채널 관련 전역 함수 — farm_channels 기준 (index → id 변환 후 CRUD)
 window.toggleSalesChannelByIndex = async function(index) {
@@ -1126,6 +1244,7 @@ window.saveInlineGrade = async function(index) {
             minAmount,
             discount
         });
+        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
         setTimeout(() => { loadCustomerGrades(); }, 100);
     } catch (error) {
         console.error('❌ 고객등급 저장 실패:', error);
@@ -1174,9 +1293,12 @@ window.saveEditGrade = async function(index) {
         };
         
         await window.settingsDataManager.updateCustomerGrade(index, updatedGrade);
-        
+
+        // 고객관리 탭 캐시 무효화
+        if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
+
         console.log('✅ 고객등급 편집 완료:', updatedGrade);
-        
+
         // 모달 닫기
         closeEditGradeModal();
         
@@ -1201,6 +1323,9 @@ window.deleteCustomerGrade = async function(index) {
             // 고객등급 삭제
             await window.settingsDataManager.deleteCustomerGrade(index);
 
+            // 고객관리 탭 캐시 무효화
+            if (window.invalidateCustomerUICache) window.invalidateCustomerUICache();
+
             // 화면 새로고침
             setTimeout(() => {
                 loadCustomerGrades();
@@ -1224,13 +1349,14 @@ window.startEditGrade = function(index) {
     if (!g) return;
     const _esc = s => String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     row.innerHTML = `
-        <input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui flex-1 text-xs" placeholder="등급명">
-        <input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui w-28 text-xs text-right" min="0">
-        <span class="text-xs text-muted shrink-0">원 이상</span>
-        <input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui w-14 text-xs text-right" min="0" max="100">
-        <span class="text-xs text-muted shrink-0">%</span>
-        <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs shrink-0">저장</button>
-        <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs shrink-0">취소</button>
+        <td></td>
+        <td><input type="text" id="grade-name-${index}" value="${_esc(g.name)}" class="input-ui text-xs w-full" placeholder="등급명"></td>
+        <td><input type="number" id="grade-minamount-${index}" value="${g.minAmount||0}" class="input-ui text-xs text-right w-full" min="0"></td>
+        <td><input type="number" id="grade-discount-${index}" value="${g.discount||0}" class="input-ui text-xs text-right w-full" min="0" max="100"></td>
+        <td class="whitespace-nowrap text-right">
+            <button onclick="saveInlineGrade(${index})" class="btn-primary btn-xs">저장</button>
+            <button onclick="cancelEditGrade(${index})" class="btn-secondary btn-xs">취소</button>
+        </td>
     `;
     row.querySelector(`#grade-name-${index}`)?.focus();
 };
@@ -1240,17 +1366,32 @@ window.cancelEditGrade = function(index) {
     loadCustomerGrades();
 };
 
-// SMS 템플릿 펼침/접힘 토글
-window.toggleSmsTemplate = function(key) {
-    const detail = document.getElementById(`sms-detail-${key}`);
-    const chevron = document.getElementById(`sms-chevron-${key}`);
-    if (!detail) return;
-    const isHidden = detail.classList.contains('hidden');
-    detail.classList.toggle('hidden', !isHidden);
-    if (chevron) {
-        chevron.classList.toggle('fa-chevron-down', !isHidden);
-        chevron.classList.toggle('fa-chevron-up', isHidden);
-    }
+// SMS 템플릿 편집 모달
+window.editSmsTemplate = function(key, fieldId, vars) {
+    const settings = window.settingsDataManager?.getAllSettings();
+    const value = settings?.smsTemplates?.[key] || '';
+    const existing = document.getElementById('edit-sms-template-modal');
+    if (existing) existing.remove();
+    const modal = document.createElement('div');
+    modal.id = 'edit-sms-template-modal';
+    modal.className = 'modal-overlay';
+    modal.innerHTML = `
+        <div class="modal-container modal-lg">
+            <div class="modal-header">
+                <span class="modal-title">SMS 템플릿 수정</span>
+                <button class="modal-close-btn" onclick="document.getElementById('edit-sms-template-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-xs text-muted mb-2">사용 가능 변수: <span class="font-mono">${vars}</span></p>
+                <textarea id="${fieldId}" class="input-ui resize-y w-full text-sm" rows="10">${value}</textarea>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('edit-sms-template-modal').remove()">취소</button>
+                <button class="btn-primary" onclick="saveSingleSmsTemplate('${key}','${fieldId}')">저장</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 };
 
 // SMS 단일 템플릿 저장
@@ -1259,17 +1400,86 @@ window.saveSingleSmsTemplate = async function(key, fieldId) {
         const value = document.getElementById(fieldId)?.value || '';
         if (window.settingsDataManager) {
             await window.settingsDataManager.updateSetting('smsTemplates', key, value);
-            const item = document.getElementById(`sms-item-${key}`);
-            if (item) {
-                const previewEl = item.querySelector('.sms-preview');
-                if (previewEl) {
-                    const preview = value ? value.split('\n')[0].slice(0, 50) + (value.length > 50 ? '…' : '') : '(미설정)';
-                    previewEl.textContent = preview;
-                }
-            }
+            // 카드 그리드 전체 재렌더 (v3.3.139+: 카드 구조)
+            await loadSMSSettings();
+            // 모달 닫기
+            document.getElementById('edit-sms-template-modal')?.remove();
+            if (window.showToast) window.showToast('저장되었습니다.', 2000);
         }
     } catch (error) {
         console.error('❌ SMS 템플릿 저장 실패:', error);
         alert('저장에 실패했습니다.');
     }
+};
+
+// ── 농장 로고 업로드 ──
+window._handleFarmLogoSelect = async function(input) {
+    const file = input.files?.[0];
+    if (!file) return;
+
+    // 미리보기
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const img = document.getElementById('farm-logo-img');
+        const placeholder = document.getElementById('farm-logo-placeholder');
+        const removeBtn = document.getElementById('farm-logo-remove');
+        if (img) { img.src = e.target.result; img.classList.remove('hidden'); }
+        if (placeholder) placeholder.classList.add('hidden');
+        if (removeBtn) removeBtn.classList.remove('hidden');
+        // 사이드바에도 즉시 반영
+        const sidebarImg = document.getElementById('sidebar-logo-img');
+        const sidebarIcon = document.getElementById('sidebar-logo-icon');
+        if (sidebarImg) { sidebarImg.src = e.target.result; sidebarImg.classList.remove('hidden'); }
+        if (sidebarIcon) sidebarIcon.classList.add('hidden');
+    };
+    reader.readAsDataURL(file);
+
+    // 리사이즈 + 업로드
+    try {
+        if (!window.supabaseClient) { alert('Supabase 미연결'); return; }
+        const blob = await new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                const size = Math.min(img.width, img.height, 400);
+                const canvas = document.createElement('canvas');
+                canvas.width = size; canvas.height = size;
+                canvas.getContext('2d').drawImage(img, 0, 0, size, size);
+                canvas.toBlob(b => resolve(b), 'image/jpeg', 0.8);
+            };
+            img.src = URL.createObjectURL(file);
+        });
+
+        const fileName = `farm-logo-${Date.now()}.jpg`;
+        const { error } = await window.supabaseClient.storage
+            .from('product-images')
+            .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+        if (error) throw error;
+
+        const { data: urlData } = window.supabaseClient.storage
+            .from('product-images')
+            .getPublicUrl(fileName);
+
+        const url = urlData?.publicUrl || '';
+        document.getElementById('farm-logo-url').value = url;
+        console.log('✅ 로고 업로드:', url);
+    } catch (e) {
+        console.error('로고 업로드 실패:', e);
+        alert('로고 업로드 실패: ' + e.message);
+    }
+};
+
+window._removeFarmLogo = function() {
+    const img = document.getElementById('farm-logo-img');
+    const placeholder = document.getElementById('farm-logo-placeholder');
+    const removeBtn = document.getElementById('farm-logo-remove');
+    const urlInput = document.getElementById('farm-logo-url');
+    if (img) { img.src = ''; img.classList.add('hidden'); }
+    if (placeholder) placeholder.classList.remove('hidden');
+    if (removeBtn) removeBtn.classList.add('hidden');
+    if (urlInput) urlInput.value = '';
+    // 사이드바 원복
+    const sidebarImg = document.getElementById('sidebar-logo-img');
+    const sidebarIcon = document.getElementById('sidebar-logo-icon');
+    if (sidebarImg) { sidebarImg.src = ''; sidebarImg.classList.add('hidden'); }
+    if (sidebarIcon) sidebarIcon.classList.remove('hidden');
 };

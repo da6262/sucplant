@@ -36,7 +36,9 @@ export class ShippingUI {
                     </td>
                     <td class="td-primary font-medium">${order.order_number}</td>
                     <td class="td-secondary text-center">${window.fmt.date(order.created_at)}</td>
-                    <td class="td-primary">${order.customer_name}</td>
+                    <td class="td-primary">${window.orderDataManager?._renderCustomerCellWithTags
+                        ? window.orderDataManager._renderCustomerCellWithTags(String(order.customer_name || '').replace(/</g,'&lt;').replace(/>/g,'&gt;'), order)
+                        : order.customer_name}</td>
                     <td class="td-secondary">${order.customer_phone}</td>
                     <td class="td-secondary max-w-xs truncate">${order.shipping_address}</td>
                     <td class="td-primary">${order.product_name}</td>
@@ -372,24 +374,6 @@ export class ShippingUI {
         }
     }
 
-    // 유틸리티 함수들
-    /** @deprecated window.fmt.date() 사용 — v3.3.42에서 중앙 포맷터로 통일 */
-    formatDate(dateString) {
-        return window.fmt?.date(dateString) || new Date(dateString).toLocaleDateString('ko-KR');
-    }
-
-    /** @deprecated window.renderOrderStatusBadge() 사용 — v3.3.42에서 중앙 렌더러로 통일 */
-    getStatusColor(status) {
-        const colors = {
-            '주문접수': 'badge-warning',
-            '입금확인': 'badge-success',
-            '배송준비': 'badge-orange',
-            '배송시작': 'badge-purple',
-            '배송완료': 'badge-sky',
-            '주문취소': 'badge-neutral'
-        };
-        return colors[status] || 'badge-neutral';
-    }
 }
 
 // 전역 인스턴스 생성

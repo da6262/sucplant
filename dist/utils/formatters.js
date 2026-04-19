@@ -137,3 +137,19 @@ export function formatQty(qty, fallback = '0개') {
     if (isNaN(n)) return fallback;
     return n.toLocaleString('ko-KR') + '개';
 }
+
+// ─────────────────────────────────────────────────────────
+// Supabase 클라이언트 보장
+// ─────────────────────────────────────────────────────────
+
+/**
+ * window.supabaseClient 존재 확인. 없으면 Error throw.
+ * DataManager 메서드 진입부에서 1줄로 호출.
+ * @returns {object} supabaseClient
+ */
+export function ensureSupabase() {
+    if (!window.supabaseClient) {
+        throw new Error('Supabase 클라이언트가 초기화되지 않았습니다.');
+    }
+    return window.supabaseClient;
+}

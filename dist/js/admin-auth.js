@@ -149,8 +149,8 @@ class AdminAuth {
     }
 
     async handleLogin() {
-        const username = document.getElementById('username').value;
-        const password = document.getElementById('password').value;
+        const username = (document.getElementById('username').value || '').trim();
+        const password = (document.getElementById('password').value || '').trim();
         
         console.log('🔐 로그인 시도:', { username, password: '***' });
         

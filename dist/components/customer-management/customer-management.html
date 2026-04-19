@@ -5,8 +5,12 @@
     <div class="page-header">
         <h2>고객 관리</h2>
         <div class="action-group">
+            <button id="open-bulk-sms-btn" class="btn-secondary" title="태그·등급으로 고객 세그먼트 필터 후 일괄 문자 발송"><i class="fas fa-bullhorn"></i>일괄 문자</button>
+            <button id="recalc-auto-tags-btn" class="btn-secondary" title="전체 고객 주문 이력으로 자동 태그(신규·단골·이탈위험·VIP후보) 재계산"><i class="fas fa-robot"></i>자동 태그</button>
             <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
-            <button class="btn-secondary" title="내보내기"><i class="fas fa-download"></i></button>
+            <button id="import-customers-btn" class="btn-secondary" title="엑셀 파일로 고객 일괄 가져오기 (전화번호 기준 upsert)"><i class="fas fa-file-import"></i>가져오기</button>
+            <button id="export-customers-btn" class="btn-secondary" title="현재 전체 고객을 엑셀 파일로 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
+            <input type="file" id="import-customers-file" accept=".xlsx,.xls,.csv" style="display:none;">
             <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
         </div>
     </div>
@@ -31,18 +35,14 @@
         <button id="reset-customer-search" class="btn-secondary"><i class="fas fa-refresh"></i></button>
         <span class="text-gray-300">|</span>
         <span class="text-xs text-muted">등급:</span>
-        <button id="customer-grade-all"           class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
-        <button id="customer-grade-BLACK_DIAMOND"  class="customer-tab-btn px-2 py-0.5 rounded text-xs text-body hover:bg-gray-200">블랙 <span id="customer-count-BLACK_DIAMOND">0</span></button>
-        <button id="customer-grade-PURPLE_EMPEROR" class="customer-tab-btn px-2 py-0.5 rounded text-xs text-purple-700 hover:bg-purple-50">퍼플 <span id="customer-count-PURPLE_EMPEROR">0</span></button>
-        <button id="customer-grade-RED_RUBY"       class="customer-tab-btn px-2 py-0.5 rounded text-xs text-red-700 hover:bg-danger">레드 <span id="customer-count-RED_RUBY">0</span></button>
-        <button id="customer-grade-GREEN_LEAF"     class="customer-tab-btn px-2 py-0.5 rounded text-xs text-green-700 hover:bg-success">그린 <span id="customer-count-GREEN_LEAF">0</span></button>
-        <button id="customer-grade-GENERAL"        class="customer-tab-btn px-2 py-0.5 rounded text-xs text-blue-700 hover:bg-info">일반 <span id="customer-count-GENERAL">0</span></button>
+        <button id="customer-grade-all" class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
+        <span id="customer-grade-dynamic-slot"><!-- 환경설정 customerGrades 기반 동적 생성 --></span>
         <span class="text-gray-300">|</span>
         <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-            <input type="checkbox" id="filter-unpaid" class="rounded border-gray-300 text-brand focus:ring-emerald-500"> 미납
+            <input type="checkbox" id="filter-unpaid" class="checkbox-ui"> 미납
         </label>
         <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-            <input type="checkbox" id="filter-waitlist" class="rounded border-gray-300 text-brand focus:ring-emerald-500"> 대기
+            <input type="checkbox" id="filter-waitlist" class="checkbox-ui"> 대기
         </label>
     </div>
 
@@ -51,11 +51,12 @@
         <table class="table-ui min-w-full">
             <thead class="sticky top-0 z-10">
                 <tr>
-                    <th>고객명</th>
-                    <th>전화번호</th>
-                    <th>최근주문</th>
-                    <th>등급</th>
-                    <th>관리</th>
+                    <th class="w-10"><input type="checkbox" id="select-all-customers" class="checkbox-ui"></th>
+                    <th class="min-w-[120px]">고객명</th>
+                    <th class="min-w-[130px]">전화번호</th>
+                    <th class="w-28 text-center">최근주문</th>
+                    <th class="w-24 text-center">등급</th>
+                    <th class="w-28 text-center">관리</th>
                 </tr>
             </thead>
             <tbody id="customer-list-container">
@@ -71,7 +72,7 @@
             <span>오늘 신규 <strong id="customer-status-today">0</strong>명</span>
             <span class="text-gray-300">|</span>
             <label class="flex items-center gap-1 text-muted">표시
-                <select id="customer-page-size" class="border border-gray-200 rounded px-1 py-0.5 text-xs bg-white focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                <select id="customer-page-size" class="select-page-size">
                     <option value="10">10명</option>
                     <option value="20" selected>20명</option>
                     <option value="50">50명</option>
@@ -81,9 +82,96 @@
         </div>
     </footer>
 
+    <!-- 일괄 문자 발송 모달 (Phase E — 세그먼트 SMS) -->
+    <div id="bulk-sms-modal" class="modal-overlay hidden" style="z-index:460;">
+        <div class="modal-container" style="max-width:720px;width:94vw;max-height:90vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
+                <span class="modal-title">
+                    <i class="fas fa-bullhorn" style="color:var(--info);margin-right:6px;"></i>
+                    세그먼트 일괄 문자 발송
+                </span>
+                <button id="bulk-sms-close" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y:auto;flex:1;min-height:0;display:flex;flex-direction:column;gap:12px;">
+                <div class="bulk-sms-section">
+                    <div class="bulk-sms-section-title">① 대상 고객 필터</div>
+                    <div class="form-grid" style="grid-template-columns:1fr 1fr;gap:12px;">
+                        <div>
+                            <label class="form-label">태그</label>
+                            <div id="bulk-sms-tags" class="bulk-sms-chip-picker"></div>
+                            <label class="text-xs text-muted mt-1 flex items-center gap-1 cursor-pointer">
+                                <input type="checkbox" id="bulk-sms-tag-all" class="checkbox-ui"> 선택한 태그 <strong>모두</strong> 포함 (기본: 하나라도)
+                            </label>
+                        </div>
+                        <div>
+                            <label class="form-label">등급</label>
+                            <div id="bulk-sms-grades" class="bulk-sms-chip-picker"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="bulk-sms-section">
+                    <div class="bulk-sms-section-title">② 매치된 고객 <span id="bulk-sms-match-count" class="bulk-sms-count-badge">0명</span></div>
+                    <div id="bulk-sms-preview" class="bulk-sms-preview">필터를 선택하세요.</div>
+                </div>
+                <div class="bulk-sms-section">
+                    <div class="bulk-sms-section-title">③ 메시지</div>
+                    <div class="form-grid" style="grid-template-columns:1fr;gap:8px;">
+                        <div class="flex items-center gap-2">
+                            <label class="form-label m-0 whitespace-nowrap">템플릿</label>
+                            <select id="bulk-sms-template" class="input-ui" style="max-width:200px;">
+                                <option value="">직접 작성</option>
+                            </select>
+                            <span class="text-xs text-muted">치환: <code>{customerName}</code> <code>{customerPhone}</code></span>
+                        </div>
+                        <textarea id="bulk-sms-message" class="input-ui" rows="7"
+                                  placeholder="예) [경산다육식물농장] {customerName}님, 새로운 다육이 입고 소식 전해드립니다..."></textarea>
+                        <div class="flex items-center justify-between text-xs text-muted">
+                            <span>※ 90자 초과 시 LMS(장문)로 과금될 수 있습니다.</span>
+                            <span>현재 <strong id="bulk-sms-len">0</strong>자</span>
+                        </div>
+                    </div>
+                </div>
+                <div id="bulk-sms-progress" class="bulk-sms-progress hidden">
+                    <div class="bulk-sms-progress-text">발송 중 <strong id="bulk-sms-prog-done">0</strong> / <span id="bulk-sms-prog-total">0</span></div>
+                    <div class="bulk-sms-progress-bar"><div id="bulk-sms-prog-fill" class="bulk-sms-progress-fill"></div></div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="bulk-sms-cancel" class="btn-secondary">취소</button>
+                <button id="bulk-sms-send" class="btn-primary" disabled><i class="fas fa-paper-plane"></i> 발송</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 빠른 통화 로그 다이얼로그 (목록 행의 📞 버튼에서 호출) -->
+    <div id="quick-call-log-modal" class="modal-overlay hidden" style="z-index:470;">
+        <div class="modal-container" style="max-width:420px;width:92vw;">
+            <div class="modal-header">
+                <span class="modal-title">
+                    <i class="fas fa-phone" style="color:var(--info);margin-right:6px;"></i>
+                    <span id="quick-call-log-title">통화 기록</span>
+                </span>
+                <button id="quick-call-log-close" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="display:flex;flex-direction:column;gap:8px;">
+                <div id="quick-call-log-meta" class="text-muted text-xs"></div>
+                <input type="text" id="quick-call-log-title-input" class="input-ui"
+                       placeholder="한 줄 요약 (예: 배송 전 전화 요청)" maxlength="200">
+                <textarea id="quick-call-log-body-input" class="input-ui"
+                          placeholder="상세 내용 (선택) — Enter 로 저장, Shift+Enter 줄바꿈"
+                          style="min-height:80px;resize:vertical;font-family:inherit;"></textarea>
+                <div class="text-muted text-xs">※ Esc 취소 · 제목 칸에서 Enter 저장</div>
+            </div>
+            <div class="modal-footer">
+                <button id="quick-call-log-cancel" class="btn-secondary">취소</button>
+                <button id="quick-call-log-save" class="btn-primary"><i class="fas fa-save"></i> 저장</button>
+            </div>
+        </div>
+    </div>
+
     <!-- 고객 상세 팝업 모달 (position:fixed → 뷰포트 중앙, #customers-section 안에 있어야 DOM 보존됨) -->
     <div id="customer-detail-panel" class="modal-overlay hidden" style="z-index:450;">
-        <div class="modal-container" style="max-width:860px;width:92vw;max-height:88vh;display:flex;flex-direction:column;">
+        <div class="modal-container" style="max-width:1040px;width:94vw;max-height:90vh;display:flex;flex-direction:column;">
             <div class="modal-header">
                 <span id="crm-modal-title" class="modal-title">고객 상세</span>
                 <button id="close-crm-panel" class="modal-close-btn" title="닫기"><i class="fas fa-times"></i></button>

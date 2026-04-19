@@ -14,8 +14,9 @@ async function loadCustomerManagementComponent() {
             console.log('⚡ 고객관리 이미 로드됨 — 데이터 갱신 + 이벤트 재연결');
             if (typeof attachCustomerEventListeners === 'function') attachCustomerEventListeners();
             if (typeof attachCustomerGradesEventListeners === 'function') attachCustomerGradesEventListeners();
-            if (window.renderCustomersTable) window.renderCustomersTable('all');
+            // 기존 DOM 유지 → loadCustomers 완료 후 1회만 렌더 (이중 렌더 제거 v3.3.67)
             if (window.customerDataManager) {
+                if (window.prefetchCustomerRenderData) window.prefetchCustomerRenderData();
                 window.customerDataManager.loadCustomers().then(() => {
                     if (window.renderCustomersTable) window.renderCustomersTable('all');
                     if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
@@ -72,6 +73,8 @@ async function runCustomerManagementInit() {
     }
     if (window.customerDataManager) {
         try {
+            // 렌더 쿼리(최근주문일·등급) 캐시를 loadCustomers와 병렬 워밍 (v3.3.67)
+            if (window.prefetchCustomerRenderData) window.prefetchCustomerRenderData();
             await window.customerDataManager.loadCustomers();
             if (window.renderCustomersTable) window.renderCustomersTable('all');
         } catch (error) {
@@ -334,7 +337,94 @@ function attachCustomerGradesEventListeners() {
         };
         console.log('✅ 고객등급 관리 버튼 → 환경설정 이동으로 연결');
     }
-    
+
+    // 엑셀 내보내기·가져오기 (Phase F)
+    const exportBtn = document.getElementById('export-customers-btn');
+    if (exportBtn && !exportBtn.dataset.listenerAdded) {
+        exportBtn.dataset.listenerAdded = 'true';
+        exportBtn.onclick = () => {
+            if (typeof window.exportCustomersToExcel !== 'function') {
+                alert('내보내기 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            window.exportCustomersToExcel();
+        };
+        console.log('✅ 고객 내보내기 버튼 연결');
+    }
+
+    const importBtn = document.getElementById('import-customers-btn');
+    const importFile = document.getElementById('import-customers-file');
+    if (importBtn && importFile && !importBtn.dataset.listenerAdded) {
+        importBtn.dataset.listenerAdded = 'true';
+        importBtn.onclick = () => importFile.click();
+        importFile.onchange = async (e) => {
+            const file = e.target.files?.[0];
+            if (!file) return;
+            if (window.customerImportExport?.openImportDialog) {
+                await window.customerImportExport.openImportDialog(file);
+            }
+            // 같은 파일 다시 선택 가능하도록 리셋
+            e.target.value = '';
+        };
+        console.log('✅ 고객 가져오기 버튼 연결');
+    }
+
+    // 일괄 문자 발송 버튼 (Phase E — 세그먼트 SMS)
+    const bulkSMSBtn = document.getElementById('open-bulk-sms-btn');
+    if (bulkSMSBtn && !bulkSMSBtn.dataset.listenerAdded) {
+        bulkSMSBtn.dataset.listenerAdded = 'true';
+        bulkSMSBtn.onclick = () => {
+            if (typeof window.openBulkSMSModal !== 'function') {
+                alert('일괄 문자 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            window.openBulkSMSModal();
+        };
+        console.log('✅ 일괄 문자 버튼 연결');
+    }
+
+    // 자동 태그 재계산 버튼 (Phase D — RFM 기반)
+    const recalcAutoTagsBtn = document.getElementById('recalc-auto-tags-btn');
+    if (recalcAutoTagsBtn && !recalcAutoTagsBtn.dataset.listenerAdded) {
+        recalcAutoTagsBtn.dataset.listenerAdded = 'true';
+        recalcAutoTagsBtn.onclick = async () => {
+            if (!window.customerRfm) {
+                alert('RFM 모듈이 로드되지 않았습니다.');
+                return;
+            }
+            const rules = [
+                '• 미구매 (주문 0건) / 신규 (1~2건) / 재구매 (5~9건) / 단골 (10건+)',
+                '• 이탈위험 (주문 이력 있고 최근 주문 90일 초과)',
+                '• VIP후보 (누적 구매 50만원 이상)'
+            ].join('\n');
+            if (!confirm(`전체 고객의 자동 태그를 재계산하시겠습니까?\n\n[적용 규칙]\n${rules}\n\n※ 수동으로 추가한 태그는 그대로 보존됩니다.\n※ 변경된 고객은 타임라인에 "tag_change" 로그가 남습니다.`)) return;
+
+            const origHtml = recalcAutoTagsBtn.innerHTML;
+            recalcAutoTagsBtn.disabled = true;
+            recalcAutoTagsBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>분석 중…';
+
+            try {
+                const res = await window.customerRfm.recalcAllAutoTags({
+                    onProgress: (done, total) => {
+                        recalcAutoTagsBtn.innerHTML = `<i class="fas fa-spinner fa-spin"></i>${done}/${total}`;
+                    }
+                });
+                alert(`✅ 자동 태그 재계산 완료\n\n대상: ${res.total}명\n변경: ${res.changed}명\n실패: ${res.errors}명\n\n변경된 고객은 목록 새로고침 후 새 태그가 보입니다.`);
+                if (window.renderCustomersTable) {
+                    const active = document.querySelector('.customer-tab-btn.active, [id^="customer-grade-"].active');
+                    window.renderCustomersTable(active?.dataset?.grade || 'all');
+                }
+            } catch (e) {
+                console.error('❌ 자동 태그 재계산 실패:', e);
+                alert('자동 태그 재계산에 실패했습니다: ' + (e.message || e));
+            } finally {
+                recalcAutoTagsBtn.disabled = false;
+                recalcAutoTagsBtn.innerHTML = origHtml;
+            }
+        };
+        console.log('✅ 자동 태그 재계산 버튼 연결');
+    }
+
     console.log('✅ 고객등급관리 이벤트 리스너 연결 완료');
 }
 
@@ -595,35 +685,70 @@ async function updateCustomerGrade(customerId, totalPurchaseAmount) {
         
         const minVal = Number(newGrade.minAmount ?? newGrade.min_amount ?? 0);
         console.log(`📊 계산된 새 등급: ${newGrade.name} (최소금액: ${minVal.toLocaleString()}원)`);
-        
+
         const gradeCode = newGrade.code || newGrade.grade_code || 'GENERAL';
+
+        // 업데이트 전 기존 등급 조회 (변동 감지용)
+        let oldGradeCode = null;
+        try {
+            const { data: prev } = await window.supabaseClient
+                .from('farm_customers')
+                .select('grade')
+                .eq('id', customerId)
+                .single();
+            oldGradeCode = prev?.grade || null;
+        } catch { /* noop */ }
+
         const { error } = await window.supabaseClient
             .from('farm_customers')
-            .update({ 
+            .update({
                 grade: gradeCode,
                 updated_at: new Date().toISOString()
             })
             .eq('id', customerId);
-        
+
         if (error) {
             console.error('❌ 고객등급 업데이트 실패:', error);
             return;
         }
-        
+
         console.log(`✅ 고객등급 업데이트 완료: ${newGrade.name} (${newGrade.discount}% 할인)`);
-        
+
+        // 등급이 실제로 변경된 경우에만 타임라인 로그 기록
+        const changed = oldGradeCode !== gradeCode;
+        if (changed && window.customerLogsManager) {
+            try {
+                const oldLabel = (grades.find(g => (g.code || g.grade_code) === oldGradeCode)?.name) || oldGradeCode || '-';
+                await window.customerLogsManager.add(customerId, {
+                    log_type: 'grade_change',
+                    title: `등급 변동: ${oldLabel} → ${newGrade.name}`,
+                    metadata: {
+                        old: oldGradeCode,
+                        new: gradeCode,
+                        old_label: oldLabel,
+                        new_label: newGrade.name,
+                        reason: 'auto_period',
+                        period: gradePeriod,
+                        amount: calculatedAmount
+                    }
+                });
+            } catch (e) {
+                console.warn('⚠️ 등급 변동 로그 기록 실패:', e);
+            }
+        }
+
         // 고객 목록 새로고침 (현재 페이지가 고객관리인 경우)
         if (window.renderCustomersTable) {
             window.renderCustomersTable('all');
         }
-        
+
         // 고객 등급별 카운트 업데이트
         if (window.updateCustomerGradeCounts) {
             window.updateCustomerGradeCounts();
         }
-        
-        return newGrade;
-        
+
+        return { ...newGrade, __changed: changed, __oldGrade: oldGradeCode };
+
     } catch (error) {
         console.error('❌ 고객등급 자동 업데이트 실패:', error);
     }
@@ -844,12 +969,12 @@ function cleanupCustomerEventListeners() {
             }
         });
         
-        // 고객 등급 탭 버튼들 정리
-        const gradeTabs = document.querySelectorAll('.customer-tab-btn');
-        gradeTabs.forEach(tab => {
-            const newTab = tab.cloneNode(true);
-            tab.parentNode.replaceChild(newTab, tab);
-        });
+        // 고객 등급 "전체" 탭 리스너 정리 (동적 등급 탭은 renderGradeTabs()에서 관리)
+        const allTab = document.getElementById('customer-grade-all');
+        if (allTab) {
+            const newTab = allTab.cloneNode(true);
+            allTab.parentNode.replaceChild(newTab, allTab);
+        }
         
         // 고객 테이블 관련 이벤트 리스너 정리
         const customerTable = document.getElementById('customers-table');
@@ -1037,24 +1162,18 @@ function attachCustomerEventListeners() {
             console.log('✅ 고객 정렬 이벤트 리스너 연결 완료');
         }
         
-        // 고객 등급별 필터 탭
-        const gradeTabs = document.querySelectorAll('.customer-tab-btn');
-        gradeTabs.forEach(tab => {
-            tab.addEventListener('click', function() {
-                const grade = this.id.replace('customer-grade-', '');
-                console.log('🏷️ 고객 등급 필터:', grade);
-                
-                // 활성 탭 표시
-                gradeTabs.forEach(t => t.classList.remove('active'));
-                this.classList.add('active');
-                
-                // 테이블 필터링 (검색어 유지)
+        // "전체" 등급 탭 리스너 (동적 등급 탭은 renderGradeTabs() 이벤트 위임으로 처리)
+        const gradeAllTab = document.getElementById('customer-grade-all');
+        if (gradeAllTab) {
+            gradeAllTab.addEventListener('click', function() {
+                document.querySelectorAll('.customer-tab-btn').forEach(t => t.classList.remove('active', 'font-medium', 'bg-success'));
+                this.classList.add('active', 'font-medium', 'bg-success');
                 const searchTerm = (document.getElementById('customer-search')?.value || '').trim();
                 if (window.renderCustomersTable) {
-                    window.renderCustomersTable(grade, searchTerm);
+                    window.renderCustomersTable('all', searchTerm);
                 }
             });
-        });
+        }
         console.log('✅ 고객 등급 필터 이벤트 리스너 연결 완료');
         
         // 검색 초기화 버튼

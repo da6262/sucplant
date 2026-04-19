@@ -9,13 +9,16 @@ import { TABLE_MAP, mapTable, getSupabaseTableName } from './utils/helpers.js';
 
 // 페이지 표시 개수 컨트롤 — 전역 window.PageSize 등록 (side-effect import)
 import './utils/pageSize.js';
+// 헤더 체크박스 전체선택 유틸 — 전역 window.SelectAll 등록
+import './utils/selectAll.js';
 
 // ── 공통 데이터 포맷터 (Single Source of Truth) ──────────────
 import {
     formatDate, formatDateTime,
     formatCurrency, formatWon,
     formatPhone, formatQty,
-    nullDash, emptyDash, ND
+    nullDash, emptyDash, ND,
+    ensureSupabase
 } from './utils/formatters.js';
 
 // ── 공통 UI 렌더러 (표준 폼 렌더러 v3.4) ─────────────────────
@@ -45,6 +48,8 @@ window.formatCurrency = formatCurrency;
 window.formatPhone    = formatPhone;
 window.formatQty      = formatQty;
 window.nullDash       = nullDash;
+window.ensureSupabase = ensureSupabase;
+window.showToast      = showToast;
 
 // 고객 데이터 모듈 import
 import { 
@@ -53,7 +58,23 @@ import {
 } from './features/customers/customerData.js';
 
 // 고객 UI 모듈 import
-import { renderCustomersTable } from './features/customers/customerUI.js';
+import { renderCustomersTable, invalidateCustomerUICache } from './features/customers/customerUI.js';
+import { showToast } from './utils/ui-helpers.js';
+
+// 고객 로그(타임라인) 데이터 모듈 import
+import { customerLogsManager, CustomerLogsManager } from './features/customers/customerLogsData.js';
+window.customerLogsManager = customerLogsManager;
+window.CustomerLogsManager = CustomerLogsManager;
+
+// RFM 분석 + 자동 태그 재계산 모듈 (window.customerRfm 로 전역 노출)
+import './features/customers/customerRfmData.js';
+
+// 세그먼트 필터 + 일괄 SMS (Phase E)
+import './features/customers/customerSegment.js';
+import './features/customers/customerSegmentUI.js';
+
+// 엑셀 가져오기 / 내보내기 (Phase F)
+import './features/customers/customerImportExport.js';
 
 // 상품 데이터 모듈 import
 import { 
@@ -161,6 +182,7 @@ window.getSupabaseTableName = getSupabaseTableName;
 
 // customerDataManager 인스턴스 전역 등록
 window.customerDataManager = customerDataManager;
+window.invalidateCustomerUICache = invalidateCustomerUICache;
 
 // productDataManager 인스턴스 전역 등록 (지연 초기화)
 // initializeProductDataManager()가 호출되면 window.productDataManager에 설정됨

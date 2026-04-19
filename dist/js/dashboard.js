@@ -137,8 +137,8 @@ function attachDashboardEventListeners() {
         if (refreshRealtimeBtn) {
             refreshRealtimeBtn.addEventListener('click', function() {
                 console.log('🔄 실시간 데이터 새로고침');
-                if (window.dashboardDataManager && window.dashboardDataManager.refreshDashboard) {
-                    window.dashboardDataManager.refreshDashboard();
+                if (window.dashboardComponent && window.dashboardComponent.refreshDashboard) {
+                    window.dashboardComponent.refreshDashboard();
                 }
             });
             console.log('✅ 새로고침 버튼 이벤트 리스너 연결 완료');
