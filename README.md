@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.35-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.36-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.36 | fix: 바코드 모달 "전체 선택" 버튼 토글 동작 — 첫 클릭 시 전체 선택(버튼 텍스트 "전체 해제"), 재클릭 시 전체 해제(버튼 텍스트 "전체 선택")로 단일 버튼 토글 처리 |
 | v3.4.35 | fix: 바코드 라벨 인쇄 엉망 출력 — 실제 라벨(40×20 아닌 롤) 쓸 때 Chrome 의 `2×4인치` 프린터 preset 이 CSS `@page size` 를 이겨서 경계에 걸쳐 출력되던 문제 해결. ①바코드 모달에 **라벨 크기 선택기** 복원(v3.4.2 에서 제거된 것): 40×20 / 40×30 / 50×25 / 50×30 / 60×40 / 80×40 + **직접입력(W×H mm)**. 선택값 `localStorage.barcodeLabelSize` 저장. ②SVG 바코드 height 와 라벨 폰트 크기를 라벨 면적에 비례해 동적 스케일(`bcHeight = H*0.6`, `infoFontPt = W*H/120` 3.5~9pt clamp). ③인쇄 대화상자 용지 크기도 동일하게 맞추라는 경고 노출. ④"전체 해제" 버튼 제거 — 체크박스 개별 토글로 선택·해제하고, 필요 시 "전체 선택"으로 한 번에 복원하는 단일 액션으로 정리 |
 | v3.4.34 | fix: 주문 저장 불가 수정 — `features/orders/orderUI.js#saveOrder` 에 `const savedOrderId` 가 같은 블록 안에서 2회 선언되어(v3.4.33 입출고 이력 패치에서 앞쪽 선언 추가 시 뒷쪽 기존 선언 미제거) 모듈 파싱 SyntaxError → 주문 탭 전반 동작 불가. 뒤쪽 중복 선언 제거, 794 라인 단일 선언 유지. dist/ 동기화 포함 |
 | v3.4.33 | feat: 입출고 이력 시스템 — farm_stock_logs 테이블 추가(in/out/adjust/order/cancel/return), 주문 등록 시 자동 재고 차감 기록, 재고 일괄 수정 시 기록, 상품 상세 모달에 입출고 이력 탭 추가(주문이력/입출고이력 전환) |

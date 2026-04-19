@@ -2739,6 +2739,13 @@ window.selectAllBarcodes = function(checked) {
     document.querySelectorAll('.barcode-check').forEach(c => c.checked = checked);
 };
 
+window.toggleAllBarcodes = function(btn) {
+    const allChecked = [...document.querySelectorAll('.barcode-check')].every(c => c.checked);
+    const select = !allChecked;
+    document.querySelectorAll('.barcode-check').forEach(c => c.checked = select);
+    btn.textContent = select ? '전체 해제' : '전체 선택';
+};
+
 window.printBarcodeLabels = function() {
     if (!window.JsBarcode) { alert('바코드 라이브러리 로딩 중입니다. 잠시 후 다시 시도해주세요.'); return; }
 
