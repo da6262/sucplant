@@ -2880,7 +2880,7 @@ window.printBarcodeLabels = function() {
             }
         </style></head><body>
         ${labels}
-        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();window.addEventListener('focus',()=>setTimeout(()=>window.close(),300));}<\/script>
+        <script>window.onload=()=>{window.print();window.onafterprint=()=>window.close();const mql=window.matchMedia('print');mql.addEventListener('change',e=>{if(!e.matches)setTimeout(()=>window.close(),200);});if(window.opener){window.opener.addEventListener('focus',function h(){window.opener.removeEventListener('focus',h);setTimeout(()=>window.close(),200);});}}<\/script>
     </body></html>`);
     win.document.close();
 };
