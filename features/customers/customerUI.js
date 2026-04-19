@@ -1025,6 +1025,7 @@ async function showCustomerDetailInPanel(customer) {
                         <div class="timeline-type-chips" id="customer-log-type-chips" role="radiogroup" aria-label="로그 타입">
                             <button type="button" class="type-chip active" data-type="memo"><i class="fas fa-sticky-note"></i> 메모</button>
                             <button type="button" class="type-chip" data-type="call"><i class="fas fa-phone"></i> 통화</button>
+                            <button type="button" class="type-chip" data-type="callback"><i class="fas fa-phone-alt"></i> 콜백요청</button>
                             <button type="button" class="type-chip" data-type="order_note"><i class="fas fa-receipt"></i> 주문메모</button>
                             <button type="button" class="type-chip" data-type="etc"><i class="fas fa-ellipsis-h"></i> 기타</button>
                         </div>
@@ -1091,14 +1092,18 @@ async function showCustomerDetailInPanel(customer) {
                 return;
             }
             try {
+                const meta = type === 'callback' ? { done: 'false' } : {};
                 await window.customerLogsManager.add(customer.id, {
-                    log_type: type, title, body
+                    log_type: type, title, body, metadata: meta
                 });
                 if (titleInput) titleInput.value = '';
                 const bodyEl = document.getElementById('customer-log-body');
                 if (bodyEl) bodyEl.value = '';
-                if (window.showToast) window.showToast('기록이 추가되었습니다.', 1500);
+                const msg = type === 'callback' ? '콜백 요청이 등록되었습니다.' : '기록이 추가되었습니다.';
+                if (window.showToast) window.showToast(msg, 1500);
                 await reloadCustomerTimeline(timelineCtx);
+                // 콜백 배지 카운트 갱신
+                if (type === 'callback' && window.renderCallbackList) window.renderCallbackList();
                 if (titleInput) titleInput.focus();
             } catch (e) {
                 console.error(e);
@@ -2819,3 +2824,90 @@ function initCustomerSortListener() {
 
 // 전역 등록 — 고객관리 컴포넌트 로드 완료 시점에 호출됨
 window.initCustomerSortListener = initCustomerSortListener;
+
+// ── 콜백대기 기능 ──────────────────────────────────────────
+
+async function renderCallbackList() {
+    const tbody = document.getElementById('callback-list-container');
+    if (!tbody) return;
+    tbody.innerHTML = '<tr><td colspan="5" class="text-center py-8 text-muted">불러오는 중...</td></tr>';
+
+    let rows = [];
+    try {
+        rows = await window.customerLogsManager.listPendingCallbacks();
+    } catch (e) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-6 text-danger">조회 실패</td></tr>';
+        return;
+    }
+
+    const badge = document.getElementById('callback-pending-count');
+    if (badge) {
+        badge.textContent = rows.length;
+        badge.style.display = rows.length > 0 ? '' : 'none';
+    }
+
+    if (!rows.length) {
+        tbody.innerHTML = '<tr><td colspan="5" class="text-center py-10 text-muted"><i class="fas fa-check-circle mr-2 text-success"></i>콜백 대기 없음</td></tr>';
+        return;
+    }
+
+    tbody.innerHTML = rows.map(r => {
+        const customer = r.farm_customers || {};
+        const name = (customer.name || '알수없음').replace(/</g, '&lt;');
+        const phone = customer.phone || '';
+        const body = (r.body || r.title || '').replace(/</g, '&lt;');
+        const time = window.fmt ? window.fmt.date(r.created_at) : r.created_at?.slice(0,16).replace('T',' ');
+        return `<tr>
+            <td class="px-2 align-middle td-primary td-link" onclick="if(window.openCustomerModal)openCustomerModal('${r.customer_id}')">${name}</td>
+            <td class="px-2 align-middle td-secondary">${phone}</td>
+            <td class="px-2 align-middle td-body">${body || '<span class="td-null">—</span>'}</td>
+            <td class="px-2 align-middle text-center td-muted whitespace-nowrap">${time}</td>
+            <td class="px-2 align-middle text-center whitespace-nowrap">
+                <button class="btn-primary btn-xs" onclick="window.completeCallback('${r.id}')"><i class="fas fa-check mr-1"></i>완료</button>
+            </td>
+        </tr>`;
+    }).join('');
+}
+
+async function completeCallback(logId) {
+    if (!confirm('콜백 완료 처리하시겠습니까?')) return;
+    try {
+        await window.customerLogsManager.completeCallback(logId);
+        await renderCallbackList();
+    } catch (e) {
+        alert('처리 실패: ' + e.message);
+    }
+}
+
+function initCallbackTabs() {
+    const tabs = document.querySelectorAll('.customers-main-tab');
+    if (!tabs.length || tabs[0].dataset.tabInited) return;
+    tabs[0].dataset.tabInited = 'true';
+
+    tabs.forEach(btn => {
+        btn.addEventListener('click', () => {
+            tabs.forEach(b => {
+                b.classList.remove('border-primary', 'text-primary');
+                b.classList.add('border-transparent', 'text-body');
+            });
+            btn.classList.add('border-primary', 'text-primary');
+            btn.classList.remove('border-transparent', 'text-body');
+
+            const tab = btn.dataset.tab;
+            document.getElementById('customers-panel-list').classList.toggle('hidden', tab !== 'list');
+            document.getElementById('customers-panel-callback').classList.toggle('hidden', tab !== 'callback');
+
+            if (tab === 'callback') renderCallbackList();
+        });
+    });
+
+    // 새로고침 버튼
+    document.getElementById('refresh-callback-list')?.addEventListener('click', renderCallbackList);
+
+    // 배지 초기 카운트
+    renderCallbackList();
+}
+
+window.completeCallback = completeCallback;
+window.renderCallbackList = renderCallbackList;
+window.initCallbackTabs = initCallbackTabs;

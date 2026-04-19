@@ -84,6 +84,7 @@ async function runCustomerManagementInit() {
             }
         }
         if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
+        if (window.initCallbackTabs) window.initCallbackTabs();
         if (typeof attachCustomerEventListeners === 'function') attachCustomerEventListeners();
         if (typeof attachCustomerGradesEventListeners === 'function') attachCustomerGradesEventListeners();
         var phoneInput = document.getElementById('customer-form-phone');

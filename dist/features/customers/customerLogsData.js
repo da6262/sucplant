@@ -49,7 +49,7 @@ class CustomerLogsManager {
      */
     async add(customerId, payload) {
         if (!customerId) throw new Error('customerId 가 필요합니다.');
-        const ALLOWED = ['call', 'memo', 'grade_change', 'tag_change', 'order_note', 'etc'];
+        const ALLOWED = ['call', 'memo', 'grade_change', 'tag_change', 'order_note', 'callback', 'etc'];
         const log_type = payload.log_type;
         if (!ALLOWED.includes(log_type)) {
             throw new Error(`허용되지 않은 log_type: ${log_type}`);
@@ -103,8 +103,36 @@ class CustomerLogsManager {
         grade_change: { label: '등급변동', icon: 'fa-crown',       variant: 'warning' },
         tag_change:   { label: '태그변동', icon: 'fa-tag',         variant: 'purple'  },
         order_note:   { label: '주문메모', icon: 'fa-receipt',     variant: 'success' },
+        callback:     { label: '콜백대기', icon: 'fa-phone-alt',   variant: 'danger'  },
         etc:          { label: '기타',     icon: 'fa-ellipsis-h',  variant: 'neutral' }
     };
+
+    /**
+     * 콜백대기 전체 목록 조회 (완료되지 않은 것만)
+     */
+    async listPendingCallbacks() {
+        const { data, error } = await this._client()
+            .from(this.table)
+            .select('*, farm_customers(name, phone)')
+            .eq('log_type', 'callback')
+            .eq('metadata->>done', 'false')
+            .order('created_at', { ascending: false });
+        if (error) { console.error('❌ 콜백대기 조회 실패:', error); return []; }
+        return data || [];
+    }
+
+    /**
+     * 콜백 완료 처리 (metadata.done = true)
+     */
+    async completeCallback(logId) {
+        const { data: row } = await this._client()
+            .from(this.table).select('metadata').eq('id', logId).single();
+        const meta = { ...(row?.metadata || {}), done: 'true', done_at: new Date().toISOString() };
+        const { error } = await this._client()
+            .from(this.table).update({ metadata: meta }).eq('id', logId);
+        if (error) throw error;
+        return true;
+    }
 }
 
 export const customerLogsManager = new CustomerLogsManager();

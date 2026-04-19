@@ -15,6 +15,19 @@
         </div>
     </div>
 
+    <!-- 메인 탭 (고객목록 / 콜백대기) -->
+    <div class="flex border-b border-gray-200 bg-white px-3 shrink-0">
+        <button id="customers-main-tab-list" class="customers-main-tab px-4 py-2 text-sm font-medium border-b-2 border-primary text-primary" data-tab="list">
+            <i class="fas fa-users mr-1"></i>고객 목록
+        </button>
+        <button id="customers-main-tab-callback" class="customers-main-tab px-4 py-2 text-sm font-medium border-b-2 border-transparent text-body hover:text-primary" data-tab="callback">
+            <i class="fas fa-phone-alt mr-1"></i>콜백대기 <span id="callback-pending-count" class="badge badge-danger ml-1" style="display:none;">0</span>
+        </button>
+    </div>
+
+    <!-- 고객목록 영역 -->
+    <div id="customers-panel-list" class="flex flex-col flex-1 min-h-0">
+
     <!-- 검색 + 필터 한 줄 -->
     <div class="filter-bar">
         <div class="relative">
@@ -81,6 +94,32 @@
             </label>
         </div>
     </footer>
+
+    </div><!-- /customers-panel-list -->
+
+    <!-- 콜백대기 패널 -->
+    <div id="customers-panel-callback" class="flex flex-col flex-1 min-h-0 hidden">
+        <div class="filter-bar">
+            <span class="text-xs text-muted">콜백이 필요한 고객 목록입니다. 완료 처리하면 목록에서 사라집니다.</span>
+            <button id="refresh-callback-list" class="btn-secondary ml-auto"><i class="fas fa-sync-alt"></i> 새로고침</button>
+        </div>
+        <div class="flex-1 overflow-auto">
+            <table class="table-ui min-w-full">
+                <thead class="sticky top-0 z-10">
+                    <tr>
+                        <th class="min-w-[120px]">고객명</th>
+                        <th class="min-w-[130px]">전화번호</th>
+                        <th class="min-w-[200px]">요청 내용</th>
+                        <th class="w-32 text-center">등록 시각</th>
+                        <th class="w-28 text-center">처리</th>
+                    </tr>
+                </thead>
+                <tbody id="callback-list-container">
+                    <tr><td colspan="5" class="text-center py-8 text-muted">불러오는 중...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div><!-- /customers-panel-callback -->
 
     <!-- 일괄 문자 발송 모달 (Phase E — 세그먼트 SMS) -->
     <div id="bulk-sms-modal" class="modal-overlay hidden" style="z-index:460;">
