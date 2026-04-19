@@ -295,6 +295,7 @@ class DashboardComponent {
         this.renderStockAlerts();
         this.setupSalesTrendChart(this._chartPeriod || 7);
         this.setupOrderStatusChart();
+        this.setupCategorySalesChart();
     }
 
     /** 매출 KPI 카드 */
@@ -321,6 +322,34 @@ class DashboardComponent {
         set('kpi-month-sales', fmt(monthS)); set('kpi-month-orders', `${monthO.length}건`);
         set('kpi-avg-order', fmt(avgO)); set('kpi-total-customers', `고객 ${customers.length}명`);
         set('kpi-new-customers', `${newC.length}명`); set('kpi-repeat-rate', `재구매 ${repeatRate}%`);
+
+        // 전일 대비
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        const yesterdayStr = toLD(yesterday);
+        const yesterdayO = valid.filter(o => o.order_created_at && toLD(o.order_created_at) === yesterdayStr);
+        const yesterdayS = yesterdayO.reduce((s,o) => s + (o.total_amount||0), 0);
+        const diffEl = document.getElementById('kpi-today-diff');
+        if (diffEl && yesterdayS > 0) {
+            const diff = todayS - yesterdayS;
+            const pct = Math.round((diff / yesterdayS) * 100);
+            diffEl.innerHTML = diff >= 0
+                ? `<span style="color:var(--primary);"><i class="fas fa-arrow-up"></i> ${pct}%</span>`
+                : `<span style="color:var(--danger);"><i class="fas fa-arrow-down"></i> ${Math.abs(pct)}%</span>`;
+        } else if (diffEl) { diffEl.innerHTML = ''; }
+
+        // 전월 대비
+        const lastMonth = new Date(); lastMonth.setMonth(lastMonth.getMonth() - 1);
+        const lastMonthStr = `${lastMonth.getFullYear()}-${String(lastMonth.getMonth()+1).padStart(2,'0')}`;
+        const lastMonthO = valid.filter(o => o.order_created_at && toLD(o.order_created_at).startsWith(lastMonthStr));
+        const lastMonthS = lastMonthO.reduce((s,o) => s + (o.total_amount||0), 0);
+        const monthDiffEl = document.getElementById('kpi-month-diff');
+        if (monthDiffEl && lastMonthS > 0) {
+            const diff = monthS - lastMonthS;
+            const pct = Math.round((diff / lastMonthS) * 100);
+            monthDiffEl.innerHTML = diff >= 0
+                ? `<span style="color:var(--primary);"><i class="fas fa-arrow-up"></i> ${pct}%</span>`
+                : `<span style="color:var(--danger);"><i class="fas fa-arrow-down"></i> ${Math.abs(pct)}%</span>`;
+        } else if (monthDiffEl) { monthDiffEl.innerHTML = ''; }
     }
 
     /** 인기 상품 TOP 5 */
@@ -829,6 +858,59 @@ class DashboardComponent {
                     }
                 },
                 cutout: '60%'
+            }
+        });
+    }
+
+    /** 카테고리별 매출 차트 */
+    setupCategorySalesChart() {
+        const ctx = document.getElementById('category-sales-chart');
+        if (!ctx) return;
+        if (this.charts.categorySales) { this.charts.categorySales.destroy(); this.charts.categorySales = null; }
+
+        const orders = (this.data.orders || []).filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const products = this.data.products || [];
+
+        // 상품별 카테고리 매핑
+        const productCategoryMap = {};
+        products.forEach(p => { if (p.name) productCategoryMap[p.name.trim()] = p.category || '미분류'; });
+
+        // 주문에서 카테고리별 매출 집계
+        const catSales = {};
+        orders.forEach(o => {
+            const summary = o.order_items_summary || '';
+            // "상품명 외 N건" 패턴에서 대표 상품명 추출
+            const match = summary.match(/^(.+?)\s*(?:외\s+\d+건)?$/);
+            const productName = match ? match[1].trim() : summary.trim();
+            const cat = productCategoryMap[productName] || '기타';
+            catSales[cat] = (catSales[cat] || 0) + (Number(o.total_amount) || 0);
+        });
+
+        const sorted = Object.entries(catSales).sort((a, b) => b[1] - a[1]).slice(0, 8);
+        if (sorted.length === 0) return;
+
+        const colors = ['#16A34A','#2563EB','#9333EA','#F59E0B','#EF4444','#06B6D4','#EC4899','#64748B'];
+
+        this.charts.categorySales = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: sorted.map(([cat]) => cat),
+                datasets: [{
+                    data: sorted.map(([, v]) => v),
+                    backgroundColor: sorted.map((_, i) => colors[i % colors.length] + 'CC'),
+                    borderRadius: 4,
+                    barThickness: 18,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                indexAxis: 'y',
+                plugins: { legend: { display: false } },
+                scales: {
+                    x: { ticks: { callback: v => '₩' + (v >= 10000 ? Math.round(v/10000) + '만' : v.toLocaleString()), font: { size: 10 } }, grid: { display: false } },
+                    y: { ticks: { font: { size: 11 } }, grid: { display: false } }
+                }
             }
         });
     }

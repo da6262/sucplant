@@ -21,12 +21,12 @@
             <div class="app-panel px-3 py-2">
                 <p class="text-2xs text-muted">오늘 매출</p>
                 <p class="text-lg font-bold text-heading tabular-nums" id="kpi-today-sales">₩0</p>
-                <p class="text-2xs text-muted" id="kpi-today-orders">0건</p>
+                <p class="text-2xs" id="kpi-today-orders">0건 <span id="kpi-today-diff" class="text-muted"></span></p>
             </div>
             <div class="app-panel px-3 py-2">
                 <p class="text-2xs text-muted">이번 달 매출</p>
                 <p class="text-lg font-bold text-heading tabular-nums" id="kpi-month-sales">₩0</p>
-                <p class="text-2xs text-muted" id="kpi-month-orders">0건</p>
+                <p class="text-2xs" id="kpi-month-orders">0건 <span id="kpi-month-diff" class="text-muted"></span></p>
             </div>
             <div class="app-panel px-3 py-2">
                 <p class="text-2xs text-muted">평균 주문금액</p>
@@ -68,8 +68,8 @@
             </div>
         </div>
 
-        <!-- 차트 영역 (2열) -->
-        <div class="grid grid-cols-2 gap-2">
+        <!-- 차트 영역 (3열) -->
+        <div class="grid grid-cols-3 gap-2">
             <div class="app-panel px-3 py-2">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-xs font-semibold text-body">매출 추이</h3>
@@ -89,6 +89,14 @@
                 </div>
                 <div style="height:180px;">
                     <canvas id="order-status-chart"></canvas>
+                </div>
+            </div>
+            <div class="app-panel px-3 py-2">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xs font-semibold text-body">카테고리별 매출</h3>
+                </div>
+                <div style="height:180px;">
+                    <canvas id="category-sales-chart"></canvas>
                 </div>
             </div>
         </div>
