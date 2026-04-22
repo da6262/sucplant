@@ -115,16 +115,42 @@
 
             <div class="modal-body" style="padding:12px 16px;">
                 <!-- 탭 전환 -->
-                <div class="flex gap-2 mb-3">
-                    <button onclick="window._switchImportTab?.('table')" class="import-tab-btn btn-primary flex-1" data-tab="table" style="justify-content:center;">
+                <div class="flex gap-2 mb-3 flex-wrap">
+                    <button onclick="window._switchImportTab?.('quick')" class="import-tab-btn btn-primary flex-1" data-tab="quick" style="justify-content:center;min-width:90px;">
+                        <i class="fas fa-bolt mr-1"></i>빠른추가
+                    </button>
+                    <button onclick="window._switchImportTab?.('table')" class="import-tab-btn btn-secondary flex-1" data-tab="table" style="justify-content:center;min-width:90px;">
                         <i class="fas fa-table mr-1"></i>직접 입력
                     </button>
-                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-secondary flex-1" data-tab="manual" style="justify-content:center;">
+                    <button onclick="window._switchImportTab?.('manual')" class="import-tab-btn btn-secondary flex-1" data-tab="manual" style="justify-content:center;min-width:90px;">
                         <i class="fas fa-keyboard mr-1"></i>붙여넣기
                     </button>
-                    <button onclick="window._switchImportTab?.('file')" class="import-tab-btn btn-secondary flex-1" data-tab="file" style="justify-content:center;">
+                    <button onclick="window._switchImportTab?.('file')" class="import-tab-btn btn-secondary flex-1" data-tab="file" style="justify-content:center;min-width:90px;">
                         <i class="fas fa-file-excel mr-1"></i>엑셀 파일
                     </button>
+                </div>
+
+                <!-- 빠른추가 탭 (모바일 최적화: 상품명만 → 엔터로 누적) -->
+                <div id="import-tab-quick">
+                    <p class="text-xs text-muted mb-2">상품명 입력 후 <b>엔터</b> 또는 <b>추가</b> 버튼 → 목록에 누적됩니다. 가격·재고는 나중에 PC에서 보정.</p>
+                    <div class="flex gap-2 mb-2">
+                        <input type="text" id="quick-add-input"
+                            class="form-control flex-1"
+                            style="font-size:16px;padding:12px;"
+                            inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+                            placeholder="예: 에케베리아 라울">
+                        <button id="quick-add-btn" class="btn-primary" style="padding:0 16px;font-size:14px;min-width:70px;">
+                            <i class="fas fa-plus mr-1"></i>추가
+                        </button>
+                    </div>
+                    <div class="flex items-center justify-between mb-1">
+                        <span class="text-xs font-medium text-body">누적 목록</span>
+                        <div class="flex gap-2">
+                            <span id="quick-add-count" class="text-xs text-brand font-semibold">0개</span>
+                            <button id="quick-add-clear" class="btn-secondary btn-xs">모두 지우기</button>
+                        </div>
+                    </div>
+                    <div id="quick-add-list" class="border border-gray-200 rounded-lg" style="max-height:320px;overflow-y:auto;min-height:80px;"></div>
                 </div>
 
                 <!-- 직접 입력 탭 (표 양식) -->
@@ -156,15 +182,16 @@
 
                 <!-- 붙여넣기 탭 -->
                 <div id="import-tab-manual">
-                    <p class="text-xs text-muted mb-2">엑셀에서 복사한 내용을 아래에 붙여넣기 하세요 (탭/쉼표 구분 자동 감지)</p>
-                    <textarea id="product-paste-textarea" rows="8" class="form-control" style="font-size:12px;font-family:monospace;"
-                        placeholder="상품명	카테고리	판매가	재고	사이즈
-에케베리아 치와와	에케베리아	15000	10	M
-크라슐라 화제	크라슐라	8000	20	S
-코노피튬 부르겐세리	코노피튬	5000	30	SX
+                    <p class="text-xs text-muted mb-2">엑셀·메모장·카톡에서 복사한 내용을 붙여넣으세요 (탭·쉼표·줄바꿈 자동 감지, 상품명만 있어도 OK)</p>
+                    <textarea id="product-paste-textarea" rows="8" class="form-control"
+                        style="font-size:16px;font-family:monospace;padding:10px;"
+                        inputmode="text" autocapitalize="off" autocorrect="off" spellcheck="false"
+                        placeholder="에케베리아 라울
+크라슐라 화제, 크라슐라, 8000, 20
+코노피튬 부르겐세리	코노피튬	5000	30
 
-※ 엑셀에서 Ctrl+C → 여기에 Ctrl+V
-※ 상품명만 필수, 나머지 비워도 됩니다"></textarea>
+※ 한 줄에 상품명만 있어도 됩니다
+※ 탭 / 쉼표 / 줄바꿈 모두 인식"></textarea>
                     <!-- 붙여넣기 미리보기 -->
                     <div id="paste-preview-section" class="hidden mt-3">
                         <div class="flex items-center justify-between mb-1">

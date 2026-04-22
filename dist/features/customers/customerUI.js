@@ -1608,11 +1608,12 @@ async function renderCustomerOrders(orders, container) {
                     <td class="px-2"><span class="badge ${getOrderStatusBadgeClass(status)}">${status}</span></td>
                     <td class="px-2 text-center whitespace-nowrap">
                         <button type="button" onclick="typeof window.openOrderDetailModal === 'function' ? window.openOrderDetailModal('${orderId}') : window.openOrderModal && window.openOrderModal('${orderId}')" class="text-brand hover:underline text-xs">보기</button>
+                        <button type="button" onclick="window.reorderFromHistory?.('${orderId}')" class="text-info hover:underline text-xs ml-2" title="이 주문 품목으로 새 주문 생성">다시 주문</button>
                     </td>
                 </tr>
             `;
         }).join('');
-        
+
         container.innerHTML = `
             <table class="table-ui">
                 <thead>
@@ -1621,7 +1622,7 @@ async function renderCustomerOrders(orders, container) {
                         <th>상품명</th>
                         <th class="th-num">금액</th>
                         <th>상태</th>
-                        <th class="text-center w-12">보기</th>
+                        <th class="text-center w-20">액션</th>
                     </tr>
                 </thead>
                 <tbody>${rowsHTML}</tbody>

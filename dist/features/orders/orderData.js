@@ -1587,6 +1587,36 @@ class OrderDataManager {
         }
     }
     
+    // 신규 주문 시 상품 재고 차감 (공통 헬퍼: SMS/페이히어/새주문 모두 공유)
+    async deductStockForItems(items) {
+        if (!Array.isArray(items) || items.length === 0) return;
+        if (!window.supabaseClient) return;
+        for (const item of items) {
+            try {
+                const qty = parseInt(item.quantity) || 0;
+                if (!item.product_id || qty <= 0) continue;
+                const { data: p } = await window.supabaseClient
+                    .from('farm_products')
+                    .select('stock, name')
+                    .eq('id', item.product_id)
+                    .single();
+                if (!p) continue;
+                const newStock = Math.max(0, (p.stock ?? 0) - qty);
+                await window.supabaseClient
+                    .from('farm_products')
+                    .update({ stock: newStock })
+                    .eq('id', item.product_id);
+                console.log(`📦 재고 차감 ${p.name}: ${p.stock}→${newStock}`);
+            } catch (e) {
+                console.warn('⚠️ 재고 차감 중 오류 (개별 스킵):', e);
+            }
+        }
+        // 로컬 캐시 무효화
+        if (window.productDataManager?.invalidateProductCache) {
+            try { await window.productDataManager.invalidateProductCache(); } catch {}
+        }
+    }
+
     // 주문 취소/환불 시 상품 재고 복원
     // Fix #5/#6: farm_order_items를 DB에서 직접 조회 (this.farm_orders.items에 의존하지 않음)
     async restoreProductStock(orderId) {
@@ -2343,6 +2373,11 @@ window.deductCustomerPurchaseAmount = (customerPhone, deductAmount) => {
 // 상품 재고 복원 함수 전역 등록
 window.restoreProductStock = (orderId) => {
     return orderDataManager.restoreProductStock(orderId);
+};
+
+// 상품 재고 차감 함수 전역 등록 (SMS·페이히어·새주문 공통)
+window.deductStockForItems = (items) => {
+    return orderDataManager.deductStockForItems(items);
 };
 
 // 고객 구매 금액 수동 조정 함수 (관리자용)

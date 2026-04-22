@@ -124,6 +124,34 @@ class DashboardComponent {
             const btn = document.getElementById(id);
             if (btn) btn.addEventListener('click', fn);
         });
+
+        // 오늘만 토글 — localStorage 'dashboardTodayOnly' 로 상태 유지
+        const todayBtn = document.getElementById('today-only-toggle');
+        if (todayBtn) {
+            const applyTodayOnly = (on) => {
+                const section = document.getElementById('dashboard-section');
+                if (!section) return;
+                section.querySelectorAll('[data-today-hide]').forEach(el => {
+                    el.classList.toggle('hidden', !!on);
+                });
+                // today-hero 전용 섹션: 반대로 토글 (ON 일 때 표시)
+                const hero = document.getElementById('today-hero');
+                if (hero) hero.classList.toggle('hidden', !on);
+                todayBtn.classList.toggle('btn-primary', !!on);
+                todayBtn.classList.toggle('btn-secondary', !on);
+                try { localStorage.setItem('dashboardTodayOnly', on ? '1' : '0'); } catch {}
+                // 오늘만 ON 이면 today-hero 데이터 렌더
+                if (on && typeof this.renderTodayHero === 'function') {
+                    this.renderTodayHero();
+                }
+            };
+            const saved = (() => { try { return localStorage.getItem('dashboardTodayOnly') === '1'; } catch { return false; } })();
+            applyTodayOnly(saved);
+            todayBtn.addEventListener('click', () => {
+                const isOn = todayBtn.classList.contains('btn-primary');
+                applyTodayOnly(!isOn);
+            });
+        }
     }
 
     /**
@@ -296,6 +324,235 @@ class DashboardComponent {
         this.setupSalesTrendChart(this._chartPeriod || 7);
         this.setupOrderStatusChart();
         this.setupCategorySalesChart();
+        // 오늘만 모드일 때 today-hero 갱신
+        if (document.getElementById('today-only-toggle')?.classList.contains('btn-primary')) {
+            this.renderTodayHero();
+        }
+    }
+
+    /** 오늘만 모드 전용 Hero 섹션 렌더 — 시간대별·채널·오늘 TOP */
+    renderTodayHero() {
+        const orders = this.data.orders || [];
+        const fmt = (n) => '₩' + (n || 0).toLocaleString('ko-KR');
+        const toLD = (d) => {
+            const dt = new Date(d);
+            return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+        };
+        const today = toLD(new Date());
+        const valid = orders.filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const todayO = valid.filter(o => o.order_created_at && toLD(o.order_created_at) === today);
+        const todayS = todayO.reduce((s,o) => s + (o.total_amount||0), 0);
+        const avgOrder = todayO.length > 0 ? Math.round(todayS / todayO.length) : 0;
+
+        // 전일 대비
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        const yStr = toLD(yesterday);
+        const yO = valid.filter(o => o.order_created_at && toLD(o.order_created_at) === yStr);
+        const yS = yO.reduce((s,o) => s + (o.total_amount||0), 0);
+
+        const set = (id,v) => { const el = document.getElementById(id); if (el) el.innerHTML = v; };
+        set('today-hero-sales', fmt(todayS));
+        set('today-hero-orders', todayO.length.toLocaleString());
+        set('today-hero-avg', `평균 ${fmt(avgOrder)}`);
+
+        if (yS > 0) {
+            const diff = todayS - yS;
+            const pct = Math.round((diff / yS) * 100);
+            const arrow = diff >= 0 ? 'up' : 'down';
+            const color = diff >= 0 ? 'var(--primary)' : 'var(--danger)';
+            set('today-hero-diff', `<span style="color:${color};"><i class="fas fa-arrow-${arrow}"></i> 전일 대비 ${Math.abs(pct)}%</span> <span class="text-muted ml-1">(어제 ${fmt(yS)})</span>`);
+        } else {
+            set('today-hero-diff', `<span class="text-muted">어제 매출 없음</span>`);
+        }
+
+        // 채널별 분리
+        const byChannel = {};
+        for (const o of todayO) {
+            const ch = (o.order_channel || '').trim() || '기타';
+            byChannel[ch] = (byChannel[ch] || 0) + (o.total_amount || 0);
+        }
+        const channelPalette = {
+            '페이히어': '#16A34A',
+            '문자주문': '#2563EB',
+            '네이버': '#03C75A',
+            '카카오': '#FEE500',
+            '기타':   '#94A3B8',
+        };
+        const channelEntries = Object.entries(byChannel).sort((a,b) => b[1]-a[1]);
+        const legendEl = document.getElementById('today-hero-channels');
+        if (legendEl) {
+            if (channelEntries.length === 0) {
+                legendEl.innerHTML = `<span class="text-muted text-2xs">오늘 매출 없음</span>`;
+            } else {
+                legendEl.innerHTML = channelEntries.map(([ch, amt]) => {
+                    const color = channelPalette[ch] || '#94A3B8';
+                    const pct = todayS > 0 ? Math.round((amt/todayS)*100) : 0;
+                    return `<span class="flex items-center gap-1">
+                        <span style="width:10px;height:10px;background:${color};border-radius:2px;display:inline-block;"></span>
+                        <strong>${ch}</strong> ₩${amt.toLocaleString()} (${pct}%)
+                    </span>`;
+                }).join('');
+            }
+        }
+
+        // 채널 도넛 차트
+        this._renderTodayChannelDonut(channelEntries, channelPalette);
+        // 시간대별 매출 차트
+        this._renderTodayHourlyChart(todayO);
+        // 오늘 판매 상품 TOP 5
+        this._renderTodayTopProducts(todayO);
+    }
+
+    _renderTodayChannelDonut(entries, palette) {
+        const canvas = document.getElementById('today-channel-donut');
+        if (!canvas || typeof Chart === 'undefined') return;
+        if (this._todayChannelChart) { this._todayChannelChart.destroy(); }
+        if (entries.length === 0) {
+            const ctx = canvas.getContext('2d');
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = '#94A3B8';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'center';
+            ctx.fillText('데이터 없음', canvas.width/2, canvas.height/2);
+            return;
+        }
+        this._todayChannelChart = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: entries.map(e => e[0]),
+                datasets: [{
+                    data: entries.map(e => e[1]),
+                    backgroundColor: entries.map(e => palette[e[0]] || '#94A3B8'),
+                    borderWidth: 2,
+                    borderColor: '#fff',
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '65%',
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.label}: ₩${ctx.parsed.toLocaleString()}`,
+                        },
+                    },
+                },
+            },
+        });
+    }
+
+    _renderTodayHourlyChart(todayOrders) {
+        const canvas = document.getElementById('today-hourly-chart');
+        if (!canvas || typeof Chart === 'undefined') return;
+        if (this._todayHourlyChart) { this._todayHourlyChart.destroy(); }
+
+        // 0~23시 버킷 (9시~21시만 표시하면 충분)
+        const buckets = new Array(24).fill(0);
+        for (const o of todayOrders) {
+            if (!o.order_created_at) continue;
+            const h = new Date(o.order_created_at).getHours();
+            buckets[h] += (o.total_amount || 0);
+        }
+        // 9시~21시 범위만 차트에
+        const startH = 9, endH = 21;
+        const labels = [];
+        const values = [];
+        for (let h = startH; h <= endH; h++) {
+            labels.push(`${h}시`);
+            values.push(buckets[h]);
+        }
+
+        this._todayHourlyChart = new Chart(canvas, {
+            type: 'bar',
+            data: {
+                labels,
+                datasets: [{
+                    label: '매출',
+                    data: values,
+                    backgroundColor: '#16A34A',
+                    borderRadius: 3,
+                }],
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `₩${ctx.parsed.y.toLocaleString()}`,
+                        },
+                    },
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 10 },
+                            callback: (v) => v >= 10000 ? `${(v/10000).toFixed(0)}만` : v,
+                        },
+                    },
+                    x: { ticks: { font: { size: 10 } } },
+                },
+            },
+        });
+    }
+
+    async _renderTodayTopProducts(todayOrders) {
+        const box = document.getElementById('today-top-products');
+        if (!box) return;
+        if (todayOrders.length === 0) {
+            box.innerHTML = `<p class="text-center text-muted text-xs py-6">오늘 판매된 상품이 없습니다</p>`;
+            return;
+        }
+        // farm_order_items 로 오늘 주문 품목 집계
+        if (!window.supabaseClient) return;
+        const orderIds = todayOrders.map(o => o.order_id || o.id).filter(Boolean);
+        if (orderIds.length === 0) { box.innerHTML = `<p class="text-center text-muted text-xs py-6">데이터 없음</p>`; return; }
+        try {
+            const { data: items } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('product_name, quantity, total, price')
+                .in('order_id', orderIds);
+            const agg = {};
+            for (const it of items || []) {
+                const name = it.product_name || '(이름없음)';
+                if (!agg[name]) agg[name] = { qty: 0, amt: 0 };
+                agg[name].qty += (it.quantity || 0);
+                agg[name].amt += (it.total || (it.quantity||0) * (it.price||0));
+            }
+            const top = Object.entries(agg)
+                .sort((a,b) => b[1].qty - a[1].qty)
+                .slice(0, 5);
+            if (top.length === 0) {
+                box.innerHTML = `<p class="text-center text-muted text-xs py-6">품목 정보 없음</p>`;
+                return;
+            }
+            const maxQty = top[0][1].qty || 1;
+            const esc = s => String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+            box.innerHTML = top.map(([name, v], i) => {
+                const barPct = Math.round((v.qty / maxQty) * 100);
+                const medal = ['🥇','🥈','🥉','4','5'][i] || `${i+1}`;
+                return `
+                <div class="flex items-center gap-2">
+                    <span style="width:18px;text-align:center;font-size:14px;">${medal}</span>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex justify-between items-baseline">
+                            <span class="truncate" title="${esc(name)}">${esc(name)}</span>
+                            <span class="tabular-nums ml-2 flex-shrink-0"><strong>${v.qty}개</strong> <span class="text-2xs text-muted">₩${v.amt.toLocaleString()}</span></span>
+                        </div>
+                        <div class="bg-gray-100 rounded-full h-1 mt-0.5">
+                            <div style="width:${barPct}%;background:var(--primary);height:100%;border-radius:9999px;"></div>
+                        </div>
+                    </div>
+                </div>`;
+            }).join('');
+        } catch (e) {
+            console.warn('오늘 TOP 상품 집계 실패:', e);
+            box.innerHTML = `<p class="text-center text-muted text-xs py-6">집계 실패</p>`;
+        }
     }
 
     /** 매출 KPI 카드 */
@@ -319,6 +576,20 @@ class DashboardComponent {
         const repeatRate = totalB > 0 ? Math.round((repeatB/totalB)*100) : 0;
         const set = (id,v) => { const el = document.getElementById(id); if (el) el.textContent = v; };
         set('kpi-today-sales', fmt(todayS)); set('kpi-today-orders', `${todayO.length}건`);
+
+        // 오늘 매출 채널별 분리 (페이히어·문자주문·기타)
+        const byChannel = {};
+        for (const o of todayO) {
+            const ch = (o.order_channel || '').trim() || '기타';
+            byChannel[ch] = (byChannel[ch] || 0) + (o.total_amount || 0);
+        }
+        const channelEl = document.getElementById('kpi-today-channels');
+        if (channelEl) {
+            const parts = Object.entries(byChannel)
+                .sort((a,b) => b[1]-a[1])
+                .map(([ch, amt]) => `${ch} ₩${amt.toLocaleString('ko-KR')}`);
+            channelEl.textContent = parts.length > 0 ? parts.join(' · ') : '';
+        }
         set('kpi-month-sales', fmt(monthS)); set('kpi-month-orders', `${monthO.length}건`);
         set('kpi-avg-order', fmt(avgO)); set('kpi-total-customers', `고객 ${customers.length}명`);
         set('kpi-new-customers', `${newC.length}명`); set('kpi-repeat-rate', `재구매 ${repeatRate}%`);
@@ -505,10 +776,15 @@ class DashboardComponent {
         this.updateCard('packing-count', getCount('상품준비'));
         this.updateCard('ship-ready-count', getCount('배송준비'));
 
-        // 재고 부족 상품 (5개 이하)
-        const lowStockProducts = this.data.products?.filter(product => product.stock <= 5) || [];
-        console.log('⚠️ 재고 부족 상품:', lowStockProducts.length);
-        this.updateCard('low-stock-count', lowStockProducts.length);
+        // 재고 부족 상품 (5개 이하) — 품절(0) 과 부족(1~5) 분리
+        const products = this.data.products || [];
+        const outOfStock = products.filter(p => (p.stock ?? 0) === 0);
+        const lowStockOnly = products.filter(p => (p.stock ?? 0) > 0 && (p.stock ?? 0) <= 5);
+        const totalLow = outOfStock.length + lowStockOnly.length;
+        console.log('⚠️ 재고: 품절', outOfStock.length, '부족', lowStockOnly.length);
+        this.updateCard('low-stock-count', totalLow);
+        this.updateCard('out-of-stock-count', outOfStock.length);
+        this.updateCard('low-stock-sub', lowStockOnly.length);
 
         // 연락할 대기자 (우선순위 높음)
         const contactWaitlist = this.data.waitlist?.filter(item => item.priority <= 2) || [];
@@ -1031,23 +1307,35 @@ class DashboardComponent {
     }
 
     /**
-     * 카드 클릭 처리
+     * 카드 클릭 처리 — 현재 HTML 카드 ID 기반, 상태 탭 자동 필터
      */
     handleCardClick(cardId) {
         console.log('🖱️ 카드 클릭:', cardId);
-        
-        // 해당 섹션으로 이동
-        const sectionMap = {
-            'pack-orders-card': 'orders',
-            'ship-orders-card': 'orders',
-            'low-stock-card': 'products',
-            'contact-waitlist-card': 'waitlist',
-            'new-customers-card': 'customers'
+
+        const map = {
+            'pack-waiting-card':     { section: 'orders',   status: '입금확인' },
+            'packing-card':          { section: 'orders',   status: '상품준비' },
+            'ship-ready-card':       { section: 'orders',   status: '배송준비' },
+            'low-stock-card':        { section: 'products' },
+            'contact-waitlist-card': { section: 'waitlist' },
+            'new-customers-card':    { section: 'customers' },
         };
-        
-        const targetSection = sectionMap[cardId];
-        if (targetSection) {
-            this.navigateToSection(targetSection);
+        const target = map[cardId];
+        if (!target) { console.warn('⚠️ 미매핑 카드 ID:', cardId); return; }
+
+        this.navigateToSection(target.section);
+
+        // 주문 관련 카드는 해당 상태 탭으로 자동 필터
+        if (target.status) {
+            setTimeout(() => {
+                const btn = document.getElementById(`status-${target.status}`);
+                if (btn) {
+                    btn.click();
+                    console.log(`✅ 상태 탭 활성화: ${target.status}`);
+                } else {
+                    console.warn(`⚠️ 상태 탭 없음: status-${target.status}`);
+                }
+            }, 500);
         }
     }
 

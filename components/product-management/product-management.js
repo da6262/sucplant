@@ -1175,9 +1175,17 @@ class ProductManagementComponent {
      * 상품 저장
      */
     async saveProduct() {
+        // 모바일 더블탭·고스트 클릭 재진입 방지
+        if (this._savingProduct) {
+            console.log('⏳ 이미 저장 중 — 중복 호출 차단');
+            return;
+        }
+        this._savingProduct = true;
+        const saveBtn = document.getElementById('save-product-btn');
+        if (saveBtn) saveBtn.disabled = true;
         try {
             console.log('💾 상품 저장 시작...');
-            
+
             // 안전한 폼 데이터 수집
             const getFormValue = (elementId, defaultValue = '') => {
                 const element = document.getElementById(elementId);
@@ -1260,7 +1268,7 @@ class ProductManagementComponent {
             
         } catch (error) {
             console.error('❌ 상품 저장 실패:', error);
-            
+
             // 중복 상품명 에러인 경우 특별 처리
             if (error.message.includes('이미 등록된 상품명입니다')) {
                 // 에러 메시지에 기존 상품 정보가 포함되어 있으므로 그대로 표시
@@ -1269,6 +1277,10 @@ class ProductManagementComponent {
                 // 기타 에러의 경우 일반적인 메시지 표시
                 alert('상품 저장 중 오류가 발생했습니다: ' + error.message);
             }
+        } finally {
+            this._savingProduct = false;
+            const btn = document.getElementById('save-product-btn');
+            if (btn) btn.disabled = false;
         }
     }
 
@@ -1509,19 +1521,23 @@ class ProductManagementComponent {
         window._onPasteInput        = () => this._onPasteInput();
         window._addBulkRow          = () => this._addBulkRow();
         window._bulkInputChanged    = () => this._refreshImportCount();
+        window._quickAddRemove      = (i) => this._quickAddRemove(i);
         // 이벤트 (한 번만 등록하도록 플래그)
         if (!modal._importEventsReady) {
             modal._importEventsReady = true;
             this._bindImportEvents();
         }
-        // 붙여넣기 textarea 포커스
-        setTimeout(() => document.getElementById('product-paste-textarea')?.focus(), 100);
+        // 빠른추가 탭 진입 → 상품명 입력창 포커스
+        setTimeout(() => document.getElementById('quick-add-input')?.focus(), 100);
     }
 
     /** 모달 상태 초기화 */
     _resetImport() {
-        // 직접 입력 탭 활성화
-        this._switchTab('table');
+        // 빠른추가 탭 기본 활성화 (모바일 최적)
+        this._switchTab('quick');
+        // 빠른추가 입력창·목록 초기화
+        const qa = document.getElementById('quick-add-input');
+        if (qa) qa.value = '';
         // 표 초기화 — 기본 5행
         const tbody = document.getElementById('bulk-input-tbody');
         if (tbody) { tbody.innerHTML = ''; for (let i = 0; i < 5; i++) this._addBulkRow(); }
@@ -1530,6 +1546,7 @@ class ProductManagementComponent {
         if (ta) ta.value = '';
         // 미리보기 숨기기
         document.getElementById('paste-preview-section')?.classList.add('hidden');
+        this._renderQuickAddList();
         // 파일 탭 초기화
         const fi = document.getElementById('product-excel-input');
         if (fi) fi.value = '';
@@ -1544,40 +1561,117 @@ class ProductManagementComponent {
 
     /** 탭 전환 */
     _switchTab(tab) {
-        ['table', 'manual', 'file'].forEach(t => {
+        ['quick', 'table', 'manual', 'file'].forEach(t => {
             document.getElementById(`import-tab-${t}`)?.classList.toggle('hidden', t !== tab);
         });
         document.querySelectorAll('.import-tab-btn').forEach(btn => {
             const active = btn.dataset.tab === tab;
             btn.className = `import-tab-btn ${active ? 'btn-primary' : 'btn-secondary'} flex-1`;
-            btn.style.justifyContent = 'center';
+            btn.style.cssText = 'justify-content:center;min-width:90px;';
         });
+        // 빠른추가 탭 진입 시 입력창 포커스
+        if (tab === 'quick') setTimeout(() => document.getElementById('quick-add-input')?.focus(), 50);
         this._refreshImportCount();
     }
 
-    /** 붙여넣기 textarea 입력 처리 */
+    /** 빠른추가: 상품명 하나 추가 */
+    _quickAdd() {
+        const input = document.getElementById('quick-add-input');
+        const name = (input?.value || '').trim();
+        if (!name) return;
+        const list = window.productImportData && Array.isArray(window.productImportData)
+            ? window.productImportData
+            : [];
+        // 이 세션 안에서 중복 방지
+        if (list.some(p => p.name === name)) {
+            input.value = '';
+            input.focus();
+            input.classList.add('border-red-400');
+            setTimeout(() => input.classList.remove('border-red-400'), 600);
+            return;
+        }
+        list.push({
+            name,
+            category: '',
+            price: 0,
+            cost: 0,
+            stock: 0,
+            size: '',
+            description: '',
+            shipping_option: '일반배송',
+            status: 'active',
+        });
+        window.productImportData = list;
+        input.value = '';
+        input.focus();
+        this._renderQuickAddList();
+        this._refreshImportCount();
+    }
+
+    /** 빠른추가: 한 건 삭제 */
+    _quickAddRemove(index) {
+        const list = window.productImportData || [];
+        list.splice(index, 1);
+        window.productImportData = list.length ? list : null;
+        this._renderQuickAddList();
+        this._refreshImportCount();
+    }
+
+    /** 빠른추가: 전체 삭제 */
+    _quickAddClear() {
+        if (!confirm('누적된 상품을 모두 지울까요?')) return;
+        window.productImportData = null;
+        this._renderQuickAddList();
+        this._refreshImportCount();
+    }
+
+    /** 빠른추가: 목록 렌더 */
+    _renderQuickAddList() {
+        const box = document.getElementById('quick-add-list');
+        const countEl = document.getElementById('quick-add-count');
+        if (!box) return;
+        const list = window.productImportData || [];
+        if (countEl) countEl.textContent = `${list.length}개`;
+        if (list.length === 0) {
+            box.innerHTML = `<div class="p-4 text-center text-xs text-muted">아직 추가된 상품이 없습니다</div>`;
+            return;
+        }
+        const esc = s => String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+        box.innerHTML = list.map((p, i) =>
+            `<div class="flex items-center justify-between px-3 py-2 border-b border-gray-100" style="font-size:14px;">
+                <span class="td-primary truncate">${i+1}. ${esc(p.name)}</span>
+                <button onclick="window._quickAddRemove?.(${i})" class="btn-icon-delete" title="삭제">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`
+        ).join('');
+    }
+
+    /** 붙여넣기 textarea 입력 처리 — 탭/쉼표 라인별 자동 감지, 단일 이름 라인 지원 */
     _onPasteInput() {
         const ta = document.getElementById('product-paste-textarea');
-        const text = ta?.value?.trim() || '';
-        if (!text) {
+        const text = ta?.value || '';
+        if (!text.trim()) {
             window.productImportData = null;
             document.getElementById('paste-preview-section')?.classList.add('hidden');
             this._refreshImportCount();
             return;
         }
-        // 탭 구분(엑셀) 또는 쉼표 구분 자동 감지
         const lines = text.split(/\r?\n/).filter(l => l.trim());
-        const useTab = lines[0]?.includes('\t');
         const products = [];
+        const seen = new Set();
         for (const line of lines) {
-            const cols = useTab ? line.split('\t') : line.split(',');
-            const name     = String(cols[0] || '').trim();
-            const category = String(cols[1] || '').trim();
-            // 헤더행 자동 감지 (숫자가 아닌 첫 줄 건너뜀)
-            if (!name || name === '상품명') continue;
+            // 라인마다 구분자 자동 감지: 탭 > 쉼표 > 없음(이름만)
+            const cols = line.includes('\t') ? line.split('\t')
+                       : line.includes(',')  ? line.split(',')
+                       : [line];
+            const name = String(cols[0] || '').trim();
+            if (!name || name === '상품명') continue; // 헤더·빈 행 스킵
+            if (seen.has(name)) continue;              // 같은 텍스트 내 중복 방지
+            seen.add(name);
             products.push({
                 name,
-                category: category || '기타',
+                category:        String(cols[1] || '').trim(),
                 price:           parseFloat(String(cols[2] || '').replace(/,/g, '')) || 0,
                 stock:           parseInt(cols[3]) || 0,
                 size:            String(cols[4] || '').trim(),
@@ -1698,6 +1792,14 @@ class ProductManagementComponent {
         // 붙여넣기 textarea
         document.getElementById('product-paste-textarea')?.addEventListener('input', () => this._onPasteInput());
 
+        // 빠른추가: Enter = 추가, 버튼 = 추가, 전체삭제
+        const quickInput = document.getElementById('quick-add-input');
+        quickInput?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); this._quickAdd(); }
+        });
+        document.getElementById('quick-add-btn')?.addEventListener('click', () => this._quickAdd());
+        document.getElementById('quick-add-clear')?.addEventListener('click', () => this._quickAddClear());
+
         // 등록 시작
         document.getElementById('product-import-start')?.addEventListener('click', () => this.startProductImport());
 
@@ -1782,38 +1884,40 @@ class ProductManagementComponent {
     }
 
     _parseCsvText(text) {
-        const lines = text.split(/\r?\n/).filter(l => l.trim());
-        this._parseRowArrays(lines.map(l => l.split(',')));
+        // RFC4180 준수 파서: 따옴표 내 쉼표·줄바꿈·이스케이프 처리
+        const rows = [];
+        let row = [], field = '', inQuotes = false;
+        for (let i = 0; i < text.length; i++) {
+            const c = text[i];
+            if (inQuotes) {
+                if (c === '"') {
+                    if (text[i+1] === '"') { field += '"'; i++; }
+                    else inQuotes = false;
+                } else field += c;
+            } else {
+                if (c === '"') inQuotes = true;
+                else if (c === ',') { row.push(field); field = ''; }
+                else if (c === '\r') { /* skip */ }
+                else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+                else field += c;
+            }
+        }
+        if (field.length || row.length) { row.push(field); rows.push(row); }
+        const filtered = rows.filter(r => r.some(c => c && String(c).trim()));
+        this._parseRowArrays(filtered);
     }
 
     _parseRowArrays(rows) {
-        // Payhere 양식 자동 감지: 헤더행에 '상품명' + 'SKU' 존재
-        const hdrIdx = rows.findIndex(r => String(r[0]||'').trim() === '상품명' && String(r[11]||'').trim() === 'SKU');
-        const isPayhere = hdrIdx >= 0;
-        // Payhere 컬럼 위치
-        const PH = { name:0, cat:1, sku:11, barcode:12, price:13, cost:15, stock:16 };
-
+        // 헤더 행: '상품명' 단어를 포함한 첫 행 (컬럼 순서·위치 무관)
+        const hdrIdx = rows.findIndex(r => r.some(c => String(c||'').trim() === '상품명'));
         const products = [];
-        const startIdx = isPayhere ? hdrIdx + 1 : 1;
-        for (let i = startIdx; i < rows.length; i++) {
-            const cols = rows[i];
-            const name = String(cols[PH.name]||'').trim();
-            // 빈 행·설명 행·헤더 잔여행 스킵
-            if (!name || name.startsWith('*') || name === '필수' || name === '선택' || name === '상품명') continue;
-            if (isPayhere) {
-                products.push({
-                    name,
-                    category:     String(cols[PH.cat]    ||'').trim(),
-                    price:        parseFloat(String(cols[PH.price] ||'').replace(/,/g,'')) || 0,
-                    cost:         parseFloat(String(cols[PH.cost]  ||'').replace(/,/g,'')) || 0,
-                    stock:        parseInt(cols[PH.stock]) || 0,
-                    product_code: String(cols[PH.sku]    ||'').trim(),
-                    barcode:      String(cols[PH.barcode]||'').trim(),
-                    shipping_option: '일반배송',
-                    status: 'active',
-                });
-            } else {
-                // 우리 기존 단순 양식 (상품명·카테고리·판매가·재고·사이즈·설명)
+
+        if (hdrIdx < 0) {
+            // 헤더 없음: 단순 양식 (상품명·카테고리·판매가·재고·사이즈·설명)
+            for (let i = 0; i < rows.length; i++) {
+                const cols = rows[i];
+                const name = String(cols[0]||'').trim();
+                if (!name || name === '상품명') continue;
                 products.push({
                     name,
                     category:    String(cols[1]||'').trim(),
@@ -1822,6 +1926,47 @@ class ProductManagementComponent {
                     size:        String(cols[4]||'').trim(),
                     description: String(cols[5]||'').trim(),
                     cost: 0,
+                    shipping_option: '일반배송',
+                    status: 'active',
+                });
+            }
+        } else {
+            // 헤더 기반 키워드 매핑 — 컬럼 순서·누락 허용
+            const hdr = rows[hdrIdx].map(c => String(c||'').trim());
+            const findCol = (...names) => {
+                for (const n of names) {
+                    const idx = hdr.findIndex(h => h === n);
+                    if (idx >= 0) return idx;
+                }
+                return -1;
+            };
+            const map = {
+                name:    findCol('상품명'),
+                cat:     findCol('카테고리','분류'),
+                sku:     findCol('SKU','상품코드'),
+                barcode: findCol('바코드','Barcode'),
+                price:   findCol('판매가','가격','Price'),
+                cost:    findCol('원가','공급가','Cost'),
+                stock:   findCol('재고','수량','Stock'),
+                size:    findCol('사이즈','크기','Size'),
+                desc:    findCol('설명','상품설명','Description'),
+            };
+            const pick = (cols, idx) => idx >= 0 ? String(cols[idx]||'').trim() : '';
+            for (let i = hdrIdx + 1; i < rows.length; i++) {
+                const cols = rows[i];
+                const name = pick(cols, map.name);
+                // 빈 행·Payhere 안내 행(*/필수/선택) 스킵
+                if (!name || name.startsWith('*') || name === '필수' || name === '선택' || name === '상품명') continue;
+                products.push({
+                    name,
+                    category:     pick(cols, map.cat),
+                    price:        parseFloat(pick(cols, map.price).replace(/,/g,'')) || 0,
+                    cost:         parseFloat(pick(cols, map.cost).replace(/,/g,'')) || 0,
+                    stock:        parseInt(pick(cols, map.stock)) || 0,
+                    size:         pick(cols, map.size),
+                    description:  pick(cols, map.desc),
+                    product_code: pick(cols, map.sku),
+                    barcode:      pick(cols, map.barcode),
                     shipping_option: '일반배송',
                     status: 'active',
                 });
@@ -1873,25 +2018,50 @@ class ProductManagementComponent {
             return;
         }
         const total = products.length;
-        let ok = 0, fail = 0;
+        let ok = 0, skipped = 0, fail = 0;
+        const failRows = [];
+        // 기존 DB 상품명 집합 (중복 사전 차단)
+        const existingNames = new Set(
+            (window.productDataManager?.farm_products || []).map(p => p.name)
+        );
         const progress = document.getElementById('product-import-progress');
         progress?.classList.remove('hidden');
         for (let i = 0; i < total; i++) {
+            const p = products[i];
             try {
-                if (window.productDataManager) { await window.productDataManager.addProduct(products[i]); ok++; }
-                else fail++;
-            } catch (e) { console.error(`상품 등록 실패 [${i}]:`, e); fail++; }
+                if (!window.productDataManager) {
+                    fail++;
+                    failRows.push(`${i+1}행: 데이터 매니저 없음`);
+                } else if (!p.name) {
+                    skipped++;
+                } else if (existingNames.has(p.name)) {
+                    // 중복 상품명 → 조용히 건너뛰기
+                    skipped++;
+                } else {
+                    await window.productDataManager.addProduct(p);
+                    existingNames.add(p.name); // 엑셀 내 중복도 차단
+                    ok++;
+                }
+            } catch (e) {
+                console.error(`상품 등록 실패 [${i}]:`, e);
+                fail++;
+                failRows.push(`${i+1}행 (${p.name||'이름없음'}): ${e.message||e}`);
+            }
             this.updateProgress(i + 1, total);
             await new Promise(r => setTimeout(r, 60));
         }
         progress?.classList.add('hidden');
         this.closeImportModal();
-        if (ok > 0) {
-            alert(`일괄등록 완료!\n성공 ${ok}개${fail ? ' / 실패 ' + fail + '개' : ''}`);
-            await this.loadProducts();
-        } else {
-            alert(`등록에 실패했습니다 (${fail}개 오류)`);
+
+        let msg = `일괄등록 완료\n성공 ${ok}개`;
+        if (skipped) msg += ` / 중복 건너뜀 ${skipped}개`;
+        if (fail)    msg += ` / 실패 ${fail}개`;
+        if (failRows.length) {
+            msg += '\n\n[실패 상세]\n' + failRows.slice(0, 10).join('\n');
+            if (failRows.length > 10) msg += `\n... 외 ${failRows.length-10}개`;
         }
+        alert(msg);
+        if (ok > 0) await this.loadProducts();
     }
 
     updateProgress(current, total) {

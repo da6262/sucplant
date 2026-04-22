@@ -2811,6 +2811,942 @@ async function exportLogenExcel() {
 
 window.exportLogenExcel = exportLogenExcel;
 
+// ══════════════════════════════════════════════════════════════
+// 페이히어 매출 가져오기 (엑셀 업로드 → 주문관리 자동 등록)
+// ══════════════════════════════════════════════════════════════
+
+/** 헤더 키워드 매핑 테이블 — 페이히어/일반 POS 공통 대응 */
+const PAYHERE_HEADER_KEYWORDS = {
+    datetime: ['결제일시','결제일자','결제일','거래일시','거래일자','주문일시','주문일자','일시','일자'],
+    orderNo:  ['주문번호','영수증번호','거래번호','주문ID','영수증','거래ID'],
+    productName: ['상품명','메뉴명','제품명','품목명','상품'],
+    qty:      ['수량','개수','Qty','quantity'],
+    unitPrice:['단가','판매가','단품가','상품가','unit_price','price'],
+    amount:   ['금액','결제금액','합계금액','합계','총액','매출액','판매금액','amount','total'],
+    discount: ['할인액','할인금액','할인','discount'],
+    payMethod:['결제수단','결제방법','결제유형','payment'],
+    customerName: ['고객명','구매자','이름','주문자','회원명'],
+    customerPhone:['전화번호','연락처','전화','휴대폰','핸드폰','phone'],
+    memo:     ['메모','비고','요청사항','note','memo'],
+};
+
+/** 엑셀 헤더 행에서 컬럼 인덱스 매핑 계산 */
+function _payhereMapColumns(headerRow) {
+    const hdr = headerRow.map(c => String(c||'').trim().toLowerCase());
+    const map = {};
+    for (const [key, names] of Object.entries(PAYHERE_HEADER_KEYWORDS)) {
+        map[key] = -1;
+        for (const n of names) {
+            const idx = hdr.findIndex(h => h === n.toLowerCase() || h.includes(n.toLowerCase()));
+            if (idx >= 0) { map[key] = idx; break; }
+        }
+    }
+    return map;
+}
+
+/** 숫자 파싱 (쉼표·원 기호 제거) */
+function _payhereNum(v) {
+    if (v == null || v === '') return 0;
+    const n = parseFloat(String(v).replace(/[,\s₩원]/g,''));
+    return isNaN(n) ? 0 : n;
+}
+
+/** 엑셀 행 → 영수증 단위로 그룹핑 */
+function _payhereParseRows(rows) {
+    if (!rows || rows.length < 2) return [];
+    // 헤더 행: '상품명' 또는 '주문번호'를 포함한 첫 행
+    const hdrIdx = rows.findIndex(r => r.some(c => {
+        const s = String(c||'').trim();
+        return s === '상품명' || s === '주문번호' || s === '영수증번호' || s === '결제일시';
+    }));
+    if (hdrIdx < 0) throw new Error('헤더 행을 찾을 수 없습니다. (상품명/주문번호 컬럼 필요)');
+    const map = _payhereMapColumns(rows[hdrIdx]);
+    if (map.productName < 0) throw new Error("'상품명' 컬럼을 찾지 못했습니다.");
+
+    // 영수증(주문번호) 단위로 그룹
+    const groups = new Map();
+    const pickedAt = new Date().toISOString();
+    for (let i = hdrIdx + 1; i < rows.length; i++) {
+        const cols = rows[i];
+        const name = String(cols[map.productName]||'').trim();
+        if (!name) continue;
+        const orderNo = map.orderNo >= 0 ? String(cols[map.orderNo]||'').trim() : '';
+        const dt      = map.datetime >= 0 ? String(cols[map.datetime]||'').trim() : '';
+        // 주문번호 없으면 결제일시+고객명으로 그룹 키 구성
+        const key = orderNo || `${dt}|${cols[map.customerName]||''}|${i}`;
+
+        const item = {
+            product_name: name,
+            quantity: Math.max(1, _payhereNum(cols[map.qty]) || 1),
+            price:    _payhereNum(cols[map.unitPrice]) || _payhereNum(cols[map.amount]),
+            amount:   _payhereNum(cols[map.amount]),
+        };
+        if (!item.price && item.amount && item.quantity) item.price = Math.round(item.amount / item.quantity);
+        if (!item.amount) item.amount = item.price * item.quantity;
+
+        if (!groups.has(key)) {
+            groups.set(key, {
+                order_number:   orderNo || `PH-${Date.now()}-${i}`,
+                order_date:     _payhereParseDate(dt) || pickedAt,
+                customer_name:  map.customerName >= 0 ? String(cols[map.customerName]||'').trim() : '',
+                customer_phone: map.customerPhone >= 0 ? String(cols[map.customerPhone]||'').trim() : '',
+                pay_method:     map.payMethod >= 0 ? String(cols[map.payMethod]||'').trim() : '',
+                memo:           map.memo >= 0 ? String(cols[map.memo]||'').trim() : '',
+                discount:       _payhereNum(cols[map.discount]),
+                items: [],
+            });
+        }
+        const g = groups.get(key);
+        g.items.push(item);
+        if (!g.discount && map.discount >= 0) g.discount = _payhereNum(cols[map.discount]);
+    }
+    return Array.from(groups.values());
+}
+
+/** 날짜 문자열 정규화 */
+function _payhereParseDate(s) {
+    if (!s) return null;
+    // 'YYYY-MM-DD HH:MM:SS' / 'YYYY.MM.DD HH:MM' / 'YYYY/MM/DD' 허용
+    const normalized = String(s).trim()
+        .replace(/\./g, '-')
+        .replace(/\//g, '-')
+        .replace(/\s+/, 'T');
+    const d = new Date(normalized);
+    return isNaN(d.getTime()) ? null : d.toISOString();
+}
+
+// — 모달 제어 —————————————————————————————————————————
+let _payhereParsedOrders = null;
+
+function openPayhereImportModal() {
+    const modal = document.getElementById('payhere-import-modal');
+    if (!modal) return;
+    _resetPayhereImport();
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    _bindPayhereImportEvents();
+}
+window.openPayhereImportModal = openPayhereImportModal;
+
+function closePayhereImportModal() {
+    const modal = document.getElementById('payhere-import-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    _resetPayhereImport();
+}
+window.closePayhereImportModal = closePayhereImportModal;
+
+function _resetPayhereImport() {
+    _payhereParsedOrders = null;
+    const fi = document.getElementById('payhere-excel-input');
+    if (fi) fi.value = '';
+    document.getElementById('payhere-upload-area-content')?.classList.remove('hidden');
+    document.getElementById('payhere-upload-file-info')?.classList.add('hidden');
+    document.getElementById('payhere-import-preview')?.classList.add('hidden');
+    document.getElementById('payhere-import-progress')?.classList.add('hidden');
+    const btn = document.getElementById('payhere-import-start');
+    if (btn) btn.disabled = true;
+    const label = document.getElementById('payhere-import-count-label');
+    if (label) label.textContent = '0건';
+}
+
+function _bindPayhereImportEvents() {
+    const modal = document.getElementById('payhere-import-modal');
+    if (!modal || modal._payhereEventsReady) return;
+    modal._payhereEventsReady = true;
+
+    const dropZone = document.getElementById('payhere-drop-zone');
+    const fileInput = document.getElementById('payhere-excel-input');
+    dropZone?.addEventListener('click', () => fileInput?.click());
+    fileInput?.addEventListener('change', (e) => {
+        if (e.target.files[0]) _payhereHandleFile(e.target.files[0]);
+    });
+    dropZone?.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('border-green-400'); });
+    dropZone?.addEventListener('dragleave', () => dropZone.classList.remove('border-green-400'));
+    dropZone?.addEventListener('drop', (e) => {
+        e.preventDefault();
+        dropZone.classList.remove('border-green-400');
+        if (e.dataTransfer.files[0]) _payhereHandleFile(e.dataTransfer.files[0]);
+    });
+}
+
+async function _payhereHandleFile(file) {
+    const ext = file.name.split('.').pop().toLowerCase();
+    if (!['xlsx','xls','csv'].includes(ext)) { alert('지원 형식: .xlsx, .xls, .csv'); return; }
+    document.getElementById('payhere-upload-file-name').textContent = file.name;
+    document.getElementById('payhere-upload-file-size').textContent = (file.size/1024).toFixed(1)+' KB';
+    document.getElementById('payhere-upload-area-content')?.classList.add('hidden');
+    document.getElementById('payhere-upload-file-info')?.classList.remove('hidden');
+
+    try {
+        const reader = new FileReader();
+        reader.onload = (e) => {
+            try {
+                let rows;
+                if (ext === 'csv') {
+                    rows = _payhereParseCsv(e.target.result);
+                } else {
+                    if (!window.XLSX) { alert('XLSX 라이브러리가 로드되지 않았습니다.'); return; }
+                    const wb = XLSX.read(e.target.result, { type: 'array' });
+                    rows = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[0]], { header: 1, defval: '' });
+                }
+                _payhereParsedOrders = _payhereParseRows(rows);
+                _payhereRenderPreview();
+            } catch (err) {
+                console.error(err);
+                alert('파일 파싱 실패: ' + err.message);
+            }
+        };
+        if (ext === 'csv') reader.readAsText(file, 'utf-8');
+        else reader.readAsArrayBuffer(file);
+    } catch (e) {
+        alert('파일 읽기 실패: ' + e.message);
+    }
+}
+
+function _payhereParseCsv(text) {
+    // 간이 RFC4180: 따옴표·쉼표·줄바꿈 처리
+    const rows = [];
+    let row = [], field = '', inQ = false;
+    for (let i = 0; i < text.length; i++) {
+        const c = text[i];
+        if (inQ) {
+            if (c === '"') {
+                if (text[i+1] === '"') { field += '"'; i++; }
+                else inQ = false;
+            } else field += c;
+        } else {
+            if (c === '"') inQ = true;
+            else if (c === ',') { row.push(field); field = ''; }
+            else if (c === '\r') { /* skip */ }
+            else if (c === '\n') { row.push(field); rows.push(row); row = []; field = ''; }
+            else field += c;
+        }
+    }
+    if (field.length || row.length) { row.push(field); rows.push(row); }
+    return rows.filter(r => r.some(c => c && String(c).trim()));
+}
+
+function _payhereRenderPreview() {
+    const section = document.getElementById('payhere-import-preview');
+    const content = document.getElementById('payhere-preview-content');
+    const countEl = document.getElementById('payhere-preview-count');
+    const label   = document.getElementById('payhere-import-count-label');
+    const btn     = document.getElementById('payhere-import-start');
+    const orders  = _payhereParsedOrders || [];
+    const itemsTotal = orders.reduce((s,o) => s + o.items.length, 0);
+
+    if (countEl) countEl.textContent = `주문 ${orders.length}건 / 품목 ${itemsTotal}개`;
+    if (label)   label.textContent = `${orders.length}건 등록 예정`;
+    if (btn)     btn.disabled = orders.length === 0;
+
+    const esc = s => String(s).replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    const html = `
+        <table class="table-ui w-full">
+            <thead><tr>
+                <th class="w-12">#</th><th>주문번호</th><th>결제일시</th>
+                <th>고객</th><th>품목</th><th class="text-right">합계</th>
+            </tr></thead>
+            <tbody>
+                ${orders.slice(0, 30).map((o, i) => {
+                    const total = o.items.reduce((s, it) => s + (it.amount||0), 0) - (o.discount||0);
+                    const summary = o.items.slice(0,2).map(it => `${esc(it.product_name)}×${it.quantity}`).join(', ')
+                                  + (o.items.length > 2 ? ` 외 ${o.items.length-2}` : '');
+                    return `<tr>
+                        <td>${i+1}</td>
+                        <td class="td-muted font-mono">${esc(o.order_number)}</td>
+                        <td class="td-secondary">${esc((o.order_date||'').slice(0,16).replace('T',' '))}</td>
+                        <td>${esc(o.customer_name || '오프라인')}</td>
+                        <td class="td-secondary">${summary}</td>
+                        <td class="td-amount text-right">${total.toLocaleString()}</td>
+                    </tr>`;
+                }).join('')}
+                ${orders.length > 30 ? `<tr><td colspan="6" class="text-center td-muted">... 외 ${orders.length-30}건</td></tr>` : ''}
+            </tbody>
+        </table>`;
+    content.innerHTML = html;
+    section.classList.remove('hidden');
+}
+
+/** 등록 시작 */
+async function startPayhereImport() {
+    const orders = _payhereParsedOrders || [];
+    if (orders.length === 0) return;
+    if (!window.supabaseClient) { alert('Supabase 연결 없음'); return; }
+
+    // 기존 주문번호 미리 조회해 중복 제외
+    const orderNumbers = orders.map(o => o.order_number).filter(Boolean);
+    let existingSet = new Set();
+    try {
+        const { data } = await window.supabaseClient
+            .from('farm_orders')
+            .select('order_number')
+            .in('order_number', orderNumbers);
+        existingSet = new Set((data||[]).map(r => r.order_number));
+    } catch (e) { console.warn('중복 체크 실패 (무시):', e); }
+
+    const progress = document.getElementById('payhere-import-progress');
+    const bar      = document.getElementById('payhere-progress-bar');
+    const txt      = document.getElementById('payhere-progress-text');
+    progress?.classList.remove('hidden');
+    const btn = document.getElementById('payhere-import-start');
+    if (btn) btn.disabled = true;
+
+    let ok = 0, skipped = 0, fail = 0;
+    const failRows = [];
+    const total = orders.length;
+
+    for (let i = 0; i < total; i++) {
+        const o = orders[i];
+        try {
+            if (existingSet.has(o.order_number)) { skipped++; }
+            else {
+                // 상품 ID 매칭 (상품명 기준)
+                const products = window.productDataManager?.farm_products || [];
+                const items = o.items.map(it => {
+                    const p = products.find(pp => pp.name === it.product_name);
+                    return {
+                        product_id:   p?.id || null,
+                        product_name: it.product_name,
+                        quantity:     it.quantity,
+                        price:        it.price,
+                        total:        it.amount,
+                        size:         p?.size || null,
+                    };
+                });
+                const rpc = await window.supabaseClient.rpc('upsert_order_with_items', {
+                    p_order_id: null,
+                    p_order_number: o.order_number,
+                    p_order_date:   o.order_date,
+                    p_customer_id:  null,
+                    p_customer_name: o.customer_name || '페이히어 오프라인',
+                    p_customer_phone: o.customer_phone || '',
+                    p_customer_address: '',
+                    p_customer_address_detail: null,
+                    p_order_status: '주문접수',
+                    p_order_channel: '페이히어',
+                    p_memo: [o.pay_method && `결제수단: ${o.pay_method}`, o.memo].filter(Boolean).join(' / '),
+                    p_shipping_fee: 0,
+                    p_discount_amount: o.discount || 0,
+                    p_items: items,
+                });
+                if (rpc.error) throw new Error(rpc.error.message);
+                if (!rpc.data?.success) throw new Error('RPC 실패');
+                // 재고 자동 차감 (매칭된 상품만)
+                if (window.deductStockForItems) {
+                    await window.deductStockForItems(items);
+                }
+                ok++;
+            }
+        } catch (e) {
+            console.error(`[${i}] ${o.order_number}:`, e);
+            fail++;
+            failRows.push(`${o.order_number}: ${e.message||e}`);
+        }
+        if (bar) bar.style.width = `${Math.round(((i+1)/total)*100)}%`;
+        if (txt) txt.textContent = `${i+1}/${total}`;
+        await new Promise(r => setTimeout(r, 30));
+    }
+
+    progress?.classList.add('hidden');
+    closePayhereImportModal();
+
+    let msg = `페이히어 가져오기 완료\n성공 ${ok}건`;
+    if (skipped) msg += ` / 중복 건너뜀 ${skipped}건`;
+    if (fail)    msg += ` / 실패 ${fail}건`;
+    if (failRows.length) msg += '\n\n[실패 상세]\n' + failRows.slice(0,10).join('\n');
+    alert(msg);
+    if (ok > 0) {
+        if (window.orderDataManager?.loadOrders) await window.orderDataManager.loadOrders();
+        if (window.productDataManager?.loadProducts) await window.productDataManager.loadProducts();
+    }
+}
+window.startPayhereImport = startPayhereImport;
+
+// ══════════════════════════════════════════════════════════════
+// 문자/카톡/밴드 주문 빠른 등록
+// ══════════════════════════════════════════════════════════════
+
+const _smsState = {
+    selectedCustomer: null, // {id, name, phone, address, grade}
+    parsedItems: [],        // [{raw, name, qty, option, matchedProduct, candidates}]
+    memo: '',
+    photos: [],             // [{name, dataUrl, uploadedUrl?}]
+};
+
+function openSmsOrderModal() {
+    const modal = document.getElementById('sms-order-modal');
+    if (!modal) return;
+    _smsResetModal();
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+    _smsBindEvents();
+    setTimeout(() => document.getElementById('sms-customer-search')?.focus(), 100);
+}
+window.openSmsOrderModal = openSmsOrderModal;
+
+function closeSmsOrderModal() {
+    const modal = document.getElementById('sms-order-modal');
+    if (!modal) return;
+    modal.classList.add('hidden');
+    modal.style.display = 'none';
+    _smsResetModal();
+}
+window.closeSmsOrderModal = closeSmsOrderModal;
+
+function _smsResetModal() {
+    _smsState.selectedCustomer = null;
+    _smsState.parsedItems = [];
+    _smsState.memo = '';
+    _smsState.photos = [];
+    const ids = ['sms-customer-search','sms-order-text','sms-memo'];
+    ids.forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+    document.getElementById('sms-customer-suggestions')?.classList.add('hidden');
+    document.getElementById('sms-customer-selected')?.classList.add('hidden');
+    const fi = document.getElementById('sms-photo-input');
+    if (fi) fi.value = '';
+    _smsRenderPhotos();
+    const btn = document.getElementById('sms-save-btn');
+    if (btn) btn.disabled = true;
+    _smsRenderItems();
+}
+
+function _smsRenderPhotos() {
+    const box = document.getElementById('sms-photo-preview');
+    const countEl = document.getElementById('sms-photo-count');
+    if (!box) return;
+    if (countEl) countEl.textContent = _smsState.photos.length === 0 ? '첨부 없음' : `${_smsState.photos.length}장 첨부됨`;
+    box.innerHTML = _smsState.photos.map((p, i) => `
+        <div class="relative inline-block" style="width:60px;height:60px;">
+            <img src="${p.dataUrl}" class="rounded border border-gray-200" style="width:60px;height:60px;object-fit:cover;">
+            <button onclick="window._smsRemovePhoto?.(${i})" class="absolute" style="top:-6px;right:-6px;background:var(--danger);color:#fff;border-radius:9999px;width:18px;height:18px;font-size:10px;border:none;cursor:pointer;">×</button>
+        </div>
+    `).join('');
+}
+
+function _smsBindEvents() {
+    const modal = document.getElementById('sms-order-modal');
+    if (!modal || modal._smsEventsReady) return;
+    modal._smsEventsReady = true;
+
+    // 고객 검색
+    const searchInput = document.getElementById('sms-customer-search');
+    searchInput?.addEventListener('input', (e) => _smsSearchCustomer(e.target.value));
+    // 신규 고객 버튼
+    document.getElementById('sms-customer-new')?.addEventListener('click', () => {
+        const q = (searchInput?.value || '').trim();
+        if (!q) { alert('이름/전화번호를 먼저 입력하세요.'); return; }
+        const isPhone = /^[0-9\-]+$/.test(q) && q.replace(/\D/g,'').length >= 7;
+        _smsState.selectedCustomer = {
+            id: null,
+            name: isPhone ? '' : q,
+            phone: isPhone ? q.replace(/\D/g,'').replace(/^(\d{3})(\d{3,4})(\d{4})$/,'$1-$2-$3') : '',
+            address: '',
+            grade: null,
+            _new: true,
+        };
+        _smsRenderSelectedCustomer();
+    });
+    // 주문 텍스트
+    document.getElementById('sms-order-text')?.addEventListener('input', (e) => _smsParseText(e.target.value));
+    // 메모 수동 수정
+    document.getElementById('sms-memo')?.addEventListener('input', (e) => { _smsState.memo = e.target.value; });
+
+    // 고객 선택 해제
+    window._smsClearCustomer = () => {
+        _smsState.selectedCustomer = null;
+        document.getElementById('sms-customer-selected')?.classList.add('hidden');
+        if (searchInput) { searchInput.value = ''; searchInput.focus(); }
+        _smsUpdateSaveBtn();
+    };
+
+    // 품목 수동 조정 핸들러 (전역 함수로 노출)
+    window._smsSelectProduct = (index, productId) => _smsAssignProduct(index, productId);
+    window._smsRemoveItem = (index) => {
+        _smsState.parsedItems.splice(index, 1);
+        _smsRenderItems();
+    };
+    window._smsChangeQty = (index, qty) => {
+        const item = _smsState.parsedItems[index];
+        if (item) item.qty = Math.max(1, parseInt(qty) || 1);
+        _smsRenderItems();
+    };
+    window._smsPickCustomer = (id) => _smsSelectCustomerById(id);
+
+    // 사진 첨부
+    const photoInput = document.getElementById('sms-photo-input');
+    photoInput?.addEventListener('change', async (e) => {
+        const files = Array.from(e.target.files || []);
+        for (const f of files) {
+            if (!f.type.startsWith('image/')) continue;
+            const dataUrl = await _fileToDataUrl(f);
+            _smsState.photos.push({ name: f.name, file: f, dataUrl });
+        }
+        photoInput.value = '';
+        _smsRenderPhotos();
+    });
+    window._smsRemovePhoto = (i) => { _smsState.photos.splice(i, 1); _smsRenderPhotos(); };
+
+    // 매칭 실패 상품 즉시 등록
+    window._smsQuickAddProduct = async (index) => {
+        const item = _smsState.parsedItems[index];
+        if (!item) return;
+        const priceStr = prompt(`새 상품 "${item.name}" 의 판매가를 입력하세요 (원).\n나중에 상품관리에서 수정 가능합니다.`, '0');
+        if (priceStr === null) return;
+        const price = parseInt(String(priceStr).replace(/[^\d]/g,'')) || 0;
+        if (!window.productDataManager?.addProduct) {
+            alert('상품 데이터 매니저가 준비되지 않았습니다.');
+            return;
+        }
+        try {
+            const newProduct = await window.productDataManager.addProduct({
+                name: item.name,
+                category: '미분류',
+                price,
+                cost: 0,
+                stock: 0,
+                shipping_option: '일반배송',
+                status: 'active',
+            });
+            if (newProduct) {
+                item.matchedProduct = newProduct;
+                item.candidates = [newProduct];
+                _smsRenderItems();
+            }
+        } catch (e) {
+            alert('상품 등록 실패: ' + (e.message || e));
+        }
+    };
+}
+
+/** 고객 검색 (이름/별명/전화) */
+function _smsSearchCustomer(query) {
+    const box = document.getElementById('sms-customer-suggestions');
+    const q = (query || '').trim();
+    if (!box) return;
+    if (!q || q.length < 1) { box.classList.add('hidden'); return; }
+    const customers = window.customerDataManager?.farm_customers || window.customerDataManager?.customers || [];
+    const digits = q.replace(/\D/g,'');
+    const qLower = q.toLowerCase();
+    const results = customers.filter(c => {
+        const name = (c.name || '').toLowerCase();
+        const nick = (c.nickname || c.alias || '').toLowerCase();
+        const phone = (c.phone || '').replace(/\D/g,'');
+        if (name.includes(qLower) || nick.includes(qLower)) return true;
+        if (digits.length >= 4 && phone.includes(digits)) return true;
+        return false;
+    }).slice(0, 8);
+
+    const esc = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    if (results.length === 0) {
+        box.innerHTML = `<div class="p-2 text-xs text-muted text-center">일치하는 고객 없음 — "신규" 버튼으로 새로 등록</div>`;
+    } else {
+        box.innerHTML = results.map(c => `
+            <div onclick="window._smsPickCustomer?.('${c.id}')" class="p-2 border-b border-gray-100 cursor-pointer hover:bg-success" style="font-size:13px;">
+                <span class="font-semibold">${esc(c.name || '(이름없음)')}</span>
+                ${c.nickname ? `<span class="text-2xs text-muted ml-2">별명: ${esc(c.nickname)}</span>` : ''}
+                <span class="text-2xs text-muted ml-2">${esc(c.phone || '')}</span>
+                ${c.grade ? `<span class="text-2xs text-brand ml-2">[${esc(c.grade)}]</span>` : ''}
+            </div>
+        `).join('');
+    }
+    box.classList.remove('hidden');
+}
+
+function _smsSelectCustomerById(id) {
+    const customers = window.customerDataManager?.farm_customers || window.customerDataManager?.customers || [];
+    const c = customers.find(x => x.id === id);
+    if (!c) return;
+    _smsState.selectedCustomer = {
+        id: c.id,
+        name: c.name || '',
+        phone: c.phone || '',
+        address: c.address || '',
+        grade: c.grade || null,
+        _new: false,
+    };
+    document.getElementById('sms-customer-suggestions')?.classList.add('hidden');
+    _smsRenderSelectedCustomer();
+}
+
+function _smsRenderSelectedCustomer() {
+    const box = document.getElementById('sms-customer-selected');
+    const nameEl = document.getElementById('sms-selected-name');
+    const metaEl = document.getElementById('sms-selected-meta');
+    const c = _smsState.selectedCustomer;
+    if (!box || !c) return;
+    nameEl.textContent = c.name || '(이름 미지정)';
+    metaEl.textContent = [c._new ? '신규' : '', c.phone, c.grade].filter(Boolean).join(' · ');
+    box.classList.remove('hidden');
+    _smsUpdateSaveBtn();
+}
+
+/**
+ * 메시지 텍스트 파싱
+ * 핵심 패턴:
+ *  - "상품명\d+" (예: 애성3)
+ *  - "상품명(옵션)\d+" (예: 화이트그리니(만원)1)
+ *  - 구분자: 쉼표 · 줄바꿈 · 공백
+ *  - 요청 문장(한글로 끝나는 문장): 메모로 자동 분리
+ */
+function _smsParseText(text) {
+    const items = [];
+    const memoLines = [];
+    if (!text || !text.trim()) {
+        _smsState.parsedItems = [];
+        _smsState.memo = '';
+        const memoEl = document.getElementById('sms-memo');
+        if (memoEl) memoEl.value = '';
+        _smsRenderItems();
+        return;
+    }
+    // 줄 단위로 나눠 분석
+    const lines = text.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    const orderLineRe = /([가-힣a-zA-Z][가-힣a-zA-Z0-9\s]*?)\s*(?:\(([^)]+)\))?\s*(\d+)\s*(?:개|그루|송이|포기)?/g;
+    const looksLikeOrder = (line) => /\d/.test(line) && !/[?？]$/.test(line.trim()); // 숫자 없으면 주문 아님
+    const looksLikeRequest = (line) => /(해주세요|해주세여|부탁|바랍니다|요청|해주시길|주세요|해줘요)\s*\.?$/.test(line);
+
+    for (const line of lines) {
+        if (looksLikeRequest(line) || !looksLikeOrder(line)) {
+            // 주문 숫자가 하나라도 없거나, 요청 문구면 메모 후보
+            memoLines.push(line);
+            continue;
+        }
+        // 한 줄에서 "상품명+수량" 토큰 뽑기
+        orderLineRe.lastIndex = 0;
+        let m, foundAny = false;
+        while ((m = orderLineRe.exec(line)) !== null) {
+            const name = (m[1] || '').trim();
+            const option = (m[2] || '').trim();
+            const qty = Math.max(1, parseInt(m[3]) || 1);
+            if (!name || name.length < 1) continue;
+            items.push({ raw: m[0], name, option, qty, matchedProduct: null, candidates: [] });
+            foundAny = true;
+        }
+        if (!foundAny) memoLines.push(line);
+    }
+
+    // 상품 매칭 시도
+    const products = window.productDataManager?.farm_products || [];
+    for (const it of items) {
+        const needle = it.name;
+        // 1) 정확히 일치
+        let exact = products.find(p => p.name === needle);
+        if (exact) { it.matchedProduct = exact; continue; }
+        // 2) 부분 일치 (상품명이 검색어를 포함 or 검색어가 상품명을 포함)
+        const cands = products.filter(p => {
+            const n = p.name || '';
+            return n.includes(needle) || needle.includes(n);
+        });
+        it.candidates = cands.slice(0, 6);
+        if (cands.length === 1) it.matchedProduct = cands[0];
+    }
+
+    _smsState.parsedItems = items;
+    _smsState.memo = memoLines.join(' ');
+    const memoEl = document.getElementById('sms-memo');
+    if (memoEl) memoEl.value = _smsState.memo;
+    _smsRenderItems();
+}
+
+function _smsRenderItems() {
+    const box = document.getElementById('sms-items-list');
+    const summary = document.getElementById('sms-parse-summary');
+    const totalLabel = document.getElementById('sms-total-label');
+    const items = _smsState.parsedItems;
+
+    const matched = items.filter(i => i.matchedProduct).length;
+    const unmatched = items.filter(i => !i.matchedProduct).length;
+    if (summary) summary.textContent = items.length === 0
+        ? '입력하면 자동 파싱됩니다'
+        : `품목 ${items.length}건 · 매칭 ${matched} · 미매칭 ${unmatched}`;
+    if (totalLabel) totalLabel.textContent = `품목 ${items.length}건`;
+
+    if (!box) return;
+    if (items.length === 0) {
+        box.innerHTML = `<div class="p-4 text-center text-xs text-muted">주문 내용을 붙여넣으면 여기 품목이 표시됩니다</div>`;
+        _smsUpdateSaveBtn();
+        return;
+    }
+    const esc = s => String(s||'').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    box.innerHTML = items.map((it, i) => {
+        const matched = !!it.matchedProduct;
+        const hasCandidates = it.candidates && it.candidates.length > 0;
+        const statusIcon = matched
+            ? `<i class="fas fa-check-circle" style="color:var(--primary);"></i>`
+            : hasCandidates
+                ? `<i class="fas fa-exclamation-triangle" style="color:var(--warn);"></i>`
+                : `<i class="fas fa-times-circle" style="color:var(--danger);"></i>`;
+        const productSelect = (() => {
+            if (matched && it.candidates.length <= 1) {
+                return `<span class="text-xs td-primary">${esc(it.matchedProduct.name)}</span>
+                        <span class="text-2xs text-muted ml-1">₩${(it.matchedProduct.price||0).toLocaleString()}</span>`;
+            }
+            if (hasCandidates) {
+                const opts = it.candidates.map(p =>
+                    `<option value="${p.id}" ${it.matchedProduct?.id===p.id?'selected':''}>${esc(p.name)} (₩${(p.price||0).toLocaleString()})</option>`
+                ).join('');
+                return `<select onchange="window._smsSelectProduct?.(${i}, this.value)"
+                            class="form-control" style="font-size:12px;padding:2px 6px;">
+                            ${matched ? '' : '<option value="">선택...</option>'}
+                            ${opts}
+                        </select>`;
+            }
+            return `<span class="text-2xs text-danger mr-1">매칭 실패</span>
+                    <button onclick="window._smsQuickAddProduct?.(${i})" class="btn-secondary btn-xs" title="이 이름으로 새 상품 등록하고 즉시 매칭">
+                        <i class="fas fa-plus mr-1"></i>상품 등록
+                    </button>`;
+        })();
+
+        return `
+            <div class="flex items-center gap-2 px-3 py-2 border-b border-gray-100">
+                <span style="width:14px;">${statusIcon}</span>
+                <span class="text-2xs text-muted font-mono" style="min-width:80px;">${esc(it.raw)}</span>
+                <span class="flex-1">${productSelect}</span>
+                ${it.option ? `<span class="text-2xs" style="color:var(--warn);">[${esc(it.option)}]</span>` : ''}
+                <input type="number" min="1" value="${it.qty}"
+                    onchange="window._smsChangeQty?.(${i}, this.value)"
+                    class="form-control text-center" style="width:50px;font-size:12px;padding:2px 4px;">
+                <button onclick="window._smsRemoveItem?.(${i})" class="btn-icon-delete" title="삭제">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        `;
+    }).join('');
+    _smsUpdateSaveBtn();
+}
+
+function _smsAssignProduct(index, productId) {
+    const item = _smsState.parsedItems[index];
+    if (!item) return;
+    const products = window.productDataManager?.farm_products || [];
+    item.matchedProduct = products.find(p => p.id === productId) || null;
+    _smsRenderItems();
+}
+
+function _smsUpdateSaveBtn() {
+    const btn = document.getElementById('sms-save-btn');
+    if (!btn) return;
+    const hasCustomer = !!_smsState.selectedCustomer;
+    const hasItems = _smsState.parsedItems.length > 0;
+    btn.disabled = !(hasCustomer && hasItems);
+}
+
+/** 주문 저장 */
+function _fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+        const r = new FileReader();
+        r.onload = () => resolve(r.result);
+        r.onerror = reject;
+        r.readAsDataURL(file);
+    });
+}
+
+async function _uploadSmsPhotos() {
+    if (!_smsState.photos.length) return [];
+    if (!window.supabaseClient) return [];
+    const urls = [];
+    for (const p of _smsState.photos) {
+        try {
+            const ext = (p.name.split('.').pop() || 'jpg').toLowerCase();
+            const fileName = `sms-orders/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+            const { error } = await window.supabaseClient.storage
+                .from('product-images') // 기존 버킷 재사용 (별도 버킷 없어도 동작)
+                .upload(fileName, p.file, { contentType: p.file.type || 'image/jpeg', upsert: false });
+            if (error) { console.warn('사진 업로드 실패 (스킵):', error); continue; }
+            const { data } = window.supabaseClient.storage
+                .from('product-images')
+                .getPublicUrl(fileName);
+            if (data?.publicUrl) urls.push(data.publicUrl);
+        } catch (e) { console.warn('사진 업로드 예외:', e); }
+    }
+    return urls;
+}
+
+async function saveSmsOrder() {
+    if (!_smsState.selectedCustomer) { alert('고객을 선택하세요.'); return; }
+    if (_smsState.parsedItems.length === 0) { alert('품목이 없습니다.'); return; }
+    if (!window.supabaseClient) { alert('Supabase 연결 없음'); return; }
+
+    const btn = document.getElementById('sms-save-btn');
+    if (btn) btn.disabled = true;
+
+    // 사진 먼저 업로드
+    const photoUrls = await _uploadSmsPhotos();
+
+    try {
+        const cust = _smsState.selectedCustomer;
+        let customerId = cust.id;
+        // 신규 고객이면 먼저 생성
+        if (cust._new) {
+            if (window.customerDataManager?.addCustomer) {
+                const newC = await window.customerDataManager.addCustomer({
+                    name: cust.name || '(이름미지정)',
+                    phone: cust.phone || '',
+                    address: '',
+                });
+                customerId = newC?.id || null;
+            } else {
+                // 폴백: farm_customers에 직접 insert
+                const { data } = await window.supabaseClient.from('farm_customers').insert([{
+                    id: crypto.randomUUID(),
+                    name: cust.name || '(이름미지정)',
+                    phone: cust.phone || '',
+                    address: '',
+                }]).select();
+                customerId = data?.[0]?.id || null;
+            }
+        }
+
+        // 품목 → RPC 페이로드
+        const items = _smsState.parsedItems.map(it => {
+            const p = it.matchedProduct;
+            return {
+                product_id:   p?.id || null,
+                product_name: p?.name || (it.name + (it.option ? ` (${it.option})` : '')),
+                quantity:     it.qty,
+                price:        p?.price || 0,
+                total:        (p?.price || 0) * it.qty,
+                size:         p?.size || null,
+            };
+        });
+
+        // 주문번호 생성
+        const d = new Date();
+        const yy = String(d.getFullYear()).slice(2);
+        const mm = String(d.getMonth()+1).padStart(2,'0');
+        const dd = String(d.getDate()).padStart(2,'0');
+        const rand = Math.random().toString(36).slice(2,6).toUpperCase();
+        const orderNumber = `SMS-${yy}${mm}${dd}-${rand}`;
+
+        const memo = [
+            _smsState.memo,
+            ..._smsState.parsedItems.filter(i => !i.matchedProduct).map(i => `[미매칭] ${i.raw}`),
+            ...photoUrls.map(u => `[사진] ${u}`),
+        ].filter(Boolean).join(' / ');
+
+        const rpc = await window.supabaseClient.rpc('upsert_order_with_items', {
+            p_order_id: null,
+            p_order_number: orderNumber,
+            p_order_date: new Date().toISOString(),
+            p_customer_id: customerId,
+            p_customer_name: cust.name || '',
+            p_customer_phone: cust.phone || '',
+            p_customer_address: cust.address || '',
+            p_customer_address_detail: null,
+            p_order_status: '주문접수',
+            p_order_channel: '문자주문',
+            p_memo: memo,
+            p_shipping_fee: 0,
+            p_discount_amount: 0,
+            p_items: items,
+        });
+        if (rpc.error) throw new Error(rpc.error.message);
+        if (!rpc.data?.success) throw new Error('RPC 실패');
+
+        // 재고 자동 차감 (매칭된 상품만)
+        if (window.deductStockForItems) {
+            await window.deductStockForItems(items);
+        }
+
+        alert(`주문 등록 완료\n주문번호: ${orderNumber}\n품목 ${items.length}건`);
+        closeSmsOrderModal();
+        if (window.orderDataManager?.loadOrders) await window.orderDataManager.loadOrders();
+        if (window.productDataManager?.loadProducts) await window.productDataManager.loadProducts();
+    } catch (e) {
+        console.error('문자 주문 저장 실패:', e);
+        alert('저장 실패: ' + (e.message || e));
+        if (btn) btn.disabled = false;
+    }
+}
+window.saveSmsOrder = saveSmsOrder;
+
+// ══════════════════════════════════════════════════════════════
+// 이전 주문 복제 — "다시 주문" 버튼
+// ══════════════════════════════════════════════════════════════
+async function reorderFromHistory(orderId) {
+    if (!orderId) return;
+    if (!window.supabaseClient) { alert('Supabase 연결 없음'); return; }
+    try {
+        const { data: order, error: orderErr } = await window.supabaseClient
+            .from('farm_orders')
+            .select('*')
+            .eq('id', orderId)
+            .single();
+        if (orderErr || !order) throw new Error('주문을 찾을 수 없습니다.');
+        const { data: items } = await window.supabaseClient
+            .from('farm_order_items')
+            .select('product_id, product_name, quantity, price, size')
+            .eq('order_id', orderId);
+        const itemArr = items || [];
+        if (itemArr.length === 0) { alert('이 주문에는 품목이 없습니다.'); return; }
+
+        if (!confirm(
+            `이 주문을 복제해 새 주문을 만드시겠어요?\n\n`+
+            `고객: ${order.customer_name || '(없음)'}\n`+
+            `품목: ${itemArr.map(i => `${i.product_name}×${i.quantity}`).join(', ')}\n`+
+            `원 주문일: ${(order.order_date||'').slice(0,10)}`
+        )) return;
+
+        // 고객관리 모달 닫기 (있으면)
+        document.getElementById('customer-modal')?.classList.add('hidden');
+        // 주문관리 탭으로 이동
+        if (typeof window.switchTab === 'function') window.switchTab('orders');
+
+        // SMS 주문 모달을 재활용 (고객+품목 구조가 동일하므로 가장 안전)
+        setTimeout(() => {
+            openSmsOrderModal();
+            setTimeout(() => _applyReorderToSmsModal(order, itemArr), 250);
+        }, 400);
+    } catch (e) {
+        console.error('재주문 실패:', e);
+        alert('재주문 실패: ' + (e.message || e));
+    }
+}
+window.reorderFromHistory = reorderFromHistory;
+
+/** 재주문 데이터를 SMS 모달에 채움 */
+function _applyReorderToSmsModal(order, items) {
+    // 고객 세팅
+    _smsState.selectedCustomer = {
+        id: order.customer_id || null,
+        name: order.customer_name || '',
+        phone: order.customer_phone || '',
+        address: order.customer_address || '',
+        grade: null,
+        _new: false,
+    };
+    _smsRenderSelectedCustomer();
+
+    // 품목 세팅 — 기존 상품 ID 있으면 그대로 사용, 없으면 이름으로 매칭 시도
+    const products = window.productDataManager?.farm_products || [];
+    _smsState.parsedItems = items.map(it => {
+        const matched = it.product_id
+            ? products.find(p => p.id === it.product_id) || null
+            : products.find(p => p.name === it.product_name) || null;
+        return {
+            raw: `${it.product_name}${it.quantity}`,
+            name: it.product_name,
+            option: '',
+            qty: it.quantity || 1,
+            matchedProduct: matched,
+            candidates: matched ? [matched] : [],
+        };
+    });
+
+    // 메모
+    const memo = `[재주문] 원 주문번호: ${order.order_number||''}${order.memo ? ' / ' + order.memo : ''}`;
+    _smsState.memo = memo;
+    const memoEl = document.getElementById('sms-memo');
+    if (memoEl) memoEl.value = memo;
+    // 주문 본문 textarea에도 품목 표기(사용자가 편집 가능)
+    const taEl = document.getElementById('sms-order-text');
+    if (taEl) taEl.value = items.map(it => `${it.product_name}${it.quantity}`).join(', ');
+
+    _smsRenderItems();
+}
+
 // ──────────────────────────────────────────────
 // 날짜 필터 함수
 // ──────────────────────────────────────────────

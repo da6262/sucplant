@@ -411,9 +411,9 @@ class ProductDataManager {
         try {
             console.log('새 상품 추가:', productData);
             
-            // 상품 데이터 검증
-            if (!productData.name || !productData.price) {
-                throw new Error('상품명과 판매가는 필수입니다.');
+            // 상품 데이터 검증 — 상품명만 필수 (판매가는 0원 허용: 일괄등록 시 가격 미정 상품)
+            if (!productData.name) {
+                throw new Error('상품명은 필수입니다.');
             }
             
             // 수정 모드인지 확인 (ID가 있고 유효한 UUID 형식인지 확인)
@@ -458,6 +458,7 @@ class ProductDataManager {
                 shipping_option: productData.shipping_option || '일반배송',
                 description: productData.description || '',
                 image_url: productData.image_url || '',
+                barcode: (productData.barcode && String(productData.barcode).trim()) || this.generateEAN13(),
                 tags: productData.tags || [],
                 created_at: new Date().toISOString(),
                 updated_at: new Date().toISOString()
@@ -484,6 +485,7 @@ class ProductDataManager {
                 shipping_option: newProduct.shipping_option,
                 description:     newProduct.description,
                 image_url:       newProduct.image_url,
+                barcode:         newProduct.barcode,
                 tags:            Array.isArray(newProduct.tags)
                                      ? JSON.stringify(newProduct.tags)
                                      : (newProduct.tags || '[]'),
@@ -549,7 +551,7 @@ class ProductDataManager {
             // 확인된 컬럼만 Supabase에 전송 (미확인 필드 제거)
             const ALLOWED_COLUMNS = new Set([
                 'product_code','name','category','category_id','size','price','cost','stock',
-                'shipping_option','description','image_url','tags','updated_at'
+                'shipping_option','description','image_url','barcode','tags','updated_at'
             ]);
             const cleanUpdate = { updated_at: new Date().toISOString() };
             for (const [key, val] of Object.entries(updateData)) {
@@ -697,6 +699,19 @@ class ProductDataManager {
             const next = nums.length > 0 ? Math.max(...nums) + 1 : 1;
             return `P${String(next).padStart(3, '0')}`;
         }
+    }
+
+    // EAN-13 바코드 자동 생성 (prefix 8801000 + 5자리 순번 + 체크섬)
+    generateEAN13() {
+        const existing = this.farm_products
+            .map(p => p.barcode)
+            .filter(b => b && /^8801000\d{6}$/.test(b))
+            .map(b => parseInt(b.slice(7, 12)));
+        const next = existing.length > 0 ? Math.max(...existing) + 1 : 31;
+        const base = '8801000' + String(next).padStart(5, '0');
+        let sum = 0;
+        for (let i = 0; i < 12; i++) sum += parseInt(base[i]) * (i % 2 === 0 ? 1 : 3);
+        return base + ((10 - (sum % 10)) % 10);
     }
 
     // 상품 정렬
