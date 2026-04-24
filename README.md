@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.48-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.49-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.49 | fix: 바코드 인쇄 모달 UX 2종 — ①"전체 선택" 버튼을 라벨/A4 공통 영역으로 이동(A4 모드에서 사라지던 버그 수정) ②일괄 선택 시 바코드 없는 상품 제외 개수를 모달 안에 경고 표시 |
 | v3.4.48 | fix: 바코드 상품 필터 타입 불일치 — selected.includes(p.id) 에서 p.id 가 UUID 문자열이어도 String() 명시 캐스트로 안전하게 수정 (updateBarcodePreview·printBarcodeLabels·_printBarcodeLabelsA4 3곳) |
 | v3.4.44 | fix: 바코드 웹 버전 3종 수정 — ①모든 인쇄 팝업(단일·라벨·A4)에 null 체크 추가(팝업 차단 시 alert 안내) ②`printSingleBarcode` onload 자동인쇄 → 버튼 클릭 방식으로 변경(Chrome 보안정책 대응) ③카메라 스캔 후면 카메라 실패 시 전면(웹캠) 폴백 추가 |
 | v3.4.43 | feat: 상품관리 바코드 인쇄 개선 — ①테이블 체크박스 선택 후 일괄처리 바에서 "바코드 인쇄" 버튼으로 선택 상품만 모달 오픈 ②바코드 인쇄 모달에 "라벨 프린터 / A4 용지" 모드 토글 추가 — A4 모드는 라벨 크기 선택(40×20·50×25·60×30·70×35mm·직접입력)으로 A4 1장에 격자 배치 + 페이지당 개수 힌트 자동 표시 |

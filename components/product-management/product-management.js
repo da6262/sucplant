@@ -2843,7 +2843,7 @@ window.openProductDetailModal = async function(productId) {
 };
 
 // preSelectedIds: 테이블 체크박스에서 미리 선택할 상품 ID 배열 (없으면 전체 선택)
-window.openBarcodePrintModal = function(preSelectedIds) {
+window.openBarcodePrintModal = function(preSelectedIds, noBarcodeCount = 0) {
     const products = (window.productDataManager?.farm_products || [])
         .filter(p => p.barcode)
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
@@ -2862,6 +2862,22 @@ window.openBarcodePrintModal = function(preSelectedIds) {
     }).join('');
 
     document.getElementById('barcode-print-modal')?.classList.remove('hidden');
+
+    // 바코드 없는 상품 제외 경고
+    const warnEl = document.getElementById('barcode-no-barcode-warn');
+    const msgEl  = document.getElementById('barcode-no-barcode-msg');
+    if (warnEl && msgEl) {
+        if (noBarcodeCount > 0) {
+            msgEl.textContent = `바코드 없는 상품 ${noBarcodeCount}개 제외됨`;
+            warnEl.classList.remove('hidden');
+        } else {
+            warnEl.classList.add('hidden');
+        }
+    }
+
+    // 전체 선택 버튼 텍스트 초기화
+    const selAllBtn = document.getElementById('barcode-select-all-btn');
+    if (selAllBtn) selAllBtn.textContent = '전체 선택';
 
     _initBarcodeSizePicker();
     window.setBarcodePrintMode('label');
@@ -2887,7 +2903,7 @@ window._productBulkPrintBarcodes = function() {
         alert('선택된 상품에 바코드가 없습니다. 상품 편집에서 바코드를 먼저 설정해주세요.');
         return;
     }
-    window.openBarcodePrintModal(ids);
+    window.openBarcodePrintModal(ids, noBarcode.length);
 };
 
 // 인쇄 모드 전환 (label / a4)

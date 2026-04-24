@@ -480,7 +480,6 @@
                         <span class="text-xs text-muted">mm</span>
                     </div>
                     <span class="text-xs text-muted hidden sm:inline">감열 1장 1매</span>
-                    <button id="barcode-select-all-btn" onclick="window.toggleAllBarcodes(this)" class="btn-secondary btn-xs ml-auto">전체 선택</button>
                 </div>
                 <!-- A4 설정 -->
                 <div id="barcode-a4-settings" class="hidden flex items-center gap-2 mb-2 flex-wrap">
@@ -499,6 +498,13 @@
                         <span class="text-xs text-muted">mm</span>
                     </div>
                     <span id="barcode-a4-count-hint" class="text-xs badge badge-info">A4 1장에 약 52개</span>
+                </div>
+                <!-- 전체 선택/해제 — 모드에 관계없이 항상 표시 -->
+                <div class="flex items-center mb-2">
+                    <button id="barcode-select-all-btn" onclick="window.toggleAllBarcodes(this)" class="btn-secondary btn-xs">전체 선택</button>
+                    <span id="barcode-no-barcode-warn" class="hidden text-xs ml-3" style="color:var(--warn);">
+                        <i class="fas fa-exclamation-triangle mr-1"></i><span id="barcode-no-barcode-msg"></span>
+                    </span>
                 </div>
                 <div id="barcode-print-hint" class="text-xs text-warn mb-2" style="line-height:1.4;">
                     💡 Chrome 인쇄 대화상자 → <b>기타 설정 → 용지 크기</b>를 <b id="barcode-size-hint">40 × 20 mm</b>로 맞춰주세요. 다르면 라벨이 밀립니다.
