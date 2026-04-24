@@ -1455,8 +1455,87 @@ class DashboardComponent {
      * 대시보드 내보내기
      */
     exportDashboard() {
-        console.log('📤 대시보드 보고서 내보내기');
-        // TODO: Excel/PDF 보고서 내보내기 구현
+        if (typeof XLSX === 'undefined') {
+            alert('Excel 라이브러리가 로드되지 않았습니다. 페이지를 새로고침 후 다시 시도해주세요.');
+            return;
+        }
+
+        const orders   = (this.data.orders   || []).filter(o => !['주문취소','환불완료'].includes(o.order_status));
+        const products = this.data.products  || [];
+        const today    = new Date();
+        const toDate   = (d) => d ? new Date(d).toLocaleDateString('ko-KR') : '';
+        const fmt      = (n) => Number(n || 0);
+
+        // ── Sheet 1: 매출 요약 ──────────────────────────────────────────
+        const toLD = (d) => { const dt = new Date(d); return `${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`; };
+        const todayStr = toLD(today);
+        const thisMonth = `${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,'0')}`;
+
+        const todayOrders  = orders.filter(o => o.order_created_at && toLD(o.order_created_at) === todayStr);
+        const monthOrders  = orders.filter(o => o.order_created_at && o.order_created_at.startsWith(thisMonth));
+        const totalSales   = orders.reduce((s, o) => s + fmt(o.total_amount), 0);
+        const monthSales   = monthOrders.reduce((s, o) => s + fmt(o.total_amount), 0);
+        const todaySales   = todayOrders.reduce((s, o) => s + fmt(o.total_amount), 0);
+
+        const summaryData = [
+            ['항목', '값'],
+            ['보고서 생성일', today.toLocaleDateString('ko-KR')],
+            ['전체 주문 수 (취소 제외)', orders.length],
+            ['전체 매출 합계', totalSales],
+            [`이번 달(${thisMonth}) 주문 수`, monthOrders.length],
+            [`이번 달 매출`, monthSales],
+            [`오늘(${todayStr}) 주문 수`, todayOrders.length],
+            [`오늘 매출`, todaySales],
+            ['전체 상품 수', products.length],
+            ['재고 부족 상품 수 (5개 이하)', products.filter(p => (p.stock ?? 0) <= 5).length],
+            ['품절 상품 수', products.filter(p => (p.stock ?? 0) === 0).length],
+        ];
+
+        // ── Sheet 2: 주문 목록 ─────────────────────────────────────────
+        const orderHeaders = ['주문번호', '주문일', '고객명', '연락처', '상품요약', '상품금액', '배송비', '할인', '합계', '결제상태', '주문상태', '배송상태'];
+        const orderRows = orders.map(o => [
+            o.order_number || '',
+            toDate(o.order_created_at),
+            o.customer_name || '',
+            o.customer_phone || '',
+            o.order_items_summary || '',
+            fmt(o.items_subtotal),
+            fmt(o.shipping_fee),
+            fmt(o.discount_amount),
+            fmt(o.total_amount),
+            o.payment_status || '',
+            o.order_status || '',
+            o.delivery_status || '',
+        ]);
+
+        // ── Sheet 3: 재고 현황 ─────────────────────────────────────────
+        const stockHeaders = ['상품명', '카테고리', '가격', '재고', '안전재고', '상태'];
+        const stockRows = products.map(p => [
+            p.name || '',
+            p.category || '',
+            fmt(p.price),
+            p.stock ?? 0,
+            p.safe_stock ?? 5,
+            (p.stock ?? 0) === 0 ? '품절' : (p.stock ?? 0) <= (p.safe_stock ?? 5) ? '부족' : '정상',
+        ]);
+
+        // ── 워크북 조립 ────────────────────────────────────────────────
+        const wb = XLSX.utils.book_new();
+
+        const ws1 = XLSX.utils.aoa_to_sheet(summaryData);
+        ws1['!cols'] = [{ wch: 28 }, { wch: 20 }];
+        XLSX.utils.book_append_sheet(wb, ws1, '매출요약');
+
+        const ws2 = XLSX.utils.aoa_to_sheet([orderHeaders, ...orderRows]);
+        ws2['!cols'] = [10,12,10,14,30,12,10,10,12,10,10,10].map(w => ({ wch: w }));
+        XLSX.utils.book_append_sheet(wb, ws2, '주문목록');
+
+        const ws3 = XLSX.utils.aoa_to_sheet([stockHeaders, ...stockRows]);
+        ws3['!cols'] = [{ wch: 24 }, { wch: 16 }, { wch: 10 }, { wch: 8 }, { wch: 10 }, { wch: 8 }];
+        XLSX.utils.book_append_sheet(wb, ws3, '재고현황');
+
+        const fileName = `경산다육_대시보드_${todayStr}.xlsx`;
+        XLSX.writeFile(wb, fileName);
     }
 
     /**

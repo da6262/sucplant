@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.53-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.54-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.54 | feat: 대시보드 Excel 내보내기 구현 — 매출요약·주문목록·재고현황 3개 시트, 파일명 경산다육_대시보드_YYYY-MM-DD.xlsx |
 | v3.4.53 | refactor: orderForm.js 데드 코드 3개 제거 — applyCoupon·saveOrderDraft·previewOrder (버튼 제거 시 함께 지워졌어야 할 미호출 함수) |
 | v3.4.52 | refactor: features/shipping/ 전체 삭제 — 내비게이션에 연결되지 않은 데드 코드 4,093줄(10파일) 제거, main.js import·전역 등록·sw.js 캐시 목록도 함께 정리 |
 | v3.4.51 | fix: 고객관리 dead code 5개 제거 + supabase 체크 수정 — updateCustomerStats/updateCustomerOrders/updateCustomerModalStats/updateCustomerModalOrders/closeCustomerDetailModal 미호출 스텁 삭제, loadCustomerOrders의 !window.supabase 잘못된 가드 → !window.supabaseClient 로 수정 |
