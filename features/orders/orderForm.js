@@ -465,36 +465,6 @@ function setupOrderFormEventListeners() {
 }
 
 
-// 주문채널 옵션 초기화
-function initOrderChannelOptions() {
-    try {
-        const channelSelect = document.getElementById('order-channel');
-        if (!channelSelect) return;
-        
-        // 기본 채널 옵션들
-        const defaultChannels = [
-            '온라인몰',
-            '전화주문',
-            '카카오톡',
-            '인스타그램',
-            '네이버쇼핑',
-            '쿠팡',
-            '11번가',
-            'G마켓',
-            '옥션',
-            '기타'
-        ];
-        
-        channelSelect.innerHTML = defaultChannels.map(channel => 
-            `<option value="${channel}">${channel}</option>`
-        ).join('');
-        
-        console.log('✅ 주문채널 옵션 초기화 완료');
-        
-    } catch (error) {
-        console.error('❌ 주문채널 옵션 초기화 실패:', error);
-    }
-}
 
 // 배송비 설정 로드
 function loadShippingSettings() {
@@ -1429,7 +1399,6 @@ function addSelectedProductsToCart(event) {
 // 전역 스코프에 함수 등록
 window.generateOrderFormHTML = generateOrderFormHTML;
 window.initOrderForm = initOrderForm;
-window.initOrderChannelOptions = initOrderChannelOptions;
 window.initShippingFeeFromSettings = initShippingFeeFromSettings;
 window.loadShippingMethodsFromSettings = loadShippingMethodsFromSettings;
 window.populateOrderStatusSelectFromSettings = populateOrderStatusSelectFromSettings;

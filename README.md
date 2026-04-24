@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.57-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.58-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.58 | fix: 주문 고객 검색 onclick 이스케이프 — 주소·이름에 따옴표 포함 시 onclick 파싱 오류 수정, XSS 방어 추가 / initOrderChannelOptions 데드코드 삭제 |
 | v3.4.57 | fix: 주문·상품·환경설정 모바일 반응형 — 주문관리(문자주문 노출·나머지 ⋮), 상품관리(카메라스캔 노출·나머지 ⋮), 환경설정 SMS grid-cols-3→1 md:3, 상품 필터 검색창 flex-1 |
 | v3.4.56 | fix: 고객관리 모바일 반응형 — 보조 버튼 4개(자동태그·등급관리·가져오기·내보내기) ⋮ 토글로 접기, 필터바 등급 버튼 flex-wrap 분리 |
 | v3.4.55 | fix: 대시보드 모바일 반응형 — KPI 4열→2열, 워크플로우 6열→3열, 차트/하단/분석 3·2열→1열(md:이상 복원), KPI 숫자 truncate 추가 |

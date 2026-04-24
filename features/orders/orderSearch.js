@@ -21,24 +21,25 @@ function searchExistingCustomers(query) {
                     return;
                 }
                 
+                const esc = s => (s || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
                 const resultsDiv = document.getElementById('customer-search-results');
                 if (data && data.length > 0) {
                     resultsDiv.innerHTML = data.map(customer => `
-                        <div class="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                             onclick="selectCustomerFromHTML('${customer.id}', '${customer.name}', '${customer.phone}', '${customer.address}')">
-                            <div class="text-xs font-medium text-heading">${customer.name}</div>
-                            <div class="text-xs text-secondary">${customer.phone}</div>
+                        <div class="p-2 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                             onclick="selectCustomerFromHTML('${esc(customer.id)}', '${esc(customer.name)}', '${esc(customer.phone)}', '${esc(customer.address)}')">
+                            <div class="text-xs font-medium text-heading">${customer.name.replace(/</g,'&lt;')}</div>
+                            <div class="text-xs text-secondary">${(customer.phone||'').replace(/</g,'&lt;')}</div>
                         </div>
                     `).join('');
                     resultsDiv.classList.remove('hidden');
                 } else {
                     // 검색 결과가 없을 때 신규 고객 등록 옵션 표시
                     resultsDiv.innerHTML = `
-                        <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0" 
-                             onclick="openNewCustomerRegistration('${query}')">
+                        <div class="p-2 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0"
+                             onclick="openNewCustomerRegistration('${esc(query)}')">
                             <div class="text-xs font-medium text-info flex items-center">
                                 <i class="fas fa-plus mr-2"></i>
-                                "${query}" 새 고객으로 등록
+                                "${query.replace(/</g,'&lt;')}" 새 고객으로 등록
                             </div>
                             <div class="text-xs text-secondary">기존 명단에 없는 고객입니다</div>
                         </div>
