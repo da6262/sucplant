@@ -53,12 +53,15 @@ window.printSingleBarcode = function() {
     const svg = document.getElementById('barcode-zoom-svg');
     const svgStr = new XMLSerializer().serializeToString(svg);
     const win = window.open('', '_blank', 'width=400,height=300');
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 팝업 허용 후 다시 시도해주세요.'); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>바코드</title>
         <style>body{margin:20px;text-align:center;font-family:sans-serif;}
         p{font-size:13px;font-weight:600;margin-bottom:8px;}
-        @media print{@page{margin:8mm;}}</style></head><body>
+        #btn-print{margin-top:12px;padding:8px 24px;font-size:14px;font-weight:700;background:#16a34a;color:#fff;border:none;border-radius:6px;cursor:pointer;}
+        @media print{#btn-print{display:none;}@page{margin:8mm;}}</style></head><body>
         <p>${name.replace(/</g,'&lt;')}</p>${svgStr}
-        <script>window.onload=()=>{window.print();}<\/script>
+        <button id="btn-print" onclick="window.print()">🖨 인쇄</button>
+        <script>setTimeout(function(){document.getElementById('btn-print')?.click();},200);<\/script>
     </body></html>`);
     win.document.close();
 };
@@ -3100,6 +3103,7 @@ window.printBarcodeLabels = function() {
 
     const labelCount = products.length;
     const win = window.open('', '_blank', 'width=480,height=360');
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 팝업 허용 후 다시 시도해주세요.'); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>바코드 라벨 인쇄</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3244,6 +3248,7 @@ window._printBarcodeLabelsA4 = function(selected) {
     const labelCount = products.length;
     const pageCount = Math.ceil(labelCount / perPage);
     const win = window.open('', '_blank', 'width=720,height=900');
+    if (!win) { alert('팝업이 차단되었습니다. 브라우저 팝업 허용 후 다시 시도해주세요.'); return; }
     win.document.write(`<!DOCTYPE html><html><head><title>바코드 A4 인쇄</title>
         <style>
             * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -3317,16 +3322,21 @@ window.openBarcodeScanner = function() {
 function _startBarcodeCamera(statusEl) {
     try {
         _barcodeScanner = new window.Html5Qrcode('barcode-scanner-reader');
-        _barcodeScanner.start(
-            { facingMode: 'environment' },
-            { fps: 10, qrbox: { width: 250, height: 100 } },
-            (decodedText) => { window.processBarcodeResult(decodedText); },
-            () => {}
+        const config = { fps: 10, qrbox: { width: 250, height: 100 } };
+        // 후면 카메라 먼저 시도, 실패 시 전면(데스크톱 웹캠) 폴백
+        _barcodeScanner.start({ facingMode: 'environment' }, config,
+            (decodedText) => { window.processBarcodeResult(decodedText); }, () => {}
         ).then(() => {
             if (statusEl) statusEl.textContent = '카메라를 바코드에 가져다 대세요';
-        }).catch(err => {
-            if (statusEl) statusEl.textContent = '카메라 접근 실패. 직접 입력을 이용해 주세요.';
-            console.warn('카메라 시작 실패:', err);
+        }).catch(() => {
+            _barcodeScanner.start({ facingMode: 'user' }, config,
+                (decodedText) => { window.processBarcodeResult(decodedText); }, () => {}
+            ).then(() => {
+                if (statusEl) statusEl.textContent = '카메라를 바코드에 가져다 대세요';
+            }).catch(err => {
+                if (statusEl) statusEl.textContent = '카메라 접근 실패. 직접 입력을 이용해 주세요.';
+                console.warn('카메라 시작 실패:', err);
+            });
         });
     } catch(e) {
         if (statusEl) statusEl.textContent = '스캔 초기화 오류. 직접 입력을 이용해 주세요.';
