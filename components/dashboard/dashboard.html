@@ -21,7 +21,7 @@
 
         <!-- 오늘만 모드 전용 Hero 섹션 (today-mode 에서만 표시) -->
         <div id="today-hero" class="hidden today-mode-only space-y-3">
-            <div class="grid grid-cols-3 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
                 <!-- Big 오늘 매출 -->
                 <div class="app-panel px-4 py-3 col-span-2" style="background:linear-gradient(135deg, #F0FDF4 0%, #ECFDF5 100%);">
                     <div class="flex items-start justify-between">
@@ -49,7 +49,7 @@
                 </div>
             </div>
             <!-- 시간대별 + 오늘 TOP 상품 -->
-            <div class="grid grid-cols-2 gap-2">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-2">
                 <div class="app-panel px-3 py-2">
                     <h3 class="text-xs font-semibold text-body mb-2"><i class="fas fa-clock mr-1 text-info"></i>시간대별 매출 (오늘)</h3>
                     <div style="height:180px;"><canvas id="today-hourly-chart"></canvas></div>
@@ -61,33 +61,33 @@
             </div>
         </div>
 
-        <!-- 매출 KPI 카드 (4열) -->
-        <div class="grid grid-cols-4 gap-2" data-today-hide>
+        <!-- 매출 KPI 카드 (모바일 2열 → 데스크탑 4열) -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-2" data-today-hide>
             <div class="app-panel px-3 py-2">
                 <p class="text-2xs text-muted">오늘 매출</p>
-                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-today-sales">₩0</p>
+                <p class="text-sm md:text-lg font-bold text-heading tabular-nums truncate" id="kpi-today-sales">₩0</p>
                 <p class="text-2xs" id="kpi-today-orders">0건 <span id="kpi-today-diff" class="text-muted"></span></p>
                 <p class="text-2xs text-muted" id="kpi-today-channels"></p>
             </div>
             <div class="app-panel px-3 py-2" data-today-hide>
                 <p class="text-2xs text-muted">이번 달 매출</p>
-                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-month-sales">₩0</p>
+                <p class="text-sm md:text-lg font-bold text-heading tabular-nums truncate" id="kpi-month-sales">₩0</p>
                 <p class="text-2xs" id="kpi-month-orders">0건 <span id="kpi-month-diff" class="text-muted"></span></p>
             </div>
             <div class="app-panel px-3 py-2">
                 <p class="text-2xs text-muted">평균 주문금액</p>
-                <p class="text-lg font-bold text-heading tabular-nums" id="kpi-avg-order">₩0</p>
+                <p class="text-sm md:text-lg font-bold text-heading tabular-nums truncate" id="kpi-avg-order">₩0</p>
                 <p class="text-2xs text-muted" id="kpi-total-customers">고객 0명</p>
             </div>
             <div class="app-panel px-3 py-2" data-today-hide>
                 <p class="text-2xs text-muted">이번 달 신규고객</p>
-                <p class="text-lg font-bold text-brand tabular-nums" id="kpi-new-customers">0명</p>
+                <p class="text-sm md:text-lg font-bold text-brand tabular-nums truncate" id="kpi-new-customers">0명</p>
                 <p class="text-2xs text-muted" id="kpi-repeat-rate">재구매 0%</p>
             </div>
         </div>
 
-        <!-- 워크플로우 카드 (6열) -->
-        <div class="grid grid-cols-6 gap-1.5">
+        <!-- 워크플로우 카드 (모바일 3열 → 데스크탑 6열) -->
+        <div class="grid grid-cols-3 md:grid-cols-6 gap-1.5">
             <div id="pack-waiting-card" class="app-panel border-l-4 border-orange-400 px-2 py-1.5 cursor-pointer hover:bg-orange-50 text-center">
                 <p class="text-2xs text-muted">포장대기</p>
                 <p class="text-lg font-bold text-orange-500" id="pack-waiting-count">0</p>
@@ -115,8 +115,8 @@
             </div>
         </div>
 
-        <!-- 차트 영역 (3열) -->
-        <div class="grid grid-cols-3 gap-2" data-today-hide>
+        <!-- 차트 영역 (모바일 1열 → 데스크탑 3열) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2" data-today-hide>
             <div class="app-panel px-3 py-2">
                 <div class="flex items-center justify-between mb-2">
                     <h3 class="text-xs font-semibold text-body">매출 추이</h3>
@@ -148,8 +148,8 @@
             </div>
         </div>
 
-        <!-- 하단 3열: 인기상품 / 최근주문 / 빠른액션 -->
-        <div class="grid grid-cols-3 gap-2">
+        <!-- 하단 (모바일 1열 → 데스크탑 3열) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-2">
             <div class="app-panel px-3 py-2 flex flex-col" style="max-height:260px;" data-today-hide>
                 <h3 class="text-xs font-semibold text-body mb-2">인기 상품 TOP 5</h3>
                 <div id="top-products-list" class="overflow-y-auto flex-1 text-xs space-y-1">
@@ -185,8 +185,8 @@
             </div>
         </div>
 
-        <!-- 운영효율 + 고객분석 (2열) -->
-        <div class="grid grid-cols-2 gap-2" data-today-hide>
+        <!-- 운영효율 + 고객분석 (모바일 1열 → 데스크탑 2열) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-2" data-today-hide>
             <!-- 운영 효율 -->
             <div class="app-panel px-3 py-2">
                 <h3 class="text-xs font-semibold text-body mb-2"><i class="fas fa-tachometer-alt text-info mr-1"></i>운영 효율</h3>
