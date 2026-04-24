@@ -6,10 +6,18 @@
         <h2>고객 관리</h2>
         <div class="action-group">
             <button id="open-bulk-sms-btn" class="btn-secondary" title="태그·등급으로 고객 세그먼트 필터 후 일괄 문자 발송"><i class="fas fa-bullhorn"></i>일괄 문자</button>
-            <button id="recalc-auto-tags-btn" class="btn-secondary" title="전체 고객 주문 이력으로 자동 태그(신규·단골·이탈위험·VIP후보) 재계산"><i class="fas fa-robot"></i>자동 태그</button>
-            <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
-            <button id="import-customers-btn" class="btn-secondary" title="엑셀 파일로 고객 일괄 가져오기 (전화번호 기준 upsert)"><i class="fas fa-file-import"></i>가져오기</button>
-            <button id="export-customers-btn" class="btn-secondary" title="현재 전체 고객을 엑셀 파일로 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
+            <!-- 모바일: 보조 버튼 토글 -->
+            <button class="mobile-more-toggle btn-secondary" title="더보기"
+                    onclick="this.nextElementSibling.classList.toggle('open')">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <!-- 보조 버튼 (PC: 항상 표시 / 모바일: 토글) -->
+            <div class="mobile-extra-btns">
+                <button id="recalc-auto-tags-btn" class="btn-secondary" title="전체 고객 주문 이력으로 자동 태그(신규·단골·이탈위험·VIP후보) 재계산"><i class="fas fa-robot"></i>자동 태그</button>
+                <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
+                <button id="import-customers-btn" class="btn-secondary" title="엑셀 파일로 고객 일괄 가져오기 (전화번호 기준 upsert)"><i class="fas fa-file-import"></i>가져오기</button>
+                <button id="export-customers-btn" class="btn-secondary" title="현재 전체 고객을 엑셀 파일로 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
+            </div>
             <input type="file" id="import-customers-file" accept=".xlsx,.xls,.csv" style="display:none;">
             <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
         </div>
@@ -28,17 +36,18 @@
     <!-- 고객목록 영역 -->
     <div id="customers-panel-list" class="flex flex-col flex-1 min-h-0">
 
-    <!-- 검색 + 필터 한 줄 -->
+    <!-- 검색 + 필터 -->
     <div class="filter-bar">
-        <div class="relative">
+        <!-- 검색 + 정렬 -->
+        <div class="relative flex-1" style="min-width:140px;max-width:240px;">
             <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
-                   class="input-ui" style="max-width:240px;padding-right:28px;" autocomplete="off"
+                   class="input-ui w-full" style="padding-right:28px;" autocomplete="off"
                    oninput="if(window.handleCustomerSearch) handleCustomerSearch(this.value);"
                    onchange="if(window.handleCustomerSearch) handleCustomerSearch(this.value);">
             <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-muted text-xs pointer-events-none"></i>
             <div id="customer-search-suggestions" class="absolute left-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden" style="min-width:200px;"></div>
         </div>
-        <select id="customer-sort" class="input-ui" style="max-width:140px;">
+        <select id="customer-sort" class="input-ui" style="max-width:120px;">
             <option value="newest">최근등록순</option>
             <option value="name_asc">이름↑</option>
             <option value="name_desc">이름↓</option>
@@ -46,17 +55,19 @@
         </select>
         <button id="apply-customer-sort" class="btn-search">적용</button>
         <button id="reset-customer-search" class="btn-secondary"><i class="fas fa-refresh"></i></button>
-        <span class="text-gray-300">|</span>
-        <span class="text-xs text-muted">등급:</span>
-        <button id="customer-grade-all" class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
-        <span id="customer-grade-dynamic-slot"><!-- 환경설정 customerGrades 기반 동적 생성 --></span>
-        <span class="text-gray-300">|</span>
-        <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-            <input type="checkbox" id="filter-unpaid" class="checkbox-ui"> 미납
-        </label>
-        <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-            <input type="checkbox" id="filter-waitlist" class="checkbox-ui"> 대기
-        </label>
+        <!-- 등급 필터 + 체크박스 (줄바꿈 허용) -->
+        <div class="flex items-center gap-1 flex-wrap">
+            <span class="text-xs text-muted">등급:</span>
+            <button id="customer-grade-all" class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
+            <span id="customer-grade-dynamic-slot"><!-- 환경설정 customerGrades 기반 동적 생성 --></span>
+            <span class="text-gray-300">|</span>
+            <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
+                <input type="checkbox" id="filter-unpaid" class="checkbox-ui"> 미납
+            </label>
+            <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
+                <input type="checkbox" id="filter-waitlist" class="checkbox-ui"> 대기
+            </label>
+        </div>
     </div>
 
     <!-- 고객 목록 -->

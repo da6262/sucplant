@@ -1138,6 +1138,19 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     .filter-bar { gap: 8px; padding: 5px 16px; }
 }
 
+/* 모바일 접이식 버튼 그룹 */
+.mobile-extra-btns {
+    display: flex; flex-wrap: wrap; gap: 8px;
+}
+@media (max-width: 768px) {
+    .mobile-extra-btns { display: none; }
+    .mobile-extra-btns.open { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
+    .mobile-more-toggle { display: inline-flex !important; }
+}
+@media (min-width: 769px) {
+    .mobile-more-toggle { display: none !important; }
+}
+
 /* Status tab bar 컨테이너 */
 .status-tab-bar {
     padding: 4px 12px;
