@@ -30,36 +30,6 @@ function generateOrderFormHTML() {
     return "";
 }
 
-// 쿠폰 적용 함수
-function applyCoupon() {
-    const couponCode = document.getElementById('coupon-code').value;
-    if (!couponCode) {
-        alert('쿠폰 코드를 입력해주세요.');
-        return;
-    }
-    
-    console.log('🎫 쿠폰 적용:', couponCode);
-    // 쿠폰 검증 및 할인 적용 로직
-    alert('쿠폰이 적용되었습니다.');
-    updateCartTotal();
-}
-
-// 주문 임시저장 함수
-function saveOrderDraft() {
-    console.log('💾 주문 임시저장');
-    // 임시저장 로직 구현
-    if (typeof window.showToast === 'function') {
-        window.showToast('💾 주문이 임시저장되었습니다', 2000);
-    }
-}
-
-// 주문 미리보기 함수
-function previewOrder() {
-    console.log('👁️ 주문 미리보기');
-    // 미리보기 모달 열기 로직
-    alert('주문 미리보기 기능은 준비 중입니다.');
-}
-
 // 주문 요약 업데이트 함수
 function updateOrderSummary() {
     try {
