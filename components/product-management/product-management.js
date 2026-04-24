@@ -1969,7 +1969,7 @@ class ProductManagementComponent {
                     size:         pick(cols, map.size),
                     description:  pick(cols, map.desc),
                     product_code: pick(cols, map.sku),
-                    barcode:      pick(cols, map.barcode),
+                    barcode:      pick(cols, map.barcode) || generateEAN13(),
                     shipping_option: '일반배송',
                     status: 'active',
                 });
