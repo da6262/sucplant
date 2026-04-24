@@ -9,9 +9,9 @@
 **올바른 순서 (반드시 이 순서 준수)**:
 
 ```bash
-# Step 1 — 다른 세션 파일 먼저 격리 (커밋 전에)
-git stash push -- dist/js/config.js .claude/settings.local.json
-# (다른 세션 modified 파일이 있으면 추가)
+# Step 1 — 커밋 전 워킹트리 정리
+git restore dist/                              # dist/ 는 deploy 때마다 재생성 → restore로 초기화
+git stash push -- .claude/settings.local.json  # 다른 세션 파일만 stash (dist/ 는 stash 하지 말 것)
 
 # Step 2 — 내 파일만 스테이징 + 커밋
 git add <file1> <file2> README.md
@@ -24,7 +24,7 @@ git push origin main
 # Step 4 — 배포
 npm run deploy
 
-# Step 5 — 격리 복원
+# Step 5 — stash 복원
 git stash pop
 ```
 
@@ -33,9 +33,8 @@ git stash pop
 - 한글 메시지 OK (UTF-8)
 - `js/config.js` 패치 버전은 git hook 이 자동 +1
 - **내가 편집한 파일만 명시 스테이징** (`git add <file1> <file2>` 형태). `git add .` / `git add -A` 금지 — 다른 AI 편집기 세션의 미커밋 변경이 끼어들면 다른 세션의 작업이 통째로 섞여 들어감
-- **stash는 반드시 커밋 전에** — 커밋 후 stash하면 `git pull --rebase` 가 "unstaged changes" 오류로 막힘
-- **stash 대상 파일 목록** (매번 확인): `dist/js/config.js`, `.claude/settings.local.json` — 다른 세션이 건드린 파일이 더 있으면 추가
-- **deploy 후 dist/ stash는 드롭** — `npm run sync`가 dist/ 를 최신으로 덮어쓰므로 stash한 구버전 dist/ 를 pop하면 충돌. deploy 완료 후 dist/ 관련 stash는 `git stash drop` 으로 제거
+- **dist/ 는 stash 금지, restore 로 초기화** — `npm run sync`가 deploy 때마다 덮어쓰므로 stash해봤자 pop 시 충돌만 발생. `git restore dist/`로 초기화 후 rebase, deploy 후 자동 재생성됨
+- **stash 대상**: `dist/` 제외한 다른 세션 파일만 (`js/config.js` 가 modified 상태라면 stash, `.claude/settings.local.json` 등)
 - README/config 는 내 커밋의 일부로 취급해 같이 스테이징 (변경 이력 동일 커밋 규칙과 정합)
 
 ### 2) README 변경이력 (커밋과 동일 커밋에 포함)
