@@ -5,12 +5,35 @@
 여러 AI 편집기가 동시 작업하므로 원격 동기화를 지연시키지 않는다.
 
 ### 1) 커밋 (항상)
+
+**올바른 순서 (반드시 이 순서 준수)**:
+
+```bash
+# Step 1 — 다른 세션 파일 먼저 격리 (커밋 전에)
+git stash push -- dist/js/config.js .claude/settings.local.json
+# (다른 세션 modified 파일이 있으면 추가)
+
+# Step 2 — 내 파일만 스테이징 + 커밋
+git add <file1> <file2> README.md
+git commit -m "feat: ..."
+
+# Step 3 — rebase pull → push
+git pull --rebase origin main
+git push origin main
+
+# Step 4 — 배포
+npm run deploy
+
+# Step 5 — 격리 복원
+git stash pop
+```
+
 - 한 가지 주제 작업이 끝날 때마다 **즉시 커밋**
 - 메시지 프리픽스: `fix` / `feat` / `style` / `refactor` / `docs` / `chore`
 - 한글 메시지 OK (UTF-8)
 - `js/config.js` 패치 버전은 git hook 이 자동 +1
 - **내가 편집한 파일만 명시 스테이징** (`git add <file1> <file2>` 형태). `git add .` / `git add -A` 금지 — 다른 AI 편집기 세션의 미커밋 변경이 끼어들면 다른 세션의 작업이 통째로 섞여 들어감
-- 다른 세션의 modified 파일은 commit 전 `git stash push -- <files>` 로 분리, push 완료 후 `git stash pop` 으로 원복
+- **stash는 반드시 커밋 전에** — 커밋 후 stash하면 `git pull --rebase` 가 "unstaged changes" 오류로 막힘
 - README/config 는 내 커밋의 일부로 취급해 같이 스테이징 (변경 이력 동일 커밋 규칙과 정합)
 
 ### 2) README 변경이력 (커밋과 동일 커밋에 포함)
