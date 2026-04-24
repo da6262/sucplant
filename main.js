@@ -106,12 +106,6 @@ import {
     OrderDataManager
 } from './features/orders/orderData.js';
 
-// 배송 UI 모듈 import
-import { shippingUI } from './features/shipping/shippingUI.js';
-
-// 배송관리 컴포넌트 로드 함수 import
-import { loadShippingManagementComponent } from './js/shipping-management.js';
-
 // 테스트 유틸리티 모듈 import
 import './features/test/testUtils.js';
 
@@ -201,12 +195,6 @@ window.openCategoryModal = openCategoryModal;
 window.closeCategoryModal = closeCategoryModal;
 window.loadCategoriesList = loadCategoriesList;
 window.updateCategoryDropdown = updateCategoryDropdown;
-
-// shippingUI 인스턴스 전역 등록
-window.shippingUI = shippingUI;
-
-// 배송관리 컴포넌트 로드 함수 전역 등록
-window.loadShippingManagementComponent = loadShippingManagementComponent;
 
 // 주문 데이터 관리자 전역 등록
 window.orderDataManager = orderDataManager;
@@ -373,7 +361,6 @@ document.addEventListener('DOMContentLoaded', async () => {
                     '[id$="-section"]',
                     '.tab-content',
                     '.content-section',
-                    '#shipping-section',
                     '#waitlist-section',
                     '#dashboard-section',
                     '#customers-section',

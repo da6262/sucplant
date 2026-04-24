@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.51-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.52-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -17,7 +17,6 @@
 | 📦 **주문관리** | 주문 등록·수정·상태 변경, 피킹 리스트, 일괄 처리, SMS 발송 |
 | 🌿 **상품관리** | 상품 등록·재고 관리, 카테고리 분류, 이미지 업로드 |
 | ⏳ **대기자관리** | 재입고 대기 등록, 상태 추적(대기중→연락완료→주문전환), 탭 카운트 배지 |
-| 🚚 **배송관리** | 배송 현황, 라벨 출력, SMS 일괄 발송 |
 | ⚙️ **환경설정** | 농장 정보, 배송 설정, 판매 채널, 주문 상태, 고객등급, SMS 템플릿 |
 
 ---
@@ -233,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.52 | refactor: features/shipping/ 전체 삭제 — 내비게이션에 연결되지 않은 데드 코드 4,093줄(10파일) 제거, main.js import·전역 등록·sw.js 캐시 목록도 함께 정리 |
 | v3.4.51 | fix: 고객관리 dead code 5개 제거 + supabase 체크 수정 — updateCustomerStats/updateCustomerOrders/updateCustomerModalStats/updateCustomerModalOrders/closeCustomerDetailModal 미호출 스텁 삭제, loadCustomerOrders의 !window.supabase 잘못된 가드 → !window.supabaseClient 로 수정 |
 | v3.4.50 | fix: 일괄 등록 시 바코드 누락 — 엑셀/CSV에 바코드 컬럼이 없거나 비어있을 때 EAN-13 자동 생성 (수동 등록과 동일하게 통일) |
 | v3.4.49 | fix: 바코드 인쇄 모달 UX 2종 — ①"전체 선택" 버튼을 라벨/A4 공통 영역으로 이동(A4 모드에서 사라지던 버그 수정) ②일괄 선택 시 바코드 없는 상품 제외 개수를 모달 안에 경고 표시 |

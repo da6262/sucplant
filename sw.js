@@ -16,7 +16,6 @@ const STATIC_ASSETS = [
   '/js/app.js',
   '/js/customer-management.js',
   '/js/order-management.js',
-  '/js/shipping-management.js',
   '/main.js',
   '/components/header/header.html',
   '/components/header/header.js',
