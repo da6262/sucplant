@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.44-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.48-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.48 | fix: 바코드 상품 필터 타입 불일치 — selected.includes(p.id) 에서 p.id 가 UUID 문자열이어도 String() 명시 캐스트로 안전하게 수정 (updateBarcodePreview·printBarcodeLabels·_printBarcodeLabelsA4 3곳) |
 | v3.4.44 | fix: 바코드 웹 버전 3종 수정 — ①모든 인쇄 팝업(단일·라벨·A4)에 null 체크 추가(팝업 차단 시 alert 안내) ②`printSingleBarcode` onload 자동인쇄 → 버튼 클릭 방식으로 변경(Chrome 보안정책 대응) ③카메라 스캔 후면 카메라 실패 시 전면(웹캠) 폴백 추가 |
 | v3.4.43 | feat: 상품관리 바코드 인쇄 개선 — ①테이블 체크박스 선택 후 일괄처리 바에서 "바코드 인쇄" 버튼으로 선택 상품만 모달 오픈 ②바코드 인쇄 모달에 "라벨 프린터 / A4 용지" 모드 토글 추가 — A4 모드는 라벨 크기 선택(40×20·50×25·60×30·70×35mm·직접입력)으로 A4 1장에 격자 배치 + 페이지당 개수 힌트 자동 표시 |
 | v3.4.42 | feat: 주문/대시보드/상품 대규모 개선 — ①상품 일괄등록 5개 버그 수정(판매가 필수 제거·CSV 따옴표 파서·Payhere 헤더 키워드 매핑·중복 건너뛰기·상세 결과 알림) ②EAN-13 바코드 자동 생성(addProduct/updateProduct 양쪽) ③모바일 "빠른추가" 탭(상품명만 엔터 연속 입력) + 붙여넣기 탭 모바일 친화(16px·라인별 구분자 자동 감지) ④saveProduct 재진입 가드(모바일 더블탭 중복 저장 차단) ⑤페이히어 매출 엑셀 가져오기(헤더 키워드 매핑·영수증 단위 그룹핑·주문번호 기준 dedup·upsert_order_with_items RPC) ⑥문자/카톡/밴드 주문 빠른등록 모달(고객 이름·별명·전화 부분매칭, 상품명+수량 정규식 파싱, 요청문장 메모 자동 분리, 매칭 실패 품목 "상품 등록" 즉시 추가, 사진 첨부 Supabase Storage) ⑦고객 상세 "다시 주문" 버튼(SMS 모달 프리필 재활용) ⑧재고 자동 차감 공통 헬퍼(deductStockForItems) + SMS·페이히어 경로 연결 ⑨대시보드 "오늘만" 토글(localStorage 저장) + Hero 시각화(큰 매출 카드·채널 도넛·시간대별 bar chart·오늘 TOP5 상품) ⑩대시보드 워크플로우 카드 클릭 복구(옛 ID 매핑 교체, 상태 탭 자동 필터) ⑪재고부족 카드 품절/부족 분리 + 오늘 매출 KPI에 채널별 분리 서브텍스트 |

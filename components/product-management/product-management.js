@@ -3011,7 +3011,7 @@ window.updateBarcodePreview = function() {
     const { W, H } = _getBarcodeLabelSize();
     const selected = [...document.querySelectorAll('.barcode-check:checked')].map(c => c.dataset.id);
     const products = (window.productDataManager?.farm_products || [])
-        .filter(p => selected.includes(p.id) && p.barcode);
+        .filter(p => selected.includes(String(p.id)) && p.barcode);
     if (!products.length) {
         box.innerHTML = '<span class="text-xs text-muted">상품을 선택하면<br>미리보기가 표시됩니다</span>';
         return;
@@ -3064,7 +3064,7 @@ window.printBarcodeLabels = function() {
     if (printMode === 'a4') { window._printBarcodeLabelsA4(selected); return; }
 
     const products = (window.productDataManager?.farm_products || [])
-        .filter(p => selected.includes(p.id) && p.barcode);
+        .filter(p => selected.includes(String(p.id)) && p.barcode);
 
     // 사용자 선택 라벨 크기 (기본 40×20mm, localStorage 저장)
     const { W, H } = _getBarcodeLabelSize();
@@ -3193,7 +3193,7 @@ window.printBarcodeLabels = function() {
 // A4 용지 바코드 인쇄
 window._printBarcodeLabelsA4 = function(selected) {
     const products = (window.productDataManager?.farm_products || [])
-        .filter(p => selected.includes(p.id) && p.barcode);
+        .filter(p => selected.includes(String(p.id)) && p.barcode);
     if (!products.length) { alert('바코드가 있는 상품이 없습니다.'); return; }
 
     const { W, H } = _getA4LabelSize();
