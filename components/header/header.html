@@ -1,13 +1,18 @@
 <!-- 좌측 사이드바 (데스크톱) -->
 <aside class="sidebar" role="navigation" aria-label="주 메뉴">
 
+    <!-- 접기 토글 버튼 -->
+    <button id="sidebar-toggle-btn" title="사이드바 접기/펼치기" aria-label="사이드바 접기/펼치기">
+        <i class="fas fa-chevron-left"></i>
+    </button>
+
     <!-- 로고 영역 -->
     <div class="flex items-center gap-2.5 px-4 py-4" style="border-bottom: 1px solid rgba(255,255,255,0.08);">
         <div id="sidebar-logo-box" class="w-14 h-14 rounded-xl bg-emerald-500 flex items-center justify-center flex-shrink-0 overflow-hidden" style="box-shadow: 0 2px 8px rgba(5,150,105,0.4);">
             <i class="fas fa-seedling text-white" id="sidebar-logo-icon"></i>
             <img id="sidebar-logo-img" class="w-full h-full object-cover hidden" alt="로고">
         </div>
-        <div class="min-w-0">
+        <div class="min-w-0 sidebar-logo-text">
             <div id="sidebar-title" class="text-white text-sm font-bold leading-tight">경산다육</div>
             <div id="sidebar-subtitle" class="text-xs leading-tight" style="color: var(--text-secondary);">식물농장 관리</div>
             <div id="app-version-badge" class="text-2xs leading-tight" style="color:#fff; letter-spacing:0.04em;">
@@ -17,7 +22,7 @@
     </div>
 
     <!-- 구분선 + 메뉴 라벨 -->
-    <div class="px-5 pt-4 pb-1">
+    <div class="px-5 pt-4 pb-1 sidebar-menu-label">
         <span class="text-2xs font-semibold uppercase tracking-widest" style="color: #475569;">메뉴</span>
     </div>
 
@@ -25,32 +30,32 @@
     <nav class="flex-1 px-3 pb-4 space-y-0.5 overflow-y-auto">
         <button id="nav-dashboard" class="nav-btn active" type="button">
             <i class="fas fa-tachometer-alt"></i>
-            <span>대시보드</span>
+            <span class="sidebar-text">대시보드</span>
         </button>
         <button id="nav-customers" class="nav-btn" type="button">
             <i class="fas fa-users"></i>
-            <span>고객관리</span>
+            <span class="sidebar-text">고객관리</span>
         </button>
         <button id="nav-orders" class="nav-btn" type="button">
             <i class="fas fa-shopping-cart"></i>
-            <span>주문관리</span>
+            <span class="sidebar-text">주문관리</span>
             <span id="nav-order-todo-badge" style="display:none; margin-left:auto; min-width:18px; height:18px; padding:0 4px; border-radius:9px; background:#ef4444; color:#fff; font-size:10px; font-weight:700; align-items:center; justify-content:center; line-height:1;"></span>
         </button>
         <button id="nav-products" class="nav-btn" type="button">
             <i class="fas fa-box"></i>
-            <span>상품관리</span>
+            <span class="sidebar-text">상품관리</span>
         </button>
-<button id="nav-waitlist" class="nav-btn" type="button">
+        <button id="nav-waitlist" class="nav-btn" type="button">
             <i class="fas fa-clock"></i>
-            <span>대기자관리</span>
+            <span class="sidebar-text">대기자관리</span>
         </button>
 
-        <div class="px-2 pt-4 pb-1">
+        <div class="px-2 pt-4 pb-1 sidebar-menu-label">
             <span class="text-2xs font-semibold uppercase tracking-widest" style="color: #475569;">시스템</span>
         </div>
         <button id="nav-settings" class="nav-btn" type="button">
             <i class="fas fa-cog"></i>
-            <span>환경설정</span>
+            <span class="sidebar-text">환경설정</span>
         </button>
     </nav>
 

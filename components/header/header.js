@@ -101,8 +101,42 @@ class HeaderComponent {
             });
         }
 
+        // 사이드바 접기/펼치기 토글
+        this.setupSidebarToggle();
+
         // 비밀번호 변경 모달 관련
         this.setupPasswordChangeModal();
+    }
+
+    setupSidebarToggle() {
+        const toggleBtn = document.getElementById('sidebar-toggle-btn');
+        const sidebar = document.querySelector('.sidebar');
+        const mainContent = document.getElementById('mainContent');
+        if (!toggleBtn || !sidebar) return;
+
+        const STORAGE_KEY = 'sidebar_collapsed';
+        const icon = toggleBtn.querySelector('i');
+
+        const applyState = (collapsed) => {
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                if (mainContent) mainContent.style.paddingLeft = '48px';
+                if (icon) { icon.classList.remove('fa-chevron-left'); icon.classList.add('fa-chevron-right'); }
+            } else {
+                sidebar.classList.remove('collapsed');
+                if (mainContent) mainContent.style.paddingLeft = '';
+                if (icon) { icon.classList.remove('fa-chevron-right'); icon.classList.add('fa-chevron-left'); }
+            }
+        };
+
+        // 저장된 상태 복원
+        applyState(localStorage.getItem(STORAGE_KEY) === '1');
+
+        toggleBtn.addEventListener('click', () => {
+            const nowCollapsed = sidebar.classList.contains('collapsed');
+            localStorage.setItem(STORAGE_KEY, nowCollapsed ? '0' : '1');
+            applyState(!nowCollapsed);
+        });
     }
 
     /**
