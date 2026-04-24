@@ -2839,24 +2839,29 @@ window.openProductDetailModal = async function(productId) {
     }
 };
 
-window.openBarcodePrintModal = function() {
+// preSelectedIds: 테이블 체크박스에서 미리 선택할 상품 ID 배열 (없으면 전체 선택)
+window.openBarcodePrintModal = function(preSelectedIds) {
     const products = (window.productDataManager?.farm_products || [])
         .filter(p => p.barcode)
         .sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
 
+    const selectedSet = preSelectedIds ? new Set(preSelectedIds.map(String)) : null;
+
     const list = document.getElementById('barcode-product-list');
     if (!list) return;
-    list.innerHTML = products.map(p => `
-        <label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-section" style="border-color:var(--border);">
-            <input type="checkbox" class="barcode-check checkbox-ui" data-id="${p.id}" checked>
+    list.innerHTML = products.map(p => {
+        const isChecked = selectedSet ? selectedSet.has(String(p.id)) : true;
+        return `<label class="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-section" style="border-color:var(--border);">
+            <input type="checkbox" class="barcode-check checkbox-ui" data-id="${p.id}"${isChecked ? ' checked' : ''}>
             <span class="text-xs td-primary truncate flex-1">${(p.name||'').replace(/</g,'&lt;')}</span>
             <span class="text-2xs td-muted font-mono">${p.barcode}</span>
-        </label>
-    `).join('');
+        </label>`;
+    }).join('');
 
     document.getElementById('barcode-print-modal')?.classList.remove('hidden');
 
     _initBarcodeSizePicker();
+    window.setBarcodePrintMode('label');
 
     // 체크박스 변경 시 미리보기 업데이트 (이벤트 위임)
     if (list && !list.dataset.previewBound) {
@@ -2865,6 +2870,72 @@ window.openBarcodePrintModal = function() {
     }
     setTimeout(() => window.updateBarcodePreview(), 50);
 };
+
+// 테이블 체크박스 선택 상품으로 바코드 인쇄 모달 열기
+window._productBulkPrintBarcodes = function() {
+    const checked = [...document.querySelectorAll('.product-checkbox:checked')];
+    if (checked.length === 0) { alert('상품을 선택해주세요.'); return; }
+    const ids = checked.map(c => c.dataset.productId);
+    const noBarcode = ids.filter(id => {
+        const p = (window.productDataManager?.farm_products || []).find(x => String(x.id) === String(id));
+        return p && !p.barcode;
+    });
+    if (noBarcode.length > 0 && noBarcode.length === ids.length) {
+        alert('선택된 상품에 바코드가 없습니다. 상품 편집에서 바코드를 먼저 설정해주세요.');
+        return;
+    }
+    window.openBarcodePrintModal(ids);
+};
+
+// 인쇄 모드 전환 (label / a4)
+window.setBarcodePrintMode = function(mode) {
+    const btnLabel = document.getElementById('barcode-mode-label');
+    const btnA4    = document.getElementById('barcode-mode-a4');
+    const labelSet = document.getElementById('barcode-label-settings');
+    const a4Set    = document.getElementById('barcode-a4-settings');
+    const labelHint= document.getElementById('barcode-print-hint');
+    const a4Hint   = document.getElementById('barcode-a4-hint');
+    if (!btnLabel) return;
+
+    const isA4 = mode === 'a4';
+    btnLabel.style.background = isA4 ? '#fff' : 'var(--primary)';
+    btnLabel.style.color      = isA4 ? 'var(--text-body)' : '#fff';
+    btnA4.style.background    = isA4 ? 'var(--primary)' : '#fff';
+    btnA4.style.color         = isA4 ? '#fff' : 'var(--text-body)';
+
+    labelSet.classList.toggle('hidden', isA4);
+    a4Set.classList.toggle('hidden', !isA4);
+    labelHint.classList.toggle('hidden', isA4);
+    a4Hint.classList.toggle('hidden', !isA4);
+
+    document.getElementById('barcode-print-modal').dataset.printMode = mode;
+    window.updateA4SizeHint();
+};
+
+// A4 모드 라벨 개수 힌트 업데이트
+window.updateA4SizeHint = function() {
+    // custom 옵션 show/hide
+    const preset = document.getElementById('barcode-a4-size-preset')?.value;
+    document.getElementById('barcode-a4-size-custom')?.classList.toggle('hidden', preset !== 'custom');
+
+    const el = document.getElementById('barcode-a4-count-hint');
+    if (!el) return;
+    const { W, H } = _getA4LabelSize();
+    const cols = Math.floor(190 / W);
+    const rows = Math.floor(277 / H);
+    el.textContent = `A4 1장에 약 ${cols * rows}개`;
+};
+
+function _getA4LabelSize() {
+    const preset = document.getElementById('barcode-a4-size-preset')?.value || '40x20';
+    if (preset === 'custom') {
+        const W = parseFloat(document.getElementById('barcode-a4-size-w')?.value) || 40;
+        const H = parseFloat(document.getElementById('barcode-a4-size-h')?.value) || 20;
+        return { W, H };
+    }
+    const [W, H] = preset.split('x').map(Number);
+    return { W, H };
+}
 
 function _initBarcodeSizePicker() {
     const preset = document.getElementById('barcode-size-preset');
@@ -2986,6 +3057,9 @@ window.printBarcodeLabels = function() {
     const selected = [...document.querySelectorAll('.barcode-check:checked')].map(c => c.dataset.id);
     if (!selected.length) { alert('인쇄할 상품을 선택해주세요.'); return; }
 
+    const printMode = document.getElementById('barcode-print-modal')?.dataset.printMode || 'label';
+    if (printMode === 'a4') { window._printBarcodeLabelsA4(selected); return; }
+
     const products = (window.productDataManager?.farm_products || [])
         .filter(p => selected.includes(p.id) && p.barcode);
 
@@ -3105,6 +3179,109 @@ window.printBarcodeLabels = function() {
                 mql.addEventListener('change',function(e){
                     if(!e.matches)setTimeout(function(){window.close();},300);
                 });
+            },50);
+        }
+        <\/script>
+    </body></html>`);
+    win.document.close();
+};
+
+// A4 용지 바코드 인쇄
+window._printBarcodeLabelsA4 = function(selected) {
+    const products = (window.productDataManager?.farm_products || [])
+        .filter(p => selected.includes(p.id) && p.barcode);
+    if (!products.length) { alert('바코드가 있는 상품이 없습니다.'); return; }
+
+    const { W, H } = _getA4LabelSize();
+    const usableW = 190, usableH = 277; // A4 margin 10mm
+    const cols = Math.max(1, Math.floor(usableW / W));
+    const rows = Math.max(1, Math.floor(usableH / H));
+    const perPage = cols * rows;
+
+    const pxPerMm = 96 / 25.4;
+    const eanSvgW = 113;
+    const scale = (W * pxPerMm) / eanSvgW;
+    const bcHeight = Math.max(15, Math.min(120, Math.round((H * pxPerMm * 0.58) / scale)));
+    const infoFontPt = Math.max(4, Math.min(9, H * 0.28));
+
+    // 라벨 SVG 생성
+    const labelData = products.map(p => {
+        const svg = document.createElementNS('http://www.w3.org/2000/svg','svg');
+        try {
+            window.JsBarcode(svg, p.barcode, { format:'EAN13', width:1.0, height:bcHeight, fontSize:Math.round(bcHeight*0.22), margin:1, displayValue:true });
+        } catch(e) {
+            window.JsBarcode(svg, p.barcode, { format:'CODE128', width:1.0, height:bcHeight, fontSize:Math.round(bcHeight*0.22), margin:1, displayValue:true });
+        }
+        return {
+            svg: new XMLSerializer().serializeToString(svg),
+            name: (p.name||'').replace(/</g,'&lt;'),
+            price: p.price ? Number(p.price).toLocaleString()+'원' : ''
+        };
+    });
+
+    // 미리보기용 HTML (화면 표시)
+    const previewHtml = labelData.map(d =>
+        `<div style="width:${W*3.78}px;height:${H*3.78}px;border:1px dashed #aaa;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:2px 4px;overflow:hidden;flex-shrink:0;">
+            ${d.svg.replace(/<svg /, '<svg style="max-width:100%;height:auto;display:block;" ')}
+            <div style="font-size:${infoFontPt}pt;font-weight:700;text-align:center;width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:1px;line-height:1.1;">${d.name}&nbsp;${d.price}</div>
+        </div>`
+    ).join('');
+
+    // 인쇄용 HTML (A4 페이지별 그리드)
+    const printPages = (() => {
+        let pages = '';
+        for (let i = 0; i < labelData.length; i += perPage) {
+            const chunk = labelData.slice(i, i + perPage);
+            const cells = chunk.map(d =>
+                `<div class="lbl">${d.svg}<div class="lbl-info">${d.name}&nbsp;${d.price}</div></div>`
+            ).join('');
+            const isLast = i + perPage >= labelData.length;
+            pages += `<div class="pg${isLast ? ' last' : ''}">${cells}</div>`;
+        }
+        return pages;
+    })();
+
+    const labelCount = products.length;
+    const pageCount = Math.ceil(labelCount / perPage);
+    const win = window.open('', '_blank', 'width=720,height=900');
+    win.document.write(`<!DOCTYPE html><html><head><title>바코드 A4 인쇄</title>
+        <style>
+            * { box-sizing: border-box; margin: 0; padding: 0; }
+            body { font-family: 'Malgun Gothic', sans-serif; background: #f4f4f4; }
+            #print-bar {
+                position: fixed; top: 0; left: 0; right: 0; z-index: 999;
+                background: #16a34a; color: #fff;
+                display: flex; align-items: center; justify-content: space-between;
+                padding: 8px 14px; gap: 10px; font-size: 13px;
+            }
+            #btn-do-print { background:#fff;color:#16a34a;border:none;border-radius:6px;padding:6px 18px;font-size:14px;font-weight:700;cursor:pointer; }
+            #preview-area { margin-top: 54px; padding: 16px; display: flex; flex-wrap: wrap; gap: 5px; justify-content: center; }
+            #print-content { display: none; }
+            @media print {
+                #print-bar, #preview-area { display: none !important; }
+                body { background: #fff; }
+                #print-content { display: block !important; }
+                @page { size: A4; margin: 10mm; }
+                .pg { display: flex; flex-wrap: wrap; align-content: flex-start; width: 190mm; page-break-after: always; }
+                .pg.last { page-break-after: avoid; }
+                .lbl { width: ${W}mm; height: ${H}mm; overflow: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 0.3mm 0.8mm; }
+                .lbl svg { max-width: 100%; height: auto; display: block; }
+                .lbl-info { font-size: ${infoFontPt}pt; font-weight: 700; text-align: center; width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 0.3mm; line-height: 1.1; }
+            }
+        </style></head><body>
+        <div id="print-bar">
+            <span>A4 인쇄 — 라벨 ${labelCount}장 · ${pageCount}페이지 (${cols}열 × ${rows}행, ${W}×${H}mm)</span>
+            <button id="btn-do-print" onclick="doPrint()">🖨 인쇄</button>
+        </div>
+        <div id="preview-area">${previewHtml}</div>
+        <div id="print-content">${printPages}</div>
+        <script>
+        function doPrint(){
+            document.getElementById('btn-do-print').disabled=true;
+            document.getElementById('btn-do-print').textContent='인쇄 중...';
+            setTimeout(function(){
+                window.print();
+                window.onafterprint=function(){window.close();};
             },50);
         }
         <\/script>
