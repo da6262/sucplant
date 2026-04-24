@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.50-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.51-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -233,6 +233,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.51 | fix: 고객관리 dead code 5개 제거 + supabase 체크 수정 — updateCustomerStats/updateCustomerOrders/updateCustomerModalStats/updateCustomerModalOrders/closeCustomerDetailModal 미호출 스텁 삭제, loadCustomerOrders의 !window.supabase 잘못된 가드 → !window.supabaseClient 로 수정 |
 | v3.4.50 | fix: 일괄 등록 시 바코드 누락 — 엑셀/CSV에 바코드 컬럼이 없거나 비어있을 때 EAN-13 자동 생성 (수동 등록과 동일하게 통일) |
 | v3.4.49 | fix: 바코드 인쇄 모달 UX 2종 — ①"전체 선택" 버튼을 라벨/A4 공통 영역으로 이동(A4 모드에서 사라지던 버그 수정) ②일괄 선택 시 바코드 없는 상품 제외 개수를 모달 안에 경고 표시 |
 | v3.4.48 | fix: 바코드 상품 필터 타입 불일치 — selected.includes(p.id) 에서 p.id 가 UUID 문자열이어도 String() 명시 캐스트로 안전하게 수정 (updateBarcodePreview·printBarcodeLabels·_printBarcodeLabelsA4 3곳) |

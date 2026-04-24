@@ -1455,9 +1455,8 @@ async function loadCustomerOrders(customerId) {
         console.log('👤 고객 정보 확인:', customer.name, customer.phone);
         console.log('🔍 고객 전화번호 형식:', customer.phone, typeof customer.phone);
         
-        // Supabase에서 주문 데이터 로드
-        if (!window.supabase || !window.supabaseClient) {
-            throw new Error('Supabase가 연결되지 않았습니다. Supabase 설정을 확인해주세요.');
+        if (!window.supabaseClient) {
+            throw new Error('Supabase 클라이언트가 초기화되지 않았습니다.');
         }
         
         // 전화번호 정규화 (하이픈 제거, 공백 제거)
@@ -1722,70 +1721,6 @@ async function updateCustomerBasicInfo(customer) {
     }
 }
 
-// 고객 통계 정보 업데이트
-function updateCustomerStats(customer) {
-    console.log('📊 고객 통계 정보 업데이트:', customer.name);
-    
-    // 임시 통계 데이터 (실제로는 주문 데이터에서 계산)
-    const stats = {
-        totalOrders: 0,
-        totalAmount: 0,
-        lastOrderDate: '없음'
-    };
-    
-    // 통계 정보를 HTML에 업데이트
-    const statsElements = document.querySelectorAll('[id^="customer-stat-"]');
-    statsElements.forEach(element => {
-        const statType = element.id.replace('customer-stat-', '');
-        switch(statType) {
-            case 'orders':
-                element.textContent = stats.totalOrders;
-                break;
-            case 'amount':
-                element.textContent = formatCurrency(stats.totalAmount);
-                break;
-            case 'last-order':
-                element.textContent = stats.lastOrderDate;
-                break;
-        }
-    });
-}
-
-// 고객 주문 내역 업데이트
-function updateCustomerOrders(customer) {
-    console.log('📦 고객 주문 내역 업데이트:', customer.name);
-    
-    // 주문 내역 컨테이너
-    const ordersContainer = document.getElementById('customer-orders-content');
-    if (ordersContainer) {
-        ordersContainer.innerHTML = `
-            <div class="text-center py-8 text-muted">
-                <i class="fas fa-shopping-cart text-4xl mb-4 text-gray-300"></i>
-                <h3 class="text-lg font-medium mb-2 text-body">주문 내역이 없습니다</h3>
-                <p class="text-sm text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
-            </div>
-        `;
-    }
-}
-
-// 선택된 고객 행 하이라이트
-function highlightSelectedCustomerRow(customerId) {
-    console.log('🎯 선택된 고객 행 하이라이트:', customerId);
-    
-    // 모든 행의 하이라이트 제거
-    const allRows = document.querySelectorAll('[data-customer-id]');
-    allRows.forEach(row => {
-        row.classList.remove('bg-blue-50', 'border-blue-200');
-        row.classList.add('hover:bg-gray-50');
-    });
-    
-    // 선택된 행 하이라이트
-    const selectedRow = document.querySelector(`[data-customer-id="${customerId}"]`);
-    if (selectedRow) {
-        selectedRow.classList.add('bg-blue-50', 'border-blue-200');
-        selectedRow.classList.remove('hover:bg-gray-50');
-    }
-}
 
 // 모달용 고객 기본 정보 업데이트
 async function updateCustomerModalBasicInfo(customer) {
@@ -1850,88 +1785,6 @@ async function updateCustomerModalBasicInfo(customer) {
     }
 }
 
-// 모달용 고객 통계 정보 업데이트
-function updateCustomerModalStats(customer) {
-    console.log('📊 모달 고객 통계 정보 업데이트:', customer.name);
-    
-    // 임시 통계 데이터 (실제로는 주문 데이터에서 계산)
-    const stats = {
-        totalOrders: 0,
-        totalAmount: 0,
-        lastOrderDate: '없음'
-    };
-    
-    // 통계 정보를 모달 HTML에 업데이트
-    const ordersElement = document.getElementById('customer-detail-modal-orders');
-    if (ordersElement) {
-        ordersElement.textContent = stats.totalOrders;
-    }
-    
-    const amountElement = document.getElementById('customer-detail-modal-amount');
-    if (amountElement) {
-        amountElement.textContent = formatCurrency(stats.totalAmount);
-    }
-    
-    const lastOrderElement = document.getElementById('customer-detail-modal-last-order');
-    if (lastOrderElement) {
-        lastOrderElement.textContent = stats.lastOrderDate;
-    }
-}
-
-// 모달용 고객 주문 내역 업데이트
-function updateCustomerModalOrders(customer) {
-    console.log('📦 모달 고객 주문 내역 업데이트:', customer.name);
-    
-    // 주문 내역 컨테이너
-    const ordersContainer = document.getElementById('customer-detail-modal-orders-content');
-    if (ordersContainer) {
-        ordersContainer.innerHTML = `
-            <div class="text-center py-4 text-muted">
-                <i class="fas fa-shopping-cart text-2xl mb-2 text-gray-300"></i>
-                <h3 class="text-sm font-medium mb-1 text-body">주문 내역이 없습니다</h3>
-                <p class="text-xs text-muted">${customer.name}님의 주문 기록이 아직 없습니다.</p>
-            </div>
-        `;
-    }
-}
-
-// 고객 상세 정보 모달 닫기
-function closeCustomerDetailModal() {
-    console.log('🚪 고객 상세 정보 모달 닫기');
-    const modal = document.getElementById('customer-detail-modal');
-    if (modal) {
-        modal.classList.add('hidden');
-    }
-}
-
-// 모달 닫기 이벤트 리스너 등록
-document.addEventListener('DOMContentLoaded', function() {
-    // 모달 닫기 버튼
-    const closeBtn = document.getElementById('close-customer-detail-modal');
-    if (closeBtn) {
-        closeBtn.addEventListener('click', closeCustomerDetailModal);
-    }
-    
-    // 모달 배경 클릭 시 닫기
-    const modal = document.getElementById('customer-detail-modal');
-    if (modal) {
-        modal.addEventListener('click', (e) => {
-            if (e.target === modal) {
-                closeCustomerDetailModal();
-            }
-        });
-    }
-    
-    // ESC 키로 모달 닫기
-    document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-            const modal = document.getElementById('customer-detail-modal');
-            if (modal && !modal.classList.contains('hidden')) {
-                closeCustomerDetailModal();
-            }
-        }
-    });
-});
 
 // 고객등급 옵션 동적 로드
 async function loadCustomerGradeOptions() {
