@@ -5,33 +5,40 @@
     <div class="page-header">
         <h2>상품 관리</h2>
         <div class="action-group">
-            <button id="export-products-btn"   class="btn-secondary"><i class="fas fa-download"></i>내보내기</button>
-            <button id="import-products-btn"   class="btn-secondary"><i class="fas fa-upload"></i>일괄 등록</button>
-            <button id="manage-categories-btn" class="btn-secondary"><i class="fas fa-tags"></i>카테고리</button>
-            <button id="print-barcodes-btn"    class="btn-secondary"><i class="fas fa-barcode"></i>바코드 인쇄</button>
-            <button id="scan-barcode-btn"      class="btn-secondary"><i class="fas fa-camera"></i>카메라 스캔</button>
+            <button id="scan-barcode-btn" class="btn-secondary"><i class="fas fa-camera"></i>카메라 스캔</button>
+            <!-- 모바일: 보조 버튼 토글 -->
+            <button class="mobile-more-toggle btn-secondary" title="더보기"
+                    onclick="this.nextElementSibling.classList.toggle('open')">
+                <i class="fas fa-ellipsis-h"></i>
+            </button>
+            <div class="mobile-extra-btns">
+                <button id="print-barcodes-btn"    class="btn-secondary"><i class="fas fa-barcode"></i>바코드 인쇄</button>
+                <button id="manage-categories-btn" class="btn-secondary"><i class="fas fa-tags"></i>카테고리</button>
+                <button id="import-products-btn"   class="btn-secondary"><i class="fas fa-upload"></i>일괄 등록</button>
+                <button id="export-products-btn"   class="btn-secondary"><i class="fas fa-download"></i>내보내기</button>
+            </div>
             <button id="add-product-btn" class="btn-primary"><i class="fas fa-plus"></i>상품 등록</button>
         </div>
     </div>
 
     <!-- 검색 및 필터 -->
     <div class="filter-bar">
-        <div class="relative">
+        <div class="relative flex-1" style="min-width:120px;max-width:240px;">
             <input type="text" id="product-search" placeholder="상품명 검색..."
-                   class="input-ui" style="max-width:240px;padding-right:28px;" autocomplete="off">
+                   class="input-ui w-full" style="padding-right:28px;" autocomplete="off">
             <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-muted text-xs pointer-events-none"></i>
         </div>
-        <select id="product-category-filter" class="input-ui" style="max-width:150px;">
+        <select id="product-category-filter" class="input-ui" style="max-width:140px;">
             <option value="">전체 카테고리</option>
             <!-- DB에서 동적으로 채워집니다 -->
         </select>
-        <select id="product-stock-filter" class="input-ui" style="max-width:120px;">
+        <select id="product-stock-filter" class="input-ui" style="max-width:100px;">
             <option value="">재고 전체</option>
             <option value="in-stock">재고 있음</option>
             <option value="low-stock">재고 부족</option>
             <option value="out-of-stock">품절</option>
         </select>
-        <select id="product-price-filter" class="input-ui" style="max-width:120px;">
+        <select id="product-price-filter" class="input-ui" style="max-width:100px;">
             <option value="">가격 전체</option>
             <option value="0-10000">1만원 이하</option>
             <option value="10000-30000">1-3만원</option>
