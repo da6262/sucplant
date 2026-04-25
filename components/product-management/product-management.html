@@ -2,22 +2,31 @@
 <div id="products-section" class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
 
     <!-- 헤더 -->
-    <div class="page-header">
-        <h2>상품 관리</h2>
-        <div class="action-group">
+    <div class="page-header" style="padding: 8px 12px; gap: 8px;">
+        <h2 class="hidden md:block">상품 관리</h2>
+        <div class="flex items-center gap-1.5">
+            <!-- 카메라 스캔: 항상 표시 -->
             <button id="scan-barcode-btn" class="btn-secondary"><i class="fas fa-camera"></i>카메라 스캔</button>
-            <!-- 모바일: 보조 버튼 토글 -->
-            <button class="mobile-more-toggle btn-secondary" title="더보기"
-                    onclick="this.nextElementSibling.classList.toggle('open')">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-            <div class="mobile-extra-btns">
-                <button id="print-barcodes-btn"    class="btn-secondary"><i class="fas fa-barcode"></i>바코드 인쇄</button>
-                <button id="manage-categories-btn" class="btn-secondary"><i class="fas fa-tags"></i>카테고리</button>
-                <button id="import-products-btn"   class="btn-secondary"><i class="fas fa-upload"></i>일괄 등록</button>
-                <button id="export-products-btn"   class="btn-secondary"><i class="fas fa-download"></i>내보내기</button>
-            </div>
+            <!-- PC 전용 버튼들 -->
+            <button id="print-barcodes-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-barcode"></i>바코드 인쇄</button>
+            <button id="manage-categories-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-tags"></i>카테고리</button>
+            <button id="import-products-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-upload"></i>일괄 등록</button>
+            <button id="export-products-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-download"></i>내보내기</button>
+            <!-- 상품 등록 (항상 표시) -->
             <button id="add-product-btn" class="btn-primary"><i class="fas fa-plus"></i>상품 등록</button>
+            <!-- 모바일 전용 ⋮ 드롭다운 -->
+            <div class="relative md:hidden">
+                <button id="prod-more-btn" class="btn-secondary" style="padding:6px 10px;"
+                    onclick="const dd=document.getElementById('prod-more-dd'); dd.classList.toggle('hidden'); event.stopPropagation(); if(!dd.classList.contains('hidden')){const fn=e=>{if(!e.target.closest('#prod-more-btn,#prod-more-dd')){dd.classList.add('hidden');document.removeEventListener('click',fn);}};setTimeout(()=>document.addEventListener('click',fn),0);}">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+                <div id="prod-more-dd" class="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1" style="min-width:160px;">
+                    <button onclick="document.getElementById('print-barcodes-btn').click();document.getElementById('prod-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-barcode text-muted text-xs"></i>바코드 인쇄</button>
+                    <button onclick="document.getElementById('manage-categories-btn').click();document.getElementById('prod-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-tags text-muted text-xs"></i>카테고리</button>
+                    <button onclick="document.getElementById('import-products-btn').click();document.getElementById('prod-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-upload text-muted text-xs"></i>일괄 등록</button>
+                    <button onclick="document.getElementById('export-products-btn').click();document.getElementById('prod-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-download text-muted text-xs"></i>내보내기</button>
+                </div>
+            </div>
         </div>
     </div>
 

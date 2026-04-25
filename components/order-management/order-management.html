@@ -1,34 +1,33 @@
 <!-- Order management -->
 
 <!-- 헤더 -->
-<div class="page-header">
-    <h2>주문 관리</h2>
-    <div class="action-group">
-        <button id="sms-order-btn" class="btn-secondary" onclick="openSmsOrderModal()" title="문자·카톡·밴드 주문을 빠르게 등록">
+<div class="page-header" style="padding: 8px 12px; gap: 8px;">
+    <h2 class="hidden md:block">주문 관리</h2>
+    <div class="flex items-center gap-1.5">
+        <!-- 문자주문: 항상 표시 (자주 쓰는 기능) -->
+        <button id="sms-order-btn" class="btn-secondary" onclick="openSmsOrderModal()" title="문자 주문 등록">
             <i class="fas fa-comment-dots"></i>문자 주문
         </button>
-        <!-- 모바일: 보조 버튼 토글 -->
-        <button class="mobile-more-toggle btn-secondary" title="더보기"
-                onclick="this.nextElementSibling.classList.toggle('open')">
-            <i class="fas fa-ellipsis-h"></i>
-        </button>
-        <div class="mobile-extra-btns">
-            <button id="generate-picking-list-btn" class="btn-secondary">
-                <i class="fas fa-clipboard-list"></i>피킹 리스트
+        <!-- PC 전용 버튼들 -->
+        <button id="generate-picking-list-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-clipboard-list"></i>피킹 리스트</button>
+        <button id="bulk-tracking-import-btn" class="btn-secondary hidden md:inline-flex" title="송장번호 일괄 입력"><i class="fas fa-barcode"></i>송장입력</button>
+        <button id="bulk-export-logen-btn" class="btn-secondary hidden md:inline-flex" onclick="exportLogenExcel()"><i class="fas fa-file-excel"></i>로젠 엑셀</button>
+        <button id="bulk-import-payhere-btn" class="btn-secondary hidden md:inline-flex" onclick="openPayhereImportModal()"><i class="fas fa-cash-register"></i>페이히어</button>
+        <!-- 새 주문 (항상 표시) -->
+        <button id="add-order-btn" class="btn-primary"><i class="fas fa-plus"></i>새 주문</button>
+        <!-- 모바일 전용 ⋮ 드롭다운 -->
+        <div class="relative md:hidden">
+            <button id="order-more-btn" class="btn-secondary" style="padding:6px 10px;"
+                onclick="const dd=document.getElementById('order-more-dd'); dd.classList.toggle('hidden'); event.stopPropagation(); if(!dd.classList.contains('hidden')){const fn=e=>{if(!e.target.closest('#order-more-btn,#order-more-dd')){dd.classList.add('hidden');document.removeEventListener('click',fn);}};setTimeout(()=>document.addEventListener('click',fn),0);}">
+                <i class="fas fa-ellipsis-h"></i>
             </button>
-            <button id="bulk-tracking-import-btn" class="btn-secondary" title="배송준비 주문에 송장번호 일괄 입력">
-                <i class="fas fa-barcode"></i>송장입력
-            </button>
-            <button id="bulk-export-logen-btn" class="btn-secondary" onclick="exportLogenExcel()" title="배송준비 주문을 로젠택배 엑셀 양식으로 다운로드">
-                <i class="fas fa-file-excel"></i>로젠 엑셀
-            </button>
-            <button id="bulk-import-payhere-btn" class="btn-secondary" onclick="openPayhereImportModal()" title="페이히어 매출 엑셀을 주문관리로 가져오기">
-                <i class="fas fa-cash-register"></i>페이히어 가져오기
-            </button>
+            <div id="order-more-dd" class="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1" style="min-width:160px;">
+                <button onclick="document.getElementById('generate-picking-list-btn').click();document.getElementById('order-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-clipboard-list text-muted text-xs"></i>피킹 리스트</button>
+                <button onclick="document.getElementById('bulk-tracking-import-btn').click();document.getElementById('order-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-barcode text-muted text-xs"></i>송장입력</button>
+                <button onclick="exportLogenExcel();document.getElementById('order-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-file-excel text-muted text-xs"></i>로젠 엑셀</button>
+                <button onclick="openPayhereImportModal();document.getElementById('order-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-cash-register text-muted text-xs"></i>페이히어 가져오기</button>
+            </div>
         </div>
-        <button id="add-order-btn" class="btn-primary">
-            <i class="fas fa-plus"></i>새 주문
-        </button>
     </div>
 </div>
 
