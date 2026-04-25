@@ -1215,10 +1215,8 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
     .filter-bar { gap: 8px; padding: 5px 16px; }
 }
 
-/* 모바일 접이식 버튼 그룹 */
-.mobile-extra-btns {
-    display: flex; flex-wrap: wrap; gap: 8px;
-}
+/* 모바일 접이식 버튼 그룹 (legacy — 신규 코드는 md: Tailwind 사용) */
+.mobile-extra-btns { display: flex; flex-wrap: wrap; gap: 8px; }
 @media (max-width: 768px) {
     .mobile-extra-btns { display: none; }
     .mobile-extra-btns.open { display: flex; flex-wrap: wrap; gap: 8px; width: 100%; }
@@ -1227,6 +1225,8 @@ textarea.input-ui { height: auto; padding: 6px 8px; resize: vertical; min-height
 @media (min-width: 769px) {
     .mobile-more-toggle { display: none !important; }
 }
+/* 등급 필터 스크롤 바 안의 동적 버튼 */
+#customer-grade-dynamic-slot .customer-tab-btn { flex-shrink: 0; }
 
 /* Status tab bar 컨테이너 */
 .status-tab-bar {

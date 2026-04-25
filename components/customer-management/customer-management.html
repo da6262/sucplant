@@ -2,24 +2,32 @@
 <div id="customers-section" class="flex flex-col h-[calc(100vh-3.5rem)] min-h-0 bg-white">
 
     <!-- 헤더 -->
-    <div class="page-header">
-        <h2>고객 관리</h2>
-        <div class="action-group">
-            <button id="open-bulk-sms-btn" class="btn-secondary" title="태그·등급으로 고객 세그먼트 필터 후 일괄 문자 발송"><i class="fas fa-bullhorn"></i>일괄 문자</button>
-            <!-- 모바일: 보조 버튼 토글 -->
-            <button class="mobile-more-toggle btn-secondary" title="더보기"
-                    onclick="this.nextElementSibling.classList.toggle('open')">
-                <i class="fas fa-ellipsis-h"></i>
-            </button>
-            <!-- 보조 버튼 (PC: 항상 표시 / 모바일: 토글) -->
-            <div class="mobile-extra-btns">
-                <button id="recalc-auto-tags-btn" class="btn-secondary" title="전체 고객 주문 이력으로 자동 태그(신규·단골·이탈위험·VIP후보) 재계산"><i class="fas fa-robot"></i>자동 태그</button>
-                <button id="manage-customer-grades-btn" class="btn-secondary"><i class="fas fa-crown"></i>등급 관리</button>
-                <button id="import-customers-btn" class="btn-secondary" title="엑셀 파일로 고객 일괄 가져오기 (전화번호 기준 upsert)"><i class="fas fa-file-import"></i>가져오기</button>
-                <button id="export-customers-btn" class="btn-secondary" title="현재 전체 고객을 엑셀 파일로 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
-            </div>
+    <div class="page-header" style="padding: 8px 12px; gap: 8px;">
+        <h2 class="hidden md:block">고객 관리</h2>
+        <div class="flex items-center gap-1.5">
+            <!-- PC 전용 버튼들 -->
+            <button id="open-bulk-sms-btn" class="btn-secondary hidden md:inline-flex" title="일괄 문자 발송"><i class="fas fa-bullhorn"></i>일괄 문자</button>
+            <button id="recalc-auto-tags-btn" class="btn-secondary hidden md:inline-flex" title="자동 태그 재계산"><i class="fas fa-robot"></i>자동 태그</button>
+            <button id="manage-customer-grades-btn" class="btn-secondary hidden md:inline-flex"><i class="fas fa-crown"></i>등급 관리</button>
+            <button id="import-customers-btn" class="btn-secondary hidden md:inline-flex" title="엑셀 가져오기"><i class="fas fa-file-import"></i>가져오기</button>
+            <button id="export-customers-btn" class="btn-secondary hidden md:inline-flex" title="엑셀 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
             <input type="file" id="import-customers-file" accept=".xlsx,.xls,.csv" style="display:none;">
+            <!-- 고객 등록 (항상 표시) -->
             <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
+            <!-- 모바일 전용 ⋮ 드롭다운 -->
+            <div class="relative md:hidden">
+                <button id="cust-more-btn" class="btn-secondary" style="padding:6px 10px;"
+                    onclick="const dd=document.getElementById('cust-more-dd'); dd.classList.toggle('hidden'); event.stopPropagation(); if(!dd.classList.contains('hidden')){const fn=e=>{if(!e.target.closest('#cust-more-btn,#cust-more-dd')){dd.classList.add('hidden');document.removeEventListener('click',fn);}};setTimeout(()=>document.addEventListener('click',fn),0);}">
+                    <i class="fas fa-ellipsis-h"></i>
+                </button>
+                <div id="cust-more-dd" class="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1" style="min-width:160px;">
+                    <button onclick="document.getElementById('open-bulk-sms-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-bullhorn text-muted text-xs"></i>일괄 문자</button>
+                    <button onclick="document.getElementById('recalc-auto-tags-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-robot text-muted text-xs"></i>자동 태그</button>
+                    <button onclick="document.getElementById('manage-customer-grades-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-crown text-muted text-xs"></i>등급 관리</button>
+                    <button onclick="document.getElementById('import-customers-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-file-import text-muted text-xs"></i>가져오기</button>
+                    <button onclick="document.getElementById('export-customers-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-file-export text-muted text-xs"></i>내보내기</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -36,38 +44,36 @@
     <!-- 고객목록 영역 -->
     <div id="customers-panel-list" class="flex flex-col flex-1 min-h-0">
 
-    <!-- 검색 + 필터 -->
-    <div class="filter-bar">
-        <!-- 검색 + 정렬 -->
-        <div class="relative flex-1" style="min-width:140px;max-width:240px;">
-            <input type="text" id="customer-search" placeholder="고객명·전화번호 검색"
+    <!-- 검색 + 정렬 (1행) -->
+    <div class="filter-bar" style="padding: 6px 12px; gap: 6px; flex-wrap: nowrap;">
+        <div class="relative flex-1" style="min-width:100px;">
+            <input type="text" id="customer-search" placeholder="고객명·전화번호"
                    class="input-ui w-full" style="padding-right:28px;" autocomplete="off"
                    oninput="if(window.handleCustomerSearch) handleCustomerSearch(this.value);"
                    onchange="if(window.handleCustomerSearch) handleCustomerSearch(this.value);">
             <i class="fas fa-search absolute right-2 top-1/2 -translate-y-1/2 text-muted text-xs pointer-events-none"></i>
             <div id="customer-search-suggestions" class="absolute left-0 top-full mt-0.5 bg-white border border-gray-200 rounded shadow-lg z-20 max-h-40 overflow-y-auto hidden" style="min-width:200px;"></div>
         </div>
-        <select id="customer-sort" class="input-ui" style="max-width:120px;">
-            <option value="newest">최근등록순</option>
+        <select id="customer-sort" class="input-ui" style="max-width:90px; flex-shrink:0;">
+            <option value="newest">최근순</option>
             <option value="name_asc">이름↑</option>
             <option value="name_desc">이름↓</option>
             <option value="grade_high">등급순</option>
         </select>
-        <button id="apply-customer-sort" class="btn-search">적용</button>
-        <button id="reset-customer-search" class="btn-secondary"><i class="fas fa-refresh"></i></button>
-        <!-- 등급 필터 + 체크박스 (줄바꿈 허용) -->
-        <div class="flex items-center gap-1 flex-wrap">
-            <span class="text-xs text-muted">등급:</span>
-            <button id="customer-grade-all" class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700">전체 <span id="customer-count-all">0</span></button>
-            <span id="customer-grade-dynamic-slot"><!-- 환경설정 customerGrades 기반 동적 생성 --></span>
-            <span class="text-gray-300">|</span>
-            <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-                <input type="checkbox" id="filter-unpaid" class="checkbox-ui"> 미납
-            </label>
-            <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer">
-                <input type="checkbox" id="filter-waitlist" class="checkbox-ui"> 대기
-            </label>
-        </div>
+        <button id="apply-customer-sort" class="btn-search" style="flex-shrink:0;">적용</button>
+        <button id="reset-customer-search" class="btn-secondary" style="flex-shrink:0;"><i class="fas fa-refresh"></i></button>
+    </div>
+    <!-- 등급 + 체크박스 (1행, 가로 스크롤) -->
+    <div class="flex items-center gap-1.5 px-3 py-1 border-b border-gray-100 overflow-x-auto" style="scrollbar-width:none; flex-shrink:0; -webkit-overflow-scrolling:touch;">
+        <button id="customer-grade-all" class="customer-tab-btn px-2 py-0.5 rounded text-xs font-medium text-body hover:bg-success hover:text-emerald-700 flex-shrink-0">전체 <span id="customer-count-all">0</span></button>
+        <span id="customer-grade-dynamic-slot" class="contents"><!-- 환경설정 customerGrades 기반 동적 생성 --></span>
+        <span class="text-gray-300 flex-shrink-0">|</span>
+        <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer flex-shrink-0">
+            <input type="checkbox" id="filter-unpaid" class="checkbox-ui"> 미납
+        </label>
+        <label class="inline-flex items-center gap-1 text-xs text-body cursor-pointer flex-shrink-0">
+            <input type="checkbox" id="filter-waitlist" class="checkbox-ui"> 대기
+        </label>
     </div>
 
     <!-- 고객 목록 -->
