@@ -12,6 +12,7 @@
             <button id="import-customers-btn" class="btn-secondary hidden md:inline-flex" title="엑셀 가져오기"><i class="fas fa-file-import"></i>가져오기</button>
             <button id="export-customers-btn" class="btn-secondary hidden md:inline-flex" title="엑셀 내보내기"><i class="fas fa-file-export"></i>내보내기</button>
             <input type="file" id="import-customers-file" accept=".xlsx,.xls,.csv" style="display:none;">
+            <button id="sms-paste-customer-btn" class="btn-secondary hidden md:inline-flex" title="받은 문자·카톡을 붙여넣어 이름·전화·주소를 자동 인식 → 즉시 고객 등록"><i class="fas fa-paste"></i>문자 입력</button>
             <!-- 고객 등록 (항상 표시) -->
             <button id="add-customer-btn" class="btn-primary"><i class="fas fa-user-plus"></i>고객 등록</button>
             <!-- 모바일 전용 ⋮ 드롭다운 -->
@@ -21,6 +22,7 @@
                     <i class="fas fa-ellipsis-h"></i>
                 </button>
                 <div id="cust-more-dd" class="hidden absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1" style="min-width:160px;">
+                    <button onclick="document.getElementById('sms-paste-customer-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-paste text-muted text-xs"></i>문자 입력</button>
                     <button onclick="document.getElementById('open-bulk-sms-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-bullhorn text-muted text-xs"></i>일괄 문자</button>
                     <button onclick="document.getElementById('recalc-auto-tags-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-robot text-muted text-xs"></i>자동 태그</button>
                     <button onclick="document.getElementById('manage-customer-grades-btn').click();document.getElementById('cust-more-dd').classList.add('hidden');" class="w-full text-left px-4 py-2.5 text-sm text-body hover:bg-section flex items-center gap-2"><i class="fas fa-crown text-muted text-xs"></i>등급 관리</button>

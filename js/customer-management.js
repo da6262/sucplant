@@ -1068,7 +1068,21 @@ function attachCustomerEventListeners() {
             };
             console.log('✅ 새 고객 등록 버튼 이벤트 리스너 연결 완료');
         }
-        
+
+        // 문자 입력 → 고객 자동 등록 버튼
+        const smsPasteBtn = document.getElementById('sms-paste-customer-btn');
+        if (smsPasteBtn && !smsPasteBtn.dataset.bound) {
+            smsPasteBtn.dataset.bound = '1';
+            smsPasteBtn.addEventListener('click', () => {
+                if (window.openCustomerSmsPasteModal) {
+                    window.openCustomerSmsPasteModal();
+                } else {
+                    alert('문자 입력 기능을 로드하지 못했습니다. 페이지를 새로고침해주세요.');
+                }
+            });
+            console.log('✅ 문자 입력 버튼 이벤트 리스너 연결 완료');
+        }
+
         // 고객 검색
         const customerSearch = document.getElementById('customer-search');
         if (customerSearch) {
@@ -1838,12 +1852,192 @@ window.handleCustomerSearch = function(value) {
     }
 };
 
+// ─── 문자 붙여넣기 → 고객 즉시 등록 (v3.4.43+) ───
+// 받은 문자·카톡을 그대로 붙여넣으면 parseSmsText 로 이름·전화·주소·메모 자동 추출 →
+// 폼 미리보기 후 "등록" 클릭으로 customerDataManager.addCustomer (또는 전화번호 중복 시 updateCustomer) 호출
+async function openCustomerSmsPasteModal() {
+    const existing = document.getElementById('customer-sms-paste-modal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'customer-sms-paste-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '999999';
+    modal.innerHTML = `
+        <div class="modal-container modal-md" style="max-width:560px;width:94vw;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-paste mr-1" style="color:var(--info);"></i>문자로 고객 등록</span>
+                <button id="cust-sms-close" class="modal-close-btn"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;display:flex;flex-direction:column;gap:12px;max-height:75vh;overflow-y:auto;">
+                <div>
+                    <label class="form-label">받은 문자 / 카톡 내용</label>
+                    <textarea id="cust-sms-input" rows="6" class="form-control"
+                              placeholder="예) 홍길동&#10;010-1234-5678&#10;경기 수원시 영통구 광교로 145&#10;아파트 101동 502호&#10;배송 시 부재중 경비실 부탁드려요"
+                              style="font-family:inherit;resize:vertical;font-size:13px;"></textarea>
+                    <p class="form-helper">붙여넣으면 이름·전화·주소를 자동 인식합니다. 라벨(이름:, 연락처:, 주소:)이 있으면 더 정확합니다.</p>
+                </div>
+                <div id="cust-sms-warn" class="hidden"
+                     style="padding:8px 10px;border-radius:6px;font-size:12px;"></div>
+                <div class="form-grid">
+                    <div class="form-col-6">
+                        <label class="form-label">이름 <span class="req">*</span></label>
+                        <input type="text" id="cust-sms-name" class="form-control" placeholder="자동 추출">
+                    </div>
+                    <div class="form-col-6">
+                        <label class="form-label">전화번호 <span class="req">*</span></label>
+                        <input type="text" id="cust-sms-phone" class="form-control" placeholder="010-XXXX-XXXX" maxlength="13">
+                    </div>
+                    <div class="form-col-12">
+                        <label class="form-label">주소</label>
+                        <input type="text" id="cust-sms-addr" class="form-control" placeholder="자동 추출">
+                    </div>
+                    <div class="form-col-12">
+                        <label class="form-label">상세주소</label>
+                        <input type="text" id="cust-sms-addr-detail" class="form-control">
+                    </div>
+                    <div class="form-col-12">
+                        <label class="form-label">메모</label>
+                        <textarea id="cust-sms-memo" rows="2" class="form-control"
+                                  style="font-family:inherit;resize:vertical;" maxlength="200"></textarea>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="cust-sms-cancel" class="btn-secondary">취소</button>
+                <button id="cust-sms-save" class="btn-primary">
+                    <i class="fas fa-user-plus mr-1"></i><span id="cust-sms-save-label">고객 등록</span>
+                </button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    const $ = (id) => document.getElementById(id);
+    const close = () => modal.remove();
+    let existingCustomer = null;
+
+    // 전화번호 입력 자동 포맷 (010-1234-5678)
+    const formatPhone = (raw) => {
+        const d = String(raw || '').replace(/[^0-9]/g, '').slice(0, 11);
+        if (d.length < 4) return d;
+        if (d.length < 8) return d.replace(/^(\d{3})(\d+)/, '$1-$2');
+        return d.replace(/^(\d{3})(\d{3,4})(\d{4})$/, '$1-$2-$3');
+    };
+
+    // 전화번호 중복 체크 → 경고 + 버튼 라벨 갱신
+    const checkDuplicate = () => {
+        const phoneDigits = $('cust-sms-phone').value.replace(/[^0-9]/g, '');
+        const warn = $('cust-sms-warn');
+        const saveLabel = $('cust-sms-save-label');
+        existingCustomer = null;
+        if (phoneDigits.length < 10) {
+            warn.classList.add('hidden');
+            saveLabel.textContent = '고객 등록';
+            return;
+        }
+        const customers = window.customerDataManager?.farm_customers || [];
+        const found = customers.find(c => (c.phone || '').replace(/[^0-9]/g, '') === phoneDigits);
+        if (found) {
+            existingCustomer = found;
+            warn.className = '';
+            warn.style.cssText = 'padding:8px 10px;border-radius:6px;font-size:12px;background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn);';
+            const safeName = String(found.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            warn.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>이미 등록된 번호 — <strong>${safeName}</strong>. 등록 시 정보가 업데이트됩니다.`;
+            saveLabel.textContent = '정보 업데이트';
+        } else {
+            warn.classList.add('hidden');
+            saveLabel.textContent = '신규 등록';
+        }
+    };
+
+    // SMS 텍스트 → 폼 자동 채우기 (이미 사용자가 입력한 칸은 보존)
+    const parseAndFill = () => {
+        const text = $('cust-sms-input').value;
+        if (!window.parseSmsText) {
+            console.warn('parseSmsText 함수가 로드되지 않았습니다 (orderForm.js 미로드)');
+            return;
+        }
+        const parsed = window.parseSmsText(text);
+        if (!parsed) return;
+
+        if (!$('cust-sms-name').value && parsed.name) $('cust-sms-name').value = parsed.name;
+        if (!$('cust-sms-phone').value && parsed.phone) $('cust-sms-phone').value = parsed.phone;
+        if (!$('cust-sms-addr').value && parsed.address) $('cust-sms-addr').value = parsed.address;
+        if (!$('cust-sms-addr-detail').value && parsed.addressDetail) $('cust-sms-addr-detail').value = parsed.addressDetail;
+        if (!$('cust-sms-memo').value && parsed.memo) $('cust-sms-memo').value = parsed.memo;
+        checkDuplicate();
+    };
+
+    // 이벤트 바인딩
+    $('cust-sms-close').addEventListener('click', close);
+    $('cust-sms-cancel').addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+
+    let parseTimer;
+    $('cust-sms-input').addEventListener('input', () => {
+        clearTimeout(parseTimer);
+        parseTimer = setTimeout(parseAndFill, 250);
+    });
+    $('cust-sms-input').addEventListener('paste', () => {
+        setTimeout(parseAndFill, 50);
+    });
+
+    $('cust-sms-phone').addEventListener('input', (e) => {
+        e.target.value = formatPhone(e.target.value);
+        checkDuplicate();
+    });
+
+    $('cust-sms-save').addEventListener('click', async () => {
+        const name = $('cust-sms-name').value.trim();
+        const phone = $('cust-sms-phone').value.trim();
+        if (!name) { alert('이름을 입력하세요.'); $('cust-sms-name').focus(); return; }
+        if (!phone) { alert('전화번호를 입력하세요.'); $('cust-sms-phone').focus(); return; }
+        const phoneDigits = phone.replace(/[^0-9]/g, '');
+        if (phoneDigits.length < 10) {
+            alert('전화번호 형식이 올바르지 않습니다 (10~11자리).');
+            $('cust-sms-phone').focus();
+            return;
+        }
+
+        const data = {
+            name,
+            phone,
+            address: $('cust-sms-addr').value.trim(),
+            address_detail: $('cust-sms-addr-detail').value.trim(),
+            memo: $('cust-sms-memo').value.trim(),
+        };
+
+        const saveBtn = $('cust-sms-save');
+        saveBtn.disabled = true;
+        try {
+            if (!window.customerDataManager) throw new Error('고객 데이터 매니저가 초기화되지 않았습니다. 페이지를 새로고침해주세요.');
+            if (existingCustomer) {
+                await window.customerDataManager.updateCustomer(existingCustomer.id, data);
+                if (window.showToast) window.showToast(`${name} 정보 업데이트 완료`, 1500);
+            } else {
+                await window.customerDataManager.addCustomer(data);
+                if (window.showToast) window.showToast(`${name} 신규 등록 완료`, 1500);
+            }
+            if (window.renderCustomersTable) window.renderCustomersTable('all', '');
+            if (window.updateCustomerGradeCounts) window.updateCustomerGradeCounts();
+            close();
+        } catch (err) {
+            console.error('문자 → 고객 등록 실패:', err);
+            alert('등록 실패: ' + err.message);
+            saveBtn.disabled = false;
+        }
+    });
+
+    setTimeout(() => $('cust-sms-input').focus(), 100);
+}
+
 // 전역 함수로 등록 (강제로 덮어쓰기)
 window.loadCustomerManagementComponent = loadCustomerManagementComponent;
 window.saveCustomer = saveCustomer; // 🔥 이 함수가 실제로 고객을 저장합니다
 window.attachCustomerEventListeners = attachCustomerEventListeners;
 window.loadCustomerModal = loadCustomerModal;
 window.openAddressSearch = openAddressSearch;
+window.openCustomerSmsPasteModal = openCustomerSmsPasteModal;
 
 console.log('✅ customer-management.js: saveCustomer 함수 등록 완료');
 console.log('📋 window.saveCustomer:', typeof window.saveCustomer);
