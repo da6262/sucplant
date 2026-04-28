@@ -183,13 +183,20 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
         console.log(`📊 정렬 적용: ${sortBy}`);
         
         // 등급 + 검색어 필터링
+        // v3.4.83 버그 수정: 검색어가 한글이면 .replace(/\D/g,'') 결과가 ''
+        // → ''.includes('') === true 라 모든 고객 통과 (필터 무력화)
+        // → 전화번호 매칭은 검색어에 숫자가 있을 때만 적용
         const term = (searchTerm || '').toLowerCase().trim();
+        const termDigits = term.replace(/\D/g, '');
         let customers = sortedCustomers
             .filter(c => gradeFilter === 'all' || c.grade === gradeFilter)
-            .filter(c => !term ||
-                (c.name || '').toLowerCase().includes(term) ||
-                (c.phone || '').replace(/\D/g, '').includes(term.replace(/\D/g, ''))
-            );
+            .filter(c => {
+                if (!term) return true;
+                const nameMatch = (c.name || '').toLowerCase().includes(term);
+                const phoneMatch = termDigits.length > 0
+                    && (c.phone || '').replace(/\D/g, '').includes(termDigits);
+                return nameMatch || phoneMatch;
+            });
 
         // 미납 / 대기 체크박스 필터
         const filterUnpaid   = document.getElementById('filter-unpaid')?.checked;
