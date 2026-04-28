@@ -86,11 +86,18 @@ export function formatWon(amount, fallback = '-') {
  */
 export function formatPhone(phone, fallback = '-') {
     if (!phone) return fallback;
-    const n = String(phone).replace(/\D/g, '');
+    const n = String(phone).replace(/\D/g, '').slice(0, 11);
+    if (n.length === 0) return fallback;
     if (n.length === 11) return `${n.slice(0, 3)}-${n.slice(3, 7)}-${n.slice(7)}`;
-    if (n.length === 10) return `${n.slice(0, 3)}-${n.slice(3, 6)}-${n.slice(6)}`;
-    if (n.length === 9)  return `0${n.slice(0, 2)}-${n.slice(2, 5)}-${n.slice(5)}`;
-    return phone; // 알 수 없는 형식은 그대로 반환
+    if (n.length === 10) {
+        // 02-XXXX-XXXX (서울) vs 0XX-XXX-XXXX (모바일 구형/지방)
+        if (n.startsWith('02')) return `${n.slice(0, 2)}-${n.slice(2, 6)}-${n.slice(6)}`;
+        return `${n.slice(0, 3)}-${n.slice(3, 6)}-${n.slice(6)}`;
+    }
+    // 9자리 — 서울 02 표기에서 leading 0 누락된 경우만 보정 (예: 27771234 → 027-771-234 X, 217712345 → 0XX 형태)
+    // 단, 이미 0 으로 시작하면 입력 중간 상태(예: 모바일 010000000)이므로 prepend 금지 — 사용자 보고: 010-0000-0000 입력 → 001-000-0000 변형 버그
+    if (n.length === 9 && !n.startsWith('0')) return `0${n.slice(0, 2)}-${n.slice(2, 5)}-${n.slice(5)}`;
+    return phone; // 입력 중간 단계 — 원본 그대로 반환 (oninput 시 사용자 타이핑 흐름 유지)
 }
 
 // ─────────────────────────────────────────────────────────
