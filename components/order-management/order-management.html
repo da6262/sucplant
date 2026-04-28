@@ -91,6 +91,9 @@
                 <span class="text-xs text-amber-600">— 배송준비 상태 주문에 송장번호를 입력하세요</span>
             </div>
             <div class="flex items-center gap-2">
+                <input type="file" id="tracking-excel-file" accept=".xlsx,.xls,.csv" class="hidden">
+                <button id="tracking-excel-upload-btn" class="btn-secondary" title="송장번호가 적힌 엑셀 파일을 선택하면 주문번호로 자동 매칭하여 송장번호를 채웁니다"><i class="fas fa-file-excel"></i>엑셀 업로드</button>
+                <button id="tracking-template-btn" class="btn-secondary" title="현재 패널의 주문번호로 빈 송장 입력 양식 엑셀 다운로드"><i class="fas fa-download"></i>양식 다운로드</button>
                 <button id="tracking-save-all-btn" class="btn-primary"><i class="fas fa-save"></i>전체 저장</button>
                 <button id="tracking-panel-close" class="btn-secondary" style="padding:4px 8px;"><i class="fas fa-times"></i></button>
             </div>

@@ -614,6 +614,30 @@ function attachOrderEventListeners() {
                 saveAllTrackingNumbers();
             }
         });
+
+        // 송장 엑셀 업로드 버튼 → 파일 선택 트리거
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#tracking-excel-upload-btn')) {
+                const fileInput = document.getElementById('tracking-excel-file');
+                if (fileInput) fileInput.click();
+            }
+        });
+
+        // 송장 양식 다운로드 버튼
+        document.addEventListener('click', function(e) {
+            if (e.target.closest('#tracking-template-btn')) {
+                downloadTrackingTemplate();
+            }
+        });
+
+        // 파일 선택 시 업로드 처리 (한 번만 바인딩)
+        document.addEventListener('change', function(e) {
+            if (e.target && e.target.id === 'tracking-excel-file') {
+                const file = e.target.files && e.target.files[0];
+                if (file) uploadTrackingExcel(file);
+                e.target.value = ''; // 같은 파일 재선택 가능하도록 초기화
+            }
+        });
         
         const generatePackagingLabelsBtn = document.getElementById('generate-packaging-labels-btn');
         if (generatePackagingLabelsBtn) {
@@ -2635,7 +2659,7 @@ async function loadTrackingPanelOrders() {
                 `<option value="${c}"${c === existingCompany ? ' selected' : ''}>${c}</option>`
             ).join('');
             return `
-            <tr class="hover:bg-amber-50" data-order-id="${order.id}">
+            <tr class="hover:bg-amber-50" data-order-id="${order.id}" data-order-number="${(order.order_number || '').replace(/"/g, '&quot;')}">
                 <td class="px-3 font-mono td-secondary whitespace-nowrap">${order.order_number || '-'}</td>
                 <td class="px-3 font-medium td-primary whitespace-nowrap">${order.customer_name || '-'}</td>
                 <td class="px-3 td-muted max-w-[180px] truncate" title="${summary}">${summary}</td>
@@ -2728,6 +2752,130 @@ async function saveAllTrackingNumbers() {
 window.toggleTrackingPanel = toggleTrackingPanel;
 window.saveOneTrackingNumber = saveOneTrackingNumber;
 window.saveAllTrackingNumbers = saveAllTrackingNumbers;
+
+// =============================================
+// 송장 엑셀 업로드 (로젠택배 결과 파일 + 일반 양식)
+// =============================================
+
+/** 헤더 행 자동 탐지 — 운송장/송장번호 + 주문번호 컬럼 모두 가진 첫 번째 행 */
+function _findTrackingHeaderRow(arr) {
+    const trackRe = /^(운송장|송장)\s*번호?$|^운송장$/;
+    const orderRe = /^주문\s*번호$|^오더\s*번호$|^주문\s*ID$/i;
+    const maxScan = Math.min(arr.length, 12); // 상위 12행만 헤더 탐지
+    for (let i = 0; i < maxScan; i++) {
+        const row = (arr[i] || []).map(c => String(c == null ? '' : c).trim());
+        const tCol = row.findIndex(c => trackRe.test(c));
+        const oCol = row.findIndex(c => orderRe.test(c));
+        if (tCol >= 0 && oCol >= 0) return { headerRowIdx: i, trackingCol: tCol, orderNumCol: oCol };
+    }
+    return null;
+}
+
+async function uploadTrackingExcel(file) {
+    if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리(XLSX)가 로드되지 않았습니다.'); return; }
+    if (!file) return;
+
+    try {
+        const buf = await file.arrayBuffer();
+        const wb = XLSX.read(buf, { type: 'array' });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        const arr = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+
+        const meta = _findTrackingHeaderRow(arr);
+        if (!meta) {
+            alert('엑셀에서 "운송장번호" + "주문번호" 컬럼을 찾지 못했습니다.\n\n로젠택배 결과 파일이거나, 양식 다운로드로 받은 파일을 사용해주세요.');
+            return;
+        }
+
+        // 데이터 행 → { orderNumber, trackingNumber } 추출
+        const tracks = [];
+        for (let i = meta.headerRowIdx + 1; i < arr.length; i++) {
+            const row = arr[i] || [];
+            const orderNumber = String(row[meta.orderNumCol] == null ? '' : row[meta.orderNumCol]).trim();
+            const trackingNumber = String(row[meta.trackingCol] == null ? '' : row[meta.trackingCol]).trim();
+            if (orderNumber && trackingNumber) tracks.push({ orderNumber, trackingNumber });
+        }
+
+        if (tracks.length === 0) {
+            alert('엑셀에서 유효한 송장번호 행을 찾지 못했습니다.');
+            return;
+        }
+
+        // 패널 행과 매칭하여 input 채우기
+        const rows = document.querySelectorAll('#tracking-input-rows tr[data-order-number]');
+        const rowMap = new Map();
+        rows.forEach(tr => {
+            const num = (tr.dataset.orderNumber || '').trim();
+            if (num) rowMap.set(num, tr);
+        });
+
+        let filled = 0;
+        const unmatched = [];
+        for (const t of tracks) {
+            const tr = rowMap.get(t.orderNumber);
+            if (tr) {
+                const input = tr.querySelector('.tracking-number-input');
+                if (input) {
+                    input.value = t.trackingNumber;
+                    tr.style.background = '#fef3c7'; // 매칭 표시 (앰버)
+                    filled++;
+                }
+            } else {
+                unmatched.push(t.orderNumber);
+            }
+        }
+
+        const msg = [
+            `📦 송장 엑셀 업로드 결과`,
+            ``,
+            `총 ${tracks.length}건 중 ${filled}건 매칭 완료`,
+            unmatched.length > 0 ? `매칭 실패 ${unmatched.length}건: ${unmatched.slice(0, 5).join(', ')}${unmatched.length > 5 ? ' 외...' : ''}` : '',
+            ``,
+            `검토 후 "전체 저장" 버튼을 눌러 DB에 반영하세요.`
+        ].filter(Boolean).join('\n');
+        alert(msg);
+
+        if (filled > 0 && window.showToast) {
+            window.showToast(`${filled}건 자동 입력 완료 — 전체 저장 클릭`, 2500);
+        }
+    } catch (e) {
+        console.error('송장 엑셀 업로드 실패:', e);
+        alert('엑셀 파일 읽기 실패: ' + e.message);
+    }
+}
+
+/** 빈 송장번호 양식 엑셀 다운로드 — 현재 패널의 주문들로 행 채움 */
+function downloadTrackingTemplate() {
+    if (typeof XLSX === 'undefined') { alert('엑셀 라이브러리(XLSX)가 로드되지 않았습니다.'); return; }
+
+    const rows = document.querySelectorAll('#tracking-input-rows tr[data-order-id]');
+    if (!rows.length) {
+        alert('패널에 표시된 주문이 없습니다.\n먼저 "송장입력" 버튼으로 패널을 열어주세요.');
+        return;
+    }
+
+    const data = [['주문번호', '고객명', '상품요약', '택배사', '송장번호']];
+    rows.forEach(tr => {
+        const tds = tr.querySelectorAll('td');
+        const orderNumber = (tr.dataset.orderNumber || '').trim();
+        const customerName = (tds[1]?.textContent || '').trim();
+        const summary = (tds[2]?.getAttribute('title') || tds[2]?.textContent || '').trim();
+        const company = tr.querySelector('.tracking-company-select')?.value || '';
+        const tracking = tr.querySelector('.tracking-number-input')?.value || '';
+        data.push([orderNumber, customerName, summary, company, tracking]);
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    ws['!cols'] = [{ wch: 18 }, { wch: 12 }, { wch: 30 }, { wch: 12 }, { wch: 18 }];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '송장입력');
+
+    const today = new Date().toISOString().slice(0, 10);
+    XLSX.writeFile(wb, `송장입력_양식_${today}.xlsx`);
+}
+
+window.uploadTrackingExcel = uploadTrackingExcel;
+window.downloadTrackingTemplate = downloadTrackingTemplate;
 
 // =============================================
 // 로젠택배 엑셀 내보내기
