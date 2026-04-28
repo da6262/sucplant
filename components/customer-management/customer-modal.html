@@ -126,13 +126,16 @@
                                 <div class="flex gap-2">
                                     <button type="button" data-status="ACTIVE"
                                             onclick="window.setCustomerStatus('ACTIVE')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-green-500 bg-success text-green-700">활성</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2"
+                                            style="border-color:var(--primary);background:var(--badge-green-bg);color:var(--primary-hover);">활성</button>
                                     <button type="button" data-status="INACTIVE"
                                             onclick="window.setCustomerStatus('INACTIVE')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-muted">비활성</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2"
+                                            style="border-color:var(--border);background:var(--bg-white);color:var(--text-muted);">비활성</button>
                                     <button type="button" data-status="SUSPENDED"
                                             onclick="window.setCustomerStatus('SUSPENDED')"
-                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2 border-gray-200 bg-white text-muted">정지</button>
+                                            class="customer-status-btn flex-1 py-2 rounded-lg text-xs font-medium border-2"
+                                            style="border-color:var(--border);background:var(--bg-white);color:var(--text-muted);">정지</button>
                                 </div>
                                 <input type="hidden" id="customer-form-status" value="ACTIVE">
                             </div>

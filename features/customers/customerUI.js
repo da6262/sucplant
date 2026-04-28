@@ -2320,22 +2320,17 @@ window.setCustomerStatus = function(status) {
     const hiddenInput = document.getElementById('customer-form-status');
     if (hiddenInput) hiddenInput.value = status;
 
-    const styleMap = {
-        'ACTIVE':    { on: ['border-green-500',  'bg-green-50',  'text-green-700'],  off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
-        'INACTIVE':  { on: ['border-yellow-400', 'bg-yellow-50', 'text-yellow-700'], off: ['border-gray-200', 'bg-white', 'text-gray-500'] },
-        'SUSPENDED': { on: ['border-red-400',    'bg-red-50',    'text-red-700'],    off: ['border-gray-200', 'bg-white', 'text-gray-500'] }
+    const activeStyleMap = {
+        'ACTIVE':    { borderColor: 'var(--primary)', background: 'var(--badge-green-bg)', color: 'var(--primary-hover)' },
+        'INACTIVE':  { borderColor: 'var(--warn)',    background: 'var(--warn-bg)',         color: 'var(--warn)'          },
+        'SUSPENDED': { borderColor: 'var(--danger)',  background: 'var(--danger-bg)',       color: 'var(--danger)'        }
     };
+    const offStyle = { borderColor: 'var(--border)', background: 'var(--bg-white)', color: 'var(--text-muted)' };
 
     document.querySelectorAll('#customer-modal .customer-status-btn').forEach(btn => {
         const btnStatus = btn.dataset.status;
-        const s = styleMap[btnStatus] || styleMap['ACTIVE'];
-        if (btnStatus === status) {
-            btn.classList.remove(...s.off);
-            btn.classList.add(...s.on);
-        } else {
-            btn.classList.remove(...s.on);
-            btn.classList.add(...s.off);
-        }
+        const s = btnStatus === status ? (activeStyleMap[btnStatus] || activeStyleMap['ACTIVE']) : offStyle;
+        Object.assign(btn.style, s);
     });
 };
 
