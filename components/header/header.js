@@ -420,13 +420,26 @@ function applySidebarLogo() {
     // 로고
     const img = document.getElementById('sidebar-logo-img');
     const icon = document.getElementById('sidebar-logo-icon');
+    const box = document.getElementById('sidebar-logo-box');
     if (farm.logoUrl && img) {
         img.src = farm.logoUrl;
         img.classList.remove('hidden');
         if (icon) icon.classList.add('hidden');
+        // v3.4.77: 로고 모드 — 흰 배경 + 약한 그림자, 초록 배경 제거 (투명 PNG 비침 방지)
+        if (box) {
+            box.classList.remove('bg-emerald-500');
+            box.style.background = '#fff';
+            box.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        }
     } else if (img) {
         img.classList.add('hidden');
         if (icon) icon.classList.remove('hidden');
+        // 아이콘 모드 — 초록 배경 복원
+        if (box) {
+            box.classList.add('bg-emerald-500');
+            box.style.background = '';
+            box.style.boxShadow = '0 2px 8px rgba(5,150,105,0.4)';
+        }
     }
     // 타이틀/서브타이틀
     const titleEl = document.getElementById('sidebar-title');

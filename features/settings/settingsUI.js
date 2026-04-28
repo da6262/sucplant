@@ -1536,33 +1536,47 @@ window._handleFarmLogoSelect = async function(input) {
         if (img) { img.src = e.target.result; img.classList.remove('hidden'); }
         if (placeholder) placeholder.classList.add('hidden');
         if (removeBtn) removeBtn.classList.remove('hidden');
-        // 사이드바에도 즉시 반영
+        // 사이드바에도 즉시 반영 (v3.4.77: 흰 배경 스타일도 함께 적용)
         const sidebarImg = document.getElementById('sidebar-logo-img');
         const sidebarIcon = document.getElementById('sidebar-logo-icon');
+        const sidebarBox = document.getElementById('sidebar-logo-box');
         if (sidebarImg) { sidebarImg.src = e.target.result; sidebarImg.classList.remove('hidden'); }
         if (sidebarIcon) sidebarIcon.classList.add('hidden');
+        if (sidebarBox) {
+            sidebarBox.classList.remove('bg-emerald-500');
+            sidebarBox.style.background = '#fff';
+            sidebarBox.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
+        }
     };
     reader.readAsDataURL(file);
 
-    // 리사이즈 + 업로드
+    // 리사이즈 + 업로드 (v3.4.77: PNG 유지, 비율 보존, 고품질 스무딩)
     try {
         if (!window.supabaseClient) { alert('Supabase 미연결'); return; }
         const blob = await new Promise((resolve) => {
             const img = new Image();
             img.onload = () => {
-                const size = Math.min(img.width, img.height, 400);
+                // 가로·세로 중 큰 변을 400px 기준으로 비율 유지하며 축소 (확대는 안 함)
+                const maxSize = 400;
+                const ratio = Math.min(maxSize / img.width, maxSize / img.height, 1);
+                const w = Math.max(1, Math.round(img.width * ratio));
+                const h = Math.max(1, Math.round(img.height * ratio));
                 const canvas = document.createElement('canvas');
-                canvas.width = size; canvas.height = size;
-                canvas.getContext('2d').drawImage(img, 0, 0, size, size);
-                canvas.toBlob(b => resolve(b), 'image/jpeg', 0.8);
+                canvas.width = w; canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.imageSmoothingEnabled = true;
+                ctx.imageSmoothingQuality = 'high';
+                ctx.drawImage(img, 0, 0, w, h);
+                // PNG 로 저장 — 투명도 보존 + 무손실 (로고는 보통 PNG/SVG 라 JPEG 압축 손실 회피)
+                canvas.toBlob(b => resolve(b), 'image/png');
             };
             img.src = URL.createObjectURL(file);
         });
 
-        const fileName = `farm-logo-${Date.now()}.jpg`;
+        const fileName = `farm-logo-${Date.now()}.png`;
         const { error } = await window.supabaseClient.storage
             .from('product-images')
-            .upload(fileName, blob, { contentType: 'image/jpeg', upsert: true });
+            .upload(fileName, blob, { contentType: 'image/png', upsert: true });
         if (error) throw error;
 
         const { data: urlData } = window.supabaseClient.storage
