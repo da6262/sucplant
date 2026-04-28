@@ -515,6 +515,58 @@ start-server.bat
 3. **imageSmoothingQuality = 'high'** 설정 — 기본 smoothing은 저품질, 고품질 옵션으로 텍스트·선 선명도 확보
 4. 사이드바 로고 박스 — 로고 모드일 때 `bg-emerald-500` (초록) → 흰 배경(`var(--bg-white)`)으로 자동 전환 필수. 투명 PNG 로고에 초록 비치는 문제. `applySidebarLogo` (header.js) 와 `_handleFarmLogoSelect` (settingsUI.js) 두 곳 동시 적용
 
+### JS 검색 필터 빈 문자열 함정 (v3.4.83+)
+**`''.includes('')` 는 항상 true** — JS 특성. OR 조건 검색에서 한쪽이 빈 문자열로 떨어지면 모든 항목이 통과되어 **필터 무력화**.
+
+사례: 고객명 검색에서 한글 "정진경" 입력 →
+```js
+(c.phone||'').replace(/\D/g,'').includes(term.replace(/\D/g,''))
+// term.replace(/\D/g,'') → '' (한글에는 숫자 없음)
+// '01012345678'.includes('') === true → 모든 고객 통과
+```
+
+**해결 패턴**: 정규식으로 추출한 부분 검색어가 빈 문자열인지 가드 후 매칭.
+```js
+const termDigits = term.replace(/\D/g, '');
+const phoneMatch = termDigits.length > 0 && phone.includes(termDigits);
+```
+
+**적용 영역**: 한글·영문 혼합 OR 검색이 있는 모든 곳 — 고객·상품·주문 검색 등. 새 검색 함수 작성 시 빈 문자열 가드 의식적으로.
+
+### 한글 유사도 검색 (오타 대응) — `findSimilarProducts` 패턴 (v3.4.87+)
+한글 한 글자 차이("비얀트" vs "비안트")로 ilike 검색 0건일 때 "혹시 이거?" 제안:
+
+```js
+function _toChosung(s) { /* 한글 → 초성(자모) ㅂㅇㅌ */ }
+function _similarity(a, b) { /* 글자 집합 교집합 / 합집합 */ }
+const score = nameSim * 0.5 + choSim * 0.3 + runBonus * 0.2;
+return scored.filter(x => x.score >= 0.5).sort(...).slice(0, limit);
+```
+
+- 글자 단위 50% + 초성 단위 30% + 부분 일치 20%
+- 임계값 ≥ 0.5 만 통과 → 오용 방지
+- `productDataManager` 캐시 사용 (DB 추가 호출 없음)
+- 다른 한국어 검색(고객명 오타·카테고리)에도 동일 함수 재사용 가능
+
+### 주문 등록 중 신규 상품 즉시 등록 패턴 (v3.4.85+)
+주문 폼 떠나지 않고 카탈로그에 없는 상품 즉시 등록 → 라이브·문자 주문 폭주 처리에 필수:
+
+`openQuickAddProductModal(initialName)` 표준 흐름 (orderForm.js):
+1. 검색 결과 0건 시 "<검색어> 신규 상품 등록" 버튼 노출
+2. 클릭 → 미니 모달 (이름·가격·재고·무료배송 체크박스)
+3. INSERT → `productDataManager.farm_products` 캐시 즉시 push (다음 검색 반영)
+4. `addQuickProductToCart` 로 카트 자동 추가
+5. 검색창 초기화 + 포커스 복귀
+6. 퀵상품 패널 재계산
+
+이 패턴을 다른 "선택 중 즉시 등록" 케이스에도 동일 적용 가능 — 신규 카테고리·신규 SMS 템플릿 등.
+
+### 주문 폼 퀵 상품 카드 CSS 충돌 함정 (v3.4.84+)
+2줄 flex 카드와 CSS 파일의 텍스트 자르기 옵션이 충돌:
+- `.xf-quick-grid` 클래스에 CSS 미정의 → grid 레이아웃 안 됨, 인라인 흐름으로 흩어짐 → `display:grid; grid-template-columns:repeat(3, minmax(0,1fr))` 명시
+- `#quick-product-buttons button` 의 `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` 가 카드 내부 다중 줄 텍스트를 가로로 잘라버림 → 버튼은 `white-space:normal` 로 해제, 상품명 줄만 `.truncate` 클래스로 한 줄 처리
+- 패턴: 컨테이너 클래스에 CSS 정의 명시 + 인라인 flex 와 충돌하는 외부 CSS 식별·해제
+
 ### 환경설정 항목 삭제 — 영향 범위 마이그레이션 패턴 (v3.4.80+)
 환경설정의 동적 배열 항목(주문상태·배송방법·고객등급·SMS 템플릿 등) 삭제 시 **DB 잔존 데이터 처리** 필요. 단순 splice 만 하면 기존 데이터가 그대로 남아 화면에 잔존 표시.
 

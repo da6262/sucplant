@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.87-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.88-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.88 | chore: CLAUDE.md 재사용 지식 4건 보강 — 자체 감사("클로드 규칙 지켰어?") 누락 지적 처리. ①JS 검색 필터 빈 문자열 함정 (`''.includes('')` 항상 true · 한글 검색어 + 전화번호 OR 매칭 시 가드 필수) ②한글 유사도 검색 패턴 (`findSimilarProducts` chosung + 글자 집합 점수 합산) ③주문 등록 중 신규 상품 즉시 등록 패턴 (`openQuickAddProductModal` 모달 + 캐시 즉시 갱신) ④주문 폼 퀵 상품 카드 CSS 충돌 함정 (xf-quick-grid 그리드 명시 + button white-space 해제) |
 | v3.4.87 | feat: 상품 검색 결과 없을 때 한글 오타 대응 — "혹시 이걸 찾으셨나요?" 유사 상품 자동 제안. 사례: "비얀트" 입력 → DB는 "비안트" → 정확 ilike 0건 → findSimilarProducts 함수로 ①글자 교집합 비율 ②초성(자모) 매칭 ③부분 일치 점수 합산 → 상위 3개 노출 (점수 ≥ 0.5). 신규 등록 버튼은 그대로 노출하여 진짜 신상품도 즉시 추가 가능. 한글 오타로 인한 중복 등록 방지 |
 | v3.4.86 | feat: 주문 폼 상품 검색에 Enter 연속 추가 흐름 — Enter 시 첫 검색 결과 카트 추가 후 ①검색창 자동 비움 ②검색창에 포커스 자동 복귀 ③토스트 "+ <상품명>" 1.2초 표시 → 마우스 클릭 없이 다음 상품 바로 타이핑 가능. 또한 검색→카트 경로에서도 무료배송 옵션 보존(productDataManager 캐시에서 shipping_option 추출). 라이브·문자 주문 다건 처리 시 키보드만으로 빠르게 진행 |
 | v3.4.85 | feat: 주문 등록 중 신규 상품 즉시 등록 — 상품 검색에서 결과 없을 때 "<검색어> 신규 상품 등록" 버튼 노출. 클릭 시 빠른 등록 모달(상품명·판매가·초기재고·무료배송 체크박스) → 저장 → DB insert → productDataManager 캐시 갱신 → 장바구니 자동 추가 → 퀵상품 패널 재계산. 카테고리·상세는 나중에 상품관리에서 보완 가능. 주문 폼 떠나지 않고 진행 — 라이브·문자 주문 들어왔는데 카탈로그에 없는 상품도 즉시 처리 |
