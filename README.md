@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.81-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.82-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.82 | feat: 무료배송 상품 지정 + 주문 폼 자동 적용 — ①상품 등록 모달에 "🚚 무료 배송 상품" 체크박스 추가 (기존 배송옵션 드롭다운과 양방향 sync, 더 직관적). ②주문 폼: 카트에 무료배송 상품 1개라도 있으면 배송비 자동 0원 + "🚚 무료배송 상품 포함" 안내 메시지(있으면 표시). ③Quick 상품 카드·카트 행에 "🚚 무료" 배지 시각 표시. ④fillProductForm 수정 모드에서 체크박스 자동 sync. addQuickProductToCart 4번째 인자로 shippingOption 받도록 확장 |
 | v3.4.81 | chore: CLAUDE.md 재사용 지식 3건 보강 + 색상 토큰 정리 — 자체 감사("규칙 지켰어?") 누락 지적 처리. ①송장 조회 URL 자동 삽입 패턴(`getTrackingUrl`·`{trackingUrl}`) ②농장 로고 업로드 흐릿함 3중 원인(JPEG·정사각형·smoothing) ③환경설정 항목 삭제 → 영향 범위 마이그레이션 표준 패턴(`deleteOrderStatus` 레퍼런스). 색상: header.js·settingsUI.js 의 `#fff` 2곳 → `var(--bg-white)` 토큰화 |
 | v3.4.80 | fix: 주문상태 삭제 시 화면·드롭다운에 잔존하던 문제 — 원인: `deleteOrderStatus` 가 settings 배열에서만 splice 하고 기존 farm_orders 의 데이터는 그대로 둠. 수정: 삭제 전 영향 주문 건수 카운트 → 0건이면 단순 삭제 / N건이면 "어디로 옮길지" 선택 모달 → DB 일괄 UPDATE + settings 제거 + 목록 자동 새로고침. 마지막 1개 상태는 삭제 차단 |
 | v3.4.79 | chore: 송장 패널 택배사 드롭다운 — 농장 실사용(로젠/우체국)으로 축소 — `SHIPPING_COMPANIES` 배열 6개(로젠·CJ·한진·우체국·편의점·기타) → 3개(로젠택배·우체국택배·기타). 송장 조회 URL 매핑(`getTrackingUrl`)은 5개 그대로 유지(향후 사용 시 즉시 동작). 사용자 선택 부담 ↓ |

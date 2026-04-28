@@ -1581,9 +1581,10 @@ class ProductManagementComponent {
                 'product-form-id': product.id,
                 'product-form-created-at': product.created_at,
                 'product-form-barcode': product.barcode || '',
-                'product-form-product-code': product.product_code || ''
+                'product-form-product-code': product.product_code || '',
+                'product-form-shipping': product.shipping_option || '일반배송'
             };
-            
+
             Object.entries(fields).forEach(([fieldId, value]) => {
                 const field = document.getElementById(fieldId);
                 if (field) {
@@ -1593,7 +1594,11 @@ class ProductManagementComponent {
                     console.warn(`⚠️ ${fieldId} 필드를 찾을 수 없습니다`);
                 }
             });
-            
+
+            // v3.4.82: 무료배송 체크박스 sync
+            const freeChk = document.getElementById('product-form-free-shipping');
+            if (freeChk) freeChk.checked = (product.shipping_option === '무료배송');
+
         } catch (error) {
             console.error('❌ 상품 폼 데이터 채우기 실패:', error);
         }

@@ -86,7 +86,7 @@ async function loadQuickProductsForMinimal() {
         if (ranked.length > 0) {
             const { data } = await window.supabaseClient
                 .from('farm_products')
-                .select('id, name, price, stock')
+                .select('id, name, price, stock, shipping_option')
                 .in('name', ranked);
             products = (data || []).sort((a, b) => ranked.indexOf(a.name) - ranked.indexOf(b.name)).slice(0, 6);
         }
@@ -94,7 +94,7 @@ async function loadQuickProductsForMinimal() {
             // 부족한 자리는 최근 등록 상품으로 채움
             const { data } = await window.supabaseClient
                 .from('farm_products')
-                .select('id, name, price, stock')
+                .select('id, name, price, stock, shipping_option')
                 .order('created_at', { ascending: false })
                 .limit(12);
             const seen = new Set(products.map(p => p.id));
@@ -113,7 +113,9 @@ async function loadQuickProductsForMinimal() {
         container.innerHTML = products.map(p => {
             const stock = Number(p.stock) || 0;
             const isOut = stock <= 0;
+            const isFree = p.shipping_option === '무료배송';
             const safeName = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const safeShipping = (p.shipping_option || '일반배송').replace(/'/g, "\\'");
             const stockLabel = isOut ? '품절'
                               : stock <= 5 ? `재고 ${stock}개`
                               : '';
@@ -129,9 +131,10 @@ async function loadQuickProductsForMinimal() {
             `.replace(/\s+/g, ' ');
             const onclickAttr = isOut
                 ? `onclick="alert('재고가 없는 상품입니다 (품절). 검색에서 직접 추가하거나 재고를 보충해주세요.')"`
-                : `onclick="addQuickProductToCart('${p.id}','${safeName}',${parseFloat(p.price)||0})"`;
+                : `onclick="addQuickProductToCart('${p.id}','${safeName}',${parseFloat(p.price)||0},'${safeShipping}')"`;
+            const freeBadge = isFree ? `<span style="font-size:9px;background:var(--badge-green-bg);color:var(--primary-hover);padding:1px 5px;border-radius:var(--radius-full);font-weight:600;margin-left:4px;">🚚 무료</span>` : '';
             return `<button type="button" style="${cardStyle}" ${onclickAttr} ${isOut ? 'aria-disabled="true"' : ''}>
-                <div class="truncate" style="font-weight:600;color:var(--text-heading);">${(p.name || '').replace(/</g, '&lt;')}</div>
+                <div class="truncate" style="font-weight:600;color:var(--text-heading);">${(p.name || '').replace(/</g, '&lt;')}${freeBadge}</div>
                 <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:3px;">
                     <span class="tabular-nums" style="font-size:12px;font-weight:600;color:var(--primary-accent);">${window.fmt.won(p.price)}</span>
                     ${stockLabel ? `<span style="font-size:11px;color:${stockColor};font-weight:500;">${stockLabel}</span>` : ''}
@@ -207,7 +210,7 @@ async function loadPopularProducts() {
 }
 
 // 퀵상품 클릭 시 장바구니 추가 또는 수량 +1 (4열: 상품명/단가/수량/소계, 수량 0이면 자동 삭제)
-function addQuickProductToCart(productId, productName, price) {
+function addQuickProductToCart(productId, productName, price, shippingOption = '일반배송') {
     const cartBody = document.getElementById('cart-items-body');
     if (!cartBody) return;
     const unitPrice = parseFloat(price) || 0;
@@ -230,11 +233,16 @@ function addQuickProductToCart(productId, productName, price) {
         tr.setAttribute('data-price', String(unitPrice));
         tr.setAttribute('data-unit-price', String(unitPrice));
         tr.setAttribute('data-product-name', productName || '');
+        tr.setAttribute('data-shipping-option', shippingOption);
         const lineTotal = unitPrice * 1;
+        const isFree = shippingOption === '무료배송';
+        const freeBadge = isFree
+            ? ` <span style="font-size:9px;background:var(--badge-green-bg);color:var(--primary-hover);padding:1px 5px;border-radius:var(--radius-full);font-weight:600;">🚚 무료</span>`
+            : '';
         const stepBtn = `width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
         tr.innerHTML = `
             <td class="text-center"><input type="checkbox" class="checkbox-ui cart-row-checkbox"></td>
-            <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}</td>
+            <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}${freeBadge}</td>
             <td class="td-amount text-right text-numeric">${window.fmt.won(unitPrice)}</td>
             <td class="text-center whitespace-nowrap">
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', -1)">−</button>
@@ -844,21 +852,39 @@ function updateOrderTotalDisplay() {
             totalItems += quantity;
         });
         
-        // 배송비: 사용자가 수정 안 했으면 환경설정 제안(상품합계>=무료배송기준 → 0원, 아니면 기본배송비) + 도서산간 체크 시 추가금
+        // 배송비: 사용자가 수정 안 했으면 환경설정 제안 + 도서산간 추가금
+        // v3.4.82: 카트에 "무료배송" 상품 1개라도 있으면 자동 0원 (행사상품 우선)
         const shippingFeeInput = document.getElementById('shipping-fee-input');
         const freeThreshold = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.freeShippingThreshold) || 50000;
         const defaultFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.defaultShippingFee) || 3000;
         const remoteFee = (window.SHIPPING_SETTINGS && window.SHIPPING_SETTINGS.remoteAreaShippingFee) || 0;
         const remoteChecked = document.getElementById('remote-area-shipping-checkbox')?.checked === true;
         const remoteSurcharge = remoteChecked ? Math.max(0, toIntegerWon(remoteFee)) : 0;
+
+        // 카트에 무료배송 상품 포함 여부 확인
+        const hasFreeShippingItem = !!cartBody.querySelector('tr[data-product-id][data-shipping-option="무료배송"]');
+
         let shippingFee;
         if (shippingFeeInput && !window._shippingFeeUserEdited) {
-            const baseFee = productTotal >= freeThreshold ? 0 : Math.max(0, toIntegerWon(defaultFee));
+            const baseFee = (hasFreeShippingItem || productTotal >= freeThreshold)
+                ? 0
+                : Math.max(0, toIntegerWon(defaultFee));
             const suggested = baseFee + remoteSurcharge;
             shippingFeeInput.value = suggested;
             shippingFee = suggested;
         } else {
             shippingFee = shippingFeeInput ? Math.max(0, toIntegerWon(shippingFeeInput.value)) : 0;
+        }
+
+        // 무료배송 안내 메시지 토글 (#shipping-free-notice 가 있으면 표시/숨김)
+        const freeNotice = document.getElementById('shipping-free-notice');
+        if (freeNotice) {
+            if (hasFreeShippingItem && !window._shippingFeeUserEdited) {
+                freeNotice.classList.remove('hidden');
+                freeNotice.textContent = '🚚 무료배송 상품 포함 → 배송비 자동 0원';
+            } else {
+                freeNotice.classList.add('hidden');
+            }
         }
         
         // 할인액(원 단위 정수), 총액 = max(0, 상품+배송비-할인)
