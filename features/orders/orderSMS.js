@@ -399,10 +399,12 @@ async function sendOrderSMSFromModal(orderId) {
         await sendOrderSMS(orderId, templateType, customMessage);
         closeSMSTemplateModal();
 
-        // 템플릿별 상태 자동 전환
+        // 템플릿별 상태 자동 전환 (v3.4.71+:
+        //   orderConfirm   → 고객안내  — 고객에게 주문확인 안내 발송 = 안내 완료
+        //   paymentConfirm → 배송준비  — 입금확인 안내 발송 = 입금 확인됨 → 배송 준비로 진행
         const STATUS_MAP = {
-            orderConfirm: '입금대기',
-            paymentConfirm: '입금확인',
+            orderConfirm: '고객안내',
+            paymentConfirm: '배송준비',
             shippingStart: '배송중',
             shippingComplete: '배송완료',
         };
@@ -853,10 +855,10 @@ async function showBulkSMSModal() {
             }
         }
 
-        // 템플릿별 상태 자동 전환
+        // 템플릿별 상태 자동 전환 (v3.4.71+: orderConfirm → 고객안내 / paymentConfirm → 배송준비)
         const BULK_STATUS_MAP = {
-            orderConfirm: '입금대기',
-            paymentConfirm: '입금확인',
+            orderConfirm: '고객안내',
+            paymentConfirm: '배송준비',
             shippingStart: '배송중',
             shippingComplete: '배송완료',
         };
@@ -876,7 +878,7 @@ async function showBulkSMSModal() {
         }
 
         alert(`일괄 SMS 발송 완료\n성공: ${success}건 / 실패: ${fail}건` +
-            (templateType === 'orderConfirm' ? '\n상태가 [입금대기]로 변경되었습니다.' : ''));
+            (bulkNewStatus ? `\n상태가 [${bulkNewStatus}](으)로 변경되었습니다.` : ''));
     });
 }
 

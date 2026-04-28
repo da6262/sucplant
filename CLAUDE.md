@@ -424,7 +424,7 @@ start-server.bat
   - `shippingComplete` → `KA01TP260418163114900fOuMkngRGhB` (배송 완료 안내)
   - `waitlistNotify` → `KA01TP250905182859613fufzpibZmgG` (입고 알림, 승인완료)
 - **SMS 발송 후 DB 기록**: `sms_sent_at` + `last_sms_type` 자동 업데이트
-- **템플릿별 상태 자동 전환**: orderConfirm→입금대기, paymentConfirm→입금확인, shippingStart→배송중, shippingComplete→배송완료
+- **템플릿별 상태 자동 전환** (v3.4.71+): orderConfirm→**고객안내**(이전: 입금대기), paymentConfirm→**배송준비**(이전: 입금확인), shippingStart→배송중, shippingComplete→배송완료. 의미: SMS 발송 = 해당 단계 완료. orderConfirm 발송 = 고객에게 안내 갔음 / paymentConfirm 발송 = 입금 확인되었으니 배송 준비 단계 진입
 - **일괄 SMS**: 체크박스 선택 → `showBulkSMSModal()` → 템플릿 선택 → 순차 발송 + 진행률 표시
 
 ### 문자 붙여넣기 → 주문 자동 입력 (v3.4.9+)
