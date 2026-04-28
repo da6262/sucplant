@@ -181,21 +181,50 @@ function formatSMSTemplate(template, order) {
     const paymentInfo = `상품금액: ${productAmount.toLocaleString()}원\n${shippingText}\n총 결제금액: ${totalAmount.toLocaleString()}원`;
     console.log('💳 결제 정보:', paymentInfo);
     
-    const formattedTemplate = template
-        .replace('{customerName}', order.customer_name || '고객')
-        .replace('{orderNumber}', order.order_number || order.id)
-        .replace('{orderDetails}', orderDetails)
-        .replace('{totalAmount}', totalAmount.toLocaleString())
-        .replace('{productAmount}', productAmount.toLocaleString())
-        .replace('{shippingFee}', shippingFee.toLocaleString())
-        .replace('{shippingFeeText}', shippingText)
-        .replace('{paymentInfo}', paymentInfo)
-        .replace('{shippingCompany}', order.shipping_method || '택배사')
-        .replace('{trackingNumber}', order.tracking_number || '송장번호');
-    
+    // v3.4.78: 송장 조회 URL 자동 생성 (택배사별 매핑)
+    const trackingUrl = getTrackingUrl(order.shipping_method, order.tracking_number);
+
+    let formattedTemplate = template
+        .replace(/{customerName}/g, order.customer_name || '고객')
+        .replace(/{orderNumber}/g, order.order_number || order.id)
+        .replace(/{orderDetails}/g, orderDetails)
+        .replace(/{totalAmount}/g, totalAmount.toLocaleString())
+        .replace(/{productAmount}/g, productAmount.toLocaleString())
+        .replace(/{shippingFee}/g, shippingFee.toLocaleString())
+        .replace(/{shippingFeeText}/g, shippingText)
+        .replace(/{paymentInfo}/g, paymentInfo)
+        .replace(/{shippingCompany}/g, order.shipping_method || '택배사')
+        .replace(/{trackingNumber}/g, order.tracking_number || '송장번호')
+        .replace(/{trackingUrl}/g, trackingUrl || '');
+
+    // 기존 운영 농장 호환: 템플릿에 {trackingUrl} 없는데 송장번호 언급 + URL 생성 가능하면 자동 추가
+    if (trackingUrl && /송장번호|trackingNumber/.test(template) && !/trackingUrl|조회:/.test(template)) {
+        formattedTemplate += `\n조회: ${trackingUrl}`;
+    }
+
     console.log('📱 포맷팅된 SMS 템플릿:', formattedTemplate);
     return formattedTemplate;
 }
+
+// 택배사별 송장 조회 URL 생성 (v3.4.78+)
+// 매핑 추가/수정 시 settingsData.js 의 default 템플릿도 함께 확인
+function getTrackingUrl(shippingMethod, trackingNumber) {
+    if (!trackingNumber) return '';
+    const num = String(trackingNumber).replace(/[^0-9]/g, '');
+    if (!num) return '';
+    const method = String(shippingMethod || '').trim();
+
+    // 택배사별 조회 URL 패턴
+    const patterns = {
+        '로젠택배':     `https://www.ilogen.com/web/personal/trace.do?invoiceNo=${num}`,
+        'CJ대한통운':   `https://www.cjlogistics.com/ko/tool/parcel/tracking?gnbInvcNo=${num}`,
+        '한진택배':     `https://www.hanjin.com/kor/CMS/DeliveryMgr/WaybillResult.do?mCode=MN038&wblnumText2=${num}`,
+        '우체국택배':   `https://service.epost.go.kr/trace.RetrieveDomRigiTraceList.comm?sid1=${num}`,
+        '편의점택배':   `https://www.cupost.co.kr/postbox/delivery/localResult.cupost?invoice_no=${num}`,
+    };
+    return patterns[method] || '';
+}
+window.getTrackingUrl = getTrackingUrl;
 
 // 메시지 발송 (카카오 알림톡 우선 → SMS 폴백)
 async function sendSMS(phoneNumber, message, templateType = 'custom', order = null) {

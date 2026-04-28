@@ -45,7 +45,7 @@ class SettingsDataManager {
             smsTemplates: {
                 orderConfirm: '[경산다육식물농장] {customerName}님, 주문이 접수되었습니다.\n\n■ 주문번호 {orderNumber}\n\n■ 주문상세\n\n{orderDetails}\n\n■ 결제 정보\n{paymentInfo}\n\n■ 입금계좌 농협 010-9745-6245-08 (예금주: 경산식물원(배은희))\n\n감사합니다.',
                 paymentConfirm: '[경산다육식물농장] {customerName}님, 입금이 확인되었습니다.\n주문번호: {orderNumber}\n배송준비를 시작합니다.',
-                shippingStart: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}',
+                shippingStart: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송을 시작했습니다.\n주문번호: {orderNumber}\n택배사: {shippingCompany}\n송장번호: {trackingNumber}\n조회: {trackingUrl}',
                 shippingComplete: '[경산다육식물농장] {customerName}님, 주문하신 상품이 배송완료되었습니다.\n주문번호: {orderNumber}\n감사합니다.',
                 waitlistNotify: '[경산다육식물농장] {customerName}님, 대기하신 상품이 입고되었습니다.\n상품명: {productName}\n수량: {quantity}개\n주문 가능합니다.'
             },
