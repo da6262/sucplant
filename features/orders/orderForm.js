@@ -2732,8 +2732,11 @@ function parseSmsText(text) {
     }
 
     // ── 2단계: 패턴 기반 추출 (라벨 없는 경우) ──
-    // 전화번호: 공백·하이픈·점 구분자 모두 허용 (010 4338 8929, 010-4338-8929, 01043388929)
-    const phoneRe = /(01[016789])[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})/;
+    // 전화번호: 공백·하이픈·점 구분자 모두 허용
+    //   • 모바일: 010-4338-8929, 010 4338 8929, 01043388929
+    //   • 서울 02: 02-1234-5678, 02-123-4567 (지역번호 2자리)
+    //   • 지방 0XX: 042-1234-5678, 053-123-4567 (지역번호 3자리, 031~064 등)
+    const phoneRe = /(0\d{1,2})[\s.\-]?(\d{3,4})[\s.\-]?(\d{4})/;
     const addrRe = /(?:서울|부산|대구|인천|광주|대전|울산|세종|경기|강원|충북|충남|전북|전남|경북|경남|제주)|(?:[\uAC00-\uD7A3]+(?:시|도|군|구|읍|면|동|리|로|길)[\s\d])/;
 
     for (let i = 0; i < lines.length; i++) {
@@ -2817,9 +2820,9 @@ function parseSmsText(text) {
         }
     }
 
-    // 전화번호 포맷 정리 (01012345678 → 010-1234-5678)
-    if (phone && phone.length >= 10) {
-        phone = phone.replace(/^(01[016789])(\d{3,4})(\d{4})$/, '$1-$2-$3');
+    // 전화번호 포맷 정리 — utils/formatters.js#formatPhone 위임 (모바일·서울 02·지방 0XX 통합 처리)
+    if (phone && phone.length >= 9) {
+        phone = (window.formatPhone ? window.formatPhone(phone, phone) : phone);
     }
 
     return { name, phone, address, addressDetail, memo, items: parsedItems };

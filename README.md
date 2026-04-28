@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.64-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.65-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.65 | feat: 문자 파서 지역 전화번호(042·053·02 등) 인식 — `parseSmsText` 의 phone 정규식 `(01[016789])` → `(0\d{1,2})` 로 확장하여 모바일 외에 서울 02·지방 0XX 지역번호도 자동 추출, 출력 포맷팅도 `formatPhone` 에 위임하여 `02-1234-5678`/`042-1234-5678` 표기 통일 |
 | v3.4.64 | fix: 전화번호 입력 9자리 도달 시 `0` 중복 prepend → `010-0000-0000` 입력이 `001-000-0000` 으로 변형되던 버그 — `utils/formatters.js#formatPhone` 의 9자리 분기에 `!n.startsWith('0')` 가드 추가, 10자리 분기에 02 서울 케이스 분리, slice(0,11) 으로 maxlength 보장. 고객/주문 등록 모달 양쪽에 동시 적용 |
 | v3.4.63 | feat: 고객관리 "문자 입력" 버튼 — 받은 문자·카톡을 붙여넣으면 parseSmsText로 이름·전화·주소·상세주소·메모 자동 추출 → 즉시 고객 등록 (전화번호 중복 시 기존 고객 자동 매칭 → 정보 업데이트 모드 전환). 헤더 PC: hidden md:inline-flex 버튼, 모바일: ⋮ 드롭다운 항목. customerDataManager.addCustomer/updateCustomer 재사용 |
 | v3.4.62 | feat: 상품관리 재고 직접 편집 + 삭제 FK 가드 — ①재고 셀을 항상 표시되는 [−][숫자입력][+] 스텝퍼로 교체, 더블클릭 없이 클릭/타이핑/Enter로 즉시 저장 + farm_stock_logs 자동 기록(in/out, "재고 +1/-1 (수동)" / "재고 직접 수정") + 0=빨강·≤5=주황 색상 + "품절" 뱃지 자동 토글, 컬럼 폭 w-20→w-28. ②상품 삭제 시 fk_order_items_product 위반 감지 → 친절한 안내(참조 건수 카운트) + "재고 0으로 변경(품절 처리)" 폴백 옵션 → 주문 이력 보존하면서 신규 판매 차단 |
