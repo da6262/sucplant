@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.67-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.68-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.68 | chore: 디자인 토큰 정리 + CLAUDE.md 함정 3건 문서화 — ①styles/index-inline.css 에 `--success-bg` 추가, js/order-management.js 의 송장 매칭/저장 표시 색상 하드코딩 제거(`#fef3c7`→`var(--warn-bg)`, `#d1fae5`→`var(--success-bg)`), product-management.js 재고 스텝퍼 `#fff`→`var(--bg-white)`. ②CLAUDE.md 에 "장바구니 row 생성기 5곳 동기화 함정"·"formatPhone 함정"·"로젠택배 엑셀 구조" 추가 — 향후 같은 영역 작업 시 즉시 참고 |
 | v3.4.67 | feat: 주문 등록 장바구니 일괄 삭제 — 각 행 맨 앞에 체크박스 추가 + 헤더에 마스터 체크박스 + "선택 삭제" 휴지통 버튼. 사용자가 수량 2000을 잘못 입력했을 때 −를 2000번 누르지 않아도 체크박스 1번으로 항목 제거 가능. 모든 row 생성기(addQuickProductToCart·addToCart·addItemToCartDirectly·orderUI 빈 행·addProductToOrderForm)에 동일 컬럼 적용, colspan 5↔6 양방향 호환 |
 | v3.4.66 | feat: 송장번호 엑셀 일괄 입력 — 송장 패널에 "엑셀 업로드" + "양식 다운로드" 버튼 추가. 로젠택배 결과 엑셀(`주문등록_출력...xlsx`) 또는 양식 다운로드 파일을 선택하면 헤더 자동 탐지(`운송장번호`/`송장번호` + `주문번호`)로 주문번호 매칭하여 송장번호 input 자동 채움. 매칭 결과(성공/실패 건수) 알림 후 "전체 저장"으로 일괄 DB 반영. 패널 행에 `data-order-number` 속성 추가 |
 | v3.4.65 | feat: 문자 파서 지역 전화번호(042·053·02 등) 인식 — `parseSmsText` 의 phone 정규식 `(01[016789])` → `(0\d{1,2})` 로 확장하여 모바일 외에 서울 02·지방 0XX 지역번호도 자동 추출, 출력 포맷팅도 `formatPhone` 에 위임하여 `02-1234-5678`/`042-1234-5678` 표기 통일 |

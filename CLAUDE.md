@@ -480,6 +480,33 @@ start-server.bat
 - **대비 4% 이하는 고휘도·주변광 환경에서 지각 불가** — `#FAFAFA`(2%)·`#F5F5F5`(4%) 는 OLED/고밝기 LCD에서 flatten. `--tbl-zebra-bg` 는 `#E5E7EB`(gray-200, 10%) 유지. 더 낮추려면 DevTools 로 Weber 대비 확인 후.
 - 증상 감별: 화면 dim(캡처 overlay, 절전 전이) 때만 보이면 색상 대비 문제. 부모 bg 따라 탭마다 차이나면 odd 명시 누락.
 
+### 주문 등록 장바구니 row 생성기 5곳 동기화 함정 (v3.4.67+)
+주문 등록 폼의 `#cart-items-body` 에 행을 삽입하는 코드가 **5곳에 흩어져 있음**. 컬럼 추가/삭제 시 5곳 모두 수정하지 않으면 `colspan` 어긋나 빈 메시지 깨지거나 신규 컬럼 누락:
+1. `features/orders/orderForm.js#addQuickProductToCart` — 퀵상품 패널 클릭 시
+2. `features/orders/orderForm.js` (라인 ~1714) — 상품 검색 결과 클릭 시 (`removeCartItem` 사용)
+3. `features/orders/orderForm.js#window.addToCart` (라인 ~2353) — 외부 호출용 (`removeFromCart(this)` 사용)
+4. `features/orders/orderUI.js#addItemToCartDirectly` — 주문 수정 시 기존 아이템 복원
+5. `features/orders/orderUI.js` 빈 메시지 행 (`colspan="6"`) — items 비어있을 때
+
+**컬럼 변경 체크리스트**: ① 헤더 `<th>` (`orderFormMinimalLayout.js`) ② tfoot `colspan` ③ 위 5개 row 생성기 ④ `ensureCartEmptyRow` 의 `thCount` 자동 감지는 OK ⑤ 빈 메시지 selector 는 `tr td[colspan="6"], tr td[colspan="5"]` 처럼 양방향 호환으로 작성 (구버전 캐시 대응).
+
+### 전화번호 포맷터(`utils/formatters.js#formatPhone`) 함정
+- **9자리 분기는 `!startsWith('0')` 가드 필수** — leading 0 누락된 서울 02 표기(`27771234`)만 보정 목적. 가드 없으면 모바일 입력 중간 상태 9자리(`010000000`)에 다시 `0` prepend → `001-000-0000` 변형 (v3.4.64 수정).
+- **10자리 분기는 02 vs 모바일 분리** — `02-XXXX-XXXX`(서울) vs `0XX-XXX-XXXX`(지방·구형 모바일). `startsWith('02')` 체크 필요.
+- **`oninput` 콜백에서 호출 시 입력 중간 단계 보존** — 알 수 없는 길이는 원본 그대로 반환 (`return phone`). 사용자 타이핑 흐름 깨지 않도록.
+- **지역 전화번호 인식 범위** — `parseSmsText` 의 phoneRe 도 `(0\d{1,2})` 로 모바일+서울+지방 통합 (v3.4.65). 모바일만 검출하던 `(01[016789])` 패턴 사용 금지.
+
+### 송장번호 엑셀 업로드 (로젠택배 결과 파일) 구조 (v3.4.66+)
+로젠택배 「출력완료」 엑셀 파일 (`주문등록_출력(복수건)_출력완료(N)건 (YYYY-MM-DD HHMM시MM분SS초).xlsx`):
+- **Row 0**: 파일 제목 단일 셀 (병합)
+- **Row 1**: 상위 헤더 그룹 (`수하인`·`송하인` 같은 묶음 라벨) — `운송장번호`·`주문번호` 라벨 포함
+- **Row 2**: 서브 헤더 (이름/주소/전화 등 구체 컬럼) — 이 행에도 `운송장번호`·`주문번호` 그대로 표기
+- **Row 3+**: 데이터
+
+**핵심 컬럼**: C4=`운송장번호`, C19=`주문번호`(우리 DB의 `farm_orders.order_number` 와 동일 포맷, 예: `ORD-260428-1V0L`), C7~C11=수하인 정보, C23~C27=송하인 정보, C13=`택배운임`, C14=`운임구분`(선불/착불).
+
+**파서 전략** (`uploadTrackingExcel` 참고): 헤더 자동 탐지 — 상위 12행 스캔하여 `(운송장|송장)\s*번호?` + `주문\s*번호` 둘 다 가진 첫 번째 행을 헤더 행으로 채택, 그 다음 행부터 데이터. 다른 택배사(CJ·한진) 파일도 비슷한 라벨 사용하므로 동일 파서 재사용 가능.
+
 ### 환경설정 데이터 구조 (farm_settings, Supabase)
 - 모든 환경설정은 Supabase `farm_settings` 테이블(id=1)의 `settings` JSONB 컬럼에 단일 JSON 으로 저장
 - 최상위 키: `farm`(`name`/`owner`/`phone`/`address`/`email`/`businessNumber`/`bankName`/`bankAccount`/`bankHolder`/`logoUrl`/`sidebarTitle`/`sidebarSubtitle`), `shipping`(`defaultShippingFee`/`freeShippingThreshold`/`remoteAreaShippingFee`/`shippingMethods`/`logenShippingFee`/`logenFreightType`), `orderStatuses`(배열), `customerGrades`(배열), `smsTemplates`, `smsConfig`, `gradePeriod`, `system`

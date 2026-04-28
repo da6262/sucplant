@@ -2705,7 +2705,7 @@ async function saveOneTrackingNumber(orderId, rowEl) {
         if (error) throw error;
 
         // 성공 표시
-        tr.style.background = '#d1fae5';
+        tr.style.background = 'var(--success-bg)';
         setTimeout(() => { tr.style.background = ''; }, 1500);
 
         // 주문 테이블도 새로고침
@@ -2735,7 +2735,7 @@ async function saveAllTrackingNumbers() {
             await window.supabaseClient.from('farm_orders')
                 .update({ tracking_number: trackingNumber, shipping_method: shippingCompany, order_status: '배송중' })
                 .eq('id', orderId);
-            tr.style.background = '#d1fae5';
+            tr.style.background = 'var(--success-bg)';
             saved++;
         } catch (e) {
             console.error(`주문 ${orderId} 저장 실패:`, e);
@@ -2817,7 +2817,7 @@ async function uploadTrackingExcel(file) {
                 const input = tr.querySelector('.tracking-number-input');
                 if (input) {
                     input.value = t.trackingNumber;
-                    tr.style.background = '#fef3c7'; // 매칭 표시 (앰버)
+                    tr.style.background = 'var(--warn-bg)'; // 매칭 표시 (앰버)
                     filled++;
                 }
             } else {

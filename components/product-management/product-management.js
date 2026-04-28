@@ -198,14 +198,14 @@ const PRODUCT_COLUMNS = [
             return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}" style="padding:2px 4px;">
                 <div class="stock-stepper" style="display:inline-flex;align-items:center;justify-content:flex-end;">
                     <button type="button" class="stock-step-btn" data-step="-1" data-product-id="${p.id}"
-                        style="width:22px;height:24px;border:1px solid var(--border);background:#fff;border-radius:3px 0 0 3px;cursor:pointer;font-weight:700;line-height:1;color:var(--text-secondary);"
+                        style="width:22px;height:24px;border:1px solid var(--border);background:var(--bg-white);border-radius:3px 0 0 3px;cursor:pointer;font-weight:700;line-height:1;color:var(--text-secondary);"
                         title="1개 차감">−</button>
                     <input type="number" class="stock-inline-input" data-product-id="${p.id}"
                         value="${stock}" min="0"
                         style="width:46px;height:24px;text-align:right;font-size:12px;padding:0 4px;border:1px solid var(--border);border-left:none;border-right:none;outline:none;border-radius:0;${inputColor}"
                         title="값을 입력하고 Enter 또는 포커스 해제 시 저장">
                     <button type="button" class="stock-step-btn" data-step="1" data-product-id="${p.id}"
-                        style="width:22px;height:24px;border:1px solid var(--border);background:#fff;border-radius:0 3px 3px 0;cursor:pointer;font-weight:700;line-height:1;color:var(--primary);"
+                        style="width:22px;height:24px;border:1px solid var(--border);background:var(--bg-white);border-radius:0 3px 3px 0;cursor:pointer;font-weight:700;line-height:1;color:var(--primary);"
                         title="1개 추가">+</button>
                 </div>
             </td>`;
