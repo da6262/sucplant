@@ -428,7 +428,7 @@ function applySidebarLogo() {
         // v3.4.77: 로고 모드 — 흰 배경 + 약한 그림자, 초록 배경 제거 (투명 PNG 비침 방지)
         if (box) {
             box.classList.remove('bg-emerald-500');
-            box.style.background = '#fff';
+            box.style.background = 'var(--bg-white)';
             box.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
         }
     } else if (img) {

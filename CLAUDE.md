@@ -430,6 +430,7 @@ start-server.bat
 - **발송 채널 라벨 (v3.4.73+)**: 결과 알림 메시지는 `result.channel === 'kakao' ? '카카오톡' : '문자'` 로 분기 표기. 일괄 발송은 채널별 카운트(`kakaoCount`/`smsCount`) 분리. 단순 "SMS 발송 완료" 처럼 generic 라벨 금지
 - **자동 발송 토글 패턴 (v3.4.70+ 송장 / v3.4.73+ 입금확인)**: 일괄 작업 화면에 `<input type="checkbox" id="*-auto-sms">` 토글 + 저장/처리 시 토글 ON 이면 sendOrderSMS 자동 호출. Solapi rate limit 대응 **250ms 간격** 순차 발송 권장. 채널별 카운트 분리 표시
 - **`bulkConfirmPayment`** (v3.4.73+): 입금대기 주문 일괄 입금확인. 토글 ON → paymentConfirm 발송 → 상태 배송준비 / OFF → 단순 입금확인 상태 변경
+- **송장 조회 URL 자동 삽입 (v3.4.78+)**: `getTrackingUrl(shippingMethod, trackingNumber)` 가 택배사별 조회 URL 패턴 매핑. SMS 템플릿에 `{trackingUrl}` 변수 사용 시 자동 치환. 기존 사용자 템플릿에 `{trackingUrl}` 없어도 송장번호 언급 시 자동으로 `\n조회: <URL>` append (호환). 지원: 로젠·CJ대한통운·한진·우체국·편의점택배. 농장 실사용 택배사(`SHIPPING_COMPANIES`)는 v3.4.79 부터 로젠·우체국·기타 3개로 단순화 — getTrackingUrl 매핑은 5개 그대로 유지하여 향후 사용 시 즉시 동작
 
 ### 문자 붙여넣기 → 주문 자동 입력 (v3.4.9+)
 - `openSmsPasteModal()` — 주문 등록 폼의 "문자입력" 버튼
@@ -506,6 +507,25 @@ start-server.bat
 - **상품 검색 드롭다운** (`searchProducts`): 동일 시각 처리 + onclick 차단 + 안내 alert
 - **`addProductToCart`**: 재고 0 진입 시 `confirm()` 다이얼로그로 사용자 동의 받음 → 사전예약·재입고 후 처리 같은 특수 케이스만 우회 허용
 - **검색 드롭다운 카테고리 컬럼 제거**: `<span class="search-result-cat">` 를 v3.4.74에서 삭제 — 학명(그랩토페들럼·크라슐라·포퀘리아 등)이 농장 사용자에게 의미 없고 가독성만 해침
+
+### 농장 로고 업로드 함정 (v3.4.77+)
+이미지 업로드 처리에서 발견된 3중 흐릿함 원인 — 향후 다른 이미지 업로드 작업에도 동일 패턴 적용:
+1. **JPEG 변환 + 80% 압축 금지** — 투명 PNG 로고는 JPEG 로 변환 시 알파 채널 사라지고 80% 압축 노이즈로 색감 흐려짐. **PNG 무손실** 사용 (`canvas.toBlob(b, 'image/png')`)
+2. **정사각형 강제 늘림 금지** — `drawImage(img, 0, 0, size, size)` 가 가로·세로 다른 이미지를 늘려서 왜곡. **비율 유지** 필수: `Math.min(maxSize/w, maxSize/h, 1)` 로 ratio 계산 → `canvas.width = w * ratio`
+3. **imageSmoothingQuality = 'high'** 설정 — 기본 smoothing은 저품질, 고품질 옵션으로 텍스트·선 선명도 확보
+4. 사이드바 로고 박스 — 로고 모드일 때 `bg-emerald-500` (초록) → 흰 배경(`var(--bg-white)`)으로 자동 전환 필수. 투명 PNG 로고에 초록 비치는 문제. `applySidebarLogo` (header.js) 와 `_handleFarmLogoSelect` (settingsUI.js) 두 곳 동시 적용
+
+### 환경설정 항목 삭제 — 영향 범위 마이그레이션 패턴 (v3.4.80+)
+환경설정의 동적 배열 항목(주문상태·배송방법·고객등급·SMS 템플릿 등) 삭제 시 **DB 잔존 데이터 처리** 필요. 단순 splice 만 하면 기존 데이터가 그대로 남아 화면에 잔존 표시.
+
+**표준 패턴** (`deleteOrderStatus` 가 레퍼런스 구현, settingsUI.js):
+1. 삭제 전 영향 범위 카운트 — `supabase.from(table).select('id', { count: 'exact', head: true }).eq(column, value)`
+2. 0건이면 단순 confirm 후 splice
+3. N건이면 모달 표시 — "어디로 옮길지" 드롭다운 (남은 항목들) → 사용자 선택
+4. DB 일괄 UPDATE → settings splice → 관련 UI 모두 새로고침 + 토스트 안내
+5. 마지막 1개 항목은 삭제 차단 (전체가 비면 시스템 깨짐)
+
+이 패턴을 다른 설정 항목 삭제(고객등급·배송방법 등)에도 동일 적용 가능. 새로 작성하지 말고 `window.deleteOrderStatus` 코드 참조하여 복제.
 
 ### 브라우저 탭 favicon 동기화 (v3.4.74+)
 환경설정 농장 로고(`farm.logoUrl`) 가 브라우저 탭 favicon + apple-touch-icon 으로 자동 적용:

@@ -1637,7 +1637,7 @@ window._handleFarmLogoSelect = async function(input) {
         if (sidebarIcon) sidebarIcon.classList.add('hidden');
         if (sidebarBox) {
             sidebarBox.classList.remove('bg-emerald-500');
-            sidebarBox.style.background = '#fff';
+            sidebarBox.style.background = 'var(--bg-white)';
             sidebarBox.style.boxShadow = '0 2px 8px rgba(0,0,0,0.15)';
         }
     };
