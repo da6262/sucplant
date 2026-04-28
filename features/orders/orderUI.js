@@ -353,7 +353,7 @@ async function loadOrderItemsToCart(items) {
         if (!items || items.length === 0) {
             cartItemsBody.innerHTML = `
                 <tr>
-                    <td colspan="5" class="text-center text-muted">
+                    <td colspan="6" class="text-center text-muted">
                         <p>장바구니가 비어있습니다</p>
                     </td>
                 </tr>
@@ -454,13 +454,13 @@ function addItemToCartDirectly(item) {
             return;
         }
         
-        // 기존 빈 메시지 제거
-        const emptyMessage = cartItemsBody.querySelector('tr td[colspan="5"]');
+        // 기존 빈 메시지 제거 (colspan 5 또는 6 모두 대응)
+        const emptyMessage = cartItemsBody.querySelector('tr td[colspan="6"], tr td[colspan="5"]');
         if (emptyMessage) {
-            emptyMessage.remove();
+            emptyMessage.closest('tr')?.remove();
             console.log('🗑️ 기존 빈 메시지 제거');
         }
-        
+
         const unitPrice = Math.max(0, toIntegerWon(item.price));
         const qty = Math.max(1, toIntegerWon(item.quantity));
         const row = document.createElement('tr');
@@ -470,6 +470,7 @@ function addItemToCartDirectly(item) {
         row.setAttribute('data-price', unitPrice);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
+            <td class="px-2 text-center"><input type="checkbox" class="checkbox-ui cart-row-checkbox"></td>
             <td class="px-2">${(item.product_name || '상품명 없음').replace(/</g, '&lt;')}</td>
             <td class="px-2 text-right tabular-nums td-secondary">${unitPrice.toLocaleString()}</td>
             <td class="px-2 text-center">

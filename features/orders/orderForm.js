@@ -180,6 +180,7 @@ function addQuickProductToCart(productId, productName, price) {
         const lineTotal = unitPrice * 1;
         const stepBtn = `width:28px;height:28px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);display:inline-flex;align-items:center;justify-content:center;font-size:13px;cursor:pointer;`;
         tr.innerHTML = `
+            <td class="text-center"><input type="checkbox" class="checkbox-ui cart-row-checkbox"></td>
             <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}</td>
             <td class="td-amount text-right text-numeric">${window.fmt.won(unitPrice)}</td>
             <td class="text-center whitespace-nowrap">
@@ -188,6 +189,7 @@ function addQuickProductToCart(productId, productName, price) {
                 <button type="button" style="${stepBtn}" onclick="cartQuantityChange('${productId}', 1)">+</button>
             </td>
             <td class="cart-line-total td-amount text-right text-numeric">${window.fmt.won(lineTotal)}</td>
+            <td class="text-center"><button type="button" class="btn-icon btn-icon-delete" title="이 행 삭제" onclick="window.removeFromCart && window.removeFromCart('${productId}')" style="padding:2px 5px;"><i class="fas fa-trash" style="font-size:10px;"></i></button></td>
         `;
         cartBody.appendChild(tr);
     }
@@ -266,6 +268,44 @@ function refreshOrderTotal() {
 window.addQuickProductToCart = addQuickProductToCart;
 window.cartQuantityChange = cartQuantityChange;
 window.refreshOrderTotal = refreshOrderTotal;
+
+// 장바구니 일괄 삭제 (체크박스 선택 항목 한꺼번에 제거)
+function toggleCartSelectAll(checked) {
+    const cartBody = document.getElementById('cart-items-body');
+    if (!cartBody) return;
+    cartBody.querySelectorAll('tr[data-product-id] .cart-row-checkbox').forEach(cb => {
+        cb.checked = !!checked;
+    });
+}
+
+function cartDeleteSelected() {
+    const cartBody = document.getElementById('cart-items-body');
+    if (!cartBody) return;
+    const checkedRows = cartBody.querySelectorAll('tr[data-product-id]');
+    const targets = [];
+    checkedRows.forEach(tr => {
+        const cb = tr.querySelector('.cart-row-checkbox');
+        if (cb && cb.checked) targets.push(tr);
+    });
+    if (targets.length === 0) {
+        alert('삭제할 항목을 체크박스로 먼저 선택해주세요.');
+        return;
+    }
+    if (!confirm(`선택한 ${targets.length}개 상품을 장바구니에서 삭제하시겠습니까?`)) return;
+    targets.forEach(tr => tr.remove());
+    // 마스터 체크박스 해제
+    const master = document.getElementById('cart-select-all');
+    if (master) master.checked = false;
+    // 빈 행 복원
+    if (typeof ensureCartEmptyRow === 'function') ensureCartEmptyRow(cartBody);
+    // 총액 재계산
+    if (typeof refreshOrderTotal === 'function') refreshOrderTotal();
+    if (window.updateCartTotal) window.updateCartTotal();
+    if (window.showToast) window.showToast(`${targets.length}개 항목 삭제 완료`, 1500);
+}
+
+window.toggleCartSelectAll = toggleCartSelectAll;
+window.cartDeleteSelected = cartDeleteSelected;
 
 // 인기 상품 추가 함수 (레거시/풀 폼용)
 function addPopularProduct(productId, productName, price) {
@@ -1713,6 +1753,7 @@ function addProductToCart(productId, productName, price, stock, event) {
             newRow.setAttribute('data-product-id', productId);
             const stepBtn2 = `width:24px;height:24px;border-radius:var(--radius-sm);background:var(--bg-light);border:1px solid var(--border-light);font-size:11px;cursor:pointer;`;
             newRow.innerHTML = `
+                <td class="text-center"><input type="checkbox" class="checkbox-ui cart-row-checkbox"></td>
                 <td class="td-primary font-medium">${productName}</td>
                 <td class="td-amount text-right text-numeric">${window.fmt.won(price)}</td>
                 <td class="text-center">
@@ -1730,9 +1771,9 @@ function addProductToCart(productId, productName, price, stock, event) {
                     ${renderBtnIcon({ icon: 'fa-trash', variant: 'delete', title: '삭제', onclick: `removeCartItem('${productId}')` })}
                 </td>
             `;
-            
-            // 빈 메시지 행 제거
-            const emptyRow = cartItemsBody.querySelector('tr td[colspan="5"]');
+
+            // 빈 메시지 행 제거 (colspan 5 또는 6 모두 대응)
+            const emptyRow = cartItemsBody.querySelector('tr td[colspan="6"], tr td[colspan="5"]');
             if (emptyRow && emptyRow.closest('tr')) {
                 emptyRow.closest('tr').remove();
             }
@@ -1849,8 +1890,8 @@ function validateForm() {
             const cartRows = cartItemsBody.querySelectorAll('tr[data-product-id]');
             hasCartItems = cartRows.length > 0;
             
-            // 빈 메시지 행이 있는지도 확인
-            const emptyMessage = cartItemsBody.querySelector('tr td[colspan="5"]');
+            // 빈 메시지 행이 있는지도 확인 (colspan 5 또는 6)
+            const emptyMessage = cartItemsBody.querySelector('tr td[colspan="6"], tr td[colspan="5"]');
             if (emptyMessage) {
                 hasCartItems = false;
             }
@@ -2346,9 +2387,10 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
             return;
         }
         
-        const emptyMessage = cartItemsBody.querySelector('tr td[colspan="5"]');
-        if (emptyMessage) emptyMessage.remove();
-        
+        // 빈 메시지 제거 (colspan="5" 또는 "6" 모두 대응 — 과거 호환)
+        const emptyMessage = cartItemsBody.querySelector('tr td[colspan="6"], tr td[colspan="5"]');
+        if (emptyMessage) emptyMessage.closest('tr')?.remove();
+
         const row = document.createElement('tr');
         row.setAttribute('data-product-id', productId);
         row.setAttribute('data-product-name', productName || '');
@@ -2357,6 +2399,7 @@ window.addToCart = function(productId, productName, price, quantity = 1, shippin
         row.setAttribute('data-shipping-option', shippingOption);
         const subtotal = unitPrice * qty;
         row.innerHTML = `
+            <td class="text-center"><input type="checkbox" class="checkbox-ui cart-row-checkbox"></td>
             <td class="td-primary">${(productName || '').replace(/</g, '&lt;')}</td>
             <td class="td-amount text-right text-numeric">${window.fmt.won(unitPrice)}</td>
             <td class="text-center">
@@ -2408,7 +2451,7 @@ window.removeFromCart = function(buttonOrProductId) {
             // 장바구니가 비어있으면 빈 메시지 표시
             const cartItemsBody = document.getElementById('cart-items-body');
             if (cartItemsBody && cartItemsBody.children.length === 0) {
-                cartItemsBody.innerHTML = renderEmptyRow(5, '장바구니가 비어있습니다');
+                cartItemsBody.innerHTML = renderEmptyRow(6, '장바구니가 비어있습니다');
             }
             
             // 총액 업데이트

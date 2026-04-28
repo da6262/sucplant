@@ -140,6 +140,12 @@ window.generateOrderFormHTMLMinimal = function () {
                 <table class="xf-tbl xf-cart">
                     <thead>
                         <tr>
+                            <th style="width:54px" class="text-center" title="체크 후 우측 휴지통으로 일괄 삭제">
+                                <input type="checkbox" id="cart-select-all" class="checkbox-ui" onchange="window.toggleCartSelectAll && window.toggleCartSelectAll(this.checked)">
+                                <button type="button" id="cart-delete-selected-btn" class="btn-icon btn-icon-delete" title="선택 삭제 (체크된 모든 항목 제거)" onclick="window.cartDeleteSelected && window.cartDeleteSelected()" style="margin-left:2px;padding:2px 5px;vertical-align:middle;">
+                                    <i class="fas fa-trash" style="font-size:10px;"></i>
+                                </button>
+                            </th>
                             <th class="text-left">상품명</th>
                             <th class="text-right" style="width:60px">단가</th>
                             <th class="text-center" style="width:82px">수량</th>
@@ -149,19 +155,19 @@ window.generateOrderFormHTMLMinimal = function () {
                     </thead>
                     <tbody id="cart-items-body">
                         <tr>
-                            <td colspan="5" class="text-center td-muted">
+                            <td colspan="6" class="text-center td-muted">
                                 장바구니가 비어있습니다
                             </td>
                         </tr>
                     </tbody>
                     <tfoot>
                         <tr>
-                            <td colspan="3" class="xf-ft-label">상품합계</td>
+                            <td colspan="4" class="xf-ft-label">상품합계</td>
                             <td class="xf-ft-val" id="product-total-amount">0원</td>
                             <td></td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="xf-ft-label">
+                            <td colspan="4" class="xf-ft-label">
                                 배송비
                                 <label class="inline-flex items-center gap-1 ml-2 text-xs text-secondary font-normal cursor-pointer">
                                     <input type="checkbox" id="remote-area-shipping-checkbox"
@@ -176,7 +182,7 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr>
-                            <td colspan="3" class="xf-ft-label">할인</td>
+                            <td colspan="4" class="xf-ft-label">할인</td>
                             <td class="xf-ft-val">
                                 <input type="number" id="discount-amount" value="0" min="0" step="1" class="xf-num"
                                        oninput="if(window.normalizeIntegerInput) normalizeIntegerInput(this); refreshOrderTotal()">원
@@ -184,7 +190,7 @@ window.generateOrderFormHTMLMinimal = function () {
                             <td></td>
                         </tr>
                         <tr class="xf-total-row">
-                            <td colspan="3" class="xf-total-label">총금액</td>
+                            <td colspan="4" class="xf-total-label">총금액</td>
                             <td colspan="2" class="xf-total-amount" id="final-total-amount">0원</td>
                         </tr>
                     </tfoot>
