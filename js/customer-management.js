@@ -1714,8 +1714,8 @@ async function openAddressSearch() {
 
 // 주소 입력 시 Enter 키 → 자체 중앙 모달(420×460)로 Daum 검색 임베드
 window.handleAddressInput = async function(value) {
+    // v3.4.76: 빈 값으로 호출되어도 Daum 검색 모달 열림 (input 클릭만으로 검색 가능)
     const trimmed = (value || '').trim();
-    if (!trimmed) return;
 
     try {
         await loadDaumPostcodeService();

@@ -39,7 +39,7 @@
                                oninput="window.handleCustomerNameInput(this.value)"
                                onblur="window.handleCustomerNameBlur()"
                                onfocus="window.handleCustomerNameFocus(this.value)"
-                               onkeydown="window.handleCustomerNameKeydown(event)"
+                               onkeydown="if(event.key==='Enter' && !document.querySelector('#customer-name-autocomplete:not(.hidden) .autocomplete-item.bg-blue-50')){event.preventDefault();document.getElementById('customer-form-phone').focus();return;} if(window.handleCustomerNameKeydown)window.handleCustomerNameKeydown(event);"
                                class="form-control">
                         <div id="customer-name-autocomplete"
                              class="absolute z-50 w-full bg-white border border-gray-200 rounded-lg shadow-lg mt-0.5 hidden max-h-40 overflow-y-auto"
@@ -50,19 +50,22 @@
                 <div class="form-col-6">
                     <label class="form-label">전화번호 <span class="req">*</span></label>
                     <input type="tel" id="customer-form-phone" placeholder="010-1234-5678" required maxlength="13"
-                           oninput="window.formatPhoneNumber(this); window.checkPhoneDuplicate(this.value)"
+                           oninput="window.formatPhoneNumber(this); document.getElementById('phone-duplicate-message')?.classList.add('hidden');"
                            onblur="window.checkPhoneDuplicate(this.value)"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('customer-form-address').focus();}"
                            class="form-control">
                     <div id="phone-duplicate-message" class="form-error hidden"></div>
                 </div>
 
-                <!-- 주소 (col-12) - Enter 키 입력 시 Daum 검색 오버레이 -->
+                <!-- 주소 (col-12) - 클릭하면 Daum 검색 자동 오픈 -->
                 <div class="form-col-12">
                     <label class="form-label">주소</label>
-                    <input type="text" id="customer-form-address"
-                           placeholder="주소 입력 후 Enter 키로 검색"
+                    <input type="text" id="customer-form-address" readonly
+                           placeholder="클릭하면 우편번호 검색이 열립니다"
                            autocomplete="off"
-                           onkeydown="if(event.key==='Enter'){event.preventDefault();window.handleAddressInput(this.value);}"
+                           style="cursor:pointer;background:var(--bg-light);"
+                           onclick="window.handleAddressInput && window.handleAddressInput(this.value || '')"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();window.handleAddressInput && window.handleAddressInput(this.value || '');}"
                            class="form-control">
                     <div id="address-embed-container"
                          class="hidden mt-1 border border-gray-200 rounded-lg overflow-hidden shadow-md"
@@ -72,16 +75,17 @@
                 <!-- 상세주소 (col-12) -->
                 <div class="form-col-12">
                     <label class="form-label">상세주소</label>
-                    <input type="text" id="customer-form-address-detail" placeholder="동, 호수 등"
+                    <input type="text" id="customer-form-address-detail" placeholder="동, 호수 등 (선택)"
+                           onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('customer-save-btn')?.click();}"
                            class="form-control">
-                    <p class="form-helper">건물명, 동·호수 등 상세 위치 (선택)</p>
                 </div>
 
-                <!-- 추가 정보 토글 (col-12) -->
+                <!-- 추가 정보 토글 (col-12) — 신규 등록 시 기본 접힘, 수정 시에는 자동 펼침 -->
                 <div class="form-col-12">
                     <button type="button" onclick="window.toggleCustomerExtraInfo()"
-                            class="w-full flex items-center justify-between py-1.5 text-xs text-muted hover:text-body border-t border-gray-100 pt-3">
-                        <span>추가 정보 <span class="text-gray-300">(이메일 · 등급 · 상태 · 메모)</span></span>
+                            class="w-full flex items-center justify-between py-2 px-3 text-xs text-secondary hover:bg-section rounded-md mt-1"
+                            style="border:1px dashed var(--border);">
+                        <span><i class="fas fa-cog mr-1.5"></i>추가 정보 <span class="text-muted">(이메일 · 등급 · 메모) — 보통 비워두셔도 됩니다</span></span>
                         <i id="toggle-extra-info-icon" class="fas fa-chevron-down text-xs transition-transform duration-200"></i>
                     </button>
                 </div>
