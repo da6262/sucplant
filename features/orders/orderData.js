@@ -2224,6 +2224,57 @@ window.bulkSetStatus = (status) => {
         window.orderDataManager.bulkSetStatus(status);
     }
 };
+
+// 일괄 입금확인 처리 (v3.4.73+) — 체크박스 선택 후 한 번에 입금확인 + 안내 자동 발송
+window.bulkConfirmPayment = async () => {
+    const dm = window.orderDataManager;
+    if (!dm) { alert('주문 매니저가 로드되지 않았습니다.'); return; }
+    const ids = Array.from(dm.selectedOrders || []);
+    if (!ids.length) { alert('선택된 주문이 없습니다.'); return; }
+
+    const autoSms = document.getElementById('bulk-auto-sms')?.checked;
+    const confirmMsg = autoSms
+        ? `${ids.length}건의 주문을 입금확인 처리합니다.\n\n• 입금확인 안내(카카오톡 우선/문자 폴백) 자동 발송\n• 발송 성공 시 상태 → "배송준비"\n\n계속하시겠습니까?`
+        : `${ids.length}건의 주문 상태를 "입금확인"으로 변경합니다.\n안내 발송은 하지 않습니다 (체크박스 끔).\n\n계속하시겠습니까?`;
+    if (!confirm(confirmMsg)) return;
+
+    let statusOk = 0, statusFail = 0, smsKakao = 0, smsText = 0, smsFail = 0;
+
+    for (const id of ids) {
+        if (autoSms && window.sendOrderSMS) {
+            try {
+                const r = await window.sendOrderSMS(id, 'paymentConfirm');
+                if (r?.channel === 'kakao') smsKakao++; else smsText++;
+                // 발송 성공 시 → 배송준비 (paymentConfirm STATUS_MAP 동일)
+                try {
+                    await dm.changeOrderStatus(id, '배송준비');
+                    statusOk++;
+                } catch (eS) { console.error(eS); statusFail++; }
+            } catch (eM) {
+                console.error('paymentConfirm 발송 실패:', id, eM);
+                smsFail++;
+                // 발송 실패 시 안전하게 입금확인 상태로 변경
+                try { await dm.changeOrderStatus(id, '입금확인'); statusOk++; }
+                catch (eS) { console.error(eS); statusFail++; }
+            }
+            await new Promise(r => setTimeout(r, 250)); // Solapi rate limit
+        } else {
+            // 자동 발송 OFF — 단순 상태 변경
+            try { await dm.changeOrderStatus(id, '입금확인'); statusOk++; }
+            catch (e) { console.error(e); statusFail++; }
+        }
+    }
+
+    dm.clearSelectedOrders();
+    const current = dm.getCurrentFilterStatus ? dm.getCurrentFilterStatus() : 'all';
+    if (dm.renderOrdersTable) dm.renderOrdersTable(current);
+    if (dm.updateFilterCounts) dm.updateFilterCounts();
+
+    const smsBreakdown = autoSms
+        ? `\n  • 카카오톡: ${smsKakao}건\n  • 문자: ${smsText}건\n  • 발송 실패: ${smsFail}건`
+        : '';
+    alert(`입금확인 처리 완료\n  • 상태 변경: ${statusOk}건 / 실패: ${statusFail}건${smsBreakdown}`);
+};
 window.clearSelectedOrders = () => {
     orderDataManager.clearSelectedOrders();
 };

@@ -396,8 +396,11 @@ async function sendOrderSMSFromModal(orderId) {
             return;
         }
 
-        await sendOrderSMS(orderId, templateType, customMessage);
+        const sendResult = await sendOrderSMS(orderId, templateType, customMessage);
         closeSMSTemplateModal();
+
+        // 발송 채널 라벨 (카카오 알림톡 vs 문자)
+        const channelLabel = sendResult?.channel === 'kakao' ? '카카오톡' : '문자';
 
         // 템플릿별 상태 자동 전환 (v3.4.71+:
         //   orderConfirm   → 고객안내  — 고객에게 주문확인 안내 발송 = 안내 완료
@@ -412,9 +415,9 @@ async function sendOrderSMSFromModal(orderId) {
         if (newStatus && window.updateOrderStatus) {
             await window.updateOrderStatus(orderId, newStatus);
             console.log(`✅ ${templateType} 발송 → ${newStatus} 상태 자동 전환`);
-            alert(`SMS가 발송되었습니다.\n주문 상태가 [${newStatus}](으)로 변경되었습니다.`);
+            alert(`${channelLabel}이(가) 발송되었습니다.\n주문 상태가 [${newStatus}](으)로 변경되었습니다.`);
         } else {
-            alert('SMS가 발송되었습니다.');
+            alert(`${channelLabel}이(가) 발송되었습니다.`);
         }
         // 주문 목록 새로고침
         if (window.orderDataManager?.loadOrders) {
@@ -718,12 +721,12 @@ function openCustomerSMSModal(phone, customerName) {
             modal.remove();
             const toast = document.createElement('div');
             toast.className = 'fixed bottom-4 right-4 z-[700] px-4 py-2.5 text-sm rounded-lg shadow-lg flex items-center gap-2 btn-primary';
-            toast.innerHTML = '<i class="fas fa-check-circle"></i> SMS 발송 완료';
+            toast.innerHTML = '<i class="fas fa-check-circle"></i> 문자 발송 완료';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
         } catch (err) {
-            console.error('SMS 발송 실패:', err);
-            alert('SMS 발송 실패: ' + err.message);
+            console.error('문자 발송 실패:', err);
+            alert('문자 발송 실패: ' + err.message);
             sendBtn.disabled = false;
             sendBtn.innerHTML = '<i class="fas fa-paper-plane mr-1"></i>발송';
         }
@@ -839,7 +842,7 @@ async function showBulkSMSModal() {
         const progressBar = modal.querySelector('#bulk-sms-progress-bar');
         progressDiv.classList.remove('hidden');
 
-        let success = 0, fail = 0;
+        let success = 0, fail = 0, kakaoCount = 0, smsCount = 0;
 
         for (let i = 0; i < selectedIds.length; i++) {
             const orderId = selectedIds[i];
@@ -847,10 +850,11 @@ async function showBulkSMSModal() {
             progressBar.style.width = ((i + 1) / count * 100) + '%';
 
             try {
-                await sendOrderSMS(orderId, templateType);
+                const r = await sendOrderSMS(orderId, templateType);
                 success++;
+                if (r?.channel === 'kakao') kakaoCount++; else smsCount++;
             } catch (e) {
-                console.error(`SMS 발송 실패 (${orderId}):`, e);
+                console.error(`발송 실패 (${orderId}):`, e);
                 fail++;
             }
         }
@@ -877,7 +881,11 @@ async function showBulkSMSModal() {
             if (dm.renderOrdersTable) dm.renderOrdersTable();
         }
 
-        alert(`일괄 SMS 발송 완료\n성공: ${success}건 / 실패: ${fail}건` +
+        // 채널별 결과 분리 표시
+        const channelBreakdown = success > 0
+            ? `\n  • 카카오톡: ${kakaoCount}건\n  • 문자: ${smsCount}건`
+            : '';
+        alert(`일괄 발송 완료\n성공: ${success}건 / 실패: ${fail}건${channelBreakdown}` +
             (bulkNewStatus ? `\n상태가 [${bulkNewStatus}](으)로 변경되었습니다.` : ''));
     });
 }
