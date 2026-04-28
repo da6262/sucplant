@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.89-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.90-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.90 | fix: 주문 수정 시 총금액 부풀려져 표시되던 근본 버그 — 사례: DB 80,000원 주문이 수정 모달에서 150,000원으로 표시. 원인: `loadOrderItemsToCart` 의 가격 우선순위가 `productInfo.price` (현재 farm_products 판매가) → item.price → item.unit_price → item.total_price 순. 주문 등록 후 상품 판매가 인상 시 productInfo.price 가 inflated 값을 가져와 cart 라인 합계 재계산 오류. 수정: 주문 당시 저장된 `item.unit_price`/`item.price` 우선, total_price/qty 폴백, productInfo.price 는 최후 폴백(주문 가격 데이터 결손 시만). 주문은 체결된 거래 — 가격 변동 무관하게 원본 보존 |
 | v3.4.89 | feat: 다건 주문(20+종) 카트 가독성 — ①cart tbody max-height 220px → `clamp(220px, 42vh, 480px)` 로 화면 비례 확대 (작은 화면 220, 노트북 ~400, 모니터 480) ②위·아래 그라디언트 + 굵은 스크롤바로 "스크롤 가능" 시각 신호 명확화 ③상품명 헤더 옆에 "N종" 배지(파랑 pill) — 카트 종 수 한눈에 파악, 행 추가/삭제 시 refreshOrderTotal 자동 갱신. 푸터(상품합계·배송비·총금액)는 기존 sticky table 구조 유지하여 항상 보임 |
 | v3.4.88 | chore: CLAUDE.md 재사용 지식 4건 보강 — 자체 감사("클로드 규칙 지켰어?") 누락 지적 처리. ①JS 검색 필터 빈 문자열 함정 (`''.includes('')` 항상 true · 한글 검색어 + 전화번호 OR 매칭 시 가드 필수) ②한글 유사도 검색 패턴 (`findSimilarProducts` chosung + 글자 집합 점수 합산) ③주문 등록 중 신규 상품 즉시 등록 패턴 (`openQuickAddProductModal` 모달 + 캐시 즉시 갱신) ④주문 폼 퀵 상품 카드 CSS 충돌 함정 (xf-quick-grid 그리드 명시 + button white-space 해제) |
 | v3.4.87 | feat: 상품 검색 결과 없을 때 한글 오타 대응 — "혹시 이걸 찾으셨나요?" 유사 상품 자동 제안. 사례: "비얀트" 입력 → DB는 "비안트" → 정확 ilike 0건 → findSimilarProducts 함수로 ①글자 교집합 비율 ②초성(자모) 매칭 ③부분 일치 점수 합산 → 상위 3개 노출 (점수 ≥ 0.5). 신규 등록 버튼은 그대로 노출하여 진짜 신상품도 즉시 추가 가능. 한글 오타로 인한 중복 등록 방지 |

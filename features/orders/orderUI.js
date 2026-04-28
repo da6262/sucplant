@@ -379,23 +379,25 @@ async function loadOrderItemsToCart(items) {
                 }
                 
                 // 아이템 데이터 검증 및 정규화
+                // v3.4.90 근본 버그 수정: productInfo.price (현재 상품 판매가) 가 우선 적용되어
+                //   가격 인상 후 주문 수정 시 합계가 부풀려져 표시되던 문제 해결
+                //   → 주문 당시 가격(farm_order_items.unit_price/price/total_price)이 진실
+                //   → productInfo.price 는 마지막 폴백
+                const qty = Math.max(1, toIntegerWon(item.quantity || item.qty || 1));
+                let unitPrice = toIntegerWon(item.unit_price || item.price);
+                if (unitPrice === 0 && item.total_price) {
+                    unitPrice = toIntegerWon(Number(item.total_price) / qty);
+                }
+                if (unitPrice === 0 && productInfo?.price) {
+                    // 주문 데이터가 아예 없으면 (예: 가격 0으로 잘못 저장됨) 현재 판매가 폴백
+                    unitPrice = toIntegerWon(productInfo.price);
+                }
                 const normalizedItem = {
                     product_id: item.product_id || item.id || `item_${index}`,
-                    product_name: productInfo?.name || productInfo?.product_name || item.product_name || item.name || item.title || '상품명 없음',
-                    price: toIntegerWon(productInfo?.price || item.price || item.unit_price || item.total_price),
-                    quantity: Math.max(1, toIntegerWon(item.quantity || item.qty || 1))
+                    product_name: item.product_name || item.name || item.title || productInfo?.name || productInfo?.product_name || '상품명 없음',
+                    price: unitPrice,
+                    quantity: qty
                 };
-                if (!productInfo) {
-                    if (item.product_name || item.name || item.title) {
-                        normalizedItem.product_name = item.product_name || item.name || item.title;
-                    }
-                    if (item.price != null || item.unit_price != null) {
-                        normalizedItem.price = toIntegerWon(item.price || item.unit_price);
-                    }
-                }
-                if (normalizedItem.price === 0 && item.total_price) {
-                    normalizedItem.price = toIntegerWon(Number(item.total_price) / normalizedItem.quantity);
-                }
                 
                 // 최종 검증: 상품명이 여전히 없으면 경고 표시
                 if (normalizedItem.product_name === '상품명 없음') {
