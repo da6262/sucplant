@@ -1789,18 +1789,44 @@ function searchProducts(query) {
                         `}).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
-                        // v3.4.85: 검색어 있는데 결과 없으면 "신규 등록" 버튼 노출 → 주문 등록 중단 없이 바로 추가
+                        // v3.4.85: 결과 없으면 "신규 등록" 버튼 + (v3.4.87) 한글 오타·유사 상품 자동 제안
                         const safeQuery = (query || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
                         const queryDisp = (query || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
                         if (query && query.trim().length > 0) {
+                            const suggestions = findSimilarProducts(query.trim(), 3);
+                            const suggestionHtml = suggestions.length > 0
+                                ? `<div style="width:100%;border-top:1px dashed var(--border);padding-top:8px;margin-top:4px;">
+                                     <div class="text-xs text-secondary mb-1.5">혹시 이걸 찾으셨나요?</div>
+                                     ${suggestions.map(p => {
+                                         const stockNum = p.stock ?? 0;
+                                         const isOut = stockNum <= 0;
+                                         const stockColor = isOut ? 'var(--danger)' : stockNum <= 5 ? 'var(--warn)' : 'var(--primary)';
+                                         const stockLabel = isOut ? '품절' : `재고 ${stockNum}개`;
+                                         const safeName = (p.name || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
+                                         const itemStyle = isOut ? 'opacity:0.55;cursor:not-allowed;background:var(--danger-bg);' : '';
+                                         const clickAttr = isOut
+                                             ? `onclick="event.preventDefault();alert('재고 부족');"`
+                                             : `onclick="addProductToCart(this.dataset.productId, this.dataset.productName, parseFloat(this.dataset.price), parseFloat(this.dataset.stock), event)"`;
+                                         return `<div class="search-result-item"
+                                                      data-product-id="${p.id}" data-product-name="${safeName}"
+                                                      data-price="${p.price}" data-stock="${p.stock ?? 0}"
+                                                      style="${itemStyle}" onmousedown="event.preventDefault();" ${clickAttr}>
+                                                    <span class="search-result-name">${safeName}</span>
+                                                    <span class="search-result-price">${window.fmt.won(p.price)}</span>
+                                                    <span class="search-result-stock" style="color:${stockColor};">${stockLabel}</span>
+                                                </div>`;
+                                     }).join('')}
+                                   </div>`
+                                : '';
                             resultsDiv.innerHTML = `
                                 <div class="search-result-empty" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;">
-                                    <div class="text-secondary text-sm">검색 결과가 없습니다</div>
+                                    <div class="text-secondary text-sm">"${queryDisp}" 검색 결과가 없습니다</div>
                                     <button type="button" class="btn-primary" style="padding:6px 14px;font-size:13px;"
                                             onmousedown="event.preventDefault();"
                                             onclick="event.preventDefault();event.stopPropagation();window.openQuickAddProductModal && window.openQuickAddProductModal('${safeQuery}');">
                                         <i class="fas fa-plus mr-1"></i>"${queryDisp}" 신규 상품 등록
                                     </button>
+                                    ${suggestionHtml}
                                 </div>`;
                         } else {
                             resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
@@ -1813,6 +1839,60 @@ function searchProducts(query) {
         console.error('❌ 상품 검색 실패:', error);
     }
 }
+
+// v3.4.87+: 한글 유사 상품 검색 (오타 대응)
+// 전략: ①초성(자모) 매칭 → ②글자 단위 교집합 비율 → 점수 합산 → 상위 N개
+function _toChosung(s) {
+    const CHO = ['ㄱ','ㄲ','ㄴ','ㄷ','ㄸ','ㄹ','ㅁ','ㅂ','ㅃ','ㅅ','ㅆ','ㅇ','ㅈ','ㅉ','ㅊ','ㅋ','ㅌ','ㅍ','ㅎ'];
+    let out = '';
+    for (const ch of String(s || '')) {
+        const code = ch.charCodeAt(0);
+        if (code >= 0xAC00 && code <= 0xD7A3) {
+            out += CHO[Math.floor((code - 0xAC00) / 588)];
+        } else {
+            out += ch.toLowerCase();
+        }
+    }
+    return out;
+}
+
+function _similarity(a, b) {
+    if (!a || !b) return 0;
+    const aSet = new Set(a);
+    const bSet = new Set(b);
+    let common = 0;
+    for (const ch of aSet) if (bSet.has(ch)) common++;
+    return common / Math.max(aSet.size, bSet.size);
+}
+
+function findSimilarProducts(query, limit = 3) {
+    const all = window.productDataManager?.farm_products;
+    if (!Array.isArray(all) || all.length === 0 || !query) return [];
+
+    const qStr = String(query).trim();
+    const qCho = _toChosung(qStr);
+    const qChars = new Set(qStr);
+
+    const scored = all.map(p => {
+        const name = String(p.name || '');
+        const nCho = _toChosung(name);
+        const nameSim = _similarity(qStr, name);                   // 글자 단위
+        const choSim = _similarity(qCho, nCho);                    // 초성 단위
+        // 부분 일치 보너스: 검색어 글자 중 상품명에 연속으로 들어있는 비율
+        let runBonus = 0;
+        for (const ch of qChars) if (name.includes(ch)) runBonus += 1;
+        runBonus = qChars.size > 0 ? runBonus / qChars.size : 0;
+        const score = nameSim * 0.5 + choSim * 0.3 + runBonus * 0.2;
+        return { product: p, score };
+    });
+
+    return scored
+        .filter(x => x.score >= 0.5)
+        .sort((a, b) => b.score - a.score)
+        .slice(0, limit)
+        .map(x => x.product);
+}
+window.findSimilarProducts = findSimilarProducts;
 
 // v3.4.85+: 주문 등록 중 즉시 신규 상품 등록 모달
 function openQuickAddProductModal(initialName) {
