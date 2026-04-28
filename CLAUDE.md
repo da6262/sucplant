@@ -426,6 +426,10 @@ start-server.bat
 - **SMS 발송 후 DB 기록**: `sms_sent_at` + `last_sms_type` 자동 업데이트
 - **템플릿별 상태 자동 전환** (v3.4.71+): orderConfirm→**고객안내**(이전: 입금대기), paymentConfirm→**배송준비**(이전: 입금확인), shippingStart→배송중, shippingComplete→배송완료. 의미: SMS 발송 = 해당 단계 완료. orderConfirm 발송 = 고객에게 안내 갔음 / paymentConfirm 발송 = 입금 확인되었으니 배송 준비 단계 진입
 - **일괄 SMS**: 체크박스 선택 → `showBulkSMSModal()` → 템플릿 선택 → 순차 발송 + 진행률 표시
+- **카카오 알림톡 silent fallback 함정 (v3.4.70+)**: `sendSmartMessage()` 가 카카오 실패 시 SMS 폴백 후 console.warn 만 찍던 문제 해결. 이제 토스트로 즉시 가시화 + `kakaoError` 필드 반환. 흔한 실패 사유: ① **변수명 불일치** — 우리 코드의 `#{고객명}`/`#{주문번호}`/`#{상품명}`/`#{금액}`/`#{택배사}`/`#{송장번호}` 가 Solapi 어드민 등록 템플릿의 변수명과 **글자 단위로 정확히 일치**해야 함 (한글 띄어쓰기 포함) ② Solapi API Key 알림톡 발송 권한 부족 ③ 카카오 채널-템플릿 미연결. 디버깅: F12 → Console → 발송 시 `⚠️ 카카오 알림톡 실패, SMS 폴백:` 로그에 실제 오류 표시
+- **발송 채널 라벨 (v3.4.73+)**: 결과 알림 메시지는 `result.channel === 'kakao' ? '카카오톡' : '문자'` 로 분기 표기. 일괄 발송은 채널별 카운트(`kakaoCount`/`smsCount`) 분리. 단순 "SMS 발송 완료" 처럼 generic 라벨 금지
+- **자동 발송 토글 패턴 (v3.4.70+ 송장 / v3.4.73+ 입금확인)**: 일괄 작업 화면에 `<input type="checkbox" id="*-auto-sms">` 토글 + 저장/처리 시 토글 ON 이면 sendOrderSMS 자동 호출. Solapi rate limit 대응 **250ms 간격** 순차 발송 권장. 채널별 카운트 분리 표시
+- **`bulkConfirmPayment`** (v3.4.73+): 입금대기 주문 일괄 입금확인. 토글 ON → paymentConfirm 발송 → 상태 배송준비 / OFF → 단순 입금확인 상태 변경
 
 ### 문자 붙여넣기 → 주문 자동 입력 (v3.4.9+)
 - `openSmsPasteModal()` — 주문 등록 폼의 "문자입력" 버튼
@@ -495,6 +499,20 @@ start-server.bat
 - **10자리 분기는 02 vs 모바일 분리** — `02-XXXX-XXXX`(서울) vs `0XX-XXX-XXXX`(지방·구형 모바일). `startsWith('02')` 체크 필요.
 - **`oninput` 콜백에서 호출 시 입력 중간 단계 보존** — 알 수 없는 길이는 원본 그대로 반환 (`return phone`). 사용자 타이핑 흐름 깨지 않도록.
 - **지역 전화번호 인식 범위** — `parseSmsText` 의 phoneRe 도 `(0\d{1,2})` 로 모바일+서울+지방 통합 (v3.4.65). 모바일만 검출하던 `(01[016789])` 패턴 사용 금지.
+
+### 재고 0 (품절) 상품 차단 정책 (v3.4.74+)
+주문 등록 폼에서 품절 상품 일관 처리:
+- **퀵상품 카드** (`loadQuickProductsForMinimal`): `stock <= 0` → 빨강 테두리(`var(--danger)`) + 빨강 배경(`var(--danger-bg)`) + opacity 0.55, onclick 으로 alert 안내 표시 (실제 추가 차단)
+- **상품 검색 드롭다운** (`searchProducts`): 동일 시각 처리 + onclick 차단 + 안내 alert
+- **`addProductToCart`**: 재고 0 진입 시 `confirm()` 다이얼로그로 사용자 동의 받음 → 사전예약·재입고 후 처리 같은 특수 케이스만 우회 허용
+- **검색 드롭다운 카테고리 컬럼 제거**: `<span class="search-result-cat">` 를 v3.4.74에서 삭제 — 학명(그랩토페들럼·크라슐라·포퀘리아 등)이 농장 사용자에게 의미 없고 가독성만 해침
+
+### 브라우저 탭 favicon 동기화 (v3.4.74+)
+환경설정 농장 로고(`farm.logoUrl`) 가 브라우저 탭 favicon + apple-touch-icon 으로 자동 적용:
+- 진입점: `components/header/header.js#applySidebarLogo` 가 `applyFavicon(url)` 호출
+- `applyFavicon`: 기존 `link[rel*="icon"]` 모두 제거 후 새 link 삽입, 확장자(.png/.svg/.jpg/.ico)로 type 자동 감지
+- `document.title` 도 `${farm.name} - 관리시스템` 으로 동기화
+- 적용 시점: 페이지 로드 1.5초 후 (settingsDataManager 초기화 대기) + 탭 전환(`tabChanged` 이벤트) 시 재적용
 
 ### 송장번호 엑셀 업로드 (로젠택배 결과 파일) 구조 (v3.4.66+)
 로젠택배 「출력완료」 엑셀 파일 (`주문등록_출력(복수건)_출력완료(N)건 (YYYY-MM-DD HHMM시MM분SS초).xlsx`):

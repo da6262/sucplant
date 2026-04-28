@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.74-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.75-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.75 | chore: CLAUDE.md 재사용 지식 4건 문서화 — 자체 감사에서 누락 지적된 항목 정리. ①카카오 알림톡 silent fallback 함정 + 변수명 정확 매칭 필수 + 디버깅 가이드 ②발송 채널 라벨 분기 규칙(카카오톡/문자) ③자동 발송 토글 패턴(rate limit 250ms) + bulkConfirmPayment ④재고 0 차단 정책(Quick/검색 비활성, addProductToCart confirm 우회) ⑤favicon 동적 교체 패턴(applyFavicon URL→type 자동 감지). 향후 같은 영역 작업 시 즉시 참고 |
 | v3.4.74 | feat: 주문 폼 상품 선택 가독성·재고 차단 + 브라우저 탭 로고 동기화 — ①퀵상품 카드 키움(높이 32→54px, font 12→13px, 2줄 레이아웃: 상품명/가격+재고), 인기상품 우선(누적 판매 TOP) + 부족분은 최근 등록으로 채움. ②검색 드롭다운에서 카테고리(그랩토페들럼·크라슐라 등 학명) 컬럼 제거 — 가독성 회복. ③품절 상품 차단: 퀵·검색 모두 회색·빨강 비활성화 + 클릭 시 안내, addProductToCart 재고 0 시 confirm 으로 우회 가능(사전예약 등). ④환경설정 농장 로고가 브라우저 탭 favicon + 페이지 title 로 동기화 (header.js#applyFavicon, .ico/.png/.svg 자동 type 감지) |
 | v3.4.73 | feat: 발송 채널 정확 표기 + 일괄 입금확인 — ①SMS 발송 후 알림에 "SMS가 발송되었습니다" → 실제 발송 채널인 "카카오톡이(가) 발송되었습니다" / "문자가(이) 발송되었습니다" 로 분기 표기. 일괄 발송도 카카오톡 N건/문자 N건 분리 카운트. ②bulk action 바에 "입금확인" 버튼 + "안내 자동 발송" 토글 추가, bulkConfirmPayment 함수: 선택 N건 → paymentConfirm 카카오/문자 자동 발송(rate limit 250ms) → 상태 배송준비. 토글 OFF 시 단순 입금확인 상태 변경 |
 | v3.4.72 | refactor: 주문상태 "상품준비" → "배송준비"로 통합 — 1인 운영 환경에서 두 단계 분리가 무의미하여 단순화. ①settingsData.js 기본 orderStatuses 에서 상품준비 제거 ②orderFormMinimalLayout 드롭다운에서 제거 ③order-management.html bulk action 버튼 제거(배송준비 하나로) ④dashboard 파이프라인 statusFlow 정리, packing-card 매핑을 배송준비로 변경(구 상품준비 잔존도 합산) ⑤기존 DB 잔존 데이터는 supabase-migrate-merge-shippingprep.sql 마이그레이션으로 일괄 변환 ⑥필터·매처는 backward compat 유지(orderData work_todo, RPC IN 절에 상품준비 포함) |
