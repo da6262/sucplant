@@ -329,6 +329,7 @@ function refreshOrderTotal() {
 window.addQuickProductToCart = addQuickProductToCart;
 window.cartQuantityChange = cartQuantityChange;
 window.refreshOrderTotal = refreshOrderTotal;
+window.loadQuickProductsForMinimal = loadQuickProductsForMinimal;
 
 // 장바구니 일괄 삭제 (체크박스 선택 항목 한꺼번에 제거)
 function toggleCartSelectAll(checked) {
@@ -1788,15 +1789,159 @@ function searchProducts(query) {
                         `}).join('');
                         resultsDiv.classList.remove('hidden');
                     } else {
-                        resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
+                        // v3.4.85: 검색어 있는데 결과 없으면 "신규 등록" 버튼 노출 → 주문 등록 중단 없이 바로 추가
+                        const safeQuery = (query || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        const queryDisp = (query || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+                        if (query && query.trim().length > 0) {
+                            resultsDiv.innerHTML = `
+                                <div class="search-result-empty" style="display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px;">
+                                    <div class="text-secondary text-sm">검색 결과가 없습니다</div>
+                                    <button type="button" class="btn-primary" style="padding:6px 14px;font-size:13px;"
+                                            onmousedown="event.preventDefault();"
+                                            onclick="event.preventDefault();event.stopPropagation();window.openQuickAddProductModal && window.openQuickAddProductModal('${safeQuery}');">
+                                        <i class="fas fa-plus mr-1"></i>"${queryDisp}" 신규 상품 등록
+                                    </button>
+                                </div>`;
+                        } else {
+                            resultsDiv.innerHTML = `<div class="search-result-empty">검색 결과가 없습니다</div>`;
+                        }
                         resultsDiv.classList.remove('hidden');
                     }
                 });
-        
+
     } catch (error) {
         console.error('❌ 상품 검색 실패:', error);
     }
 }
+
+// v3.4.85+: 주문 등록 중 즉시 신규 상품 등록 모달
+function openQuickAddProductModal(initialName) {
+    document.getElementById('quick-add-product-modal')?.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'quick-add-product-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '999999';
+    const safeName = String(initialName || '').replace(/"/g, '&quot;');
+    modal.innerHTML = `
+        <div class="modal-container modal-sm" style="max-width:420px;width:94vw;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-plus-circle text-brand mr-1"></i>신규 상품 빠른 등록</span>
+                <button class="modal-close-btn" onclick="document.getElementById('quick-add-product-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;display:flex;flex-direction:column;gap:10px;">
+                <p class="text-xs text-secondary" style="margin:0;">등록 후 자동으로 장바구니에 추가됩니다. 카테고리·상세는 나중에 상품관리에서 수정 가능.</p>
+                <div>
+                    <label class="form-label">상품명 <span class="req">*</span></label>
+                    <input type="text" id="qap-name" class="form-control" value="${safeName}" placeholder="상품명">
+                </div>
+                <div class="form-grid">
+                    <div class="form-col-6">
+                        <label class="form-label">판매가 <span class="req">*</span></label>
+                        <input type="number" id="qap-price" class="form-control" min="0" step="100" placeholder="0">
+                    </div>
+                    <div class="form-col-6">
+                        <label class="form-label">초기 재고</label>
+                        <input type="number" id="qap-stock" class="form-control" min="0" step="1" value="1">
+                    </div>
+                </div>
+                <label class="inline-flex items-center gap-1.5 cursor-pointer text-xs text-body" title="체크 시 이 상품 포함 주문은 자동으로 배송비 0원">
+                    <input type="checkbox" id="qap-free-shipping" class="checkbox-ui">
+                    <i class="fas fa-truck text-brand"></i>
+                    <span>무료 배송 상품 (배송비 자동 면제)</span>
+                </label>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('quick-add-product-modal').remove()">취소</button>
+                <button id="qap-save-btn" class="btn-primary"><i class="fas fa-plus mr-1"></i>등록 + 장바구니 추가</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    const $ = (id) => document.getElementById(id);
+    setTimeout(() => $('qap-price').focus(), 80);
+
+    // Enter 단축키
+    [ 'qap-name', 'qap-price', 'qap-stock' ].forEach(id => {
+        $(id)?.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') { e.preventDefault(); $('qap-save-btn').click(); }
+        });
+    });
+
+    $('qap-save-btn').addEventListener('click', async () => {
+        const name = $('qap-name').value.trim();
+        const price = parseInt($('qap-price').value, 10);
+        const stock = Math.max(0, parseInt($('qap-stock').value, 10) || 0);
+        const isFree = $('qap-free-shipping').checked;
+
+        if (!name) { alert('상품명을 입력해주세요.'); $('qap-name').focus(); return; }
+        if (!Number.isFinite(price) || price < 0) { alert('판매가를 정확히 입력해주세요.'); $('qap-price').focus(); return; }
+        if (!window.supabaseClient) { alert('Supabase 미연결'); return; }
+
+        const btn = $('qap-save-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>등록 중...';
+
+        try {
+            // 동일 이름 중복 체크
+            const { data: dup } = await window.supabaseClient
+                .from('farm_products')
+                .select('id, name')
+                .eq('name', name)
+                .limit(1);
+            if (dup && dup.length > 0) {
+                if (!confirm(`이미 "${name}" 상품이 존재합니다.\n그래도 새로 등록하시겠습니까?`)) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-plus mr-1"></i>등록 + 장바구니 추가';
+                    return;
+                }
+            }
+
+            const newProduct = {
+                id: crypto.randomUUID(),
+                name,
+                price,
+                stock,
+                shipping_option: isFree ? '무료배송' : '일반배송',
+                status: 'active',
+                created_at: new Date().toISOString(),
+            };
+            const { error } = await window.supabaseClient.from('farm_products').insert(newProduct);
+            if (error) throw error;
+
+            // productDataManager 캐시에도 추가 (즉시 검색 가능하게)
+            if (window.productDataManager?.farm_products) {
+                window.productDataManager.farm_products.push(newProduct);
+            }
+
+            // 장바구니 자동 추가 (퀵 경로 우선, 없으면 풀 경로)
+            if (document.getElementById('quick-product-buttons') && window.addQuickProductToCart) {
+                window.addQuickProductToCart(newProduct.id, name, price, newProduct.shipping_option);
+            } else if (window.addProductToCart) {
+                window.addProductToCart(newProduct.id, name, price, stock);
+            }
+
+            // 검색창 초기화 + 결과 닫기
+            const searchInput = document.getElementById('product-search');
+            if (searchInput) searchInput.value = '';
+            document.getElementById('product-search-results')?.classList.add('hidden');
+
+            modal.remove();
+            if (window.showToast) window.showToast(`✅ "${name}" 등록 + 장바구니 추가 완료`, 2000, 'success');
+
+            // 퀵상품 패널 새로고침 (인기상품 재계산)
+            if (window.loadQuickProductsForMinimal) {
+                try { await window.loadQuickProductsForMinimal(); } catch (_) { /* skip */ }
+            }
+        } catch (e) {
+            console.error('신규 상품 빠른 등록 실패:', e);
+            alert('등록 실패: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-plus mr-1"></i>등록 + 장바구니 추가';
+        }
+    });
+}
+window.openQuickAddProductModal = openQuickAddProductModal;
 
 // 상품을 장바구니에 추가
 function addProductToCart(productId, productName, price, stock, event) {
