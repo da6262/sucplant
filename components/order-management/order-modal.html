@@ -11,6 +11,27 @@
         }
         #order-modal-content {
             animation: panelSlideIn 0.22s ease-out;
+            /* v3.4.91: 사용자 크기 조절 가능 — 우측 하단 모서리 드래그로 늘이기/줄이기 */
+            resize: both;
+            overflow: auto;
+            /* 기본 크기 — 큰 모니터에서 더 넓게 */
+            width: min(900px, 96vw);
+            min-width: 480px;
+            min-height: 480px;
+            max-width: 96vw;
+            max-height: 94vh;
+            position: relative;
+        }
+        /* 크기 조절 핸들 시각화 (브라우저 기본 외에 시각 신호 강화) */
+        #order-modal-content::after {
+            content: '';
+            position: absolute;
+            right: 2px; bottom: 2px;
+            width: 14px; height: 14px;
+            background:
+                linear-gradient(135deg, transparent 50%, var(--text-muted) 50%, var(--text-muted) 60%, transparent 60%, transparent 70%, var(--text-muted) 70%, var(--text-muted) 80%, transparent 80%);
+            pointer-events: none;
+            opacity: 0.5;
         }
         @keyframes panelSlideIn {
             from { transform: translateY(6px); opacity: 0.6; }

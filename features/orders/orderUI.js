@@ -38,6 +38,34 @@ export async function openOrderModal(orderId = null, customerData = null) {
         // 주문 등록 팝업 표시
         modal.classList.remove('hidden');
 
+        // v3.4.91: 사용자가 마지막에 조절한 크기 복원 (localStorage)
+        const modalContent = document.getElementById('order-modal-content');
+        if (modalContent) {
+            try {
+                const saved = JSON.parse(localStorage.getItem('orderModalSize') || '{}');
+                if (saved.w) modalContent.style.width = saved.w;
+                if (saved.h) modalContent.style.height = saved.h;
+            } catch (_) { /* skip */ }
+
+            // 크기 변경 추적 → localStorage 저장 (debounce)
+            if (!modalContent._resizeObserverAttached) {
+                modalContent._resizeObserverAttached = true;
+                let saveTimer;
+                const ro = new ResizeObserver(() => {
+                    clearTimeout(saveTimer);
+                    saveTimer = setTimeout(() => {
+                        try {
+                            localStorage.setItem('orderModalSize', JSON.stringify({
+                                w: modalContent.style.width || '',
+                                h: modalContent.style.height || ''
+                            }));
+                        } catch (_) { /* skip */ }
+                    }, 400);
+                });
+                ro.observe(modalContent);
+            }
+        }
+
         // ESC 키로 닫기
         document.removeEventListener('keydown', _orderModalEscHandler);
         document.addEventListener('keydown', _orderModalEscHandler);

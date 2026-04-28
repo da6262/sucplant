@@ -136,7 +136,7 @@ window.generateOrderFormHTMLMinimal = function () {
                 </table>
 
                 <!-- 장바구니 -->
-                <table class="xf-tbl xf-cart">
+                <table class="xf-tbl xf-cart cart-grid-mode">
                     <thead>
                         <tr>
                             <th style="width:54px" class="text-center" title="체크 후 우측 휴지통으로 일괄 삭제">
@@ -264,6 +264,144 @@ window.generateOrderFormHTMLMinimal = function () {
                 padding: 4px 5px;
                 color: #444;
             }
+            /* v3.4.91: 카트 카드 그리드 모드 — 2~3열 카드, 한눈에 더 많은 상품 표시 */
+            .xf-cart.cart-grid-mode { border: none; }
+            .xf-cart.cart-grid-mode thead tr {
+                display: flex !important;
+                width: 100% !important;
+                table-layout: auto !important;
+                align-items: center;
+                background: var(--bg-light);
+                border-radius: var(--radius-md) var(--radius-md) 0 0;
+                padding: 4px 8px;
+            }
+            .xf-cart.cart-grid-mode thead th {
+                display: none !important;
+            }
+            .xf-cart.cart-grid-mode thead th:first-child,
+            .xf-cart.cart-grid-mode thead th:nth-child(2) {
+                display: flex !important;
+                align-items: center;
+                width: auto !important;
+                background: transparent !important;
+                color: var(--text-body);
+                padding: 2px 4px !important;
+            }
+            .xf-cart.cart-grid-mode thead th:nth-child(2) {
+                flex: 1;
+                justify-content: flex-start;
+                font-weight: 600;
+                font-size: 12px;
+                margin-left: 6px;
+            }
+            .xf-cart.cart-grid-mode tbody {
+                display: grid !important;
+                grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+                gap: 6px;
+                padding: 6px 4px 0;
+                max-height: clamp(280px, 50vh, 580px);
+                overflow-y: auto;
+            }
+            .xf-cart.cart-grid-mode tbody tr {
+                display: grid !important;
+                grid-template-columns: 22px 1fr auto;
+                grid-template-rows: auto auto auto;
+                gap: 4px 8px;
+                width: 100% !important;
+                table-layout: auto !important;
+                border: 1px solid var(--border);
+                border-radius: var(--radius-md);
+                padding: 8px 10px !important;
+                background: var(--bg-white) !important;
+                box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+                transition: border-color .15s, box-shadow .15s;
+            }
+            .xf-cart.cart-grid-mode tbody tr:hover {
+                border-color: var(--primary);
+                box-shadow: 0 2px 6px rgba(22,163,74,0.12);
+            }
+            /* 빈 메시지 행 — 전체 너비 차지 */
+            .xf-cart.cart-grid-mode tbody tr:has(> td[colspan]) {
+                grid-column: 1 / -1 !important;
+                display: block !important;
+                text-align: center;
+                padding: 12px !important;
+                border: none;
+                background: transparent !important;
+                box-shadow: none;
+            }
+            .xf-cart.cart-grid-mode tbody td {
+                display: flex !important;
+                align-items: center !important;
+                padding: 0 !important;
+                background: transparent !important;
+                border: none !important;
+                width: auto !important;
+                font-size: 12px;
+            }
+            /* 1열: 체크박스 (col 1, row 1) */
+            .xf-cart.cart-grid-mode tbody td:nth-child(1) {
+                grid-column: 1; grid-row: 1;
+                justify-content: center;
+            }
+            /* 2열: 상품명 (col 2, row 1) — 굵게, 줄임 */
+            .xf-cart.cart-grid-mode tbody td:nth-child(2) {
+                grid-column: 2; grid-row: 1;
+                font-size: 13px;
+                font-weight: 600;
+                color: var(--text-heading);
+                overflow: hidden;
+                text-overflow: ellipsis;
+                white-space: nowrap;
+            }
+            /* 6열: 휴지통 (col 3, row 1) */
+            .xf-cart.cart-grid-mode tbody td:nth-child(6) {
+                grid-column: 3; grid-row: 1;
+                justify-content: flex-end;
+            }
+            /* 3열: 단가 (col 1-2, row 2) — 라벨+값 */
+            .xf-cart.cart-grid-mode tbody td:nth-child(3) {
+                grid-column: 1 / 3; grid-row: 2;
+                font-size: 11px;
+                color: var(--text-secondary);
+                justify-content: flex-start;
+            }
+            .xf-cart.cart-grid-mode tbody td:nth-child(3)::before {
+                content: '단가';
+                color: var(--text-muted);
+                font-size: 10px;
+                margin-right: 6px;
+                font-weight: 600;
+            }
+            /* 5열: 소계 (col 3, row 2) — 강조 */
+            .xf-cart.cart-grid-mode tbody td:nth-child(5) {
+                grid-column: 3; grid-row: 2;
+                justify-content: flex-end;
+                font-weight: 700;
+                font-size: 14px;
+                color: var(--primary-accent);
+            }
+            /* 4열: 수량 컨트롤 (col 1-3, row 3) — 한 줄 */
+            .xf-cart.cart-grid-mode tbody td:nth-child(4) {
+                grid-column: 1 / 4; grid-row: 3;
+                justify-content: center;
+                background: var(--bg-light) !important;
+                border-radius: var(--radius-sm);
+                padding: 3px 6px !important;
+                margin-top: 2px;
+            }
+            /* 합계 푸터는 그대로 (sticky table 구조 유지) */
+            .xf-cart.cart-grid-mode tfoot {
+                display: table !important;
+                width: 100% !important;
+            }
+            .xf-cart.cart-grid-mode tfoot tr {
+                display: table-row !important;
+            }
+            .xf-cart.cart-grid-mode tfoot td {
+                display: table-cell !important;
+            }
+
             /* v3.4.89: 다건 주문 대응 — tbody 높이 키움 + 스크롤 시각 신호 + 더 굵은 스크롤바 */
             .xf-cart tbody {
                 display: block;
