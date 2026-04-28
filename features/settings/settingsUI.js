@@ -1197,11 +1197,104 @@ window.saveOrderStatus = function(index) {
     if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
 };
 
+// v3.4.80+: 주문상태 삭제 시 영향 범위 사전 확인 + 기존 주문 일괄 마이그레이션
 window.deleteOrderStatus = async function(index) {
-    if (!confirm('이 주문상태를 삭제하시겠습니까?')) return;
-    window.settingsDataManager.deleteOrderStatus(index);
-    loadOrderStatuses();
-    if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+    const settings = window.settingsDataManager?.getAllSettings();
+    const target = settings?.orderStatuses?.[index];
+    if (!target) { alert('삭제할 상태를 찾을 수 없습니다.'); return; }
+
+    const targetValue = target.value;
+    const remainStatuses = (settings.orderStatuses || []).filter((_, i) => i !== index);
+
+    // 1단계: 이 상태로 저장된 주문 건수 확인
+    let affectedCount = 0;
+    if (window.supabaseClient) {
+        try {
+            const { count } = await window.supabaseClient
+                .from('farm_orders')
+                .select('id', { count: 'exact', head: true })
+                .eq('order_status', targetValue);
+            affectedCount = count || 0;
+        } catch (e) { console.warn('영향 범위 조회 실패:', e); }
+    }
+
+    // 2단계: 영향받는 주문이 없으면 단순 삭제
+    if (affectedCount === 0) {
+        if (!confirm(`주문상태 "${targetValue}" 을(를) 삭제하시겠습니까?\n(이 상태로 저장된 주문 없음)`)) return;
+        window.settingsDataManager.deleteOrderStatus(index);
+        loadOrderStatuses();
+        if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+        return;
+    }
+
+    // 3단계: 영향받는 주문이 있으면 → 어떤 상태로 옮길지 선택받기
+    if (remainStatuses.length === 0) {
+        alert('마지막 남은 상태는 삭제할 수 없습니다.\n다른 상태를 먼저 추가해주세요.');
+        return;
+    }
+
+    const optionsHtml = remainStatuses.map(s =>
+        `<option value="${s.value}">${s.label || s.value}</option>`
+    ).join('');
+
+    document.getElementById('delete-order-status-modal')?.remove();
+    const modal = document.createElement('div');
+    modal.id = 'delete-order-status-modal';
+    modal.className = 'modal-overlay';
+    modal.style.zIndex = '999999';
+    modal.innerHTML = `
+        <div class="modal-container modal-sm" style="max-width:440px;width:94vw;">
+            <div class="modal-header">
+                <span class="modal-title"><i class="fas fa-exclamation-triangle text-warn mr-1"></i>주문상태 삭제</span>
+                <button class="modal-close-btn" onclick="document.getElementById('delete-order-status-modal').remove()"><i class="fas fa-times"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+                <p class="text-sm mb-3">
+                    상태 <strong>"${targetValue}"</strong> 을(를) 삭제하면<br>
+                    이 상태로 저장된 주문 <strong class="text-danger">${affectedCount}건</strong> 의 상태를 어디로 옮길까요?
+                </p>
+                <label class="form-label">옮길 상태 선택</label>
+                <select id="migrate-target-status" class="form-control">${optionsHtml}</select>
+                <p class="form-helper mt-2">선택한 상태로 ${affectedCount}건이 일괄 변경됩니다.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" onclick="document.getElementById('delete-order-status-modal').remove()">취소</button>
+                <button id="confirm-delete-migrate-btn" class="btn-danger"><i class="fas fa-trash mr-1"></i>이동 + 삭제</button>
+            </div>
+        </div>`;
+    document.body.appendChild(modal);
+
+    document.getElementById('confirm-delete-migrate-btn').addEventListener('click', async () => {
+        const newStatus = document.getElementById('migrate-target-status').value;
+        const btn = document.getElementById('confirm-delete-migrate-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>처리 중...';
+        try {
+            // DB 일괄 마이그레이션
+            const { error } = await window.supabaseClient
+                .from('farm_orders')
+                .update({ order_status: newStatus, updated_at: new Date().toISOString() })
+                .eq('order_status', targetValue);
+            if (error) throw error;
+
+            // settings 에서 상태 제거
+            window.settingsDataManager.deleteOrderStatus(index);
+
+            // UI 갱신
+            loadOrderStatuses();
+            if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
+            if (window.orderDataManager?.loadOrders) await window.orderDataManager.loadOrders();
+            if (window.orderDataManager?.renderOrdersTable) window.orderDataManager.renderOrdersTable();
+
+            modal.remove();
+            if (window.showToast) window.showToast(`${affectedCount}건 → "${newStatus}" 이동 + "${targetValue}" 삭제 완료`, 2500);
+        } catch (e) {
+            console.error('상태 삭제·마이그레이션 실패:', e);
+            alert('실패: ' + e.message);
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fas fa-trash mr-1"></i>이동 + 삭제';
+        }
+    });
 };
 
 // 판매채널 관련 전역 함수 — farm_channels 기준 (index → id 변환 후 CRUD)
