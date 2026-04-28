@@ -887,6 +887,18 @@ function updateOrderTotalDisplay() {
                 freeNotice.classList.add('hidden');
             }
         }
+
+        // v3.4.89: 카트 종 수 배지 갱신 (다건 주문 시각화)
+        const itemCountBadge = document.getElementById('cart-item-count-badge');
+        if (itemCountBadge) {
+            const itemCount = cartBody.querySelectorAll('tr[data-product-id]').length;
+            if (itemCount > 0) {
+                itemCountBadge.textContent = `${itemCount}종`;
+                itemCountBadge.classList.remove('hidden');
+            } else {
+                itemCountBadge.classList.add('hidden');
+            }
+        }
         
         // 할인액(원 단위 정수), 총액 = max(0, 상품+배송비-할인)
         const discountEl = document.getElementById('discount-amount');

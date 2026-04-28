@@ -145,7 +145,7 @@ window.generateOrderFormHTMLMinimal = function () {
                                     <i class="fas fa-trash" style="font-size:10px;"></i>
                                 </button>
                             </th>
-                            <th class="text-left">상품명</th>
+                            <th class="text-left">상품명 <span id="cart-item-count-badge" class="hidden" style="display:inline-block;background:var(--info-bg);color:var(--info);padding:1px 7px;border-radius:var(--radius-full);font-size:10px;font-weight:600;margin-left:4px;vertical-align:middle;">0종</span></th>
                             <th class="text-right" style="width:60px">단가</th>
                             <th class="text-center" style="width:82px">수량</th>
                             <th class="text-right" style="width:68px">소계</th>
@@ -264,11 +264,31 @@ window.generateOrderFormHTMLMinimal = function () {
                 padding: 4px 5px;
                 color: #444;
             }
+            /* v3.4.89: 다건 주문 대응 — tbody 높이 키움 + 스크롤 시각 신호 + 더 굵은 스크롤바 */
             .xf-cart tbody {
                 display: block;
-                max-height: 220px;
+                max-height: clamp(220px, 42vh, 480px);
                 overflow-y: auto;
                 width: 100%;
+                /* 스크롤 가능 시 위아래 그라디언트로 신호 */
+                background:
+                    linear-gradient(#fff 30%, rgba(255,255,255,0)) center top,
+                    linear-gradient(rgba(255,255,255,0), #fff 70%) center bottom,
+                    radial-gradient(closest-side at center top, rgba(0,0,0,0.08), transparent) center top,
+                    radial-gradient(closest-side at center bottom, rgba(0,0,0,0.08), transparent) center bottom;
+                background-repeat: no-repeat;
+                background-size: 100% 16px, 100% 16px, 100% 8px, 100% 8px;
+                background-attachment: local, local, scroll, scroll;
+            }
+            .xf-cart tbody::-webkit-scrollbar {
+                width: 10px;
+            }
+            .xf-cart tbody::-webkit-scrollbar-thumb {
+                background: var(--border);
+                border-radius: var(--radius-md);
+            }
+            .xf-cart tbody::-webkit-scrollbar-thumb:hover {
+                background: var(--text-secondary);
             }
             .xf-cart thead tr,
             .xf-cart tbody tr,
