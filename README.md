@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.61-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.62-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.62 | feat: 상품관리 재고 직접 편집 + 삭제 FK 가드 — ①재고 셀을 항상 표시되는 [−][숫자입력][+] 스텝퍼로 교체, 더블클릭 없이 클릭/타이핑/Enter로 즉시 저장 + farm_stock_logs 자동 기록(in/out, "재고 +1/-1 (수동)" / "재고 직접 수정") + 0=빨강·≤5=주황 색상 + "품절" 뱃지 자동 토글, 컬럼 폭 w-20→w-28. ②상품 삭제 시 fk_order_items_product 위반 감지 → 친절한 안내(참조 건수 카운트) + "재고 0으로 변경(품절 처리)" 폴백 옵션 → 주문 이력 보존하면서 신규 판매 차단 |
 | v3.4.61 | fix: 주문·상품관리 모바일 헤더 동일 패턴 수정 — md: Tailwind 클래스 + ⋮ 드롭다운 (CSS 미디어쿼리 방식 완전 제거) |
 | v3.4.60 | fix: 고객관리 모바일 헤더 대폭 압축 — 제목 숨김, 보조버튼 ⋮ 드롭다운, 필터 2행 분리(검색+정렬 / 등급+체크박스 가로스크롤) |
 | v3.4.59 | feat: 사이드바 접기/펼치기 토글 — 48px 아이콘 모드 ↔ 180px 텍스트 모드, localStorage 상태 유지, 메인 콘텐츠 영역 자동 조정 |

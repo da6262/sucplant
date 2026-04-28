@@ -188,13 +188,27 @@ const PRODUCT_COLUMNS = [
     {
         key: 'stock',
         label: '재고',
-        thClass: 'w-20',
+        thClass: 'w-28',
         editable: true,
         render: (p, dash) => {
             const stock = Number(p.stock) || 0;
-            if (stock === 0) return `<td class="td-num text-right font-semibold" data-field="stock" data-product-id="${p.id}" style="color:var(--danger);">품절</td>`;
-            if (stock <= 5) return `<td class="td-num text-right font-semibold" data-field="stock" data-product-id="${p.id}" style="color:var(--warn);">${stock}개</td>`;
-            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}">${stock}개</td>`;
+            const inputColor = stock === 0 ? 'border-color:var(--danger);color:var(--danger);font-weight:600;'
+                             : stock <= 5  ? 'border-color:var(--warn);color:var(--warn);font-weight:600;'
+                             : '';
+            return `<td class="td-num text-right" data-field="stock" data-product-id="${p.id}" style="padding:2px 4px;">
+                <div class="stock-stepper" style="display:inline-flex;align-items:center;justify-content:flex-end;">
+                    <button type="button" class="stock-step-btn" data-step="-1" data-product-id="${p.id}"
+                        style="width:22px;height:24px;border:1px solid var(--border);background:#fff;border-radius:3px 0 0 3px;cursor:pointer;font-weight:700;line-height:1;color:var(--text-secondary);"
+                        title="1개 차감">−</button>
+                    <input type="number" class="stock-inline-input" data-product-id="${p.id}"
+                        value="${stock}" min="0"
+                        style="width:46px;height:24px;text-align:right;font-size:12px;padding:0 4px;border:1px solid var(--border);border-left:none;border-right:none;outline:none;border-radius:0;${inputColor}"
+                        title="값을 입력하고 Enter 또는 포커스 해제 시 저장">
+                    <button type="button" class="stock-step-btn" data-step="1" data-product-id="${p.id}"
+                        style="width:22px;height:24px;border:1px solid var(--border);background:#fff;border-radius:0 3px 3px 0;cursor:pointer;font-weight:700;line-height:1;color:var(--primary);"
+                        title="1개 추가">+</button>
+                </div>
+            </td>`;
         }
     },
     // 배송옵션 — 모달에서 확인 가능, 테이블 밀도 위해 숨김
@@ -428,14 +442,58 @@ class ProductManagementComponent {
         // 상품명 실시간 중복 체크 (모달이 로드된 후에 설정)
         this.setupProductNameDuplicateCheck();
 
-        // 테이블 인라인 편집 (더블클릭)
+        // 테이블 인라인 편집 (더블클릭) + 재고 스텝퍼 직접 편집
         const tableBody = document.getElementById('products-table-body');
         if (tableBody && !tableBody.dataset.inlineEdit) {
             tableBody.dataset.inlineEdit = '1';
+            // 더블클릭 인라인 편집 (재고 셀은 스텝퍼로 직접 편집하므로 제외)
             tableBody.addEventListener('dblclick', (e) => {
                 const td = e.target.closest('td[data-field]');
                 if (!td || td.querySelector('input,select')) return;
+                if (td.dataset.field === 'stock') return;
                 this._startInlineEdit(td);
+            });
+
+            // 재고 스텝퍼 −/+ 버튼 클릭
+            tableBody.addEventListener('click', (e) => {
+                const btn = e.target.closest('.stock-step-btn');
+                if (!btn) return;
+                e.preventDefault();
+                e.stopPropagation();
+                const productId = btn.dataset.productId;
+                const step = parseInt(btn.dataset.step, 10) || 0;
+                this._adjustStock(productId, step);
+            });
+
+            // 재고 인풋 키보드 (Enter=저장 / Esc=원복)
+            tableBody.addEventListener('keydown', (e) => {
+                const input = e.target.closest('.stock-inline-input');
+                if (!input) return;
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    const productId = input.dataset.productId;
+                    const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+                    input.value = product ? (Number(product.stock) || 0) : 0;
+                    input.blur();
+                }
+            });
+
+            // 재고 인풋 변경 → 저장 (change/blur)
+            tableBody.addEventListener('change', (e) => {
+                const input = e.target.closest('.stock-inline-input');
+                if (!input) return;
+                const productId = input.dataset.productId;
+                const newVal = Math.max(0, parseInt(input.value, 10) || 0);
+                this._setStockDirect(productId, newVal);
+            });
+
+            // 재고 인풋 포커스 시 전체 선택 (빠른 덮어쓰기)
+            tableBody.addEventListener('focusin', (e) => {
+                const input = e.target.closest('.stock-inline-input');
+                if (!input) return;
+                input.select();
             });
         }
     }
@@ -511,6 +569,86 @@ class ProductManagementComponent {
             console.error('인라인 수정 실패:', err);
             td.innerHTML = originalHTML;
             if (window.showToast) window.showToast('수정 실패: ' + err.message, 2000, 'error');
+        }
+    }
+
+    /** 재고 ±1 스텝 조정 */
+    async _adjustStock(productId, delta) {
+        const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+        if (!product) return;
+        const oldStock = Number(product.stock) || 0;
+        const newStock = Math.max(0, oldStock + delta);
+        if (newStock === oldStock) return;
+        await this._writeStock(productId, oldStock, newStock, delta > 0 ? '재고 +1 (수동)' : '재고 -1 (수동)');
+    }
+
+    /** 재고 직접 입력 저장 */
+    async _setStockDirect(productId, newStock) {
+        const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+        if (!product) return;
+        const oldStock = Number(product.stock) || 0;
+        if (newStock === oldStock) return;
+        await this._writeStock(productId, oldStock, newStock, '재고 직접 수정');
+    }
+
+    /** 재고 DB 반영 + 입출고 로그 + 시각 갱신 */
+    async _writeStock(productId, oldStock, newStock, reason) {
+        if (!window.supabaseClient) return;
+        const input = document.querySelector(`.stock-inline-input[data-product-id="${productId}"]`);
+        try {
+            // logStockChange 는 productDataManager.product.stock 을 stock_before 로 읽으므로
+            // 로컬 캐시 갱신 전에 먼저 호출해야 정확한 변동 전 값이 기록됨
+            const delta = newStock - oldStock;
+            const logType = delta > 0 ? 'in' : 'out';
+            if (window.logStockChange) {
+                await window.logStockChange(productId, logType, Math.abs(delta), { reason });
+            }
+
+            const { error } = await window.supabaseClient
+                .from('farm_products')
+                .update({ stock: newStock, updated_at: new Date().toISOString() })
+                .eq('id', productId);
+            if (error) throw error;
+
+            // 로컬 캐시 갱신
+            const product = window.productDataManager?.getAllProducts()?.find(p => p.id === productId);
+            if (product) product.stock = newStock;
+
+            // 인풋 색상/굵기 갱신 (재렌더 없이 바로 반영)
+            if (input) {
+                input.value = newStock;
+                input.style.borderColor = '';
+                input.style.color = '';
+                input.style.fontWeight = '';
+                if (newStock === 0) {
+                    input.style.borderColor = 'var(--danger)';
+                    input.style.color = 'var(--danger)';
+                    input.style.fontWeight = '600';
+                } else if (newStock <= 5) {
+                    input.style.borderColor = 'var(--warn)';
+                    input.style.color = 'var(--warn)';
+                    input.style.fontWeight = '600';
+                }
+            }
+
+            // 상품명 셀 "품절" 뱃지 토글 (0 ↔ 양수 전환 시)
+            if ((oldStock === 0) !== (newStock === 0)) {
+                const nameTd = document.querySelector(`td[data-field="name"][data-product-id="${productId}"]`);
+                if (nameTd) {
+                    const existingBadge = nameTd.querySelector('.badge.badge-danger');
+                    if (newStock === 0 && !existingBadge) {
+                        nameTd.insertAdjacentHTML('beforeend', ' <span class="badge badge-danger" style="font-size:9px;padding:1px 4px;">품절</span>');
+                    } else if (newStock > 0 && existingBadge) {
+                        existingBadge.remove();
+                    }
+                }
+            }
+
+            if (window.showToast) window.showToast(`재고 ${oldStock} → ${newStock}`, 1200);
+        } catch (err) {
+            console.error('재고 수정 실패:', err);
+            if (input) input.value = oldStock;
+            if (window.showToast) window.showToast('재고 수정 실패: ' + err.message, 2000, 'error');
         }
     }
 
@@ -1494,20 +1632,58 @@ class ProductManagementComponent {
      * 상품 삭제
      */
     async deleteProduct(product) {
-        if (confirm(`정말로 "${product.name}" 상품을 삭제하시겠습니까?`)) {
-            try {
-                // productDataManager를 통해 삭제
-                if (window.productDataManager) {
-                    await window.productDataManager.deleteProduct(product.id);
-                    await this.loadProducts(); // 데이터 새로고침
-                    console.log('🗑️ 상품 삭제 완료:', product.name);
-                } else {
-                    console.error('❌ productDataManager를 찾을 수 없습니다.');
-                }
-            } catch (error) {
-                console.error('❌ 상품 삭제 실패:', error);
-                alert('상품 삭제에 실패했습니다: ' + error.message);
+        if (!confirm(`정말로 "${product.name}" 상품을 삭제하시겠습니까?`)) return;
+        try {
+            if (!window.productDataManager) {
+                console.error('❌ productDataManager를 찾을 수 없습니다.');
+                return;
             }
+            await window.productDataManager.deleteProduct(product.id);
+            await this.loadProducts();
+            console.log('🗑️ 상품 삭제 완료:', product.name);
+        } catch (error) {
+            const msg = String(error?.message || '');
+            // 주문 이력에 묶여 있으면 (FK 제약) — 친절한 안내 + 재고 0 처리 제안
+            if (/fk_order_items_product|violates foreign key/i.test(msg)) {
+                console.warn('상품 삭제 차단: 주문 이력 존재', product.name);
+                let refCount = null;
+                try {
+                    const { count } = await window.supabaseClient
+                        .from('farm_order_items')
+                        .select('id', { count: 'exact', head: true })
+                        .eq('product_id', product.id);
+                    refCount = count;
+                } catch (_) { /* 카운트 실패해도 진행 */ }
+                const refTxt = (typeof refCount === 'number') ? `${refCount}건의 주문 항목` : '기존 주문';
+                const ok = confirm(
+                    `"${product.name}" 은(는) ${refTxt} 에서 사용 중이라 삭제할 수 없습니다.\n\n` +
+                    `주문 이력 보존을 위해 재고를 0으로 변경하시겠습니까?\n` +
+                    `(목록에는 남지만 "품절" 로 표시되어 신규 판매가 차단됩니다)`
+                );
+                if (ok) {
+                    try {
+                        await window.supabaseClient
+                            .from('farm_products')
+                            .update({ stock: 0, updated_at: new Date().toISOString() })
+                            .eq('id', product.id);
+                        if (window.logStockChange) {
+                            const oldStock = Number(product.stock) || 0;
+                            if (oldStock > 0) {
+                                await window.logStockChange(product.id, 'out', oldStock, { reason: '삭제 시도 → 품절 처리' });
+                            }
+                        }
+                        product.stock = 0;
+                        await this.loadProducts();
+                        if (window.showToast) window.showToast('품절 처리 완료', 1500);
+                    } catch (e2) {
+                        console.error('품절 처리 실패:', e2);
+                        alert('품절 처리에 실패했습니다: ' + e2.message);
+                    }
+                }
+                return;
+            }
+            console.error('❌ 상품 삭제 실패:', error);
+            alert('상품 삭제에 실패했습니다: ' + msg);
         }
     }
 
