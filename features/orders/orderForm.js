@@ -64,29 +64,82 @@ function updateOrderSummary() {
     }
 }
 
-// 퀵상품 8개 로드 (최소 레이아웃용)
+// 퀵상품 6개 로드 (최소 레이아웃용) — v3.4.74: 가독성 개선 + 품절 비활성화
 async function loadQuickProductsForMinimal() {
     const container = document.getElementById('quick-product-buttons');
     if (!container || !window.supabaseClient) return;
     try {
-        const { data: products, error } = await window.supabaseClient
-            .from('farm_products')
-            .select('id, name, price')
-            .limit(6)
-            .order('created_at', { ascending: false });
+        // 인기상품 산출: farm_order_items 누적 수량 TOP 6 (없으면 최근 등록 상품)
+        let ranked = [];
+        try {
+            const { data: items } = await window.supabaseClient
+                .from('farm_order_items')
+                .select('product_name, quantity');
+            const counts = {};
+            (items || []).forEach(it => {
+                if (it.product_name) counts[it.product_name] = (counts[it.product_name] || 0) + (it.quantity || 1);
+            });
+            ranked = Object.entries(counts).sort((a, b) => b[1] - a[1]).slice(0, 12).map(([name]) => name);
+        } catch (_) { /* skip ranking */ }
+
+        let products = [];
+        if (ranked.length > 0) {
+            const { data } = await window.supabaseClient
+                .from('farm_products')
+                .select('id, name, price, stock')
+                .in('name', ranked);
+            products = (data || []).sort((a, b) => ranked.indexOf(a.name) - ranked.indexOf(b.name)).slice(0, 6);
+        }
+        if (products.length < 6) {
+            // 부족한 자리는 최근 등록 상품으로 채움
+            const { data } = await window.supabaseClient
+                .from('farm_products')
+                .select('id, name, price, stock')
+                .order('created_at', { ascending: false })
+                .limit(12);
+            const seen = new Set(products.map(p => p.id));
+            for (const p of (data || [])) {
+                if (products.length >= 6) break;
+                if (!seen.has(p.id)) products.push(p);
+            }
+        }
+
         const emptyMsg = (msg) =>
-            `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:8px 0;">${msg}</div>`;
-        if (error || !products || products.length === 0) {
+            `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:12px 0;">${msg}</div>`;
+        if (!products || products.length === 0) {
             container.innerHTML = emptyMsg('등록된 상품이 없습니다');
             return;
         }
-        const quickBtn = `min-height:32px;min-width:32px;padding:6px 8px;border-radius:var(--radius-lg);border:1px solid var(--border-light);background:var(--bg-white);font-size:12px;text-align:left;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;`;
         container.innerHTML = products.map(p => {
-            const name = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
-            return `<button type="button" class="truncate" style="${quickBtn}" onclick="addQuickProductToCart('${p.id}','${name}',${parseFloat(p.price)||0})">${(p.name || '').substring(0, 12)} <span class="tabular-nums">${window.fmt.won(p.price)}</span></button>`;
+            const stock = Number(p.stock) || 0;
+            const isOut = stock <= 0;
+            const safeName = (p.name || '').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+            const stockLabel = isOut ? '품절'
+                              : stock <= 5 ? `재고 ${stock}개`
+                              : '';
+            const stockColor = isOut ? 'var(--danger)' : (stock <= 5 ? 'var(--warn)' : 'var(--text-secondary)');
+            const cardStyle = `
+                display:flex;flex-direction:column;justify-content:space-between;
+                min-height:54px;padding:8px 10px;
+                border-radius:var(--radius-md);border:1px solid ${isOut ? 'var(--danger)' : 'var(--border)'};
+                background:${isOut ? 'var(--danger-bg)' : 'var(--bg-white)'};
+                ${isOut ? 'opacity:0.55;cursor:not-allowed;' : 'cursor:pointer;'}
+                font-size:13px;text-align:left;line-height:1.3;
+                transition:all .15s;
+            `.replace(/\s+/g, ' ');
+            const onclickAttr = isOut
+                ? `onclick="alert('재고가 없는 상품입니다 (품절). 검색에서 직접 추가하거나 재고를 보충해주세요.')"`
+                : `onclick="addQuickProductToCart('${p.id}','${safeName}',${parseFloat(p.price)||0})"`;
+            return `<button type="button" style="${cardStyle}" ${onclickAttr} ${isOut ? 'aria-disabled="true"' : ''}>
+                <div class="truncate" style="font-weight:600;color:var(--text-heading);">${(p.name || '').replace(/</g, '&lt;')}</div>
+                <div style="display:flex;justify-content:space-between;align-items:baseline;gap:6px;margin-top:3px;">
+                    <span class="tabular-nums" style="font-size:12px;font-weight:600;color:var(--primary-accent);">${window.fmt.won(p.price)}</span>
+                    ${stockLabel ? `<span style="font-size:11px;color:${stockColor};font-weight:500;">${stockLabel}</span>` : ''}
+                </div>
+            </button>`;
         }).join('');
     } catch (e) {
-        container.innerHTML = `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:8px 0;">로드 실패</div>`;
+        container.innerHTML = `<div class="txt-muted txt-sm" style="grid-column:span 3;text-align:center;padding:12px 0;">로드 실패</div>`;
     }
 }
 
@@ -1682,24 +1735,29 @@ function searchProducts(query) {
                     if (!resultsDiv) return;
 
                     if (data && data.length > 0) {
+                        // v3.4.74: 카테고리 컬럼 제거(가독성), 품절 항목 비활성화 + 시각 회색 처리
                         resultsDiv.innerHTML = data.map(product => {
                             const stockNum = product.stock ?? 0;
-                            const stockColor = stockNum <= 0 ? 'var(--danger)' : stockNum <= 5 ? 'var(--warn)' : 'var(--primary)';
-                            const stockLabel = stockNum <= 0 ? '품절' : `재고 ${stockNum}개`;
+                            const isOut = stockNum <= 0;
+                            const stockColor = isOut ? 'var(--danger)' : stockNum <= 5 ? 'var(--warn)' : 'var(--primary)';
+                            const stockLabel = isOut ? '품절' : `재고 ${stockNum}개`;
                             const safeName = (product.name || '').replace(/&/g,'&amp;').replace(/"/g,'&quot;');
-                            const safeCat  = (product.category || '').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+                            const itemStyle = isOut ? 'opacity:0.55;cursor:not-allowed;background:var(--danger-bg);' : '';
+                            const clickAttr = isOut
+                                ? `onclick="event.preventDefault();event.stopPropagation();alert('재고가 없는 상품입니다 (품절). 재고를 먼저 보충해주세요.');"`
+                                : `onclick="addProductToCart(this.dataset.productId, this.dataset.productName, parseFloat(this.dataset.price), parseFloat(this.dataset.stock), event)"`;
                             return `
                             <div class="search-result-item"
                                  data-product-id="${product.id}"
                                  data-product-name="${safeName}"
                                  data-price="${product.price}"
                                  data-stock="${product.stock ?? 0}"
+                                 style="${itemStyle}"
                                  onmousedown="event.preventDefault();"
-                                 onclick="addProductToCart(this.dataset.productId, this.dataset.productName, parseFloat(this.dataset.price), parseFloat(this.dataset.stock), event)">
+                                 ${clickAttr}>
                                 <span class="search-result-name">${safeName}</span>
-                                <span class="search-result-cat">${safeCat}</span>
                                 <span class="search-result-price">${window.fmt.won(product.price)}</span>
-                                <span class="search-result-stock" style="color:${stockColor};">${stockLabel}</span>
+                                <span class="search-result-stock" style="color:${stockColor};font-weight:${isOut ? '600' : '500'};">${stockLabel}</span>
                             </div>
                         `}).join('');
                         resultsDiv.classList.remove('hidden');
@@ -1721,10 +1779,18 @@ function addProductToCart(productId, productName, price, stock, event) {
             event.preventDefault();
             event.stopPropagation();
         }
+        // v3.4.74: 재고 0 차단 — 사전예약·재입고 사용자는 confirm 으로 우회 가능
         if (stock !== null && stock !== undefined && stock <= 0) {
-            // 재고 0이어도 주문 등록은 허용 (품절 상품도 관리자가 직접 주문 등록 가능)
-            // alert 대신 시각적 경고만 표시
-            console.warn(`⚠️ 재고 0 상품 주문 등록: ${productName}`);
+            const ok = confirm(
+                `⚠️ "${productName}" 은(는) 재고가 없습니다 (품절).\n\n` +
+                `그래도 장바구니에 추가하시겠습니까?\n` +
+                `(사전예약·재입고 후 처리 등 특수한 경우만 추가)`
+            );
+            if (!ok) {
+                console.log(`품절 상품 추가 취소: ${productName}`);
+                return;
+            }
+            console.warn(`⚠️ 사용자 동의 후 품절 상품 추가: ${productName}`);
         }
         // 최소 레이아웃: 2열 장바구니 + 퀵상품 형식으로 추가
         if (document.getElementById('quick-product-buttons') && window.addQuickProductToCart) {

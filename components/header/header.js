@@ -414,7 +414,7 @@ if (window.componentLoader) {
     });
 }
 
-// 사이드바 로고 적용 (환경설정 farm.logoUrl)
+// 사이드바 로고 적용 (환경설정 farm.logoUrl) + 브라우저 탭 favicon 동기화 (v3.4.74+)
 function applySidebarLogo() {
     const farm = window.settingsDataManager?.settings?.farm || {};
     // 로고
@@ -433,7 +433,40 @@ function applySidebarLogo() {
     const subtitleEl = document.getElementById('sidebar-subtitle');
     if (titleEl && farm.sidebarTitle) titleEl.textContent = farm.sidebarTitle;
     if (subtitleEl && farm.sidebarSubtitle) subtitleEl.textContent = farm.sidebarSubtitle;
+
+    // 브라우저 탭 favicon 동기화 — 환경설정에 업로드된 농장 로고로 표시
+    if (farm.logoUrl) {
+        applyFavicon(farm.logoUrl);
+    }
+    // 브라우저 탭 제목도 농장 이름으로
+    if (farm.name) document.title = `${farm.name} - 관리시스템`;
 }
+
+// favicon 동적 교체 — 기존 <link rel="icon"> 모두 제거 후 새 링크 삽입
+function applyFavicon(url) {
+    if (!url) return;
+    try {
+        document.querySelectorAll('link[rel*="icon"]').forEach(el => el.remove());
+        const link = document.createElement('link');
+        link.rel = 'icon';
+        link.href = url;
+        // 이미지 타입 추정 (확장자 기반)
+        if (/\.png(\?|$)/i.test(url)) link.type = 'image/png';
+        else if (/\.svg(\?|$)/i.test(url)) link.type = 'image/svg+xml';
+        else if (/\.jpe?g(\?|$)/i.test(url)) link.type = 'image/jpeg';
+        else if (/\.ico(\?|$)/i.test(url)) link.type = 'image/x-icon';
+        document.head.appendChild(link);
+
+        // apple-touch-icon (iOS 홈 화면)
+        const apple = document.createElement('link');
+        apple.rel = 'apple-touch-icon';
+        apple.href = url;
+        document.head.appendChild(apple);
+    } catch (e) {
+        console.warn('favicon 적용 실패:', e);
+    }
+}
+window.applyFavicon = applyFavicon;
 // 설정 로드 후 적용 (약간 지연 — settingsDataManager 초기화 대기)
 setTimeout(applySidebarLogo, 1500);
 // 탭 변경 시에도 재적용 (설정 변경 후 돌아올 때)
