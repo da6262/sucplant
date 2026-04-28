@@ -1965,11 +1965,19 @@ function addProductToCart(productId, productName, price, stock, event) {
         }
         // 최소 레이아웃: 2열 장바구니 + 퀵상품 형식으로 추가
         if (document.getElementById('quick-product-buttons') && window.addQuickProductToCart) {
-            window.addQuickProductToCart(productId, productName, price);
+            // shipping_option 은 검색 결과 dataset 또는 productDataManager 캐시에서 추출
+            const cached = window.productDataManager?.farm_products?.find(p => p.id === productId);
+            const shipOpt = (cached && cached.shipping_option) || '일반배송';
+            window.addQuickProductToCart(productId, productName, price, shipOpt);
             const resultsDiv = document.getElementById('product-search-results');
             if (resultsDiv) resultsDiv.classList.add('hidden');
             const searchInput = document.getElementById('product-search');
-            if (searchInput) searchInput.value = '';
+            if (searchInput) {
+                searchInput.value = '';
+                // v3.4.86: Enter 로 추가 후 검색창 포커스 복귀 → 다음 상품 즉시 입력 가능
+                setTimeout(() => searchInput.focus(), 0);
+            }
+            if (window.showToast) window.showToast(`+ ${productName}`, 1200, 'success');
             return;
         }
         const cartItemsBody = document.getElementById('cart-items-body');

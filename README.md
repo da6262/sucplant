@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.85-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.86-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.86 | feat: 주문 폼 상품 검색에 Enter 연속 추가 흐름 — Enter 시 첫 검색 결과 카트 추가 후 ①검색창 자동 비움 ②검색창에 포커스 자동 복귀 ③토스트 "+ <상품명>" 1.2초 표시 → 마우스 클릭 없이 다음 상품 바로 타이핑 가능. 또한 검색→카트 경로에서도 무료배송 옵션 보존(productDataManager 캐시에서 shipping_option 추출). 라이브·문자 주문 다건 처리 시 키보드만으로 빠르게 진행 |
 | v3.4.85 | feat: 주문 등록 중 신규 상품 즉시 등록 — 상품 검색에서 결과 없을 때 "<검색어> 신규 상품 등록" 버튼 노출. 클릭 시 빠른 등록 모달(상품명·판매가·초기재고·무료배송 체크박스) → 저장 → DB insert → productDataManager 캐시 갱신 → 장바구니 자동 추가 → 퀵상품 패널 재계산. 카테고리·상세는 나중에 상품관리에서 보완 가능. 주문 폼 떠나지 않고 진행 — 라이브·문자 주문 들어왔는데 카탈로그에 없는 상품도 즉시 처리 |
 | v3.4.84 | fix: 주문 폼 퀵 상품 카드 텍스트 잘림·레이아웃 깨짐 — ①`.xf-quick-grid` CSS 부재 → 명시적 `display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px` 추가하여 균등 3열 ②`#quick-product-buttons button` 의 `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` 가 v3.4.74 의 2줄 flex 카드와 충돌해 "재고 7개"가 "재고"로 잘리던 문제 → 버튼은 `white-space:normal` 로 해제, 상품명만 내부 `.truncate` 로 한 줄 처리. ③hover 시 primary 테두리 + 그림자로 시각 강조 |
 | v3.4.83 | fix: 고객명 검색 시 모든 고객이 그대로 보이던 버그 — `renderCustomersTable` 의 검색 필터에서 `(c.phone||'').replace(/\\D/g,'').includes(term.replace(/\\D/g,''))` 가 한글 검색어를 처리할 때 `term.replace(/\\D/g,'')` 결과가 빈 문자열 → `'01012345678'.includes('')` 가 항상 `true` → 전화번호 매칭이 모든 고객에 대해 통과 → 필터 무력화. 수정: termDigits.length > 0 일 때만 전화번호 매칭 적용 |
