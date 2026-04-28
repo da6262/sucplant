@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.78-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.79-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.79 | chore: 송장 패널 택배사 드롭다운 — 농장 실사용(로젠/우체국)으로 축소 — `SHIPPING_COMPANIES` 배열 6개(로젠·CJ·한진·우체국·편의점·기타) → 3개(로젠택배·우체국택배·기타). 송장 조회 URL 매핑(`getTrackingUrl`)은 5개 그대로 유지(향후 사용 시 즉시 동작). 사용자 선택 부담 ↓ |
 | v3.4.78 | feat: 배송시작 SMS에 송장 조회 URL 자동 삽입 — `{trackingUrl}` 신규 템플릿 변수. 택배사별 조회 URL 패턴 매핑(`getTrackingUrl`): 로젠택배·CJ대한통운·한진택배·우체국택배·편의점택배. 기본 shippingStart 템플릿에 "조회: {trackingUrl}" 추가. 기존 운영 농장 호환: 템플릿에 {trackingUrl} 없어도 송장번호 언급되어 있으면 자동으로 URL 한 줄 append. 고객 1클릭 조회 가능 — 사장님도 별도 입력 없이 같은 링크로 추적 |
 | v3.4.77 | fix: 농장 로고 흐릿하게 보이던 문제 — ①업로드 처리에서 JPEG 80% 압축 + 정사각형 강제 늘림(왜곡) 제거. PNG 무손실 + 비율 유지 + imageSmoothingQuality 'high'. 투명 PNG 로고도 알파 채널 보존 ②사이드바 로고 박스 — 로고 모드일 때 배경을 emerald-500(초록)→흰색으로 자동 전환(투명 PNG 가 초록 비치던 문제) ③object-cover→object-contain (가장자리 잘림 방지) + padding 3px (가장자리 호흡) ④아이콘 모드(로고 미설정)는 기존 초록 배경 유지 |
 | v3.4.76 | feat: 고객 등록 화면 실용성 개선 — 사용자 피드백 "친화적이지 않음/실용적이지 못함" 반영. ①주소 input 클릭만으로 우편번호 검색 자동 오픈 (이전: Enter 키 강제, 어색함). readonly + cursor:pointer 로 시각 신호. handleAddressInput 빈 값 호출도 허용. ②전화번호 입력 중에는 중복 메시지 자동 숨김 (oninput 시 hidden), blur 시점에만 검증 → 빨간 글씨 거슬림 제거. ③Enter 키로 다음 필드 이동 (이름→전화→주소). 상세주소에서 Enter = 저장 (이미 Ctrl+Enter 지원, 추가). ④"추가 정보" 토글 더 명확하게 — 점선 박스 + "보통 비워두셔도 됩니다" 안내 텍스트로 신규 등록 시 부담 줄임 |

@@ -2598,7 +2598,8 @@ window.testProductNameLookup = async function() {
 // 송장번호 일괄입력 인라인 패널
 // =============================================
 
-const SHIPPING_COMPANIES = ['로젠택배', 'CJ대한통운', '한진택배', '우체국택배', '편의점택배', '기타'];
+// v3.4.79+: 농장에서 실제 사용 중인 택배사만 — 로젠 + 우체국 (필요 시 추가)
+const SHIPPING_COMPANIES = ['로젠택배', '우체국택배', '기타'];
 
 async function toggleTrackingPanel() {
     const panel = document.getElementById('tracking-import-panel');
