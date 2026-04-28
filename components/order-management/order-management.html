@@ -91,6 +91,10 @@
                 <span class="text-xs text-amber-600">— 배송준비 상태 주문에 송장번호를 입력하세요</span>
             </div>
             <div class="flex items-center gap-2">
+                <label class="inline-flex items-center gap-1 text-xs text-amber-800 cursor-pointer mr-2" title="저장과 동시에 배송시작 알림톡(실패 시 SMS 폴백) 발송">
+                    <input type="checkbox" id="tracking-auto-sms" class="checkbox-ui">
+                    <i class="fas fa-comment-dots text-amber-600"></i>저장 시 자동 발송
+                </label>
                 <input type="file" id="tracking-excel-file" accept=".xlsx,.xls,.csv" class="hidden">
                 <button id="tracking-excel-upload-btn" class="btn-secondary" title="송장번호가 적힌 엑셀 파일을 선택하면 주문번호로 자동 매칭하여 송장번호를 채웁니다"><i class="fas fa-file-excel"></i>엑셀 업로드</button>
                 <button id="tracking-template-btn" class="btn-secondary" title="현재 패널의 주문번호로 빈 송장 입력 양식 엑셀 다운로드"><i class="fas fa-download"></i>양식 다운로드</button>

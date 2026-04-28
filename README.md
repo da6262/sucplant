@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.69-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.70-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.70 | feat: 카카오 알림톡 가시성 + 송장 저장 시 자동 SMS 발송 — ①sendSmartMessage 의 silent fallback 깨기: 카카오 성공 시 ✅ 토스트, 실패 시 실제 오류 메시지 + 원인 힌트(변수명/권한/채널 연결) 토스트로 6초 표시 → 왜 카톡이 안 가는지 즉시 진단 가능. ②송장 패널 헤더에 "📱 저장 시 자동 발송" 체크박스 추가, 켜져 있으면 saveOneTrackingNumber/saveAllTrackingNumbers 후 shippingStart 알림톡 자동 발송(rate limit 250ms 간격), 저장+발송 결과 분리 카운트 |
 | v3.4.69 | feat: 문자 파서 정확도 강화 + 고객 매칭 자동완성 — ①parseSmsText 인사말 블록리스트(안녕/주문/요청/이름/연락 등 30+) 추가하여 "안녕하세요 류정훈입니다" 같은 줄에서 인사말이 이름으로 오인되던 문제 해결. ②상세주소 휴리스틱 — 주소 별도 줄 다음 "101동 502호" "(우주아파트)" 패턴 자동 감지하여 addressDetail 필드로 분류. ③고객 SMS 모달에서 전화번호 매칭 시 기존 고객의 이름·주소·상세주소 자동 채움(사용자 입력 보존) — 010-XXXX-XXXX 만 적힌 문자에서도 DB의 류정훈 등 이름 자동 표시 |
 | v3.4.68 | chore: 디자인 토큰 정리 + CLAUDE.md 함정 3건 문서화 — ①styles/index-inline.css 에 `--success-bg` 추가, js/order-management.js 의 송장 매칭/저장 표시 색상 하드코딩 제거(`#fef3c7`→`var(--warn-bg)`, `#d1fae5`→`var(--success-bg)`), product-management.js 재고 스텝퍼 `#fff`→`var(--bg-white)`. ②CLAUDE.md 에 "장바구니 row 생성기 5곳 동기화 함정"·"formatPhone 함정"·"로젠택배 엑셀 구조" 추가 — 향후 같은 영역 작업 시 즉시 참고 |
 | v3.4.67 | feat: 주문 등록 장바구니 일괄 삭제 — 각 행 맨 앞에 체크박스 추가 + 헤더에 마스터 체크박스 + "선택 삭제" 휴지통 버튼. 사용자가 수량 2000을 잘못 입력했을 때 −를 2000번 누르지 않아도 체크박스 1번으로 항목 제거 가능. 모든 row 생성기(addQuickProductToCart·addToCart·addItemToCartDirectly·orderUI 빈 행·addProductToOrderForm)에 동일 컬럼 적용, colspan 5↔6 양방향 호환 |

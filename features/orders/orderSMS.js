@@ -576,9 +576,10 @@ function orderToKakaoVars(order, templateType) {
     }
 }
 
-// 스마트 발송: 카카오 알림톡 우선 → 실패 시 SMS 폴백
+// 스마트 발송: 카카오 알림톡 우선 → 실패 시 SMS 폴백 (실패 사유 사용자 가시화)
 async function sendSmartMessage(phoneNumber, message, templateType, order) {
     const kakaoTemplateId = KAKAO_CONFIG.templates[templateType];
+    let kakaoError = null;
 
     // 카카오 알림톡 시도 (템플릿이 있는 경우)
     if (kakaoTemplateId && order) {
@@ -586,15 +587,45 @@ async function sendSmartMessage(phoneNumber, message, templateType, order) {
             const vars = orderToKakaoVars(order, templateType);
             const result = await sendKakaoAlimtalk(phoneNumber, templateType, vars);
             console.log('✅ 카카오 알림톡 발송 성공:', templateType);
+            if (window.showToast) {
+                window.showToast(`✅ 카카오 알림톡 발송됨 (${templateType})`, 2000, 'success');
+            }
             return { ...result, channel: 'kakao' };
         } catch (e) {
-            console.warn('⚠️ 카카오 알림톡 실패, SMS 폴백:', e.message);
+            kakaoError = e.message || String(e);
+            console.warn('⚠️ 카카오 알림톡 실패, SMS 폴백:', kakaoError);
         }
+    } else if (!kakaoTemplateId && templateType && templateType !== 'custom') {
+        kakaoError = `카카오 템플릿 매핑 없음: ${templateType}`;
+        console.warn('⚠️', kakaoError);
+    } else if (!order && templateType && templateType !== 'custom') {
+        kakaoError = '카카오 발송에 order 객체가 필요합니다 (변수 매핑용)';
+        console.warn('⚠️', kakaoError);
     }
 
     // SMS 폴백
     const result = await sendSolapiSMS(phoneNumber, message);
-    return { ...result, channel: 'sms' };
+
+    // 카카오 시도가 있었으나 실패한 경우 사용자에게 즉시 알림 (silent fallback 깨기)
+    if (kakaoError && window.showToast) {
+        // 흔한 오류 사유 힌트
+        let hint = '';
+        if (/variable|치환|template/i.test(kakaoError)) {
+            hint = '\n→ 환경설정·카카오 탭에서 템플릿 변수명 확인';
+        } else if (/403|forbidden|권한/i.test(kakaoError)) {
+            hint = '\n→ Solapi API Key의 알림톡 발송 권한 확인';
+        } else if (/pfId|channel|채널/i.test(kakaoError)) {
+            hint = '\n→ Solapi 어드민에서 카카오 채널-템플릿 연결 확인';
+        }
+        const shortMsg = kakaoError.length > 180 ? kakaoError.slice(0, 180) + '…' : kakaoError;
+        window.showToast(
+            `⚠️ 카카오 실패 → SMS로 대체\n${shortMsg}${hint}`,
+            6000,
+            'warning'
+        );
+    }
+
+    return { ...result, channel: 'sms', kakaoError };
 }
 
 // Solapi SMS 발송 (저수준)

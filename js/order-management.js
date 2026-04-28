@@ -2708,6 +2708,18 @@ async function saveOneTrackingNumber(orderId, rowEl) {
         tr.style.background = 'var(--success-bg)';
         setTimeout(() => { tr.style.background = ''; }, 1500);
 
+        // 자동 발송 옵션 체크 → 배송시작 알림톡(또는 SMS 폴백)
+        const autoSms = document.getElementById('tracking-auto-sms')?.checked;
+        if (autoSms && typeof window.sendOrderSMS === 'function') {
+            try {
+                await window.sendOrderSMS(orderId, 'shippingStart');
+                if (window.showToast) window.showToast('📱 배송시작 안내 발송됨', 1800, 'success');
+            } catch (smsErr) {
+                console.error('자동 SMS 발송 실패:', smsErr);
+                if (window.showToast) window.showToast(`SMS 발송 실패: ${smsErr.message}`, 4000, 'error');
+            }
+        }
+
         // 주문 테이블도 새로고침
         if (typeof window.renderOrdersTable === 'function') window.renderOrdersTable();
         else if (typeof window.loadOrders === 'function') window.loadOrders();
@@ -2721,7 +2733,10 @@ async function saveAllTrackingNumbers() {
     const rows = document.querySelectorAll('#tracking-input-rows tr[data-order-id]');
     if (!rows.length) return;
 
-    let saved = 0, skipped = 0;
+    const autoSms = document.getElementById('tracking-auto-sms')?.checked;
+    let saved = 0, skipped = 0, smsSuccess = 0, smsFail = 0;
+    const savedOrderIds = [];
+
     for (const tr of rows) {
         const orderId = tr.dataset.orderId;
         const trackingInput = tr.querySelector('.tracking-number-input');
@@ -2737,12 +2752,28 @@ async function saveAllTrackingNumbers() {
                 .eq('id', orderId);
             tr.style.background = 'var(--success-bg)';
             saved++;
+            savedOrderIds.push(orderId);
         } catch (e) {
             console.error(`주문 ${orderId} 저장 실패:`, e);
         }
     }
 
-    alert(`저장 완료: ${saved}건 / 건너뜀: ${skipped}건`);
+    // 자동 발송: 저장 성공한 주문에 대해서만 순차 발송 (Solapi rate limit 고려 250ms 간격)
+    if (autoSms && savedOrderIds.length > 0 && typeof window.sendOrderSMS === 'function') {
+        for (const oid of savedOrderIds) {
+            try {
+                await window.sendOrderSMS(oid, 'shippingStart');
+                smsSuccess++;
+            } catch (smsErr) {
+                console.error(`주문 ${oid} SMS 실패:`, smsErr);
+                smsFail++;
+            }
+            await new Promise(r => setTimeout(r, 250));
+        }
+    }
+
+    const smsMsg = autoSms ? `\n📱 배송시작 발송: 성공 ${smsSuccess}건 / 실패 ${smsFail}건` : '';
+    alert(`저장 완료: ${saved}건 / 건너뜀: ${skipped}건${smsMsg}`);
     if (saved > 0) {
         if (typeof window.renderOrdersTable === 'function') window.renderOrdersTable();
         else if (typeof window.loadOrders === 'function') window.loadOrders();
