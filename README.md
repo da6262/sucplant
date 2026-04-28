@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.83-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.84-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.84 | fix: 주문 폼 퀵 상품 카드 텍스트 잘림·레이아웃 깨짐 — ①`.xf-quick-grid` CSS 부재 → 명시적 `display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px` 추가하여 균등 3열 ②`#quick-product-buttons button` 의 `white-space:nowrap;overflow:hidden;text-overflow:ellipsis` 가 v3.4.74 의 2줄 flex 카드와 충돌해 "재고 7개"가 "재고"로 잘리던 문제 → 버튼은 `white-space:normal` 로 해제, 상품명만 내부 `.truncate` 로 한 줄 처리. ③hover 시 primary 테두리 + 그림자로 시각 강조 |
 | v3.4.83 | fix: 고객명 검색 시 모든 고객이 그대로 보이던 버그 — `renderCustomersTable` 의 검색 필터에서 `(c.phone||'').replace(/\\D/g,'').includes(term.replace(/\\D/g,''))` 가 한글 검색어를 처리할 때 `term.replace(/\\D/g,'')` 결과가 빈 문자열 → `'01012345678'.includes('')` 가 항상 `true` → 전화번호 매칭이 모든 고객에 대해 통과 → 필터 무력화. 수정: termDigits.length > 0 일 때만 전화번호 매칭 적용 |
 | v3.4.82 | feat: 무료배송 상품 지정 + 주문 폼 자동 적용 — ①상품 등록 모달에 "🚚 무료 배송 상품" 체크박스 추가 (기존 배송옵션 드롭다운과 양방향 sync, 더 직관적). ②주문 폼: 카트에 무료배송 상품 1개라도 있으면 배송비 자동 0원 + "🚚 무료배송 상품 포함" 안내 메시지(있으면 표시). ③Quick 상품 카드·카트 행에 "🚚 무료" 배지 시각 표시. ④fillProductForm 수정 모드에서 체크박스 자동 sync. addQuickProductToCart 4번째 인자로 shippingOption 받도록 확장 |
 | v3.4.81 | chore: CLAUDE.md 재사용 지식 3건 보강 + 색상 토큰 정리 — 자체 감사("규칙 지켰어?") 누락 지적 처리. ①송장 조회 URL 자동 삽입 패턴(`getTrackingUrl`·`{trackingUrl}`) ②농장 로고 업로드 흐릿함 3중 원인(JPEG·정사각형·smoothing) ③환경설정 항목 삭제 → 영향 범위 마이그레이션 표준 패턴(`deleteOrderStatus` 레퍼런스). 색상: header.js·settingsUI.js 의 `#fff` 2곳 → `var(--bg-white)` 토큰화 |

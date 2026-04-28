@@ -331,21 +331,37 @@ window.generateOrderFormHTMLMinimal = function () {
                 font-family: inherit;
             }
             .xf-num:focus { background: #fffde7; }
-            /* ── 퀵 버튼 ── */
+            /* ── 퀵 상품 그리드 (v3.4.84+) ── */
+            .xf-quick-grid {
+                display: grid;
+                grid-template-columns: repeat(3, minmax(0, 1fr));
+                gap: 6px;
+                margin-bottom: 6px;
+            }
+            .xf-quick-grid-loading {
+                grid-column: span 3;
+                text-align: center;
+                color: var(--text-muted);
+                font-size: 12px;
+                padding: 10px 0;
+            }
+            /* 인라인 스타일이 핵심 외관을 정의 — 여기는 충돌 방지를 위해 최소화 */
             #quick-product-buttons button {
-                font-size: 11px;
-                padding: 3px 5px;
-                border: 1px solid #c8c8c8;
-                background: #f8f8f8;
-                cursor: pointer;
+                font-family: inherit;
+                /* white-space/overflow 강제 제거 — 내부 .truncate 가 한 줄만 자르고 가격·재고 줄은 보호 */
+                white-space: normal;
+                overflow: visible;
+                text-overflow: clip;
+            }
+            #quick-product-buttons button .truncate {
                 white-space: nowrap;
                 overflow: hidden;
                 text-overflow: ellipsis;
-                text-align: left;
+                max-width: 100%;
             }
-            #quick-product-buttons button:hover {
-                background: #e8f5e9;
-                border-color: #4caf50;
+            #quick-product-buttons button:hover:not([aria-disabled="true"]) {
+                border-color: var(--primary) !important;
+                box-shadow: 0 1px 4px rgba(22, 163, 74, 0.15);
             }
             /* ── 액션 그룹(취소·저장) ── */
             .xf-actions {
