@@ -1944,6 +1944,14 @@ async function openCustomerSmsPasteModal() {
             const safeName = String(found.name || '').replace(/</g, '&lt;').replace(/>/g, '&gt;');
             warn.innerHTML = `<i class="fas fa-exclamation-triangle mr-1"></i>이미 등록된 번호 — <strong>${safeName}</strong>. 등록 시 정보가 업데이트됩니다.`;
             saveLabel.textContent = '정보 업데이트';
+
+            // 매칭된 기존 고객의 정보로 빈 칸 자동 채움 (사용자가 이미 입력한 칸은 보존)
+            const nameInput = $('cust-sms-name');
+            if (nameInput && !nameInput.value && found.name) nameInput.value = found.name;
+            const addrInput = $('cust-sms-addr');
+            if (addrInput && !addrInput.value && found.address) addrInput.value = found.address;
+            const addrDetailInput = $('cust-sms-addr-detail');
+            if (addrDetailInput && !addrDetailInput.value && found.address_detail) addrDetailInput.value = found.address_detail;
         } else {
             warn.classList.add('hidden');
             saveLabel.textContent = '신규 등록';

@@ -2816,23 +2816,64 @@ function parseSmsText(text) {
         }
     }
 
+    // ── 2.5단계: 상세주소 휴리스틱 (별도 줄로 온 동·호·아파트 패턴) ──
+    // 주소가 잡혔고 상세주소가 비었을 때만 — 남은 줄에서 다음 패턴 우선 매칭
+    //   • "101동 502호" / "502호" / 괄호로 둘러싸인 짧은 줄
+    //   • 키워드: 아파트·빌라·오피스텔·상가·타워·레지던스·오피스·하우스
+    if (address && !addressDetail) {
+        const detailRe = /\d+\s*동\s*\d+\s*호|^\d+\s*호\s*$|아파트|빌라|오피스텔|상가|타워|레지던스|오피스|하우스/;
+        for (let i = 0; i < lines.length; i++) {
+            if (usedLines.has(i)) continue;
+            const line = lines[i];
+            // 괄호로 둘러싸인 짧은 줄 → 괄호 벗기고 상세주소
+            const parenMatch = line.match(/^\((.+)\)$/);
+            if (parenMatch && parenMatch[1].length <= 50) {
+                addressDetail = parenMatch[1].trim();
+                usedLines.add(i);
+                break;
+            }
+            if (detailRe.test(line) && line.length <= 60) {
+                addressDetail = line;
+                usedLines.add(i);
+                break;
+            }
+        }
+    }
+
     // ── 3단계: 이름 추론 (아직 못 찾았으면) ──
+    // 인사말/명령어로 시작하는 줄은 이름으로 오인 금지 (안녕하세요/주문/요청 등)
+    const NAME_BLOCKLIST = new Set([
+        '안녕','안녕하세','반갑','반갑습',
+        '이름','이름은','성함','고객명',
+        '연락','연락처','전화','휴대폰','핸드폰','번호','폰',
+        '주소','배송','배송지','받는','받는분','수령','수령인','수취','수취인','보내는','발송','송장',
+        '감사','감사합','부탁','부탁드','죄송','죄송합',
+        '요청','요청합','주문','주문합','문의','문의드',
+        '안내','확인','보내','보냅','드립','드려','메모','비고','특이','참고'
+    ]);
     if (!name) {
         for (let i = 0; i < lines.length; i++) {
             if (usedLines.has(i)) continue;
             const line = lines[i];
             // 한글 2~5자 이름 패턴 (숫자·특수문자 없음)
-            if (/^[가-힣]{2,5}$/.test(line)) {
+            if (/^[가-힣]{2,5}$/.test(line) && !NAME_BLOCKLIST.has(line)) {
                 name = line;
                 usedLines.add(i);
                 break;
             }
             // 이름 + 전화번호가 한 줄에 있는 경우 (이미 전화번호는 추출됨)
             const nameMatch = line.match(/^([가-힣]{2,5})\s/);
-            if (nameMatch) {
-                name = nameMatch[1];
-                usedLines.add(i);
-                break;
+            if (nameMatch && !NAME_BLOCKLIST.has(nameMatch[1])) {
+                // 추가 안전장치: prefix 가 NAME_BLOCKLIST 의 어떤 항목으로 시작하면 인사말로 간주
+                let isGreeting = false;
+                for (const w of NAME_BLOCKLIST) {
+                    if (nameMatch[1].startsWith(w) || w.startsWith(nameMatch[1])) { isGreeting = true; break; }
+                }
+                if (!isGreeting) {
+                    name = nameMatch[1];
+                    usedLines.add(i);
+                    break;
+                }
             }
         }
     }
