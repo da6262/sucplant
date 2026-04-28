@@ -89,7 +89,6 @@ window.generateOrderFormHTMLMinimal = function () {
                             <option value="주문접수">주문접수</option>
                             <option value="고객안내">고객안내</option>
                             <option value="입금확인">입금확인</option>
-                            <option value="상품준비">상품준비</option>
                             <option value="배송준비">배송준비</option>
                             <option value="배송중">배송중</option>
                             <option value="배송완료">배송완료</option>

@@ -59,13 +59,12 @@ class SettingsDataManager {
             // 주문 상태 설정
             orderStatuses: [
                 { value: '주문접수', label: '주문접수', color: '#6B7280', description: '새로 접수된 주문' },
-                { value: '고객안내', label: '고객안내', color: '#3B82F6', description: '고객에게 안내 완료' },
+                { value: '고객안내', label: '고객안내', color: '#3B82F6', description: '주문확인 안내(SMS/카톡) 발송 완료' },
                 { value: '입금대기', label: '입금대기', color: '#F59E0B', description: '입금 대기 중' },
-                { value: '입금확인', label: '입금확인', color: '#3B82F6', description: '결제가 확인된 주문' },
-                { value: '상품준비', label: '상품준비', color: '#8B5CF6', description: '상품 준비 중' },
-                { value: '배송준비', label: '배송준비', color: '#F59E0B', description: '포장 및 배송 준비 중' },
-                { value: '배송중', label: '배송중', color: '#8B5CF6', description: '배송이 시작된 주문' },
-                { value: '배송완료', label: '배송완료', color: '#10B981', description: '고객에게 배송 완료된 주문' },
+                { value: '입금확인', label: '입금확인', color: '#3B82F6', description: '결제 확인됨' },
+                { value: '배송준비', label: '배송준비', color: '#8B5CF6', description: '상품 손질·포장 등 출고 준비 (v3.4.72: 상품준비와 통합)' },
+                { value: '배송중', label: '배송중', color: '#F59E0B', description: '택배 인계, 배송 진행 중' },
+                { value: '배송완료', label: '배송완료', color: '#10B981', description: '고객에게 배송 완료' },
                 { value: '주문취소', label: '주문취소', color: '#EF4444', description: '취소된 주문' },
                 { value: '환불완료', label: '환불완료', color: '#F97316', description: '환불 처리된 주문' }
             ]

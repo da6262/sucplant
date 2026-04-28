@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.71-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.72-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.72 | refactor: 주문상태 "상품준비" → "배송준비"로 통합 — 1인 운영 환경에서 두 단계 분리가 무의미하여 단순화. ①settingsData.js 기본 orderStatuses 에서 상품준비 제거 ②orderFormMinimalLayout 드롭다운에서 제거 ③order-management.html bulk action 버튼 제거(배송준비 하나로) ④dashboard 파이프라인 statusFlow 정리, packing-card 매핑을 배송준비로 변경(구 상품준비 잔존도 합산) ⑤기존 DB 잔존 데이터는 supabase-migrate-merge-shippingprep.sql 마이그레이션으로 일괄 변환 ⑥필터·매처는 backward compat 유지(orderData work_todo, RPC IN 절에 상품준비 포함) |
 | v3.4.71 | fix: SMS 발송 후 주문 상태 자동 전환 의미 정합 — orderConfirm 발송 시 `입금대기` → **`고객안내`** (고객에게 주문확인이 갔으니 안내 완료 단계가 자연스러움), paymentConfirm 발송 시 `입금확인` → **`배송준비`** (입금확인 안내가 갔다는 건 입금 확인된 것이므로 다음 단계로 진행). orderSMS.js 단일·일괄 모달 양쪽 + CLAUDE.md 동기화 |
 | v3.4.70 | feat: 카카오 알림톡 가시성 + 송장 저장 시 자동 SMS 발송 — ①sendSmartMessage 의 silent fallback 깨기: 카카오 성공 시 ✅ 토스트, 실패 시 실제 오류 메시지 + 원인 힌트(변수명/권한/채널 연결) 토스트로 6초 표시 → 왜 카톡이 안 가는지 즉시 진단 가능. ②송장 패널 헤더에 "📱 저장 시 자동 발송" 체크박스 추가, 켜져 있으면 saveOneTrackingNumber/saveAllTrackingNumbers 후 shippingStart 알림톡 자동 발송(rate limit 250ms 간격), 저장+발송 결과 분리 카운트 |
 | v3.4.69 | feat: 문자 파서 정확도 강화 + 고객 매칭 자동완성 — ①parseSmsText 인사말 블록리스트(안녕/주문/요청/이름/연락 등 30+) 추가하여 "안녕하세요 류정훈입니다" 같은 줄에서 인사말이 이름으로 오인되던 문제 해결. ②상세주소 휴리스틱 — 주소 별도 줄 다음 "101동 502호" "(우주아파트)" 패턴 자동 감지하여 addressDetail 필드로 분류. ③고객 SMS 모달에서 전화번호 매칭 시 기존 고객의 이름·주소·상세주소 자동 채움(사용자 입력 보존) — 010-XXXX-XXXX 만 적힌 문자에서도 DB의 류정훈 등 이름 자동 표시 |

@@ -682,8 +682,8 @@ class DashboardComponent {
         // 파이프라인 바
         const pipeline = document.getElementById('ops-pipeline');
         if (pipeline) {
-            const statusFlow = ['주문접수','입금대기','입금확인','상품준비','배송준비','배송중','배송완료'];
-            const colors = ['bg-gray-300','bg-yellow-300','bg-yellow-400','bg-blue-300','bg-purple-300','bg-sky-400','bg-green-400'];
+            const statusFlow = ['주문접수','고객안내','입금대기','입금확인','배송준비','배송중','배송완료'];
+            const colors = ['bg-gray-300','bg-blue-300','bg-yellow-300','bg-yellow-400','bg-purple-300','bg-sky-400','bg-green-400'];
             const counts = statusFlow.map(s => orders.filter(o => o.order_status === s).length);
             const max = Math.max(...counts, 1);
             pipeline.innerHTML = statusFlow.map((s, i) => {
@@ -772,8 +772,10 @@ class DashboardComponent {
             : [];
         const getCount = (statusKey) => (countRows.find(r => r.status_key === statusKey) || {}).count ?? 0;
 
+        // v3.4.72: 상품준비 → 배송준비 통합. packing-card 도 배송준비로 매핑 (구 상품준비 잔존 주문 포함)
+        const packingCount = getCount('배송준비') + getCount('상품준비');
         this.updateCard('pack-waiting-count', getCount('입금확인'));
-        this.updateCard('packing-count', getCount('상품준비'));
+        this.updateCard('packing-count', packingCount);
         this.updateCard('ship-ready-count', getCount('배송준비'));
 
         // 재고 부족 상품 (5개 이하) — 품절(0) 과 부족(1~5) 분리
@@ -1314,7 +1316,7 @@ class DashboardComponent {
 
         const map = {
             'pack-waiting-card':     { section: 'orders',   status: '입금확인' },
-            'packing-card':          { section: 'orders',   status: '상품준비' },
+            'packing-card':          { section: 'orders',   status: '배송준비' },
             'ship-ready-card':       { section: 'orders',   status: '배송준비' },
             'low-stock-card':        { section: 'products' },
             'contact-waitlist-card': { section: 'waitlist' },
