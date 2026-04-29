@@ -615,4 +615,31 @@ document.addEventListener('DOMContentLoaded', async () => {
         };
         console.log('✅ 백업 시스템 생성 완료');
     }
+
+    // ── 전역 키보드 단축키 ────────────────────────────────────────
+    document.addEventListener('keydown', (e) => {
+        // 입력 필드에서 Ctrl+S/Enter 는 단축키 적용 안 함
+        const tag = document.activeElement?.tagName;
+        const isInput = tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+
+        // 표시 중인 모달 오버레이 — DOM 순서 마지막이 최상위
+        const visibleOverlays = [...document.querySelectorAll('.modal-overlay')]
+            .filter(el => !el.classList.contains('hidden') && getComputedStyle(el).display !== 'none');
+
+        if (e.key === 'Escape' && visibleOverlays.length > 0) {
+            const top = visibleOverlays[visibleOverlays.length - 1];
+            top.querySelector('.modal-close-btn')?.click();
+            e.stopPropagation();
+            return;
+        }
+
+        if ((e.ctrlKey || e.metaKey) && (e.key === 's' || (e.key === 'Enter' && !isInput))) {
+            if (visibleOverlays.length > 0) {
+                e.preventDefault();
+                const top = visibleOverlays[visibleOverlays.length - 1];
+                const saveBtn = top.querySelector('.modal-footer .btn-primary:not([disabled])');
+                saveBtn?.click();
+            }
+        }
+    });
 });

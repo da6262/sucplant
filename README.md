@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.92-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.93-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.93 | feat: 전역 키보드 단축키 — Escape: 최상위 모달 닫기, Ctrl+S/Ctrl+Enter: 최상위 모달 저장 버튼 실행 (main.js DOMContentLoaded 내 전역 keydown 핸들러 추가, 입력 필드 포커스 시 단축키 비활성화) |
 | v3.4.92 | feat: 브라우저 confirm() 전면 교체 — utils/ui.js에 Promise 기반 showConfirm() 추가, 전체 11개 파일 29곳의 confirm() → 디자인 시스템 모달로 교체 (카테고리·대기자·주문·상품·고객·환경설정·SMS 발송 등) |
 | v3.4.92 | fix: 새고객 등록 상태 버튼 색상 — raw Tailwind 색상 클래스 → CSS 변수(--primary/--warn/--danger) 인라인 스타일로 교체 |
 | v3.4.91 | feat: 주문 모달 크기 조절 + 카트 카드 그리드 — ①주문 모달에 `resize:both` + 우측 하단 핸들 → 모서리 드래그로 자유 리사이즈, localStorage 에 크기 저장 → 다음 열 때 복원 (큰 모니터 활용 가능) ②카트 `cart-grid-mode` CSS — 표 → 자동 적응 카드 그리드 (auto-fit minmax 260px → 모달 폭에 따라 1·2·3열 자동), 각 카드: 상품명·단가·소계·수량·체크박스·휴지통 그룹핑, 호버 시 초록 강조. 20+종 주문도 한 화면에 카드형으로 표시 |
