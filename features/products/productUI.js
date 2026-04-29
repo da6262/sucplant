@@ -1971,7 +1971,7 @@ export class ProductUI {
         try {
             console.log('🗑️ 상품 삭제 시작:', productId);
             
-            if (!confirm('정말로 이 상품을 삭제하시겠습니까?')) {
+            if (!await window.showConfirm({ title: '상품 삭제', message: '정말로 이 상품을 삭제하시겠습니까?', confirmLabel: '삭제' })) {
                 return;
             }
             

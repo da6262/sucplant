@@ -219,7 +219,7 @@ export async function deleteCategory(categoryId) {
 
         const cat = window.categoryDataManager.getCategoryById(categoryId);
         if (!cat) return;
-        if (!confirm(`'${cat.name}' 카테고리를 삭제하시겠습니까?`)) return;
+        if (!await window.showConfirm({ title: '카테고리 삭제', message: `'${cat.name}' 카테고리를 삭제하시겠습니까?`, confirmLabel: '삭제' })) return;
 
         await window.categoryDataManager.deleteCategory(categoryId);
         await loadCategoriesList();

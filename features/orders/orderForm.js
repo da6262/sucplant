@@ -340,7 +340,7 @@ function toggleCartSelectAll(checked) {
     });
 }
 
-function cartDeleteSelected() {
+async function cartDeleteSelected() {
     const cartBody = document.getElementById('cart-items-body');
     if (!cartBody) return;
     const checkedRows = cartBody.querySelectorAll('tr[data-product-id]');
@@ -353,7 +353,7 @@ function cartDeleteSelected() {
         alert('삭제할 항목을 체크박스로 먼저 선택해주세요.');
         return;
     }
-    if (!confirm(`선택한 ${targets.length}개 상품을 장바구니에서 삭제하시겠습니까?`)) return;
+    if (!await window.showConfirm({ title: '장바구니 삭제', message: `선택한 ${targets.length}개 상품을 장바구니에서 삭제하시겠습니까?`, confirmLabel: '삭제' })) return;
     targets.forEach(tr => tr.remove());
     // 마스터 체크박스 해제
     const master = document.getElementById('cart-select-all');
@@ -1982,7 +1982,7 @@ function openQuickAddProductModal(initialName) {
                 .eq('name', name)
                 .limit(1);
             if (dup && dup.length > 0) {
-                if (!confirm(`이미 "${name}" 상품이 존재합니다.\n그래도 새로 등록하시겠습니까?`)) {
+                if (!await window.showConfirm({ title: '중복 상품 확인', message: `이미 "${name}" 상품이 존재합니다.\n그래도 새로 등록하시겠습니까?`, confirmLabel: '등록', variant: 'info' })) {
                     btn.disabled = false;
                     btn.innerHTML = '<i class="fas fa-plus mr-1"></i>등록 + 장바구니 추가';
                     return;
@@ -2036,7 +2036,7 @@ function openQuickAddProductModal(initialName) {
 window.openQuickAddProductModal = openQuickAddProductModal;
 
 // 상품을 장바구니에 추가
-function addProductToCart(productId, productName, price, stock, event) {
+async function addProductToCart(productId, productName, price, stock, event) {
     try {
         if (event) {
             event.preventDefault();
@@ -2044,11 +2044,11 @@ function addProductToCart(productId, productName, price, stock, event) {
         }
         // v3.4.74: 재고 0 차단 — 사전예약·재입고 사용자는 confirm 으로 우회 가능
         if (stock !== null && stock !== undefined && stock <= 0) {
-            const ok = confirm(
-                `⚠️ "${productName}" 은(는) 재고가 없습니다 (품절).\n\n` +
-                `그래도 장바구니에 추가하시겠습니까?\n` +
-                `(사전예약·재입고 후 처리 등 특수한 경우만 추가)`
-            );
+            const ok = await window.showConfirm({
+                title: '품절 상품',
+                message: `"${productName}" 은(는) 재고가 없습니다 (품절).\n\n그래도 장바구니에 추가하시겠습니까?\n(사전예약·재입고 후 처리 등 특수한 경우만 추가)`,
+                confirmLabel: '추가', variant: 'info'
+            });
             if (!ok) {
                 console.log(`품절 상품 추가 취소: ${productName}`);
                 return;

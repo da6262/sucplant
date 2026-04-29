@@ -191,7 +191,7 @@ async function performBulkSend() {
     if (customers.length === 0) return;
     if (!template.trim()) return;
 
-    if (!confirm(`${customers.length}명에게 문자를 발송합니다.\n\n문자 1건당 Solapi 과금이 발생합니다.\n계속하시겠습니까?`)) return;
+    if (!await window.showConfirm({ title: '문자 일괄 발송', message: `${customers.length}명에게 문자를 발송합니다.\n\n문자 1건당 Solapi 과금이 발생합니다.\n계속하시겠습니까?`, confirmLabel: '발송', variant: 'info' })) return;
 
     const sendBtn = document.getElementById('bulk-sms-send');
     const progress = document.getElementById('bulk-sms-progress');

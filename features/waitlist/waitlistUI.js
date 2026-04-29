@@ -458,7 +458,7 @@ export class WaitlistUI {
         try {
             console.log('🗑️ 대기자 삭제:', waitlistId);
 
-            if (!confirm('정말로 이 대기자를 삭제하시겠습니까?')) return;
+            if (!await window.showConfirm({ title: '대기자 삭제', message: '정말로 이 대기자를 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
 
             await waitlistDataManager.deleteWaitlist(waitlistId);
 
@@ -939,7 +939,7 @@ window._applyWaitlistStatus = async function(waitlistId, newStatus) {
 
     // 주문전환 시 → 주문 등록 폼으로 이동
     if (newStatus === '주문전환') {
-        const doOrder = confirm(`${w.customer_name}님의 대기 상품 "${w.product_name}"을 주문 등록하시겠습니까?`);
+        const doOrder = await window.showConfirm({ title: '주문 등록', message: `${w.customer_name}님의 대기 상품 "${w.product_name}"을 주문 등록하시겠습니까?`, confirmLabel: '주문 등록', variant: 'info' });
         if (doOrder && window.openOrderModal) {
             await window.openOrderModal(null, {
                 customerName: w.customer_name,
@@ -959,7 +959,7 @@ window._applyWaitlistStatus = async function(waitlistId, newStatus) {
 
     // 연락완료 시 → SMS 발송 제안
     if (newStatus === '연락완료' && w.customer_phone) {
-        const doSms = confirm('입고 알림 문자를 발송할까요?');
+        const doSms = await window.showConfirm({ title: '입고 알림 발송', message: '입고 알림 문자를 발송할까요?', confirmLabel: '발송', variant: 'info' });
         if (doSms) {
             try {
                 if (window.sendWaitlistSMS) {
@@ -981,7 +981,7 @@ window._waitlistBulkSMS = async function() {
     const checked = [...document.querySelectorAll('.waitlist-checkbox:checked')];
     if (checked.length === 0) { alert('대기자를 선택해주세요.'); return; }
 
-    if (!confirm(`선택된 ${checked.length}명에게 입고 알림을 발송합니다.\n계속하시겠습니까?`)) return;
+    if (!await window.showConfirm({ title: '일괄 입고 알림', message: `선택된 ${checked.length}명에게 입고 알림을 발송합니다.\n계속하시겠습니까?`, confirmLabel: '발송', variant: 'info' })) return;
 
     let ok = 0, fail = 0;
     for (const cb of checked) {
@@ -1006,7 +1006,7 @@ window._waitlistBulkStatus = async function(newStatus) {
     const checked = [...document.querySelectorAll('.waitlist-checkbox:checked')];
     if (checked.length === 0) { alert('대기자를 선택해주세요.'); return; }
 
-    if (!confirm(`선택된 ${checked.length}건을 "${newStatus}"(으)로 변경합니다.`)) return;
+    if (!await window.showConfirm({ title: '상태 일괄 변경', message: `선택된 ${checked.length}건을 "${newStatus}"(으)로 변경합니다.`, confirmLabel: '변경', variant: 'info' })) return;
 
     let ok = 0;
     for (const cb of checked) {

@@ -863,7 +863,7 @@ async function showBulkSMSModal() {
     // 발송
     sendBtn.addEventListener('click', async () => {
         const templateType = templateSelect.value;
-        if (!confirm(`${count}건의 주문에 SMS를 발송합니다.\n계속하시겠습니까?`)) return;
+        if (!await window.showConfirm({ title: 'SMS 일괄 발송', message: `${count}건의 주문에 SMS를 발송합니다.\n계속하시겠습니까?`, confirmLabel: '발송', variant: 'info' })) return;
 
         sendBtn.disabled = true;
         const progressDiv = modal.querySelector('#bulk-sms-progress');

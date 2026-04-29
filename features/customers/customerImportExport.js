@@ -255,7 +255,7 @@ export async function openImportDialog(file) {
             `실행하시겠습니까?`
         ].filter(Boolean).join('\n');
 
-        if (!confirm(msg)) return;
+        if (!await window.showConfirm({ title: '고객 가져오기', message: msg, confirmLabel: '가져오기', variant: 'info' })) return;
 
         const result = await importCustomerRows(parsed.rows, {
             mergeStrategy: 'preserveEmpty',

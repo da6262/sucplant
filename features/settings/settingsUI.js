@@ -432,7 +432,7 @@ export async function loadCustomerGrades() {
                 recalculateBtn.addEventListener('click', async function() {
                     console.log('🔄 전체 고객 등급 재계산 버튼 클릭됨!');
                     
-                    if (!confirm('⚠️ 모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.')) {
+                    if (!await window.showConfirm({ title: '등급 전체 재계산', message: '모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.', confirmLabel: '재계산', variant: 'info' })) {
                         console.log('❌ 사용자가 재계산을 취소했습니다');
                         return;
                     }
@@ -737,8 +737,8 @@ function initSettingsEventListeners() {
         // 설정 초기화 버튼
         const resetBtn = document.getElementById('reset-settings-btn');
         if (resetBtn) {
-            resetBtn.addEventListener('click', function() {
-                if (confirm('⚠️ 모든 설정을 초기화하시겠습니까?')) {
+            resetBtn.addEventListener('click', async function() {
+                if (await window.showConfirm({ title: '설정 초기화', message: '모든 설정을 초기화하시겠습니까?', confirmLabel: '초기화' })) {
                     window.settingsDataManager.resetSettings();
                     alert('✅ 설정이 초기화되었습니다.');
                     location.reload();
@@ -831,7 +831,7 @@ function initSettingsEventListeners() {
             console.log('✅ 전체 고객 등급 재계산 버튼 이벤트 리스너 등록');
             recalculateAllGradesBtn.addEventListener('click', async function() {
                 console.log('🔄 전체 고객 등급 재계산 버튼 클릭됨!');
-                if (!confirm('⚠️ 모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.')) {
+                if (!await window.showConfirm({ title: '등급 전체 재계산', message: '모든 고객의 등급을 현재 설정된 기간 기준으로 재계산하시겠습니까?\n\n시간이 다소 걸릴 수 있습니다.', confirmLabel: '재계산', variant: 'info' })) {
                     console.log('❌ 사용자가 재계산을 취소했습니다');
                     return;
                 }
@@ -1220,7 +1220,7 @@ window.deleteOrderStatus = async function(index) {
 
     // 2단계: 영향받는 주문이 없으면 단순 삭제
     if (affectedCount === 0) {
-        if (!confirm(`주문상태 "${targetValue}" 을(를) 삭제하시겠습니까?\n(이 상태로 저장된 주문 없음)`)) return;
+        if (!await window.showConfirm({ title: '주문상태 삭제', message: `주문상태 "${targetValue}" 을(를) 삭제하시겠습니까?<br>(이 상태로 저장된 주문 없음)`, confirmLabel: '삭제' })) return;
         window.settingsDataManager.deleteOrderStatus(index);
         loadOrderStatuses();
         if (window.orderDataManager?.renderStatusTabs) window.orderDataManager.renderStatusTabs();
@@ -1340,7 +1340,7 @@ window.deleteSalesChannelByIndex = async function(index) {
             alert('삭제할 채널을 찾을 수 없습니다.');
             return;
         }
-        if (!confirm('정말로 이 채널을 삭제하시겠습니까?')) return;
+        if (!await window.showConfirm({ title: '채널 삭제', message: '정말로 이 채널을 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
         await window.deleteSalesChannel(mgr.channels[index].id);
         await loadSalesChannels();
     } catch (error) {
@@ -1522,7 +1522,7 @@ window.deleteCustomerGrade = async function(index) {
     console.log('🔄 고객등급 삭제:', index);
 
     try {
-        if (confirm('정말로 이 등급을 삭제하시겠습니까?')) {
+        if (await window.showConfirm({ title: '등급 삭제', message: '정말로 이 등급을 삭제하시겠습니까?', confirmLabel: '삭제' })) {
             // 고객등급 삭제
             await window.settingsDataManager.deleteCustomerGrade(index);
 

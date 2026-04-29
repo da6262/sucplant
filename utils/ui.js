@@ -398,7 +398,54 @@ export function renderConfirmDialog({
 }
 
 // ══════════════════════════════════════════════════════════════
-// 10. 정보 행 — 레이블·값 쌍 표시
+// 10. showConfirm — Promise 기반 확인 다이얼로그 (브라우저 confirm() 대체)
+// ══════════════════════════════════════════════════════════════
+
+/**
+ * 디자인 시스템 확인 다이얼로그 (Promise 반환 — await 가능)
+ *
+ * @param {object}  opts
+ * @param {string}  opts.title         - 다이얼로그 제목
+ * @param {string}  opts.message       - 본문 (줄바꿈 \n 지원)
+ * @param {string}  [opts.confirmLabel] - 확인 버튼 (기본: '확인')
+ * @param {string}  [opts.cancelLabel]  - 취소 버튼 (기본: '취소')
+ * @param {string}  [opts.variant]      - 'danger'(기본) | 'info'
+ * @returns {Promise<boolean>} 확인 → true, 취소/닫기 → false
+ */
+export function showConfirm({ title, message, confirmLabel = '확인', cancelLabel = '취소', variant = 'danger' }) {
+    return new Promise(resolve => {
+        const id  = 'sys-confirm-' + Date.now();
+        const key = '__sc_' + id;
+        window[key] = resolve;
+        const close   = `document.getElementById('${id}')?.remove();delete window['${key}']`;
+        const btnCls  = variant === 'danger' ? 'btn-danger' : 'btn-primary';
+        const iconCls = variant === 'danger' ? 'fa-exclamation-triangle' : 'fa-question-circle';
+        const iconClr = variant === 'danger' ? 'var(--danger)' : 'var(--info)';
+        const msg     = String(message).replace(/\n/g, '<br>');
+        document.body.insertAdjacentHTML('beforeend', `
+<div class="modal-overlay" id="${id}" onclick="if(event.target===this){window['${key}'](false);${close}}">
+  <div class="modal-container modal-sm" onclick="event.stopPropagation()">
+    <div class="modal-header">
+      <span class="modal-title">${title}</span>
+      <button class="modal-close-btn" onclick="window['${key}'](false);${close}"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:flex-start;gap:12px;padding:8px 0 16px;">
+        <i class="fas ${iconCls}" style="font-size:28px;color:${iconClr};flex-shrink:0;margin-top:2px;"></i>
+        <div style="font-size:13px;color:var(--text-body);line-height:1.6;">${msg}</div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="window['${key}'](false);${close}">${cancelLabel}</button>
+      <button class="${btnCls}"     onclick="window['${key}'](true);${close}">${confirmLabel}</button>
+    </div>
+  </div>
+</div>`);
+    });
+}
+
+// ══════════════════════════════════════════════════════════════
+// 11. 정보 행 — 레이블·값 쌍 표시
 // ══════════════════════════════════════════════════════════════
 
 /**
@@ -447,5 +494,6 @@ window.renderBtnIcon        = renderBtnIcon;
 window.renderBtnGroup       = renderBtnGroup;
 window.renderEditDeleteBtns = renderEditDeleteBtns;
 window.renderConfirmDialog  = renderConfirmDialog;
+window.showConfirm          = showConfirm;
 window.renderInfoRow        = renderInfoRow;
 window.renderSectionTitle   = renderSectionTitle;

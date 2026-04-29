@@ -1021,7 +1021,7 @@ export async function deleteOrder(orderId) {
     try {
         console.log('주문 삭제:', orderId);
         
-        if (!confirm('정말로 이 주문을 삭제하시겠습니까?')) {
+        if (!await window.showConfirm({ title: '주문 삭제', message: '정말로 이 주문을 삭제하시겠습니까?', confirmLabel: '삭제' })) {
             return;
         }
         

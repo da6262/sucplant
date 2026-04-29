@@ -1432,8 +1432,8 @@ class OrderDataManager {
 
             // 입금확인 시 SMS 발송 옵션 제공
             if (newStatus === '입금확인') {
-                setTimeout(() => {
-                    if (confirm('입금확인 문자를 발송할까요?')) {
+                setTimeout(async () => {
+                    if (await window.showConfirm({ title: 'SMS 발송', message: '입금확인 문자를 발송할까요?', confirmLabel: '발송', variant: 'info' })) {
                         if (window.showSMSTemplateModal) {
                             window.showSMSTemplateModal(orderId);
                             setTimeout(() => {
@@ -2010,7 +2010,7 @@ class OrderDataManager {
             }
             
             // 확인 대화상자
-            const confirmed = confirm(`선택된 ${selectedOrderIds.length}개 주문의 상태를 "${newStatus}"로 변경하시겠습니까?`);
+            const confirmed = await window.showConfirm({ title: '상태 일괄 변경', message: `선택된 ${selectedOrderIds.length}개 주문의 상태를 "${newStatus}"로 변경하시겠습니까?`, confirmLabel: '변경', variant: 'info' });
             if (!confirmed) {
                 return;
             }
@@ -2062,18 +2062,17 @@ class OrderDataManager {
     }
     
     // 일괄 삭제 모달 표시
-    showBulkDeleteModal() {
+    async showBulkDeleteModal() {
         try {
             console.log('🔄 일괄 삭제 모달 표시');
-            
+
             const selectedCount = this.selectedOrders.size;
             if (selectedCount === 0) {
                 alert('선택된 주문이 없습니다.');
                 return;
             }
-            
-            // 확인 대화상자
-            const confirmed = confirm(`선택된 ${selectedCount}개 주문을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`);
+
+            const confirmed = await window.showConfirm({ title: '주문 일괄 삭제', message: `선택된 ${selectedCount}개 주문을 삭제하시겠습니까?\n\n이 작업은 되돌릴 수 없습니다.`, confirmLabel: '삭제' });
             if (!confirmed) {
                 return;
             }
@@ -2236,7 +2235,7 @@ window.bulkConfirmPayment = async () => {
     const confirmMsg = autoSms
         ? `${ids.length}건의 주문을 입금확인 처리합니다.\n\n• 입금확인 안내(카카오톡 우선/문자 폴백) 자동 발송\n• 발송 성공 시 상태 → "배송준비"\n\n계속하시겠습니까?`
         : `${ids.length}건의 주문 상태를 "입금확인"으로 변경합니다.\n안내 발송은 하지 않습니다 (체크박스 끔).\n\n계속하시겠습니까?`;
-    if (!confirm(confirmMsg)) return;
+    if (!await window.showConfirm({ title: '일괄 입금확인', message: confirmMsg, confirmLabel: '처리', variant: 'info' })) return;
 
     let statusOk = 0, statusFail = 0, smsKakao = 0, smsText = 0, smsFail = 0;
 

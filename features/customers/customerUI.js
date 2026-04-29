@@ -102,7 +102,7 @@ async function handleCustomerSave(event) {
 
         // 고객명 중복 검사(등록 시 차단 / 수정 시 confirm 흐름)
         if (window.checkCustomerNameDuplicate) {
-            const ok = window.checkCustomerNameDuplicate(payload.name, customerId || null);
+            const ok = await window.checkCustomerNameDuplicate(payload.name, customerId || null);
             if (!ok) {
                 return;
             }
@@ -664,7 +664,7 @@ window.deleteCustomer = async function(customerId) {
             return;
         }
     } else {
-        if (!confirm('정말로 이 고객을 삭제하시겠습니까?')) return;
+        if (!await window.showConfirm({ title: '고객 삭제', message: '정말로 이 고객을 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
     }
 
     try {
@@ -1294,7 +1294,7 @@ function renderCustomerTimelineList(listEl, rows, ctx) {
     // 삭제 바인딩
     listEl.querySelectorAll('.timeline-row-del').forEach(btn => {
         btn.addEventListener('click', async () => {
-            if (!confirm('이 기록을 삭제하시겠습니까?')) return;
+            if (!await window.showConfirm({ title: '기록 삭제', message: '이 기록을 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
             try {
                 await window.customerLogsManager.remove(btn.dataset.logId);
                 await reloadCustomerTimeline(ctx);
@@ -2167,50 +2167,40 @@ function highlightSearchTerm(text, searchTerm) {
 
 
 // 고객명 중복 검사 및 제안 함수
-function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
+async function checkCustomerNameDuplicate(customerName, excludeCustomerId = null) {
     try {
         console.log('🔍 고객명 중복 검사:', customerName, '제외 ID:', excludeCustomerId);
-        
+
         if (!window.customerDataManager) {
             console.warn('⚠️ customerDataManager를 찾을 수 없습니다');
             return false;
         }
-        
+
         const customers = window.customerDataManager.getAllCustomers();
-        // 수정 모드인 경우 자기 자신을 제외하고 검사
-        const existingCustomer = customers.find(c => 
+        const existingCustomer = customers.find(c =>
             c.name === customerName.trim() && c.id !== excludeCustomerId
         );
-        
+
         if (existingCustomer) {
             console.log('⚠️ 중복된 고객명 발견:', existingCustomer);
-            
-            // 수정 모드인 경우 다른 메시지 표시
+
             if (excludeCustomerId) {
                 const message = `"${customerName}" 이름의 다른 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n- 등록일: ${existingCustomer.registration_date}\n\n정말로 수정하시겠습니까?`;
-                
-                const choice = confirm(message + '\n\n확인: 수정 계속\n취소: 수정 취소');
-                
-                if (choice) {
-                    console.log('✅ 사용자가 수정 계속하기로 선택');
-                    return true; // 계속 진행
-                } else {
-                    console.log('❌ 사용자가 수정 취소');
-                    return false; // 취소
-                }
+                const choice = await window.showConfirm({ title: '동명 고객 확인', message, confirmLabel: '수정 계속', cancelLabel: '수정 취소', variant: 'info' });
+                console.log(choice ? '✅ 수정 계속' : '❌ 수정 취소');
+                return choice;
             } else {
-                // 등록 모드 - 같은 이름이 있어도 전화번호가 다르면 등록 허용 (확인만)
                 const message = `"${customerName}" 이름의 고객이 이미 등록되어 있습니다.\n\n기존 고객 정보:\n- 전화번호: ${existingCustomer.phone}\n- 등급: ${existingCustomer.grade}\n\n다른 사람이 맞으면 확인을 눌러 계속 등록하세요.`;
-                return confirm(message); // 확인 → 계속, 취소 → 중단
+                return await window.showConfirm({ title: '동명 고객 확인', message, confirmLabel: '계속 등록', variant: 'info' });
             }
         }
-        
+
         console.log('✅ 고객명 중복 없음');
-        return true; // 중복 없음, 계속 진행
-        
+        return true;
+
     } catch (error) {
         console.error('❌ 고객명 중복 검사 실패:', error);
-        return true; // 오류 시 계속 진행
+        return true;
     }
 }
 
@@ -2726,7 +2716,7 @@ async function renderCallbackList() {
 }
 
 async function completeCallback(logId) {
-    if (!confirm('콜백 완료 처리하시겠습니까?')) return;
+    if (!await window.showConfirm({ title: '콜백 완료', message: '콜백 완료 처리하시겠습니까?', confirmLabel: '완료 처리', variant: 'info' })) return;
     try {
         await window.customerLogsManager.completeCallback(logId);
         await renderCallbackList();
