@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.93-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.92-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,7 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
-| v3.4.93 | feat: 브라우저 confirm() 전면 교체 — utils/ui.js에 Promise 기반 showConfirm() 추가, 전체 11개 파일 29곳의 confirm() → 디자인 시스템 모달로 교체 (카테고리·대기자·주문·상품·고객·환경설정·SMS 발송 등) |
+| v3.4.92 | feat: 브라우저 confirm() 전면 교체 — utils/ui.js에 Promise 기반 showConfirm() 추가, 전체 11개 파일 29곳의 confirm() → 디자인 시스템 모달로 교체 (카테고리·대기자·주문·상품·고객·환경설정·SMS 발송 등) |
 | v3.4.92 | fix: 새고객 등록 상태 버튼 색상 — raw Tailwind 색상 클래스 → CSS 변수(--primary/--warn/--danger) 인라인 스타일로 교체 |
 | v3.4.91 | feat: 주문 모달 크기 조절 + 카트 카드 그리드 — ①주문 모달에 `resize:both` + 우측 하단 핸들 → 모서리 드래그로 자유 리사이즈, localStorage 에 크기 저장 → 다음 열 때 복원 (큰 모니터 활용 가능) ②카트 `cart-grid-mode` CSS — 표 → 자동 적응 카드 그리드 (auto-fit minmax 260px → 모달 폭에 따라 1·2·3열 자동), 각 카드: 상품명·단가·소계·수량·체크박스·휴지통 그룹핑, 호버 시 초록 강조. 20+종 주문도 한 화면에 카드형으로 표시 |
 | v3.4.90 | fix: 주문 수정 시 총금액 부풀려져 표시되던 근본 버그 — 사례: DB 80,000원 주문이 수정 모달에서 150,000원으로 표시. 원인: `loadOrderItemsToCart` 의 가격 우선순위가 `productInfo.price` (현재 farm_products 판매가) → item.price → item.unit_price → item.total_price 순. 주문 등록 후 상품 판매가 인상 시 productInfo.price 가 inflated 값을 가져와 cart 라인 합계 재계산 오류. 수정: 주문 당시 저장된 `item.unit_price`/`item.price` 우선, total_price/qty 폴백, productInfo.price 는 최후 폴백(주문 가격 데이터 결손 시만). 주문은 체결된 거래 — 가격 변동 무관하게 원본 보존 |
