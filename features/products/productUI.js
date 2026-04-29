@@ -3,6 +3,50 @@
 
 import { getProductDataManager } from './productData.js';
 
+// ----------------------------
+// 페이지네이션 상태
+// ----------------------------
+let _prodPage = 1;
+let _prodLastSearch = '';
+
+function _prodPageNums(cur, total) {
+    if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+    const p = [1];
+    if (cur > 3) p.push('...');
+    for (let n = Math.max(2, cur - 1); n <= Math.min(total - 1, cur + 1); n++) p.push(n);
+    if (cur < total - 2) p.push('...');
+    p.push(total);
+    return p;
+}
+
+function _renderProdPagination(totalPages, pageSize) {
+    const info = document.getElementById('products-pagination-info');
+    const prev = document.getElementById('products-pagination-prev');
+    const next = document.getElementById('products-pagination-next');
+    const nums = document.getElementById('products-pagination-numbers');
+    const show = pageSize > 0 && totalPages > 1;
+
+    [prev, next, nums, info].forEach(el => { if (el) el.style.display = show ? '' : 'none'; });
+    if (!show) return;
+
+    if (prev) { prev.style.display = ''; prev.disabled = _prodPage <= 1; prev.onclick = () => { _prodPage -= 1; window._prodGoToPage?.(_prodPage, true); }; }
+    if (next) { next.style.display = ''; next.disabled = _prodPage >= totalPages; next.onclick = () => { _prodPage += 1; window._prodGoToPage?.(_prodPage, true); }; }
+    if (info) info.textContent = `${_prodPage} / ${totalPages}`;
+    if (nums) nums.innerHTML = _prodPageNums(_prodPage, totalPages).map(n =>
+        n === '...'
+            ? `<span style="padding:2px 4px;color:var(--text-muted);">…</span>`
+            : `<button onclick="if(window._prodGoToPage)window._prodGoToPage(${n},true)" class="btn-secondary" style="padding:3px 7px;min-width:28px;${n === _prodPage ? 'font-weight:700;border-color:var(--primary);color:var(--primary);' : ''}">${n}</button>`
+    ).join('');
+}
+
+window._prodGoToPage = (val, absolute = false) => {
+    _prodPage = absolute ? val : _prodPage + val;
+    // productUI 인스턴스를 통해 렌더
+    if (window.productManagementComponent?.renderProductsTable) {
+        window.productManagementComponent.renderProductsTable();
+    }
+};
+
 // 공통 상품 폼 필드 정의
 const PRODUCT_FORM_FIELDS = [
     { id: 'name', label: '상품명', type: 'text', required: true, placeholder: '예: White Platter (대)' },
@@ -1317,6 +1361,7 @@ export class ProductUI {
      * 필터 적용
      */
     applyFilters() {
+        _prodPage = 1; // 필터 변경 시 1페이지로 리셋
         try {
             console.log('🔍 상품 필터 적용 중...');
             
@@ -1547,10 +1592,16 @@ export class ProductUI {
             console.log('📊 로드된 상품 수:', products.length);
                 console.log('📋 상품 데이터:', products);
 
-            // 페이지 크기 적용
+            // 페이지 + 표시 수 계산
             const pageSizeEl = document.getElementById('product-page-size');
             const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
-            const pagedProducts = pageSize === 0 ? products : products.slice(0, pageSize);
+
+            const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(products.length / pageSize));
+            _prodPage = Math.min(Math.max(1, _prodPage), totalPages);
+            const startIdx = pageSize === 0 ? 0 : (_prodPage - 1) * pageSize;
+            const pagedProducts = pageSize === 0 ? products : products.slice(startIdx, startIdx + pageSize);
+
+            _renderProdPagination(totalPages, pageSize);
 
             // 하단 카운트 업데이트
             const productTotalEl = document.getElementById('product-status-total');
@@ -1558,7 +1609,7 @@ export class ProductUI {
             if (productTotalEl) productTotalEl.textContent = String(products.length);
             if (productCountEl) productCountEl.textContent = pageSize === 0 || pagedProducts.length === products.length
                 ? `${products.length}개 표시`
-                : `${pagedProducts.length} / ${products.length}개 표시`;
+                : `${startIdx + 1}–${startIdx + pagedProducts.length} / ${products.length}개`;
 
             if (products.length === 0) {
                 tbody.innerHTML = window.renderEmptyRow(9, '등록된 상품이 없습니다');

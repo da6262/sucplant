@@ -6,6 +6,47 @@ import { DEFAULT_CUSTOMER_GRADES } from '../settings/settingsData.js';
 import { formatDate, formatPhone, formatCurrency, ND } from '../../utils/formatters.js';
 
 // ----------------------------
+// 페이지네이션 상태
+// ----------------------------
+let _custPage = 1;
+let _custLastGrade = 'all';
+let _custLastSearch = '';
+
+function _custPageNums(cur, total) {
+    if (total <= 7) return Array.from({length: total}, (_, i) => i + 1);
+    const p = [1];
+    if (cur > 3) p.push('...');
+    for (let n = Math.max(2, cur - 1); n <= Math.min(total - 1, cur + 1); n++) p.push(n);
+    if (cur < total - 2) p.push('...');
+    p.push(total);
+    return p;
+}
+
+function _renderCustPagination(totalPages, pageSize) {
+    const nav = document.getElementById('customer-pagination-nav');
+    const nums = document.getElementById('customer-pagination-numbers');
+    const show = pageSize > 0 && totalPages > 1;
+    if (nav) nav.style.display = show ? 'flex' : 'none';
+    if (!show || !nums) return;
+
+    const prev = nav?.querySelector('button:first-child');
+    const next = nav?.querySelector('button:last-child');
+    if (prev) prev.disabled = _custPage <= 1;
+    if (next) next.disabled = _custPage >= totalPages;
+
+    nums.innerHTML = _custPageNums(_custPage, totalPages).map(n =>
+        n === '...'
+            ? `<span style="padding:2px 4px;color:var(--text-muted);">…</span>`
+            : `<button onclick="if(window._custGoToPage)window._custGoToPage(${n},true)" class="btn-secondary" style="padding:2px 7px;min-width:26px;${n === _custPage ? 'font-weight:700;border-color:var(--primary);color:var(--primary);' : ''}">${n}</button>`
+    ).join('');
+}
+
+window._custGoToPage = async (val, absolute = false) => {
+    _custPage = absolute ? val : _custPage + val;
+    await renderCustomersTable(_custLastGrade, _custLastSearch);
+};
+
+// ----------------------------
 // 캐시 (매 렌더마다 Supabase 쿼리 반복 방지)
 // ----------------------------
 let _gradesCache = null;          // 고객등급 설정 캐시
@@ -222,16 +263,27 @@ export async function renderCustomersTable(gradeFilter = 'all', searchTerm = '')
             return;
         }
 
-        // 페이지당 표시 수 적용
+        // 페이지 + 표시 수 계산
         const pageSizeEl = document.getElementById('customer-page-size');
         const pageSize = pageSizeEl ? parseInt(pageSizeEl.value) : 20;
-        const pagedCustomers = pageSize === 0 ? customers : customers.slice(0, pageSize);
+
+        // 필터·검색 변경 시 페이지 리셋
+        if (gradeFilter !== _custLastGrade || searchTerm !== _custLastSearch) _custPage = 1;
+        _custLastGrade = gradeFilter;
+        _custLastSearch = searchTerm;
+
+        const totalPages = pageSize === 0 ? 1 : Math.max(1, Math.ceil(customers.length / pageSize));
+        _custPage = Math.min(Math.max(1, _custPage), totalPages);
+        const startIdx = pageSize === 0 ? 0 : (_custPage - 1) * pageSize;
+        const pagedCustomers = pageSize === 0 ? customers : customers.slice(startIdx, startIdx + pageSize);
+
+        _renderCustPagination(totalPages, pageSize);
 
         // 목록 개수 표시
         const countEl = document.getElementById('customer-list-count');
         if (countEl) countEl.textContent = pageSize === 0 || pagedCustomers.length === customers.length
             ? `${customers.length}명 표시`
-            : `${pagedCustomers.length} / ${customers.length}명 표시`;
+            : `${startIdx + 1}–${startIdx + pagedCustomers.length} / ${customers.length}명`;
 
         // 하단 상태 바
         const totalEl = document.getElementById('customer-status-total');
