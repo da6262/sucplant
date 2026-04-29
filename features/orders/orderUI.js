@@ -1035,7 +1035,8 @@ export async function deleteOrder(orderId) {
             window.orderDataManager.updateFilterCounts();
             console.log('🔄 주문 목록 새로고침 및 테이블 렌더링 완료');
             
-            alert('주문이 성공적으로 삭제되었습니다.');
+            if (window.showToast) window.showToast('주문이 삭제되었습니다.', 3000);
+            else alert('주문이 삭제되었습니다.');
             
         } else {
             console.warn('OrderDataManager를 찾을 수 없습니다');

@@ -2122,3 +2122,57 @@ table tbody td [class*="shrink-0"] {
     font-weight: 500;
     line-height: 15px;
 }
+
+/* ─── 실행취소 토스트 ───────────────────────────────── */
+.undo-toast {
+    position: fixed;
+    bottom: 28px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--text-heading);
+    color: #fff;
+    border-radius: var(--radius-lg);
+    padding: 12px 16px 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    box-shadow: var(--shadow-lg);
+    z-index: 99999;
+    font-size: 13px;
+    min-width: 280px;
+    max-width: 420px;
+    animation: undoToastIn 0.2s ease;
+}
+@keyframes undoToastIn {
+    from { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+.undo-toast-msg { flex: 1; }
+.undo-toast-btn {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.45);
+    color: #fff;
+    border-radius: var(--radius-sm);
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s;
+}
+.undo-toast-btn:hover { background: rgba(255,255,255,0.15); }
+.undo-toast-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
+    overflow: hidden;
+}
+.undo-toast-fill {
+    height: 100%;
+    width: 100%;
+    background: var(--primary-light);
+}

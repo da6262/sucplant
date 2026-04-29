@@ -456,20 +456,36 @@ export class WaitlistUI {
      */
     async deleteWaitlist(waitlistId) {
         try {
-            console.log('🗑️ 대기자 삭제:', waitlistId);
-
             if (!await window.showConfirm({ title: '대기자 삭제', message: '정말로 이 대기자를 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
 
-            await waitlistDataManager.deleteWaitlist(waitlistId);
+            // soft-delete: 로컬 배열에서 즉시 제거 → UI 반영 → 5초 후 DB 삭제
+            const idx = waitlistDataManager.farm_waitlist.findIndex(i => i.id === waitlistId);
+            if (idx === -1) return;
+            const saved = waitlistDataManager.farm_waitlist.splice(idx, 1)[0];
 
             this.renderWaitlistTable(waitlistDataManager.getAllWaitlist());
             this.updateWaitlistStats();
 
-            if (window.Swal) {
-                window.Swal.fire({ icon: 'success', title: '삭제 완료', text: '대기자가 삭제되었습니다.', timer: 1500, showConfirmButton: false });
-            } else {
-                alert('대기자가 삭제되었습니다.');
-            }
+            window.showUndoToast('대기자가 삭제되었습니다', {
+                onUndo: () => {
+                    waitlistDataManager.farm_waitlist.splice(idx, 0, saved);
+                    this.renderWaitlistTable(waitlistDataManager.getAllWaitlist());
+                    this.updateWaitlistStats();
+                    if (window.showToast) window.showToast('삭제가 취소되었습니다.', 2000);
+                },
+                onConfirm: async () => {
+                    try {
+                        await window.supabaseClient.from('farm_waitlist').delete().eq('id', waitlistId);
+                        console.log('✅ 대기자 DB 삭제 완료');
+                    } catch (e) {
+                        console.error('❌ 대기자 DB 삭제 실패:', e);
+                        waitlistDataManager.farm_waitlist.splice(idx, 0, saved);
+                        this.renderWaitlistTable(waitlistDataManager.getAllWaitlist());
+                        this.updateWaitlistStats();
+                        alert('삭제 중 오류: ' + e.message);
+                    }
+                }
+            });
         } catch (error) {
             console.error('❌ 대기자 삭제 실패:', error);
             alert('대기자 삭제 중 오류가 발생했습니다: ' + error.message);

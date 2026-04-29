@@ -221,10 +221,36 @@ export async function deleteCategory(categoryId) {
         if (!cat) return;
         if (!await window.showConfirm({ title: '카테고리 삭제', message: `'${cat.name}' 카테고리를 삭제하시겠습니까?`, confirmLabel: '삭제' })) return;
 
-        await window.categoryDataManager.deleteCategory(categoryId);
-        await loadCategoriesList();
+        const mgr = window.categoryDataManager;
+        const idx = mgr.categories.findIndex(c => c.id === categoryId);
+        if (idx === -1) return;
+        const saved = { ...mgr.categories[idx] };
+
+        // soft-delete: 로컬 배열에서 즉시 제거 → UI 반영 → 5초 후 DB 삭제
+        mgr.categories.splice(idx, 1);
+        renderCategoriesList(mgr.getAllCategories());
         await syncAllCategoryDropdowns();
 
+        window.showUndoToast(`'${cat.name}' 카테고리가 삭제되었습니다`, {
+            onUndo: async () => {
+                mgr.categories.splice(idx, 0, saved);
+                renderCategoriesList(mgr.getAllCategories());
+                await syncAllCategoryDropdowns();
+                if (window.showToast) window.showToast('삭제가 취소되었습니다.', 2000);
+            },
+            onConfirm: async () => {
+                try {
+                    await window.supabaseClient.from('farm_categories').delete().eq('id', categoryId);
+                    console.log('✅ 카테고리 DB 삭제 완료');
+                } catch (e) {
+                    console.error('❌ 카테고리 DB 삭제 실패:', e);
+                    mgr.categories.splice(idx, 0, saved);
+                    renderCategoriesList(mgr.getAllCategories());
+                    await syncAllCategoryDropdowns();
+                    alert('삭제 중 오류: ' + e.message);
+                }
+            }
+        });
     } catch (err) {
         console.error('❌ 카테고리 삭제 실패:', err);
         alert('카테고리 삭제 실패: ' + err.message);

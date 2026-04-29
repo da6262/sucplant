@@ -668,14 +668,35 @@ window.deleteCustomer = async function(customerId) {
     }
 
     try {
-        if (window.customerDataManager) {
-            await window.customerDataManager.deleteCustomer(customerId);
-            console.log('✅ 고객 삭제 완료');
-            if (window.renderCustomersTable) window.renderCustomersTable('all');
-            if (window.showToast) window.showToast('✅ 고객이 삭제되었습니다.', 3000);
-        } else {
-            alert('고객 데이터 관리자를 찾을 수 없습니다.');
-        }
+        const mgr = window.customerDataManager;
+        if (!mgr) { alert('고객 데이터 관리자를 찾을 수 없습니다.'); return; }
+
+        // soft-delete: 로컬 배열에서 즉시 제거 → UI 반영 → 5초 후 DB 삭제
+        const idx = mgr.farm_customers.findIndex(c => c.id === customerId);
+        if (idx === -1) return;
+        const saved = mgr.farm_customers.splice(idx, 1)[0];
+
+        if (window.renderCustomersTable) window.renderCustomersTable('all');
+
+        window.showUndoToast('고객이 삭제되었습니다', {
+            onUndo: () => {
+                mgr.farm_customers.splice(idx, 0, saved);
+                if (window.renderCustomersTable) window.renderCustomersTable('all');
+                if (window.showToast) window.showToast('삭제가 취소되었습니다.', 2000);
+            },
+            onConfirm: async () => {
+                try {
+                    await window.supabaseClient.from('farm_orders').update({ customer_id: null }).eq('customer_id', customerId);
+                    await window.supabaseClient.from('farm_customers').delete().eq('id', customerId);
+                    console.log('✅ 고객 DB 삭제 완료');
+                } catch (e) {
+                    console.error('❌ 고객 DB 삭제 실패:', e);
+                    mgr.farm_customers.splice(idx, 0, saved);
+                    if (window.renderCustomersTable) window.renderCustomersTable('all');
+                    alert('삭제 중 오류가 발생했습니다: ' + e.message);
+                }
+            }
+        });
     } catch (error) {
         console.error('❌ 고객 삭제 실패:', error);
         alert('고객 삭제에 실패했습니다: ' + error.message);

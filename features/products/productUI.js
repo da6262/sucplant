@@ -1969,28 +1969,36 @@ export class ProductUI {
      */
     async deleteProduct(productId) {
         try {
-            console.log('🗑️ 상품 삭제 시작:', productId);
-            
-            if (!await window.showConfirm({ title: '상품 삭제', message: '정말로 이 상품을 삭제하시겠습니까?', confirmLabel: '삭제' })) {
-                return;
-            }
-            
-            const productDataManager = getProductDataManager();
-            if (productDataManager) {
-                await productDataManager.deleteProduct(productId);
-                console.log('✅ 상품 삭제 완료');
-                
-                // 테이블 새로고침
-                this.renderProductsTable();
-                
-                // 성공 알림
-                if (window.showToast) {
-                    window.showToast('✅ 상품이 삭제되었습니다.', 3000);
+            if (!await window.showConfirm({ title: '상품 삭제', message: '정말로 이 상품을 삭제하시겠습니까?', confirmLabel: '삭제' })) return;
+
+            const pdm = getProductDataManager();
+            if (!pdm) { alert('상품 데이터 관리자를 찾을 수 없습니다.'); return; }
+
+            // soft-delete: 로컬 배열에서 즉시 제거 → UI 반영 → 5초 후 DB 삭제
+            const idx = pdm.farm_products.findIndex(p => p.id === productId);
+            if (idx === -1) return;
+            const saved = pdm.farm_products.splice(idx, 1)[0];
+
+            this.renderProductsTable();
+
+            window.showUndoToast('상품이 삭제되었습니다', {
+                onUndo: () => {
+                    pdm.farm_products.splice(idx, 0, saved);
+                    this.renderProductsTable();
+                    if (window.showToast) window.showToast('삭제가 취소되었습니다.', 2000);
+                },
+                onConfirm: async () => {
+                    try {
+                        await window.supabaseClient.from('farm_products').delete().eq('id', productId);
+                        console.log('✅ 상품 DB 삭제 완료');
+                    } catch (e) {
+                        console.error('❌ 상품 DB 삭제 실패:', e);
+                        pdm.farm_products.splice(idx, 0, saved);
+                        this.renderProductsTable();
+                        alert('삭제 중 오류: ' + e.message);
+                    }
                 }
-            } else {
-                console.error('❌ productDataManager를 찾을 수 없습니다.');
-                alert('상품 데이터 관리자를 찾을 수 없습니다.');
-            }
+            });
         } catch (error) {
             console.error('❌ 상품 삭제 실패:', error);
             alert('상품 삭제에 실패했습니다: ' + error.message);
