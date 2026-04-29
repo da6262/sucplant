@@ -2572,6 +2572,9 @@ async function handleOrderSubmit(event) {
             console.log(successMsg);
         }
 
+        // 임시저장 삭제 (제출 성공)
+        clearOrderDraft();
+
         // 주문 모달 닫기
         if (window.closeOrderModal) {
             window.closeOrderModal();
@@ -3517,6 +3520,100 @@ window.parseSmsText = parseSmsText;
 // ─────────────────────────────────────────────
 
 /** 주문 저장 정합성 검증: DB의 total_amount vs Σ(subtotal)+shipping_fee-discount. 콘솔에서 validateOrderTotalAmount(orderId) 호출 가능 */
+// ── 주문 임시저장 (Draft Save) ─────────────────────────────────────
+const _DRAFT_KEY = 'order_draft_v1';
+let _draftTimer = null;
+
+function _captureDraft() {
+    if (window.currentEditingOrderId) return; // 수정 모드는 저장 안 함
+    const get = id => document.getElementById(id)?.value?.trim() || '';
+    const name = get('order-customer-name');
+    const phone = get('order-customer-phone');
+    const cartRows = [...document.querySelectorAll('#cart-items-body tr[data-product-id]')];
+    if (!name && !phone && cartRows.length === 0) { clearOrderDraft(); return; }
+    const items = cartRows.map(tr => ({
+        productId: tr.dataset.productId,
+        productName: tr.dataset.productName || '',
+        unitPrice: Number(tr.dataset.unitPrice) || 0,
+        shippingOption: tr.dataset.shippingOption || '',
+        quantity: Number(tr.querySelector('.quantity-input')?.value) || 1
+    }));
+    try {
+        localStorage.setItem(_DRAFT_KEY, JSON.stringify({
+            savedAt: new Date().toISOString(),
+            customerId: document.getElementById('order-customer-id')?.value || '',
+            customerName: name, customerPhone: phone,
+            address: get('order-customer-address'),
+            addressDetail: get('order-customer-address-detail'),
+            channel: document.getElementById('order-channel')?.value || '',
+            status: document.getElementById('order-status')?.value || '',
+            memo: get('order-memo'),
+            shippingFee: Number(document.getElementById('shipping-fee-input')?.value) || 0,
+            discount: Number(document.getElementById('discount-amount')?.value) || 0,
+            items
+        }));
+    } catch(e) { console.warn('임시저장 실패:', e); }
+}
+
+function getOrderDraft() {
+    try { return JSON.parse(localStorage.getItem(_DRAFT_KEY) || 'null'); } catch(e) { return null; }
+}
+function clearOrderDraft() {
+    try { localStorage.removeItem(_DRAFT_KEY); } catch(e) {}
+}
+function restoreOrderDraft(draft) {
+    if (!draft) return;
+    const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val ?? ''; };
+    set('order-customer-id', draft.customerId);
+    set('order-customer-name', draft.customerName);
+    set('order-customer-phone', draft.customerPhone);
+    set('order-customer-address', draft.address);
+    set('order-customer-address-detail', draft.addressDetail);
+    if (draft.channel) { const el = document.getElementById('order-channel'); if (el) el.value = draft.channel; }
+    if (draft.status) { const el = document.getElementById('order-status'); if (el) el.value = draft.status; }
+    set('order-memo', draft.memo);
+    if (draft.shippingFee !== undefined) set('shipping-fee-input', draft.shippingFee);
+    if (draft.discount !== undefined) set('discount-amount', draft.discount);
+    // 장바구니 복원
+    if (draft.items?.length > 0) {
+        const cartBody = document.getElementById('cart-items-body');
+        if (cartBody) {
+            cartBody.innerHTML = ''; // 빈 행 제거
+            for (const item of draft.items) {
+                if (window.addQuickProductToCart) {
+                    window.addQuickProductToCart(item.productId, item.productName, item.unitPrice, item.shippingOption);
+                    // 수량 설정 (추가 직후 DOM에 반영되므로 약간 지연)
+                    setTimeout(() => {
+                        const tr = document.querySelector(`#cart-items-body tr[data-product-id="${CSS.escape(String(item.productId))}"]`);
+                        if (tr) {
+                            const q = tr.querySelector('.quantity-input');
+                            if (q) q.value = item.quantity;
+                            if (window.cartQuantityChange) cartQuantityChange(String(item.productId), 0);
+                        }
+                    }, 80);
+                }
+            }
+        }
+    }
+    setTimeout(() => {
+        if (window.refreshOrderTotal) refreshOrderTotal();
+        if (window.updateOrderSubmitButtonState) updateOrderSubmitButtonState();
+    }, 150);
+}
+function startDraftAutoSave() {
+    if (_draftTimer) clearInterval(_draftTimer);
+    _draftTimer = setInterval(_captureDraft, 5000);
+}
+function stopDraftAutoSave() {
+    if (_draftTimer) { clearInterval(_draftTimer); _draftTimer = null; }
+}
+window.getOrderDraft     = getOrderDraft;
+window.clearOrderDraft   = clearOrderDraft;
+window.restoreOrderDraft = restoreOrderDraft;
+window.startDraftAutoSave = startDraftAutoSave;
+window.stopDraftAutoSave  = stopDraftAutoSave;
+
+// ─────────────────────────────────────────────
 window.validateOrderTotalAmount = async function (orderId) {
     if (!orderId || !window.supabaseClient) {
         console.warn('orderId 또는 supabaseClient 없음');

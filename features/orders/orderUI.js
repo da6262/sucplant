@@ -127,6 +127,17 @@ export async function openOrderModal(orderId = null, customerData = null) {
             window.currentEditingOrderId = null;
             window._shippingFeeUserEdited = false; // 새 주문이므로 제안값 적용 허용
             clearOrderForm();
+
+            // 임시저장 배너 (고객 데이터 직접 전달 없는 새 주문만)
+            if (!customerData) {
+                setTimeout(() => {
+                    const draft = window.getOrderDraft?.();
+                    if (draft && (draft.customerName || draft.customerPhone || draft.items?.length)) {
+                        _showOrderDraftBanner(draft);
+                    }
+                    if (window.startDraftAutoSave) window.startDraftAutoSave();
+                }, 350);
+            }
             // DB(환경설정)에서 배송비 제안값을 먼저 불러와 적용 (저장한 3000원 등이 즉시 반영되도록)
             if (typeof window.applyShippingFeeSuggestionForNewOrder === 'function') {
                 await window.applyShippingFeeSuggestionForNewOrder();
@@ -244,6 +255,10 @@ function _orderModalEscHandler(e) {
 // 주문 모달 닫기
 export function closeOrderModal() {
     try {
+        // 자동저장 중단 (제출 성공 시 clearOrderDraft 이미 호출됨)
+        if (window.stopDraftAutoSave) window.stopDraftAutoSave();
+        document.getElementById('_order-draft-banner')?.remove();
+
         const modal = document.getElementById('order-modal');
         if (modal) {
             modal.classList.add('hidden');
@@ -1085,6 +1100,30 @@ export async function updateOrderStatus(orderId, newStatus) {
         console.error('❌ 주문 상태 업데이트 실패:', error);
         alert('주문 상태 업데이트에 실패했습니다: ' + error.message);
     }
+}
+
+// 임시저장 배너 — 새 주문 폼 상단에 표시
+function _showOrderDraftBanner(draft) {
+    document.getElementById('_order-draft-banner')?.remove();
+    const panelBody = document.getElementById('order-panel-body');
+    if (!panelBody) return;
+    const savedAt = draft.savedAt
+        ? new Date(draft.savedAt).toLocaleString('ko-KR', { month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit' })
+        : '';
+    const preview = draft.customerName || draft.customerPhone || '';
+    const itemCount = draft.items?.length || 0;
+    const desc = [preview, itemCount > 0 ? `상품 ${itemCount}종` : ''].filter(Boolean).join(', ');
+    const banner = document.createElement('div');
+    banner.id = '_order-draft-banner';
+    banner.style.cssText = 'background:var(--badge-info-bg);color:var(--info);border-bottom:1px solid var(--border);padding:8px 16px;display:flex;align-items:center;gap:10px;font-size:12px;flex-shrink:0;';
+    banner.innerHTML =
+        `<i class="fas fa-clock" style="flex-shrink:0;"></i>` +
+        `<span style="flex:1;">임시저장본: <strong>${desc}</strong>${savedAt ? ' (' + savedAt + ')' : ''}</span>` +
+        `<button onclick="if(window.restoreOrderDraft&&window.getOrderDraft){window.restoreOrderDraft(window.getOrderDraft());}this.closest('#_order-draft-banner').remove();" ` +
+            `class="btn-info" style="font-size:11px;padding:3px 10px;">불러오기</button>` +
+        `<button onclick="if(window.clearOrderDraft)window.clearOrderDraft();this.closest('#_order-draft-banner').remove();" ` +
+            `class="btn-neutral" style="font-size:11px;padding:3px 10px;">무시</button>`;
+    panelBody.insertBefore(banner, panelBody.firstChild);
 }
 
 // 전역 스코프에 함수 등록
