@@ -2,7 +2,7 @@
 
 > 경산다육식물농장의 주문 · 재고 · 고객을 한 화면에서 관리하는 웹 애플리케이션
 
-![버전](https://img.shields.io/badge/version-3.4.93-brightgreen)
+![버전](https://img.shields.io/badge/version-3.4.98-brightgreen)
 
 [![stack](https://img.shields.io/badge/stack-Vanilla_JS_+_Supabase-blue)](#기술-스택)
 
@@ -232,6 +232,7 @@ sucplant/
 
 | 버전 | 내용 |
 |------|------|
+| v3.4.98 | fix: 주문 삭제 후 화면에 그대로 남던 버그 — 원인: `OrderDataManager` 가 주문을 두 배열(`farm_order_rows` RPC 결과·렌더 단일 소스 / `farm_orders` 레거시 폴백)로 보관하는데, `deleteOrder` 가 `farm_orders` 만 splice (필드도 `id` 인데 RPC 결과는 `order_id`) → DB 는 삭제됐지만 다음 `renderOrdersTable()` 이 `farm_order_rows` 옛 캐시 그대로 그림. 수정: 양쪽 배열 모두 splice + 탭 카운트 캐시(`_lastCountRows`) 즉시 재계산. CLAUDE.md 에 함정 표준 패턴 추가 (mutation 시 `farm_order_rows.order_id` 매칭 필수) |
 | v3.4.97 | feat: 고객·상품 페이지네이션 — pageSize 기반 슬라이스(0~N)에서 prev/next + 페이지번호 버튼으로 업그레이드. 고객 footer에 페이지 컨트롤 추가, 상품 기존 HTML 컨트롤 연동. 필터·검색 변경 시 자동 1페이지 리셋, 카운트 "1–20 / 350명" 범위 표시 |
 | v3.4.96 | feat: 주문 임시저장 — 새 주문 폼 열려있는 동안 5초마다 localStorage 자동저장(order_draft_v1), 다음 열 때 "임시저장본: 고객명, 상품N종 (날짜)" 배너 표시 + 불러오기/무시 버튼. 장바구니 포함 전체 복원. 제출 성공 시 자동 삭제 |
 | v3.4.95 | feat: 삭제 실행취소 토스트 — soft-delete 패턴 적용 (고객·상품·카테고리·대기자). 삭제 즉시 UI에서 사라지고 5초 진행바 토스트 표시, "실행취소" 클릭 시 로컬 배열 복원+재렌더, 5초 후 실제 DB 삭제. 주문삭제는 재고복원 복잡성으로 showToast 교체만 |

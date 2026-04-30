@@ -495,6 +495,30 @@ start-server.bat
 
 **컬럼 변경 체크리스트**: ① 헤더 `<th>` (`orderFormMinimalLayout.js`) ② tfoot `colspan` ③ 위 5개 row 생성기 ④ `ensureCartEmptyRow` 의 `thCount` 자동 감지는 OK ⑤ 빈 메시지 selector 는 `tr td[colspan="6"], tr td[colspan="5"]` 처럼 양방향 호환으로 작성 (구버전 캐시 대응).
 
+### 주문 목록 캐시 이중화 함정 — `farm_order_rows` vs `farm_orders` (v3.4.92+)
+주문 데이터가 `OrderDataManager` 에 **두 배열로** 보관되어 mutation 코드가 한쪽만 손대면 화면 갱신이 안 됨.
+
+| 배열 | 출처 | 키 필드 | 용도 |
+|---|---|---|---|
+| `this.farm_order_rows` | RPC `get_order_rows` 결과 (10필드 row spec) | `order_id` | **렌더 단일 소스** — `renderOrdersTable` → `filterOrdersByStatus` 가 여기서 읽음 |
+| `this.farm_orders` | 레거시 폴백·일부 직접 fetch 경로 | `id` | RPC 비활성 환경 호환용 |
+
+**증상**: DB 는 변경됐는데 화면에 그대로 — 새로고침해야 반영됨. 발견 사례(v3.4.92): `deleteOrder` 가 `this.farm_orders.findIndex(o => o.id === orderId)` 로만 splice → `farm_order_rows` 캐시는 그대로 → 다음 `renderOrdersTable()` 이 옛 데이터 그림.
+
+**규칙**: 주문 데이터 mutation(추가·수정·삭제) 시 **반드시 `farm_order_rows` 도 함께 갱신**. 키 필드는 `order_id` (RPC 결과는 `id` 필드 없음).
+```js
+// 표준 패턴
+const rowIndex = this.farm_order_rows?.findIndex(r => r.order_id === orderId) ?? -1;
+if (rowIndex !== -1) this.farm_order_rows.splice(rowIndex, 1);
+const orderIndex = this.farm_orders?.findIndex(o => o.id === orderId) ?? -1;
+if (orderIndex !== -1) this.farm_orders.splice(orderIndex, 1);
+// 탭 카운트도 즉시 재계산
+this._lastCountRows = this._computeCountsFromOrderRows(this.farm_order_rows);
+this.updateFilterCountsFromRpc(this._lastCountRows);
+```
+
+**대안**: 단순하게는 mutation 후 `await this.loadOrders()` 호출하면 RPC 재페치로 양쪽 동기화. 하지만 매번 네트워크 왕복 비용 발생 — 단일 항목 변경은 위 splice 패턴이 효율적.
+
 ### 전화번호 포맷터(`utils/formatters.js#formatPhone`) 함정
 - **9자리 분기는 `!startsWith('0')` 가드 필수** — leading 0 누락된 서울 02 표기(`27771234`)만 보정 목적. 가드 없으면 모바일 입력 중간 상태 9자리(`010000000`)에 다시 `0` prepend → `001-000-0000` 변형 (v3.4.64 수정).
 - **10자리 분기는 02 vs 모바일 분리** — `02-XXXX-XXXX`(서울) vs `0XX-XXX-XXXX`(지방·구형 모바일). `startsWith('02')` 체크 필요.

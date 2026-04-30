@@ -703,10 +703,21 @@ class OrderDataManager {
             }
             
             // 로컬 배열에서도 삭제
-            const orderIndex = this.farm_orders.findIndex(order => order.id === orderId);
+            // 렌더 소스는 farm_order_rows (RPC 결과, order_id 필드). farm_orders 는 레거시 폴백 경로.
+            const rowIndex = this.farm_order_rows?.findIndex(r => r.order_id === orderId) ?? -1;
+            if (rowIndex !== -1) {
+                this.farm_order_rows.splice(rowIndex, 1);
+                console.log('✅ farm_order_rows 에서 주문 행 제거');
+            }
+            const orderIndex = this.farm_orders?.findIndex(order => order.id === orderId) ?? -1;
             if (orderIndex !== -1) {
                 this.farm_orders.splice(orderIndex, 1);
-                console.log('✅ 로컬 배열에서 주문 삭제 완료');
+                console.log('✅ farm_orders 에서 주문 제거');
+            }
+            // 카운트 캐시 재계산 (탭 카운트도 즉시 반영)
+            if (Array.isArray(this.farm_order_rows)) {
+                this._lastCountRows = this._computeCountsFromOrderRows(this.farm_order_rows);
+                this.updateFilterCountsFromRpc(this._lastCountRows);
             }
             
             // 캐시 무효화
